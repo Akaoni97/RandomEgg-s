@@ -1,0 +1,14 @@
+{
+  "name": "magazzino-ferroleghe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gestione magazzino ferroleghe: baie, mucchi, lotti, arrivi su più giorni. Versione Claude.",
+  "type": "module",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "start": "node server/server.js",
+    "demo": "DEMO_DATA=1 node server/server.js",
+    "test": "node --test test/*.test.js",
+    "build:artifact": "node scripts/build-artifact.mjs"
+  }
+}
