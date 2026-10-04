@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   applyOp, emptyState, findLocation, LOCATIONS, positionStats, presentLots, planResidual, reconcile,
-  previewTargeted, addDays, romeDate, DomainError, locationHistory, parseNum, fmtTons,
+  previewTargeted, addDays, romeDate, DomainError, locationHistory, parseNum, fmtTons, tripsFor, normalizeState,
 } from '../public/js/core.js';
 import { buildDemoState, DEMO_USERS } from '../public/js/seed.js';
 
@@ -280,4 +280,22 @@ test('demo: stato iniziale coerente con il brief', () => {
   assert.equal(positionStats(s, 'baia-2').over, true);
   assert.equal(addDays('2026-10-31', 1), '2026-11-01');
   assert.ok(GIULIA);
+});
+
+test('mezzi: viaggi, stato, permessi, archivi vecchi', () => {
+  let s = emptyState();
+  const trips = Object.fromEntries(tripsFor(s, 22).map((v) => [v.id, v.trips]));
+  assert.deepEqual(trips, { pala: 3, merlo: 6, 'muletto-1': 8, 'muletto-2': 8 });
+  assert.equal(tripsFor(s, 10)[0].trips, 1);
+  const v = s.fleet.find((x) => x.id === 'muletto-2');
+  s = run(s, { type: 'fleet.update', vehicleId: v.id, expectRev: v.rev, fields: { status: 'Manutenzione', note: 'Forche' } });
+  assert.equal(s.fleet.find((x) => x.id === 'muletto-2').status, 'Manutenzione');
+  expectError(() => run(s, { type: 'fleet.update', vehicleId: 'pala', fields: { capacity: 12 } }, ctx(0, MARCO)), 'forbidden');
+  s = run(s, { type: 'fleet.update', vehicleId: 'pala', fields: { capacity: 12 } }, ctx(0, LUCA));
+  assert.equal(s.fleet[0].capacity, 12);
+  expectError(() => run(s, { type: 'order.create', title: 'X', date: ctx().today, vehicleId: 'ruspa' }), 'validation');
+  s = run(s, { type: 'order.create', title: 'X', date: ctx().today, vehicleId: 'merlo' });
+  assert.equal(s.orders[0].vehicleId, 'merlo');
+  const old = emptyState(); delete old.fleet;
+  assert.equal(normalizeState(old).fleet.length, 4);
 });

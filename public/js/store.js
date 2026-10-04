@@ -2,7 +2,7 @@
 // - LocalStore: demo nel browser. NON è condiviso fra dispositivi; due schede dello stesso browser
 //   si comportano come due dispositivi (conflitti di revisione reali).
 // - RemoteStore: server reale (server/server.js), fonte unica per PC e telefono.
-import { applyOp, reconcile, romeDate, uid, DomainError, exportBackup } from './core.js';
+import { applyOp, reconcile, romeDate, uid, DomainError, exportBackup, normalizeState } from './core.js';
 import { buildDemoState, DEMO_USERS } from './seed.js';
 
 const DAY = 86400000;
@@ -59,7 +59,7 @@ export class LocalStore extends BaseStore {
   read() {
     const raw = safeGet(ls(), this.key);
     if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return null; }
+    try { return normalizeState(JSON.parse(raw)); } catch { return null; }
   }
   write() {
     if (!safeSet(ls(), this.key, JSON.stringify(this.state))) this.persistent = false;
@@ -186,7 +186,7 @@ export class RemoteStore extends BaseStore {
     try { data = await res.json(); } catch { /* risposta vuota */ }
     if (!this.status.online) this.setStatus({ online: true, error: null });
     if (!res.ok) {
-      if (data.state) { this.state = data.state; this.emit('state'); }
+      if (data.state) { this.state = normalizeState(data.state); this.emit('state'); }
       if (res.status === 401 && this.user) { this.user = null; this.emit('auth'); }
       throw new DomainError(data.code || 'validation', data.error || `Errore ${res.status}`, data.extra);
     }
@@ -206,14 +206,14 @@ export class RemoteStore extends BaseStore {
     const d = await this.api('GET', `/api/state${force || !this.state ? '' : `?since=${this.state.rev}`}`);
     if (d.serverTime) this.serverOffset = d.serverTime - Date.now();
     this.status.lastSync = Date.now();
-    if (!d.unchanged) { this.state = d.state; this.emit('remote'); } else this.emit('status');
+    if (!d.unchanged) { this.state = normalizeState(d.state); this.emit('remote'); } else this.emit('status');
   }
   async dispatch(op) {
     const full = { ...op, opId: op.opId || uid('op') };
     this.setStatus({ saving: true });
     try {
       const d = await this.api('POST', '/api/op', { op: full });
-      this.state = d.state;
+      this.state = normalizeState(d.state);
       this.status.lastSync = Date.now();
       this.emit('state');
       return d.result;

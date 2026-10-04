@@ -3,7 +3,9 @@
 import {
   getLocation, fmtTons, fmtNum, parseNum, round3, FORMATS, NOTE_STATUSES, ORDER_STATUSES, ORDER_UNITS, EVENT_TYPES,
   planResidual, planRemainingContainers, positionStats, addDays, daysBetween, canDeleteNote, uid, EPS,
+  tripsFor, VEHICLE_STATUSES, VEHICLE_KINDS,
 } from './core.js';
+import { vehicle } from './art.js';
 import {
   App, h, icon, openDialog, confirmDialog, field, input, select, textarea, switchControl, datalist, locationPicker,
   toast, fmtDayShort, clear, fill,
@@ -19,8 +21,8 @@ export async function act(op, { button, quiet = false } = {}) {
   try {
     const result = await App.store.dispatch(op);
     if (!quiet) {
-      burst(button);
-      toast(result?.message || 'Salvato');
+      burst(button, { hue: burstHue(op.type) });
+      toast(result?.message || 'Salvato', { art: artFor(op) });
     }
     return result;
   } catch (e) {
@@ -29,6 +31,38 @@ export async function act(op, { button, quiet = false } = {}) {
   } finally {
     setBusy(button, false);
   }
+}
+
+/** Il mezzo che accompagna l'esito: muletto per i carichi, pala per gli scarichi, camion per gli arrivi. */
+export function artFor(op) {
+  const t = op.type || '';
+  if (t === 'lot.create' || t === 'lot.load') return vehicle('forklift', { load: true });
+  if (t === 'lot.unload' || t === 'lot.unloadAll' || t === 'lot.delete') return vehicle('loader', { load: true });
+  if (t.startsWith('plan.receive') || t === 'plan.create' || t === 'plan.confirmEstimates') return vehicle('truck');
+  if (t === 'lot.transfer' || t === 'lot.update') return vehicle('telehandler', { load: true });
+  if (t === 'fleet.update') {
+    const v = App.store.state.fleet.find((x) => x.id === op.vehicleId);
+    return vehicle(v?.kind || 'forklift');
+  }
+  return null;
+}
+const burstHue = (t) => (t === 'lot.unload' || t === 'lot.unloadAll' || t === 'lot.delete' ? 'dust' : 'molten');
+
+/** Viaggi necessari con ciascun mezzo (stima, aggiunta di questa versione). */
+function tripsBox() {
+  const box = h('div.field', { hidden: true }, h('div.field-label', 'Con i mezzi del piazzale'), h('div.trips'));
+  return {
+    el: box,
+    update(t) {
+      const list = tripsFor(S(), t);
+      box.hidden = !list.length;
+      fill(box.lastChild, list.map((v) => {
+        const off = v.status === 'Manutenzione' || v.status === 'Fermo';
+        return h(`span.trip${off ? '.off' : ''}`, { title: off ? `${v.name}: ${v.status.toLowerCase()}` : `${v.name}, portata ${fmtNum(v.capacity)} t` },
+          vehicle(v.kind), h('span', v.name), h('b', `${v.trips} ${v.trips === 1 ? 'viaggio' : 'viaggi'}`));
+      }));
+    },
+  };
 }
 
 export function reportError(e, { inline } = {}) {
@@ -88,8 +122,8 @@ function formDialog({ title, subtitle, content, submitLabel = 'Salva', danger = 
     setBusy(submitBtn, true);
     try {
       const result = await App.store.dispatch({ ...op, opId });
-      burst(submitBtn, { count: 46 });
-      toast(result?.message || 'Salvato');
+      burst(submitBtn, { count: 46, hue: burstHue(op.type) });
+      toast(result?.message || 'Salvato', { art: artFor(op) });
       d.close();
       after?.(result);
     } catch (e) {
@@ -260,7 +294,10 @@ export function qtyDialog(lot, kind) {
     qty.setAttribute('aria-invalid', String(next < -EPS));
     if (submitBtn) submitBtn.textContent = Number.isFinite(v) && v > 0 ? `${isLoad ? 'Carica' : 'Scarica'} ${fmtTons(v)}` : (isLoad ? 'Carica' : 'Scarica');
   }
+  const trips = tripsBox();
   qty.addEventListener('input', upd);
+  qty.addEventListener('input', () => trips.update(parseNum(qty.value)));
+  quick.addEventListener('click', () => trips.update(parseNum(qty.value)));
   const d = formDialog({
     title: isLoad ? 'Carico' : 'Scarico',
     subtitle: isLoad ? 'Aggiunge quantità a questo lotto.' : 'Toglie quantità da questo lotto. Non può superare il disponibile.',
@@ -272,6 +309,7 @@ export function qtyDialog(lot, kind) {
         h('div.pb-row', h('span', 'Ora'), h('b', fmtTons(lot.tons))),
         h('div.pb-track', { style: 'isolation:isolate' }, barGhost, barNow),
         h('div.pb-row', h('span', 'Dopo'), after)),
+      trips.el,
       field('Nota (facoltativa)', note)),
     submitLabel: isLoad ? 'Carica' : 'Scarica',
     build: () => ({ type: isLoad ? 'lot.load' : 'lot.unload', lotId: lot.id, expectRev: rev, tons: qty.value, note: note.value }),
@@ -339,9 +377,12 @@ export function transferDialog(lot) {
       h('div.pb-row', h('span', dest.value ? getLocation(dest.value).name : 'Destinazione'), h('b', ok ? `+ ${fmtTons(v)}` : '—')),
       h('div.pb-row', h('span', 'Totale magazzino'), h('b', 'invariato')));
   }
+  const trips = tripsBox();
   qty.addEventListener('input', upd);
+  qty.addEventListener('input', () => trips.update(parseNum(qty.value)));
   dest.el.addEventListener('locchange', upd);
   upd();
+  trips.update(lot.tons);
   formDialog({
     title: 'Trasferisci',
     subtitle: 'Aggiunta di questa versione: sposta tutto o parte del lotto registrando origine e destinazione.',
@@ -350,6 +391,7 @@ export function transferDialog(lot) {
       field('Destinazione', dest.el, { id: 'tr-loc' }),
       field('Quantità da spostare', h('div.big-num', qty, h('span.unit', 't')), { id: 'tr-t' }),
       info,
+      trips.el,
       field('Nota', note)),
     submitLabel: 'Trasferisci',
     build: () => {
@@ -532,6 +574,7 @@ export function orderDialog(order, { date } = {}) {
   const status = select(ORDER_STATUSES, order?.status || 'Da fare', { id: 'or-s' });
   const notes = textarea({ id: 'or-n', placeholder: 'facoltative' });
   notes.value = order?.notes || '';
+  const veh = select([['', 'Nessuno'], ...S().fleet.map((v) => [v.id, `${v.name} · ${fmtNum(v.capacity)} t${v.status !== 'Disponibile' ? ` (${v.status.toLowerCase()})` : ''}`])], order?.vehicleId || '', { id: 'or-v' });
   formDialog({
     title: order ? 'Modifica ordine' : 'Nuovo ordine di lavoro',
     subtitle: 'Completare un ordine non scarica materiale: lo scarico si fa sul lotto.',
@@ -540,12 +583,12 @@ export function orderDialog(order, { date } = {}) {
       field('Titolo', title),
       h('div.row', field('Data', d), field('Ora (facoltativa)', t), field('Stato', status)),
       h('div.row', field('Materiale', material), field('Posizione', loc.el, { id: 'or-loc' })),
-      h('div.row', field('Quantità', qty), field('Unità', unit)),
+      h('div.row', field('Quantità', qty), field('Unità', unit), field('Mezzo', veh)),
       field('Note', notes),
       datalist('dl-mat4', suggestionsFor('material'))),
     build: () => {
       if (!loc.validate()) throw 'Posizione non valida: sceglila dall\'elenco o lascia vuoto.';
-      const fields = { title: title.value, date: d.value, time: t.value, material: material.value, locationId: loc.value, qty: qty.value, unit: unit.value, status: status.value, notes: notes.value };
+      const fields = { title: title.value, date: d.value, time: t.value, material: material.value, locationId: loc.value, qty: qty.value, unit: unit.value, status: status.value, notes: notes.value, vehicleId: veh.value || null };
       return order ? { type: 'order.update', orderId: order.id, expectRev: order.rev, fields } : { type: 'order.create', ...fields };
     },
   });
@@ -592,3 +635,30 @@ export function eventDialog(ev, { date } = {}) {
   });
 }
 
+
+/* Mezzi -------------------------------------------------------------- */
+
+export function fleetDialog(v) {
+  const isAdmin = App.store.user.role === 'admin';
+  let status = v.status;
+  const seg = h('div.seg', { role: 'radiogroup', 'aria-label': 'Stato del mezzo' });
+  const drawSeg = () => fill(seg, VEHICLE_STATUSES.map((st) => h('button', { type: 'button', role: 'radio', 'aria-checked': String(st === status), 'aria-pressed': String(st === status),
+    on: { click: () => { status = st; drawSeg(); } } }, st)));
+  drawSeg();
+  const note = input({ id: 'fl-n', value: v.note || '', placeholder: 'es. cambio forche, rientra giovedì' });
+  const name = input({ id: 'fl-name', value: v.name, disabled: !isAdmin });
+  const cap = input({ id: 'fl-cap', inputmode: 'decimal', value: fmtNum(v.capacity), disabled: !isAdmin });
+  const pic = vehicle(v.kind, { load: true, cls: 'dialog-veh' });
+  pic.style.cssText = 'width:min(260px,70%);justify-self:center;display:block';
+  formDialog({
+    title: v.name,
+    subtitle: `${VEHICLE_KINDS[v.kind] || 'Mezzo'} · portata ${fmtNum(v.capacity)} t${v.updatedByName ? ` · aggiornato da ${v.updatedByName}` : ''}`,
+    content: h('div', { style: 'display:grid;gap:16px' },
+      pic,
+      h('div.field', h('div.field-label', 'Stato'), seg),
+      field('Nota', note),
+      h('div.row', field('Nome', name), field('Portata (t)', cap, { hint: isAdmin ? '' : "Modificabili dall'amministratore." }))),
+    submitLabel: 'Salva',
+    build: () => ({ type: 'fleet.update', vehicleId: v.id, expectRev: v.rev, fields: { status, note: note.value, ...(isAdmin ? { name: name.value, capacity: cap.value } : {}) } }),
+  });
+}

@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
-import { applyOp, reconcile, emptyState, romeDate, exportBackup, DomainError, ROLES, SYSTEM_USER } from '../public/js/core.js';
+import { applyOp, reconcile, emptyState, romeDate, exportBackup, DomainError, ROLES, SYSTEM_USER, normalizeState } from '../public/js/core.js';
 import { buildDemoState } from '../public/js/seed.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,7 +35,7 @@ db.exec(`
 let state;
 {
   const row = db.prepare('SELECT json FROM store WHERE id = 1').get();
-  if (row) state = JSON.parse(row.json);
+  if (row) state = normalizeState(JSON.parse(row.json));
   else {
     state = process.env.DEMO_DATA === '1' ? buildDemoState() : emptyState();
     state.meta.createdAt = Date.now();

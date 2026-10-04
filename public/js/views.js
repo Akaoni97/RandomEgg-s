@@ -10,10 +10,11 @@ import {
   textarea, copyText, initials, openDialog, confirmDialog, switchControl, reducedMotion,
 } from './ui.js';
 import { countUp, previousWidth } from './fx.js';
+import { scene, vehicle, lotArt, idleLift, truckSvg, forkliftSvg } from './art.js';
 import {
   act, addMaterialDialog, qtyDialog, unloadAllDialog, editLotDialog, transferDialog, deleteLotDialog, editPlanDialog,
   receiveDialog, receiveAllDialog, pauseDialog, cancelPlanDialog, noteDialog, deleteNote, orderDialog, setOrderStatus,
-  deleteOrder, eventDialog, reportError,
+  deleteOrder, eventDialog, reportError, fleetDialog,
 } from './dialogs.js';
 
 // Stato dell'interfaccia (filtri, schede) che sopravvive ai nuovi rendering.
@@ -133,10 +134,33 @@ export function renderSearch(s) {
       h('div.kpi', h('div.kpi-label', 'In arrivo'), h('div.kpi-value', tonsEl(incoming, 'k:inc'), h('small', 't'))),
       h('div.kpi', h('div.kpi-label', 'Posizioni occupate'), h('div.kpi-value', String(occupied), h('small', `/ ${LOCATIONS.length}`))),
       h('div.kpi', h('div.kpi-label', 'Appunti aperti'), h('div.kpi-value', String(openNotes)))),
+    yardLive(s),
     plans.length ? h('section.section',
       h('div.section-head', h('h2.section-title', icon('truck', 18), 'Arrivi in corso', h('span.count', String(plans.length)))),
       h('div.arrivals-strip.stagger', plans.map((p, i) => miniPlan(s, p, i)))) : null,
     h('section.section', yard));
+}
+
+/** Piazzale animato: i mezzi si muovono secondo il loro stato (aggiunta di questa versione). */
+function yardLive(s) {
+  const inUse = s.fleet.filter((v) => v.status === 'In uso').length;
+  const down = s.fleet.filter((v) => v.status === 'Manutenzione' || v.status === 'Fermo').length;
+  return h('section.section',
+    h('div.section-head',
+      h('h2.section-title', icon('truck', 18), 'Mezzi sul piazzale', h('span.count', `${s.fleet.length}`)),
+      h('span.muted', { style: 'font-size:13px' }, `${inUse} in uso · ${s.fleet.length - inUse - down} disponibili${down ? ` · ${down} ferm${down === 1 ? 'o' : 'i'}` : ''}`)),
+    scene(s.fleet, { caption: 'Piazzale', wrenchIcon: () => icon('settings', 14) }),
+    h('div.fleet', s.fleet.map((v) => fleetCard(v))));
+}
+
+export function fleetCard(v) {
+  const st = v.status;
+  const chip = st === 'Disponibile' ? '.ok' : st === 'In uso' ? '.accent' : st === 'Manutenzione' ? '.warn' : '.bad';
+  return h(`button.fleet-card.${st === 'In uso' ? 'inuso' : st.toLowerCase()}`, { type: 'button', 'aria-label': `${v.name}, portata ${fmtNum(v.capacity)} t, ${st}${v.note ? `: ${v.note}` : ''}. Cambia stato`, title: v.note || '',
+    on: { click: () => fleetDialog(v) } },
+  vehicle(v.kind, { load: st === 'In uso' }),
+  h('div', { style: 'min-width:0' }, h('b', v.name), h('small', `portata ${fmtNum(v.capacity)} t${v.note ? ` · ${v.note}` : ''}`)),
+  h(`span.chip${chip}`, st));
 }
 
 function miniPlan(s, p, i) {
@@ -195,10 +219,11 @@ export function renderPosition(s, locId) {
   const resolved = notes.filter((n) => n.status === 'Risolto');
   const today = App.store.today();
 
-  const ghostText = loc.kind === 'deposito' ? 'T' : loc.code;
+  const code = loc.kind === 'deposito' ? 'TETTOIA' : loc.code;
   return h('div',
     h('section.pos-hero',
-      h('div.pos-ghost', { 'aria-hidden': 'true' }, ghostText),
+      h('div.rack-sign', { 'aria-hidden': 'true' }, h('div.chains', h('i'), h('i')),
+        h('div.plate', h('span.plate-kind', loc.kind === 'deposito' ? 'DEPOSITO' : KIND_LABEL[loc.kind].toUpperCase()), h(`span.plate-code${code.length > 3 ? '.long' : ''}`, code), h('span.hazard'))),
       h('button.btn.ghost.sm', { type: 'button', on: { click: () => App.navigate('ricerca') } }, icon('arrowL', 16), 'Ricerca'),
       h('div.eyebrow', { style: 'margin-top:14px' }, KIND_LABEL[loc.kind], st.capacity == null ? h('span.chip.outline', 'Capienza non impostata') : null),
       h('h1.pos-title', loc.name),
@@ -225,7 +250,7 @@ export function renderPosition(s, locId) {
       h('div.section-head', h('h2.section-title', icon('ingot', 18), 'Lotti presenti', h('span.count', String(st.lots.length)))),
       st.lots.length
         ? h('div.grid.cols-2.stagger', st.lots.sort((a, b) => b.tons - a.tons).map((l, i) => lotCard(s, l, i)))
-        : h('div.empty', icon('ingot', 40), h('h3', 'Nessun materiale presente'),
+        : h('div.empty', idleLift(), h('h3', 'Nessun materiale presente'),
           h('p', st.plans.length ? 'Gli arrivi previsti sono qui sotto: diventano presenti quando vengono ricevuti o stimati.' : 'La posizione è vuota. Lo storico resta consultabile più in basso.'),
           h('button.btn.accent', { type: 'button', on: { click: () => addMaterialDialog({ locationId: locId }) } }, icon('plus', 18), 'Aggiungi materiale'))),
 
@@ -248,17 +273,26 @@ function occupancy(st, locId) {
   const iPct = (st.incoming / scale) * 100;
   const present = h('div.occ-present', { style: { width: `${previousWidth(`p${locId}`, pPct)}%` } });
   const incoming = h('div.occ-incoming', { style: { left: `${previousWidth(`l${locId}`, pPct)}%`, width: `${previousWidth(`i${locId}`, iPct)}%`, display: st.incoming ? '' : 'none' } });
+  const liftAt = (v) => `${Math.max(4, Math.min(93, v))}%`;
+  const lift = h('div.occ-lift', { style: { left: liftAt(previousWidth(`f${locId}`, pPct)) } });
+  lift.innerHTML = forkliftSvg({ load: true });
   requestAnimationFrame(() => requestAnimationFrame(() => {
     present.style.width = `${pPct}%`;
     incoming.style.left = `${pPct}%`;
     incoming.style.width = `${iPct}%`;
+    if (lift.style.left !== liftAt(pPct)) {
+      const bar = lift.parentElement;
+      bar?.classList.add('moving');
+      lift.style.left = liftAt(pPct);
+      setTimeout(() => bar?.classList.remove('moving'), 950);
+    }
   }));
   return h('section.card.occupancy', { 'aria-label': 'Occupazione' },
     h('div.occ-top',
       h('span', 'Occupazione · ', h('b', fmtTons(st.present)), cap ? ` (${pct(st.present, cap)})` : ''),
       h('span', 'A fine arrivi · ', h('b', fmtTons(st.final)), cap ? ` (${pct(st.final, cap)})` : '')),
     h(`div.occ-bar${st.over ? '.over' : ''}`, { role: 'img', 'aria-label': `Presente ${fmtTons(st.present)}, in arrivo ${fmtTons(st.incoming)}${cap ? `, capienza ${fmtTons(cap)}` : ''}` },
-      present, incoming,
+      present, incoming, lift,
       cap ? h('div.occ-cap', { style: { left: `calc(${(cap / scale) * 100}% - 1px)` }, 'data-label': 'capienza' }) : null),
     h('div.occ-scale', h('span', '0 t'), h('span', cap ? fmtTons(scale) : `${fmtTons(scale)} (nessuna capienza)`)),
     st.over ? h('div.occ-warn', icon('alert', 18), st.overNow ? `Già oltre la capienza provvisoria di ${fmtTons(round3(st.present - cap))}.` : `A fine arrivi supererà la capienza provvisoria di ${fmtTons(round3(st.final - cap))}.`) : null);
@@ -292,6 +326,7 @@ function lotCard(s, lot, i) {
     h('div.lot-top',
       h('div', { style: 'min-width:0' }, h('div.lot-material', lot.material), h('div.lot-client', lot.client)),
       h('div.lot-tons', tonsEl(lot.tons, `lot:${lot.id}`), h('small', 't'))),
+    h('div.lot-mid', h('div',
     h('div.lot-tags',
       h('span.code', lot.lotCode),
       h('span.chip', lot.format === 'Sacconi' && lot.bags ? `Sacconi · ${lot.bags}` : lot.format),
@@ -299,7 +334,8 @@ function lotCard(s, lot, i) {
       estimates ? h('span.chip.stripe', { title: 'Parte della quantità deriva da stime automatiche del piano, non da consegne confermate' }, 'Include stime') : null),
     h('div.lot-meta',
       h('span', `Aggiornato da ${lot.updatedByName} · ${fmtDateTime(lot.updatedAt)}`),
-      lot.pdfRef ? h('span', icon('file', 12), ' ', lot.pdfRef) : null),
+      lot.pdfRef ? h('span', icon('file', 12), ' ', lot.pdfRef) : null)),
+    lotArt(lot)),
     h('div.lot-actions',
       h('button.btn.load', { type: 'button', on: { click: () => qtyDialog(lot, 'load') } }, icon('plus', 18), 'Carico'),
       h('button.btn.unload', { type: 'button', on: { click: () => qtyDialog(lot, 'unload') } }, icon('minus', 18), 'Scarico'),
@@ -336,7 +372,9 @@ function planCard(s, p, today, i) {
         const kind = boxes[idx];
         col.push(h(`span.cbox${kind ? '.' + kind : ''}${kind && idx >= prevSeen ? '.pop' : ''}`, { style: kind && idx >= prevSeen ? `animation-delay:${(idx - prevSeen) * 90}ms` : '' }));
       }
-      return h(`div.track-day${d.state === 'today' ? '.today' : ''}`, h('div.track-boxes', col),
+      const truck = d.state === 'today' && !p.paused ? h('span.today-truck', { 'aria-hidden': 'true' }) : null;
+      if (truck) truck.innerHTML = truckSvg();
+      return h(`div.track-day${d.state === 'today' ? '.today' : ''}`, truck, h('div.track-boxes', col),
         h('div.track-label', `G${d.day}`, h('br'), fmtDayMonth(d.date)));
     }));
 
@@ -482,6 +520,8 @@ export function renderOrders(s) {
       : h('div.empty', icon('orders', 40), h('h3', ui.ordersFilter === 'aperti' ? 'Nessun ordine da fare' : 'Nessun ordine'), h('button.btn.accent', { type: 'button', on: { click: () => orderDialog(null) } }, icon('plus', 18), 'Nuovo ordine')));
 }
 
+const vehOf = (o) => (o.vehicleId ? App.store.state.fleet.find((v) => v.id === o.vehicleId) : null);
+
 function orderCard(o, today, i) {
   const done = o.status === 'Completato';
   const cancelled = o.status === 'Annullato';
@@ -496,7 +536,8 @@ function orderCard(o, today, i) {
         h(`span.chip${o.status === 'Da fare' ? '.accent' : o.status === 'Programmato' ? '.info' : o.status === 'Completato' ? '.ok' : ''}`, o.status),
         loc ? h('button.chip.outline', { type: 'button', on: { click: () => App.navigate(`pos-${loc.id}`) } }, icon('pin', 12), loc.name) : null,
         o.material ? h('span.chip', o.material) : null,
-        o.qty != null ? h('span.chip.num', `${fmtNum(o.qty)} ${o.unit}`) : null),
+        o.qty != null ? h('span.chip.num', `${fmtNum(o.qty)} ${o.unit}`) : null,
+        vehOf(o) ? h('span.chip.veh-chip', vehicle(vehOf(o).kind), vehOf(o).name) : null),
       o.notes ? h('div.order-notes', o.notes) : null,
       h('div.muted', { style: 'font-size:12.5px;margin-top:8px' }, `${o.createdByName}${o.updatedByName !== o.createdByName ? ` · modificato da ${o.updatedByName}` : ''}`)),
     h('div.order-side',

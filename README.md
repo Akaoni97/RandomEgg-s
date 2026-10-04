@@ -13,7 +13,7 @@ Serve **Node.js 22.5 o successivo**. Il progetto non ha dipendenze da installare
 ```bash
 npm start            # server reale con archivio vuoto  → http://localhost:8080
 npm run demo         # server reale precaricato con i dati DEMO
-npm test             # 23 prove: casi del pacchetto + server (accessi, conflitti, idempotenza)
+npm test             # 24 prove: casi del pacchetto + server (accessi, conflitti, idempotenza)
 npm run build:artifact   # genera dist/magazzino-ferroleghe.html (demo in un solo file)
 ```
 
@@ -38,7 +38,8 @@ public/js/core.js     regole del magazzino (unica fonte, usata da browser e serv
 public/js/seed.js     dati DEMO generati facendo passare operazioni vere dal motore
 public/js/store.js    archivio locale (demo) e remoto (server) con la stessa interfaccia
 public/js/views.js    pagine     public/js/dialogs.js  moduli     public/js/app.js  guscio
-public/styles.css     sistema visivo (temi Forgia, Acciaio, Cobalto, Pieno sole)
+public/js/art.js      illustrazioni SVG: mezzi, pallet, big bag, mucchi, scena del piazzale
+public/styles.css     sistema visivo (giallo sicurezza, antracite, cemento; temi chiaro, notte, Cobalto, Pieno sole)
 server/server.js      HTTP + SQLite + account, nessuna dipendenza esterna
 test/                 casi di prova del pacchetto e prova d'integrazione del server
 ```
@@ -80,6 +81,13 @@ test/                 casi di prova del pacchetto e prova d'integrazione del ser
 - **Palette comandi** (Ctrl/⌘+K o “/”): posizioni, lotti, pagine e azioni da tastiera.
 - **Schema del piazzale** accanto alla ricerca, dichiaratamente dimostrativo (non è la piantina reale).
 - Stime automatiche lato server **anche a sito chiuso**, finché il processo è acceso.
+- **Mezzi del piazzale**: pala gommata 10 t, Merlo 4 t, Muletto 1 e 2 da 3 t, con stato (Disponibile,
+  In uso, Manutenzione, Fermo) e nota. Si possono assegnare agli ordini; nello scarico e nel trasferimento
+  il modulo stima quanti viaggi servono con ciascun mezzo. Nome e portata li cambia l'amministratore.
+- **Piazzale animato**: nella ricerca e nell'accesso i mezzi si muovono secondo il loro stato (in
+  manutenzione restano parcheggiati con il cono). Cartello della posizione appeso che oscilla, muletto che
+  spinge la barra di occupazione, lotti disegnati come mucchi o big bag su pallet, camion nel giorno
+  corrente del piano. Tutto si ferma con “Riduci le animazioni” o con la preferenza di sistema.
 - Strumenti demo: data simulata (±1 giorno), archivio irraggiungibile, conflitto simulato.
 
 ## Casi di prova verificati

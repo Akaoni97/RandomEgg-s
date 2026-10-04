@@ -42,7 +42,10 @@ export function burst(target, { count = 34, power = 1, hue = 'molten' } = {}) {
       vx: Math.cos(a) * v, vy: Math.sin(a) * v,
       life: 1, decay: 0.012 + Math.random() * 0.02,
       w: 1 + Math.random() * 1.8,
-      c: hue === 'cool' ? `hsl(${190 + Math.random() * 30}, 100%, ${60 + Math.random() * 25}%)` : `hsl(${18 + Math.random() * 30}, 100%, ${55 + Math.random() * 30}%)`,
+      c: hue === 'cool' ? `hsl(${190 + Math.random() * 30}, 100%, ${60 + Math.random() * 25}%)`
+        : hue === 'dust' ? `hsl(${28 + Math.random() * 14}, ${18 + Math.random() * 20}%, ${52 + Math.random() * 25}%)`
+        : `hsl(${38 + Math.random() * 16}, 100%, ${55 + Math.random() * 30}%)`,
+      dust: hue === 'dust',
     });
   }
   if (!raf) raf = requestAnimationFrame(tick);
@@ -53,7 +56,7 @@ function tick() {
   sparks = sparks.filter((s) => s.life > 0);
   for (const s of sparks) {
     s.px = s.x; s.py = s.y;
-    s.vy += 0.22; s.vx *= 0.985; s.vy *= 0.985;
+    s.vy += s.dust ? 0.05 : 0.22; s.vx *= s.dust ? 0.95 : 0.985; s.vy *= s.dust ? 0.95 : 0.985;
     s.x += s.vx; s.y += s.vy;
     s.life -= s.decay;
     ctx.strokeStyle = s.c;
@@ -90,32 +93,18 @@ export function forge(canvasEl) {
       vy: 0.3 + Math.random() * 1.1,
       sway: Math.random() * Math.PI * 2,
       life: 0.4 + Math.random() * 0.6,
-      hue: 15 + Math.random() * 35,
+      hue: 35 + Math.random() * 20,
     };
   }
   resize();
   const ro = new ResizeObserver(resize);
   ro.observe(canvasEl);
-  const N = Math.round(Math.min(140, (w * h) / 6000));
+  const N = Math.round(Math.min(70, (w * h) / 12000));
   for (let i = 0; i < N; i++) embers.push(spawn(true));
   function draw() {
     if (!alive) return;
     frame++;
     c.clearRect(0, 0, w, h);
-    // griglia del piazzale in prospettiva
-    c.strokeStyle = 'rgba(255,255,255,0.05)';
-    c.lineWidth = 1;
-    const hz = h * 0.55;
-    for (let i = -12; i <= 12; i++) {
-      c.beginPath(); c.moveTo(w / 2 + i * 18, hz); c.lineTo(w / 2 + i * w * 0.16, h); c.stroke();
-    }
-    for (let j = 0; j < 10; j++) {
-      const t = ((j + (still ? 0 : (frame % 120) / 120)) / 10) ** 2;
-      const y = hz + (h - hz) * t;
-      c.globalAlpha = t;
-      c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke();
-    }
-    c.globalAlpha = 1;
     c.globalCompositeOperation = 'lighter';
     for (const e of embers) {
       if (!still) {

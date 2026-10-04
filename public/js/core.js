@@ -21,6 +21,19 @@ export const NOTE_STATUSES = ['Aperto', 'In lavorazione', 'Risolto'];
 export const ORDER_STATUSES = ['Da fare', 'Programmato', 'Completato', 'Annullato'];
 export const ORDER_UNITS = ['t', 'sacconi', 'container', 'pezzi'];
 export const EVENT_TYPES = ['Promemoria', 'Carico', 'Mezzi', 'Visita'];
+export const VEHICLE_STATUSES = ['Disponibile', 'In uso', 'Manutenzione', 'Fermo'];
+export const VEHICLE_KINDS = { loader: 'Pala gommata', telehandler: 'Sollevatore telescopico', forklift: 'Muletto' };
+
+// Mezzi del piazzale (aggiunta di questa versione): portate indicate da Luca.
+export const DEFAULT_FLEET = [
+  { id: 'pala', name: 'Pala gommata', kind: 'loader', capacity: 10 },
+  { id: 'merlo', name: 'Merlo', kind: 'telehandler', capacity: 4 },
+  { id: 'muletto-1', name: 'Muletto 1', kind: 'forklift', capacity: 3 },
+  { id: 'muletto-2', name: 'Muletto 2', kind: 'forklift', capacity: 3 },
+];
+function defaultFleet() {
+  return DEFAULT_FLEET.map((v) => ({ ...v, status: 'Disponibile', note: '', rev: 1, updatedAt: null, updatedByName: null }));
+}
 
 export const MOVEMENT_TYPES = {
   creazione:      { label: 'Nuovo lotto',        sign: 1 },
@@ -197,8 +210,26 @@ export function emptyState() {
     orders: [],
     events: [],
     audit: [],
+    fleet: defaultFleet(),
     meta: { recentOps: [], createdAt: null },
   };
+}
+
+/** Completa uno stato salvato da una versione precedente (es. senza mezzi). */
+export function normalizeState(s) {
+  if (!s || typeof s !== 'object') return s;
+  if (!Array.isArray(s.fleet)) s.fleet = defaultFleet();
+  for (const k of ['lots', 'plans', 'receipts', 'movements', 'notes', 'orders', 'events', 'audit']) if (!Array.isArray(s[k])) s[k] = [];
+  s.settings = { ...DEFAULT_SETTINGS, ...(s.settings || {}) };
+  s.meta ||= { recentOps: [], createdAt: null };
+  s.meta.recentOps ||= [];
+  return s;
+}
+
+/** Viaggi necessari per spostare una quantità con ciascun mezzo disponibile. */
+export function tripsFor(s, t) {
+  if (!Number.isFinite(t) || t <= 0) return [];
+  return (s.fleet || []).map((v) => ({ ...v, trips: Math.ceil(round3(t / v.capacity) - 1e-9) }));
 }
 
 /* Selettori ---------------------------------------------------------- */
@@ -860,7 +891,14 @@ function orderFields(f, o) {
     unit: oneOf(f.unit ?? o?.unit ?? 't', ORDER_UNITS, 'Unità'),
     status: oneOf(f.status ?? o?.status ?? 'Da fare', ORDER_STATUSES, 'Stato'),
     notes: text(f.notes ?? o?.notes, 'Note', { required: false, max: 1000 }),
+    vehicleId: vehicleRef(f.vehicleId !== undefined ? f.vehicleId : o?.vehicleId),
   };
+}
+let currentState = null; // stato in lavorazione, per validare i riferimenti ai mezzi
+function vehicleRef(id) {
+  if (!id) return null;
+  if (!currentState?.fleet?.some((v) => v.id === id)) throw invalid('Mezzo non valido.');
+  return id;
 }
 H['order.create'] = (s, op, ctx) => {
   const o = { id: uid('or'), ...orderFields(op, null), ...created(ctx) };
@@ -995,6 +1033,24 @@ export function validateBackup(data) {
   return { ok: true, state: st, counts: Object.fromEntries(keys.map((k) => [k, st[k].length])) };
 }
 
+// Aggiunta di questa versione: stato dei mezzi del piazzale.
+H['fleet.update'] = (s, op, ctx) => {
+  const v = find(s.fleet, op.vehicleId, 'Il mezzo');
+  checkRev(v, op.expectRev, 'Il mezzo');
+  const f = op.fields || {};
+  const before = { ...v };
+  if (f.status !== undefined) v.status = oneOf(f.status, VEHICLE_STATUSES, 'Stato');
+  if (f.note !== undefined) v.note = text(f.note, 'Nota', { required: false, max: 200 });
+  if ((f.name !== undefined && f.name !== v.name) || (f.capacity !== undefined && Number(parseNum(f.capacity)) !== v.capacity)) {
+    if (ctx.user.role !== 'admin') throw forbidden("Nome e portata dei mezzi li cambia l'amministratore.");
+    if (f.name !== undefined) v.name = text(f.name, 'Nome', { max: 40 });
+    if (f.capacity !== undefined) v.capacity = tons(f.capacity, 'Portata');
+  }
+  touch(v, ctx);
+  audit(s, ctx, `Mezzo: ${v.name} → ${v.status}`, 'mezzo', v.id, before, v);
+  return { message: `${v.name}: ${v.status.toLowerCase()}` };
+};
+
 H['data.replaceAll'] = (s, op, ctx) => {
   const v = validateBackup(op.backup);
   if (!v.ok) throw invalid(v.error);
@@ -1002,6 +1058,7 @@ H['data.replaceAll'] = (s, op, ctx) => {
   const fresh = emptyState();
   Object.assign(s, fresh, structuredClone(v.state), keep, { settings: { ...DEFAULT_SETTINGS, ...(v.state.settings || {}) } });
   s.audit = Array.isArray(v.state.audit) ? v.state.audit : [];
+  normalizeState(s);
   audit(s, ctx, 'Importato backup completo', 'archivio', 'backup', null, null);
   return { message: 'Backup importato' };
 };
@@ -1025,9 +1082,11 @@ export function applyOp(prev, op, ctx) {
     if (seen) return { state: prev, result: seen.result, duplicate: true };
   }
   if (!canDo(ctx.user, op.type)) throw forbidden('Il tuo ruolo non permette questa operazione.');
-  const s = structuredClone(prev);
+  const s = normalizeState(structuredClone(prev));
   reconcilePlans(s, ctx);
-  const result = H[op.type](s, op, ctx) || {};
+  currentState = s;
+  let result;
+  try { result = H[op.type](s, op, ctx) || {}; } finally { currentState = null; }
   reconcilePlans(s, ctx);
   s.rev += 1;
   if (op.opId) {

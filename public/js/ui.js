@@ -153,14 +153,14 @@ export function reducedMotion() {
 /* Toast -------------------------------------------------------------- */
 
 let toastHost;
-export function toast(message, { kind = 'ok', action, duration } = {}) {
+export function toast(message, { kind = 'ok', action, duration, art } = {}) {
   if (!toastHost) {
     toastHost = h('div.toasts', { role: 'status', 'aria-live': 'polite' });
     document.body.append(toastHost);
   }
   const ms = duration ?? (kind === 'error' ? 0 : 4800);
   const el = h(`div.toast.${kind}`,
-    h('div.t-icon', icon(kind === 'error' ? 'alert' : kind === 'warn' ? 'info' : 'check', 18)),
+    art ? h('div.t-icon.art', art) : h('div.t-icon', icon(kind === 'error' ? 'alert' : kind === 'warn' ? 'info' : 'check', 18)),
     h('div.t-msg', message),
     h('div.t-actions',
       action && h('button', { type: 'button', on: { click: () => { close(); action.run(); } } }, action.label),

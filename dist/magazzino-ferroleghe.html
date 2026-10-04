@@ -3,45 +3,53 @@
 <title>Magazzino Ferroleghe</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600..900&family=Instrument+Sans:wdth,wght@75..100,400..700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: menu laterale d'acciaio, contenuto centrale su "lamiera" chiara/scura, barra a tab su telefono.
-   Concetto: piazzale di ferroleghe — metallo fuso (arancio→ambra) su acciaio blu-grafite. */
+/* Layout: menu laterale antracite, contenuto su "cemento" chiaro (o asfalto di notte), barra a tab su telefono.
+   Concetto: piazzale di ferroleghe — giallo sicurezza dei mezzi, antracite, cemento, segnaletica stencil. */
 :root {
-  --bg: #e7ebef;
-  --bg-2: #dbe1e7;
+  --bg: #e7e8e4;
+  --bg-2: #dcded9;
   --surface: #ffffff;
-  --surface-2: #f3f5f8;
-  --surface-3: #e9edf2;
-  --ink: #0d1319;
-  --ink-2: #3f4b59;
-  --ink-3: #66727f;
-  --line: rgba(13, 19, 25, 0.11);
-  --line-strong: rgba(13, 19, 25, 0.22);
-  --accent: #e2550e;
-  --accent-2: #ffad33;
-  --accent-ink: #a63a03;
-  --on-accent: #1a0b02;
-  --steel: #142131;
-  --steel-2: #1d2d41;
-  --on-steel: #e6edf5;
-  --on-steel-2: #93a3b6;
-  --ok: #17845a;
-  --ok-bg: rgba(23, 132, 90, 0.12);
-  --warn: #a86400;
-  --warn-bg: rgba(255, 173, 51, 0.2);
-  --bad: #c9302c;
-  --bad-bg: rgba(201, 48, 44, 0.11);
-  --info: #2763a8;
-  --info-bg: rgba(39, 99, 168, 0.1);
-  --glow: rgba(255, 106, 26, 0.32);
-  --shadow: 0 1px 2px rgba(13, 19, 25, 0.06), 0 8px 24px -12px rgba(13, 19, 25, 0.18);
-  --shadow-lg: 0 24px 60px -20px rgba(13, 19, 25, 0.35);
-  --grain-opacity: 0.035;
-  --molten: linear-gradient(100deg, #c93d06 0%, #ff6a1a 38%, #ffad33 72%, #ffe08a 100%);
+  --surface-2: #f4f5f1;
+  --surface-3: #e9ebe6;
+  --ink: #17191c;
+  --ink-2: #454a51;
+  --ink-3: #6b7178;
+  --line: rgba(23, 25, 28, 0.1);
+  --line-strong: rgba(23, 25, 28, 0.2);
+  --accent: #f2b100;
+  --accent-2: #ffd54a;
+  --accent-ink: #7a5600;
+  --on-accent: #17140a;
+  --out: #c2410c;
+  --steel: #1b1e22;
+  --steel-2: #262a30;
+  --on-steel: #edeeea;
+  --on-steel-2: #9aa0a6;
+  --ok: #157a52;
+  --ok-bg: rgba(21, 122, 82, 0.11);
+  --warn: #946200;
+  --warn-bg: rgba(242, 177, 0, 0.2);
+  --bad: #c42f2a;
+  --bad-bg: rgba(196, 47, 42, 0.1);
+  --info: #2a62a3;
+  --info-bg: rgba(42, 98, 163, 0.1);
+  --glow: rgba(242, 177, 0, 0.38);
+  --shadow: 0 1px 2px rgba(23, 25, 28, 0.05), 0 10px 28px -16px rgba(23, 25, 28, 0.22);
+  --shadow-lg: 0 28px 70px -24px rgba(23, 25, 28, 0.38);
+  --grain-opacity: 0.03;
+  --molten: linear-gradient(100deg, #e89a00 0%, #f5b700 48%, #ffd54a 100%);
+  --asphalt: #cfd2cc;
+  --asphalt-2: #c3c6c0;
+  --lane: rgba(255, 255, 255, 0.85);
+  --sky-1: #f6efe0;
+  --sky-2: #e3e6e0;
+  --lamp: 0;
 
-  --font-display: 'Archivo', 'Arial Narrow', system-ui, sans-serif;
-  --font-body: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sign: 'Big Shoulders Stencil Display', 'Arial Narrow', Impact, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   --r-sm: 6px;
@@ -57,70 +65,84 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0a0d11;
-    --bg-2: #0f141a;
-    --surface: #141a21;
-    --surface-2: #1a222b;
-    --surface-3: #212b36;
-    --ink: #eef2f6;
-    --ink-2: #aab5c2;
-    --ink-3: #78848f;
-    --line: rgba(220, 232, 245, 0.085);
-    --line-strong: rgba(220, 232, 245, 0.18);
-    --accent: #ff6a1a;
-    --accent-2: #ffb547;
-    --accent-ink: #ff8f4d;
-    --on-accent: #1a0b02;
-    --steel: #06080b;
-    --steel-2: #10161d;
-    --on-steel: #e6edf5;
-    --on-steel-2: #8794a3;
+    --bg: #0f1113;
+    --bg-2: #14171a;
+    --surface: #17191d;
+    --surface-2: #1d2024;
+    --surface-3: #25292e;
+    --ink: #eeefea;
+    --ink-2: #aeb3b8;
+    --ink-3: #7d838a;
+    --line: rgba(238, 239, 234, 0.08);
+    --line-strong: rgba(238, 239, 234, 0.17);
+    --accent: #ffc21a;
+    --accent-2: #ffdb6e;
+    --accent-ink: #ffcf4d;
+    --on-accent: #17140a;
+    --out: #ff8a4c;
+    --steel: #0a0b0d;
+    --steel-2: #15181b;
+    --on-steel: #edeeea;
+    --on-steel-2: #8b9197;
     --ok: #3ccf8e;
     --ok-bg: rgba(60, 207, 142, 0.13);
-    --warn: #ffbe55;
-    --warn-bg: rgba(255, 190, 85, 0.14);
+    --warn: #ffc94d;
+    --warn-bg: rgba(255, 194, 26, 0.13);
     --bad: #ff6159;
     --bad-bg: rgba(255, 97, 89, 0.14);
     --info: #6aa8ff;
     --info-bg: rgba(106, 168, 255, 0.13);
-    --glow: rgba(255, 106, 26, 0.45);
-    --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 30px -14px rgba(0, 0, 0, 0.7);
+    --glow: rgba(255, 194, 26, 0.35);
+    --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px -16px rgba(0, 0, 0, 0.75);
     --shadow-lg: 0 30px 80px -20px rgba(0, 0, 0, 0.85);
-    --grain-opacity: 0.06;
+    --grain-opacity: 0.05;
+    --asphalt: #1f2327;
+    --asphalt-2: #191c20;
+    --lane: rgba(255, 214, 90, 0.55);
+    --sky-1: #121a2b;
+    --sky-2: #1a2030;
+    --lamp: 1;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0a0d11;
-  --bg-2: #0f141a;
-  --surface: #141a21;
-  --surface-2: #1a222b;
-  --surface-3: #212b36;
-  --ink: #eef2f6;
-  --ink-2: #aab5c2;
-  --ink-3: #78848f;
-  --line: rgba(220, 232, 245, 0.085);
-  --line-strong: rgba(220, 232, 245, 0.18);
-  --accent: #ff6a1a;
-  --accent-2: #ffb547;
-  --accent-ink: #ff8f4d;
-  --on-accent: #1a0b02;
-  --steel: #06080b;
-  --steel-2: #10161d;
-  --on-steel: #e6edf5;
-  --on-steel-2: #8794a3;
+  --bg: #0f1113;
+  --bg-2: #14171a;
+  --surface: #17191d;
+  --surface-2: #1d2024;
+  --surface-3: #25292e;
+  --ink: #eeefea;
+  --ink-2: #aeb3b8;
+  --ink-3: #7d838a;
+  --line: rgba(238, 239, 234, 0.08);
+  --line-strong: rgba(238, 239, 234, 0.17);
+  --accent: #ffc21a;
+  --accent-2: #ffdb6e;
+  --accent-ink: #ffcf4d;
+  --on-accent: #17140a;
+  --out: #ff8a4c;
+  --steel: #0a0b0d;
+  --steel-2: #15181b;
+  --on-steel: #edeeea;
+  --on-steel-2: #8b9197;
   --ok: #3ccf8e;
   --ok-bg: rgba(60, 207, 142, 0.13);
-  --warn: #ffbe55;
-  --warn-bg: rgba(255, 190, 85, 0.14);
+  --warn: #ffc94d;
+  --warn-bg: rgba(255, 194, 26, 0.13);
   --bad: #ff6159;
   --bad-bg: rgba(255, 97, 89, 0.14);
   --info: #6aa8ff;
   --info-bg: rgba(106, 168, 255, 0.13);
-  --glow: rgba(255, 106, 26, 0.45);
-  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 30px -14px rgba(0, 0, 0, 0.7);
+  --glow: rgba(255, 194, 26, 0.35);
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 32px -16px rgba(0, 0, 0, 0.75);
   --shadow-lg: 0 30px 80px -20px rgba(0, 0, 0, 0.85);
-  --grain-opacity: 0.06;
+  --grain-opacity: 0.05;
+  --asphalt: #1f2327;
+  --asphalt-2: #191c20;
+  --lane: rgba(255, 214, 90, 0.55);
+  --sky-1: #121a2b;
+  --sky-2: #1a2030;
+  --lamp: 1;
   color-scheme: dark;
 }
 /* Cobalto: omaggio al menu blu scuro del sito di riferimento. */
@@ -141,6 +163,13 @@
   --steel-2: #15306a;
   --glow: rgba(47, 107, 255, 0.3);
   --molten: linear-gradient(100deg, #1b3fd1 0%, #2f6bff 45%, #45d4ff 100%);
+  --out: #c2410c;
+  --lamp: 0;
+  --asphalt: #cfd6e2;
+  --asphalt-2: #c2cad8;
+  --lane: rgba(255,255,255,.85);
+  --sky-1: #e8eefb;
+  --sky-2: #dfe6f3;
   color-scheme: light;
 }
 /* Pieno sole: contrasto massimo per lo schermo al sole. */
@@ -169,6 +198,14 @@
   --info: #003f99;
   --grain-opacity: 0;
   --shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55);
+  --out: #a33100;
+  --lamp: 0;
+  --asphalt: #d8d8d8;
+  --asphalt-2: #cccccc;
+  --lane: #ffffff;
+  --sky-1: #ffffff;
+  --sky-2: #f0f0f0;
+  --molten: linear-gradient(100deg, #b86e00, #e09a00);
   color-scheme: light;
 }
 
@@ -597,7 +634,7 @@ p { margin: 0; }
 .lot-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr) auto; gap: 8px; }
 .lot-actions .btn { padding: 0 10px; }
 .lot-actions .btn.load { color: var(--ok); }
-.lot-actions .btn.unload { color: var(--accent-ink); }
+.lot-actions .btn.unload { color: var(--out); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 .stagger > * { animation-delay: calc(var(--i, 0) * 55ms); }
 
@@ -665,14 +702,14 @@ textarea.input { min-height: 96px; resize: vertical; line-height: 1.45; }
 }
 .mv-icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--surface-3); color: var(--ink-2); }
 .mv-icon.in { background: var(--ok-bg); color: var(--ok); }
-.mv-icon.out { background: color-mix(in srgb, var(--accent) 13%, transparent); color: var(--accent-ink); }
+.mv-icon.out { background: color-mix(in srgb, var(--out) 12%, transparent); color: var(--out); }
 .mv-icon.est { background: repeating-linear-gradient(-45deg, var(--warn-bg) 0 5px, transparent 5px 10px); color: var(--warn); border: 1px dashed var(--warn); }
 .mv-icon.neutral { background: var(--info-bg); color: var(--info); }
 .mv-title { font-weight: 700; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .mv-sub { font-size: 13px; color: var(--ink-3); margin-top: 2px; overflow-wrap: anywhere; }
 .mv-qty { font-family: var(--font-display); font-weight: 850; font-stretch: 110%; font-size: 19px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .mv-qty.in { color: var(--ok); }
-.mv-qty.out { color: var(--accent-ink); }
+.mv-qty.out { color: var(--out); }
 .mv-qty small { display: block; font-family: var(--font-body); font-stretch: 100%; font-weight: 500; font-size: 12px; color: var(--ink-3); }
 .mv.est { background: linear-gradient(90deg, var(--warn-bg), transparent 40%), var(--surface); }
 .link-btn { border: 0; background: none; padding: 0; color: var(--accent-ink); font-weight: 650; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
@@ -994,6 +1031,273 @@ pre.json { font-family: var(--font-mono); font-size: 12.5px; background: var(--s
 @keyframes vtOut { to { opacity: 0; transform: translateY(-8px); } }
 @keyframes vtIn { from { opacity: 0; transform: translateY(14px); } }
 
+/* ================================================================== */
+/* Tema piazzale: tipografia, scena animata, mezzi, segnaletica        */
+/* ================================================================== */
+
+h1, h2, h3, h4 { font-family: var(--font-display); }
+.page-title { font-weight: 650; font-stretch: normal; letter-spacing: -0.028em; font-size: clamp(30px, 4vw, 44px); line-height: 1.05; }
+.dialog-head h2, .panel h2, .cal-month, .empty h3, .login-card h2 { font-weight: 650; font-stretch: normal; letter-spacing: -0.02em; }
+.search-hero .page-title { font-weight: 650; font-stretch: normal; font-size: clamp(38px, 5.8vw, 66px); letter-spacing: -0.04em; max-width: 13ch; line-height: 1; }
+.search-hero .page-title em {
+  color: inherit; -webkit-text-fill-color: currentColor; font-style: normal;
+  background: linear-gradient(transparent 60%, var(--accent) 60%, var(--accent) 90%, transparent 90%) no-repeat 0 0 / 100% 100%;
+  animation: marker 900ms 300ms var(--ease) both; padding: 0 0.08em; margin: 0 -0.04em;
+}
+@keyframes marker { from { background-size: 0% 100%; } }
+.metric-value, .kpi-value, .lot-tons, .plan-num b, .mv-qty, .order-date, .suggest .s-code, .tile, .cal-num,
+.stepper .input, .big-num .input, .pos-title, .brand-title, .login-word {
+  font-family: var(--font-sign); font-stretch: normal;
+}
+.metric-value { font-size: clamp(42px, 5vw, 60px); font-weight: 800; letter-spacing: 0.01em; line-height: 0.95; }
+.metric-value small, .kpi-value small, .lot-tons small { font-family: var(--font-body); }
+.kpi-value { font-size: clamp(32px, 3.4vw, 42px); font-weight: 800; }
+.lot-tons { font-size: clamp(44px, 4.6vw, 56px); font-weight: 800; }
+.plan-num b { font-size: 30px; font-weight: 800; }
+.mv-qty { font-size: 26px; font-weight: 800; }
+.order-date { font-size: 19px; font-weight: 800; letter-spacing: 0.02em; }
+.big-num .input { font-size: 44px; font-weight: 800; }
+.stepper .input { font-size: 40px; font-weight: 800; }
+.tile { font-size: 19px; font-weight: 800; }
+.tile.mucchio { font-size: 16px; }
+.cal-num { font-size: 17px; font-weight: 800; }
+.pos-title { font-size: clamp(64px, 10vw, 118px); font-weight: 800; letter-spacing: 0.01em; line-height: 0.88; text-transform: uppercase; }
+.brand-title { font-size: 24px; font-weight: 800; letter-spacing: 0.08em; }
+.login-word { font-weight: 900; letter-spacing: 0.01em; font-size: clamp(54px, 17cqw, 180px); line-height: 0.84; }
+.login-word span:nth-child(2) { background: linear-gradient(100deg, #e89a00, #ffc21a 30%, #fff1b8 50%, #ffc21a 70%, #e89a00); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; }
+.login-art .glow { background: radial-gradient(ellipse at 50% 100%, rgba(255, 194, 26, 0.35), rgba(255, 194, 26, 0.08) 45%, transparent 70%); }
+.btn-forge, .tabbar .fab { color: var(--on-accent); }
+.card { border-radius: 18px; }
+.chip { font-weight: 600; }
+
+/* Cartello appeso della posizione ---------------------------------- */
+.rack-sign { position: absolute; right: 6px; top: -28px; width: clamp(130px, 18vw, 210px); z-index: -1; transform-origin: 50% 0; animation: swing 2.6s var(--ease) both; pointer-events: none; }
+.rack-sign .chains { position: relative; height: 54px; }
+.rack-sign .chains i { position: absolute; top: 0; bottom: 0; width: 3px; background: repeating-linear-gradient(180deg, var(--ink-3) 0 5px, transparent 5px 8px); border-radius: 2px; }
+.rack-sign .chains i:first-child { left: 18%; transform: rotate(8deg); transform-origin: top; }
+.rack-sign .chains i:last-child { right: 18%; transform: rotate(-8deg); transform-origin: top; }
+.plate {
+  position: relative; display: grid; justify-items: center; padding: 12px 10px 14px; border-radius: 10px;
+  background: var(--accent); color: #141210; border: 3px solid #141210; box-shadow: 0 18px 40px -14px var(--glow), inset 0 0 0 3px rgba(255, 255, 255, 0.25);
+}
+.plate::before, .plate::after { content: ''; position: absolute; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: #141210; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4); }
+.plate::before { left: 10px; } .plate::after { right: 10px; }
+.plate-kind { font-family: var(--font-sign); font-weight: 800; letter-spacing: 0.3em; font-size: clamp(13px, 1.4vw, 17px); padding-left: 0.3em; }
+.plate-code { font-family: var(--font-sign); font-weight: 900; line-height: 0.85; font-size: clamp(70px, 10vw, 120px); }
+.plate-code.long { font-size: clamp(34px, 4.2vw, 50px); padding: 10px 0 6px; letter-spacing: 0.06em; }
+.plate .hazard { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; border-radius: 0 0 6px 6px; background: repeating-linear-gradient(-45deg, #141210 0 7px, transparent 7px 14px); opacity: 0.85; }
+@keyframes swing { 0% { transform: rotate(-16deg); } 22% { transform: rotate(11deg); } 42% { transform: rotate(-6deg); } 62% { transform: rotate(3deg); } 80% { transform: rotate(-1deg); } 100% { transform: rotate(0); } }
+.pos-hero:hover .rack-sign { animation: sway 1.8s ease-in-out; }
+@keyframes sway { 30% { transform: rotate(3deg); } 70% { transform: rotate(-2deg); } }
+
+/* Scena del piazzale -------------------------------------------------- */
+.scene { position: relative; container-type: inline-size; height: clamp(190px, 26cqw, 250px); border-radius: 18px; overflow: hidden; isolation: isolate; border: 1px solid var(--line); background: var(--sky-2); }
+.scene-sky { position: absolute; inset: 0 0 42% 0; background: linear-gradient(180deg, var(--sky-1), var(--sky-2)); }
+.scene-sky .sun { position: absolute; right: 12cqw; top: 14%; width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle, #fff6d6 0 40%, rgba(255, 214, 120, 0.4) 60%, transparent 70%); opacity: calc(1 - var(--lamp)); }
+.scene-sky .moon { position: absolute; right: 12cqw; top: 12%; width: 26px; height: 26px; border-radius: 50%; box-shadow: -7px 3px 0 0 #f2ecd8; opacity: var(--lamp); }
+.scene-sky .star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; opacity: calc(var(--lamp) * 0.8); animation: twinkle 3s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: calc(var(--lamp) * 0.2); } }
+.scene-sky .cloud { position: absolute; height: 14px; border-radius: 99px; background: rgba(255, 255, 255, 0.75); opacity: calc(1 - var(--lamp)); animation: cloud 60s linear infinite; }
+.scene-sky .cloud::before { content: ''; position: absolute; left: 22%; top: -9px; width: 44%; height: 20px; border-radius: 50%; background: inherit; }
+@keyframes cloud { from { transform: translateX(-30cqw); } to { transform: translateX(120cqw); } }
+.scene-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 44%; background: linear-gradient(180deg, var(--asphalt) 0%, var(--asphalt-2) 100%); }
+.scene-ground::before { content: ''; position: absolute; left: 0; right: 0; top: 46%; height: 3px; background: repeating-linear-gradient(90deg, var(--lane) 0 26px, transparent 26px 46px); opacity: 0.9; animation: laneMove 3.5s linear infinite; }
+.scene-ground::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: rgba(0, 0, 0, 0.12); }
+@keyframes laneMove { to { background-position: 46px 0; } }
+.scene .prop { position: absolute; display: block; }
+.scene .prop svg, .scene .vehicle svg { display: block; width: 100%; height: auto; overflow: visible; }
+.p-shed { left: 1.5cqw; bottom: 30%; width: clamp(120px, 21cqw, 230px); }
+.p-containers { left: 31cqw; bottom: 41%; width: clamp(80px, 13cqw, 150px); opacity: 0.95; }
+.p-heap1 { right: 2cqw; bottom: 26%; width: clamp(110px, 20cqw, 230px); }
+.p-heap2 { right: 18cqw; bottom: 34%; width: clamp(70px, 11cqw, 130px); opacity: 0.9; }
+.p-lamp { bottom: 40%; width: 4px; height: 42%; background: #59626b; }
+.p-lamp::before { content: ''; position: absolute; top: 0; left: -2px; width: 18px; height: 5px; border-radius: 3px; background: #59626b; }
+.p-lamp::after { content: ''; position: absolute; top: 4px; left: 4px; width: 120px; height: 140px; transform: translateX(-50%); background: radial-gradient(ellipse at 50% 0%, rgba(255, 220, 130, 0.55), transparent 65%); clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); opacity: var(--lamp); pointer-events: none; }
+.scene .vehicle { position: absolute; display: block; }
+.sv { position: absolute; left: 0; display: block; will-change: transform; }
+.sv .vehicle { position: relative; }
+.sv-tag { position: absolute; left: 50%; top: -6px; transform: translate(-50%, -100%); white-space: nowrap; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; padding: 3px 7px; border-radius: 6px; background: rgba(20, 22, 25, 0.82); color: #fff; opacity: 0; transition: opacity 200ms; pointer-events: none; }
+.scene:hover .sv-tag, .scene:focus-within .sv-tag { opacity: 1; }
+.sv .sv-tag { transform: translate(-50%, -100%); }
+.wheel { transform-box: fill-box; transform-origin: center; }
+.beacon-light { animation: beacon 1.1s steps(1) infinite; }
+@keyframes beacon { 50% { opacity: 0.25; } }
+
+/* posizioni e percorsi */
+.sv-pala { bottom: 4%; width: clamp(120px, 19cqw, 210px); transform: translateX(42cqw); }
+.sv-merlo { bottom: 27%; width: clamp(110px, 17cqw, 190px); transform: translateX(19cqw); z-index: 1; }
+.sv-muletto-1 { bottom: 25%; width: clamp(66px, 10cqw, 116px); transform: translateX(62cqw); z-index: 1; }
+.sv-muletto-2 { bottom: 2%; width: clamp(74px, 11.5cqw, 128px); transform: translateX(80cqw); z-index: 3; }
+.sv-pala { z-index: 2; }
+.sv.run.sv-pala { animation: palaRoute 14s ease-in-out infinite; }
+.sv.run.sv-pala .wheel { animation: palaWheels 14s ease-in-out infinite; }
+.sv.run.sv-pala .v-arm { transform-box: view-box; transform-origin: 90px 54px; animation: palaArm 14s ease-in-out infinite; }
+.sv.run.sv-pala .bucket-load { animation: palaLoad 14s steps(1) infinite; }
+@keyframes palaRoute { 0%, 6% { transform: translateX(34cqw); } 30%, 50% { transform: translateX(58cqw); } 78%, 100% { transform: translateX(34cqw); } }
+@keyframes palaWheels { 0%, 6% { transform: rotate(0); } 30%, 50% { transform: rotate(900deg); } 78%, 100% { transform: rotate(0); } }
+@keyframes palaArm { 0%, 26% { transform: rotate(-12deg); } 34%, 40% { transform: rotate(9deg); } 48%, 80% { transform: rotate(-20deg); } 86% { transform: rotate(-26deg); } 94%, 100% { transform: rotate(-12deg); } }
+@keyframes palaLoad { 0%, 41% { opacity: 0; } 42%, 85% { opacity: 1; } 86%, 100% { opacity: 0; } }
+.sv.run.sv-merlo .v-boom { transform-box: view-box; transform-origin: 28px 45px; animation: merloBoom 9s ease-in-out infinite; }
+.sv.run.sv-merlo .v-tele { animation: merloTele 9s ease-in-out infinite; }
+.sv.run.sv-merlo { animation: merloRoute 9s ease-in-out infinite; }
+.sv.run.sv-merlo .wheel { animation: merloWheels 9s ease-in-out infinite; }
+@keyframes merloBoom { 0%, 18% { transform: rotate(0); } 40%, 60% { transform: rotate(-17deg); } 82%, 100% { transform: rotate(0); } }
+@keyframes merloTele { 0%, 25% { transform: translateX(0); } 45%, 58% { transform: translateX(14px); } 75%, 100% { transform: translateX(0); } }
+@keyframes merloRoute { 0%, 10% { transform: translateX(23cqw); } 22%, 70% { transform: translateX(17cqw); } 85%, 100% { transform: translateX(23cqw); } }
+@keyframes merloWheels { 0%, 10% { transform: rotate(0); } 22%, 70% { transform: rotate(-240deg); } 85%, 100% { transform: rotate(0); } }
+.sv.run.sv-muletto-1 { animation: mulettoA 19s linear infinite; }
+.sv.run.sv-muletto-2 { animation: mulettoB 13s linear infinite; animation-delay: -4s; }
+.sv.run.sv-muletto-1 .wheel, .sv.run.sv-muletto-2 .wheel { animation: spin 0.9s linear infinite; }
+.sv.run .v-forks { animation: forkBob 2.2s ease-in-out infinite; }
+.sv.run .v-body { animation: bob 0.5s ease-in-out infinite alternate; }
+@keyframes mulettoA { from { transform: translateX(-16cqw); } to { transform: translateX(112cqw); } }
+@keyframes mulettoB { from { transform: translateX(112cqw) scaleX(-1); } to { transform: translateX(-16cqw) scaleX(-1); } }
+.sv.run.sv-muletto-2 .sv-tag { transform: translate(-50%, -100%) scaleX(-1); }
+.sv.parked .bucket-load { opacity: 0; }
+@keyframes forkBob { 50% { transform: translateY(-3px); } }
+@keyframes bob { to { transform: translateY(-0.8px); } }
+/* parcheggiati: manutenzione o fermo */
+.sv.parked .beacon-light { animation: none; opacity: 0.25; }
+.sv.parked.fermo .vehicle { filter: grayscale(0.85); opacity: 0.75; }
+.sv.parked.sv-muletto-1 { transform: translateX(73cqw); }
+.sv.parked.sv-muletto-2 { transform: translateX(84cqw); }
+.sv.parked.sv-pala { transform: translateX(62cqw); }
+.sv.parked.sv-merlo { transform: translateX(16cqw); }
+.cone { position: absolute; bottom: 0; right: -14px; width: 16px; height: 22px; }
+.cone::before { content: ''; position: absolute; inset: 0 2px 3px; background: repeating-linear-gradient(180deg, #ff7a1a 0 5px, #fff 5px 9px); clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); }
+.cone::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; border-radius: 1px; background: #ff7a1a; }
+.wrench { position: absolute; top: -4px; left: 58%; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #1b1e22; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); animation: float 2.4s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-5px); } }
+.dust { position: absolute; bottom: 4%; left: 0; width: 1px; height: 1px; transform: translateX(34cqw); animation: palaRoute 14s ease-in-out infinite; z-index: 1; }
+.dust i { position: absolute; bottom: 0; width: 18px; height: 18px; border-radius: 50%; background: rgba(205, 188, 160, 0.5); animation: puff 1.4s ease-out infinite; }
+.dust i:nth-child(2) { animation-delay: 0.45s; left: -10px; }
+.dust i:nth-child(3) { animation-delay: 0.9s; left: 6px; }
+@keyframes puff { from { transform: scale(0.3); opacity: 0.8; } to { transform: translate(-30px, -22px) scale(1.6); opacity: 0; } }
+.scene-caption { position: absolute; left: 14px; top: 12px; display: flex; gap: 8px; align-items: center; font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); z-index: 4; }
+.scene-caption .live { width: 8px; height: 8px; border-radius: 50%; background: #e5484d; animation: pulse 1.6s infinite; color: rgba(229, 72, 77, 0.5); }
+
+/* Flotta */
+.fleet { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.fleet-card {
+  display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 4px 12px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 14px;
+  border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); transition: transform 220ms var(--ease-spring), border-color var(--dur);
+}
+.fleet-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+.fleet-card:hover .wheel { animation: spin 0.8s linear infinite; }
+.fleet-card .vehicle { width: 62px; grid-row: span 2; }
+.fleet-card b { font-size: 14px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fleet-card small { color: var(--ink-3); font-size: 12px; }
+.fleet-card .chip { height: 22px; font-size: 11.5px; padding: 0 8px; justify-self: start; }
+.fleet-card.fermo .vehicle, .fleet-card.manutenzione .vehicle { filter: grayscale(0.7); opacity: 0.8; }
+
+/* Mezzo sulla barra di occupazione */
+.occ-bar .occ-lift { position: absolute; bottom: calc(100% - 4px); width: 62px; transform: translateX(-62%); transition: left 900ms var(--ease); z-index: 2; pointer-events: none; }
+.occ-bar .occ-lift svg { display: block; width: 100%; height: auto; }
+.occ-bar.moving .occ-lift .wheel { animation: spin 0.45s linear infinite; }
+.occupancy { padding-top: 22px; }
+.occ-bar { margin-top: 44px; }
+
+/* Lotti su pallet */
+.lot { clip-path: none; border-radius: 18px; padding-bottom: 24px; }
+.lot::after { content: ''; position: absolute; left: 18px; right: 18px; bottom: 8px; top: auto; width: auto; height: 7px; border-radius: 2px;
+  background: repeating-linear-gradient(90deg, #c79157 0 calc(20% - 4px), transparent calc(20% - 4px) 20%); opacity: 0.85; }
+.lot-mid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.lot-mid > div { display: grid; gap: 10px; min-width: 0; }
+.lot-art { width: 120px; display: block; }
+.lot-art svg { display: block; width: 100%; height: auto; }
+.lot-art .heap-body { transform-box: fill-box; transform-origin: 50% 100%; animation: heapGrow 900ms var(--ease-spring) both; }
+.lot-art .bag { animation: bagDrop 600ms var(--ease-spring) both; }
+.lot-art .bag:nth-of-type(2) { animation-delay: 80ms; } .lot-art .bag:nth-of-type(3) { animation-delay: 160ms; } .lot-art .bag:nth-of-type(4) { animation-delay: 240ms; } .lot-art .bag:nth-of-type(5) { animation-delay: 320ms; }
+@keyframes heapGrow { from { transform: scaleY(0.1); } }
+@keyframes bagDrop { from { transform: translateY(-14px); opacity: 0; } }
+.lot:hover .lot-art { animation: wiggle 600ms var(--ease); }
+@keyframes wiggle { 30% { transform: rotate(-2deg); } 60% { transform: rotate(1.5deg); } }
+
+/* Container del piano e camion del giorno */
+.cbox { width: 18px; height: 13px; border-radius: 2px; }
+.cbox.recv { background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.18) 0 1.5px, transparent 1.5px 4px), var(--molten); }
+.track-day { position: relative; padding-top: 14px; }
+.track-day .today-truck { position: absolute; top: -22px; left: 50%; width: 66px; transform: translateX(-50%); animation: truckBob 1.4s ease-in-out infinite; }
+.track-day .today-truck svg { display: block; width: 100%; height: auto; }
+.track-day .today-truck .wheel { animation: spin 0.8s linear infinite; }
+@keyframes truckBob { 50% { transform: translate(-50%, -2px); } }
+.track { padding-top: 22px; }
+
+/* Vuoto con muletto in pausa */
+.idle-lift { position: relative; width: 120px; }
+.idle-lift svg { display: block; width: 100%; height: auto; }
+.idle-lift .v-body { animation: bob 1.6s ease-in-out infinite alternate; }
+.idle-lift .zz { position: absolute; top: -6px; left: 38%; font-family: var(--font-sign); font-weight: 800; color: var(--ink-3); font-size: 18px; }
+.idle-lift .zz span { position: absolute; opacity: 0; animation: zz 3s ease-out infinite; }
+.idle-lift .zz span:nth-child(2) { animation-delay: 1s; } .idle-lift .zz span:nth-child(3) { animation-delay: 2s; }
+@keyframes zz { 0% { transform: translate(0, 0) scale(0.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(22px, -34px) scale(1.2); opacity: 0; } }
+
+/* Salvataggio: muletto che attraversa la barra in alto */
+.save-lane { position: absolute; left: 0; right: 0; bottom: -2px; height: 3px; overflow: visible; pointer-events: none; }
+.save-lane::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, var(--accent) 0 16px, transparent 16px 26px); animation: laneMove 0.6s linear infinite; }
+.save-lane .vehicle { position: absolute; bottom: 2px; width: 34px; animation: saveRun 1.6s linear infinite; }
+.save-lane .wheel { animation: spin 0.4s linear infinite; }
+@keyframes saveRun { from { left: -40px; } to { left: 100%; } }
+
+/* Toast con mezzo */
+.toast .t-icon.art { width: 52px; height: 36px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+.toast .t-icon.art .vehicle { width: 44px; animation: driveIn 900ms var(--ease) both; }
+.toast .t-icon.art .wheel { animation: spin 0.4s linear 2; }
+@keyframes driveIn { from { transform: translateX(-50px); } }
+.toast .t-progress { background: var(--molten); }
+
+/* Viaggi con i mezzi */
+.trips { display: flex; gap: 8px; flex-wrap: wrap; }
+.trip { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px 5px 6px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); font-size: 13px; color: var(--ink-2); }
+.trip .vehicle { width: 34px; }
+.trip b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.trip.off { opacity: 0.5; text-decoration: line-through; }
+.veh-chip .vehicle { width: 28px; margin: -4px 0; }
+
+/* Accesso con la scena notturna */
+.login-art .scene { position: relative; flex: none; margin: 28px -48px 0; height: clamp(190px, 30vh, 290px); border: 0; border-radius: 0; background: transparent; z-index: 0;
+  --asphalt: #1c2024; --asphalt-2: #121417; --lane: rgba(255, 214, 90, 0.5); --sky-1: transparent; --sky-2: transparent; --lamp: 1; }
+.login-art .scene .scene-sky { display: none; }
+.login-art .login-word, .login-art .login-tag { position: relative; z-index: 1; }
+.login-art { justify-content: flex-start; gap: 0; padding-bottom: 0; }
+.login-art .login-word { margin-top: auto; padding-top: 24px; }
+.login-art .login-tag { max-width: 40ch; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 1023px) {
+  .rack-sign { width: 120px; top: -10px; right: 0; }
+  .login-art { min-height: 330px; }
+  .login-art .scene { height: 150px; margin: 18px -22px 0; }
+  .login-art { padding-bottom: 0; }
+}
+@media (max-width: 640px) {
+  .fleet { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fleet-card { grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 6px; }
+  .fleet-card .vehicle { width: 76px; grid-row: auto; }
+  .fleet-card small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sv-pala { width: 100px; } .sv-merlo { width: 92px; } .sv-muletto-1 { width: 56px; } .sv-muletto-2 { width: 62px; }
+  .sv.parked.sv-muletto-2 { transform: translateX(74cqw); } .sv.parked.sv-muletto-1 { transform: translateX(62cqw); }
+  .p-shed { width: 112px; } .p-heap1 { width: 120px; }
+  .rack-sign { width: 92px; top: 6px; }
+  .pos-hero .eyebrow { max-width: calc(100% - 104px); flex-wrap: wrap; }
+  .plate { padding: 8px 6px 12px; border-width: 2px; }
+  .plate-kind { font-size: 9px; letter-spacing: 0.14em; padding-left: 0.14em; }
+  .plate-code.long { font-size: 22px; padding: 6px 0 4px; letter-spacing: 0.02em; }
+  .rack-sign .chains { height: 30px; }
+  .plate-code { font-size: 54px; }
+  .pos-title { font-size: 56px; }
+  .metric-value { font-size: 40px; }
+  .lot-art { width: 84px; }
+  .scene { height: 180px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sv, .sv *, .dust, .rack-sign, .scene-ground::before, .cloud { animation: none !important; }
+  .dust { display: none; }
+}
+:root[data-motion="reduced"] .sv, :root[data-motion="reduced"] .sv *, :root[data-motion="reduced"] .dust, :root[data-motion="reduced"] .rack-sign { animation: none !important; }
+:root[data-motion="reduced"] .dust { display: none; }
+
 </style>
 <div id="app"></div>
 <script>window.__MAG_MODE = 'demo';</script>
@@ -1022,6 +1326,19 @@ const NOTE_STATUSES = ['Aperto', 'In lavorazione', 'Risolto'];
 const ORDER_STATUSES = ['Da fare', 'Programmato', 'Completato', 'Annullato'];
 const ORDER_UNITS = ['t', 'sacconi', 'container', 'pezzi'];
 const EVENT_TYPES = ['Promemoria', 'Carico', 'Mezzi', 'Visita'];
+const VEHICLE_STATUSES = ['Disponibile', 'In uso', 'Manutenzione', 'Fermo'];
+const VEHICLE_KINDS = { loader: 'Pala gommata', telehandler: 'Sollevatore telescopico', forklift: 'Muletto' };
+
+// Mezzi del piazzale (aggiunta di questa versione): portate indicate da Luca.
+const DEFAULT_FLEET = [
+  { id: 'pala', name: 'Pala gommata', kind: 'loader', capacity: 10 },
+  { id: 'merlo', name: 'Merlo', kind: 'telehandler', capacity: 4 },
+  { id: 'muletto-1', name: 'Muletto 1', kind: 'forklift', capacity: 3 },
+  { id: 'muletto-2', name: 'Muletto 2', kind: 'forklift', capacity: 3 },
+];
+function defaultFleet() {
+  return DEFAULT_FLEET.map((v) => ({ ...v, status: 'Disponibile', note: '', rev: 1, updatedAt: null, updatedByName: null }));
+}
 
 const MOVEMENT_TYPES = {
   creazione:      { label: 'Nuovo lotto',        sign: 1 },
@@ -1198,8 +1515,26 @@ function emptyState() {
     orders: [],
     events: [],
     audit: [],
+    fleet: defaultFleet(),
     meta: { recentOps: [], createdAt: null },
   };
+}
+
+/** Completa uno stato salvato da una versione precedente (es. senza mezzi). */
+function normalizeState(s) {
+  if (!s || typeof s !== 'object') return s;
+  if (!Array.isArray(s.fleet)) s.fleet = defaultFleet();
+  for (const k of ['lots', 'plans', 'receipts', 'movements', 'notes', 'orders', 'events', 'audit']) if (!Array.isArray(s[k])) s[k] = [];
+  s.settings = { ...DEFAULT_SETTINGS, ...(s.settings || {}) };
+  s.meta ||= { recentOps: [], createdAt: null };
+  s.meta.recentOps ||= [];
+  return s;
+}
+
+/** Viaggi necessari per spostare una quantità con ciascun mezzo disponibile. */
+function tripsFor(s, t) {
+  if (!Number.isFinite(t) || t <= 0) return [];
+  return (s.fleet || []).map((v) => ({ ...v, trips: Math.ceil(round3(t / v.capacity) - 1e-9) }));
 }
 
 /* Selettori ---------------------------------------------------------- */
@@ -1861,7 +2196,14 @@ function orderFields(f, o) {
     unit: oneOf(f.unit ?? o?.unit ?? 't', ORDER_UNITS, 'Unità'),
     status: oneOf(f.status ?? o?.status ?? 'Da fare', ORDER_STATUSES, 'Stato'),
     notes: text(f.notes ?? o?.notes, 'Note', { required: false, max: 1000 }),
+    vehicleId: vehicleRef(f.vehicleId !== undefined ? f.vehicleId : o?.vehicleId),
   };
+}
+let currentState = null; // stato in lavorazione, per validare i riferimenti ai mezzi
+function vehicleRef(id) {
+  if (!id) return null;
+  if (!currentState?.fleet?.some((v) => v.id === id)) throw invalid('Mezzo non valido.');
+  return id;
 }
 H['order.create'] = (s, op, ctx) => {
   const o = { id: uid('or'), ...orderFields(op, null), ...created(ctx) };
@@ -1996,6 +2338,24 @@ function validateBackup(data) {
   return { ok: true, state: st, counts: Object.fromEntries(keys.map((k) => [k, st[k].length])) };
 }
 
+// Aggiunta di questa versione: stato dei mezzi del piazzale.
+H['fleet.update'] = (s, op, ctx) => {
+  const v = find(s.fleet, op.vehicleId, 'Il mezzo');
+  checkRev(v, op.expectRev, 'Il mezzo');
+  const f = op.fields || {};
+  const before = { ...v };
+  if (f.status !== undefined) v.status = oneOf(f.status, VEHICLE_STATUSES, 'Stato');
+  if (f.note !== undefined) v.note = text(f.note, 'Nota', { required: false, max: 200 });
+  if ((f.name !== undefined && f.name !== v.name) || (f.capacity !== undefined && Number(parseNum(f.capacity)) !== v.capacity)) {
+    if (ctx.user.role !== 'admin') throw forbidden("Nome e portata dei mezzi li cambia l'amministratore.");
+    if (f.name !== undefined) v.name = text(f.name, 'Nome', { max: 40 });
+    if (f.capacity !== undefined) v.capacity = tons(f.capacity, 'Portata');
+  }
+  touch(v, ctx);
+  audit(s, ctx, `Mezzo: ${v.name} → ${v.status}`, 'mezzo', v.id, before, v);
+  return { message: `${v.name}: ${v.status.toLowerCase()}` };
+};
+
 H['data.replaceAll'] = (s, op, ctx) => {
   const v = validateBackup(op.backup);
   if (!v.ok) throw invalid(v.error);
@@ -2003,6 +2363,7 @@ H['data.replaceAll'] = (s, op, ctx) => {
   const fresh = emptyState();
   Object.assign(s, fresh, structuredClone(v.state), keep, { settings: { ...DEFAULT_SETTINGS, ...(v.state.settings || {}) } });
   s.audit = Array.isArray(v.state.audit) ? v.state.audit : [];
+  normalizeState(s);
   audit(s, ctx, 'Importato backup completo', 'archivio', 'backup', null, null);
   return { message: 'Backup importato' };
 };
@@ -2026,9 +2387,11 @@ function applyOp(prev, op, ctx) {
     if (seen) return { state: prev, result: seen.result, duplicate: true };
   }
   if (!canDo(ctx.user, op.type)) throw forbidden('Il tuo ruolo non permette questa operazione.');
-  const s = structuredClone(prev);
+  const s = normalizeState(structuredClone(prev));
   reconcilePlans(s, ctx);
-  const result = H[op.type](s, op, ctx) || {};
+  currentState = s;
+  let result;
+  try { result = H[op.type](s, op, ctx) || {}; } finally { currentState = null; }
   reconcilePlans(s, ctx);
   s.rev += 1;
   if (op.opId) {
@@ -2123,8 +2486,8 @@ function buildDemoState(nowMs = Date.now()) {
   run(at(3, 18, luca), { type: 'note.create', locationId: null, title: 'Pesa a ponte: taratura lunedì', text: 'Fino alla taratura usare la pesa esterna per i carichi sopra 25 t.', status: 'Aperto', important: true });
 
   // Ordini.
-  run(at(1, 9, giulia), { type: 'order.create', title: 'Caricare camion per Acciaierie Demo Nord', date: today, time: '14:30', material: 'Ferro-silicio FeSi 75', locationId: 'baia-1', qty: 10, unit: 't', status: 'Da fare', notes: 'Prelevare dal lotto DEMO-A.' });
-  run(at(1, 10, giulia), { type: 'order.create', title: 'Spostare sacconi sotto tettoia', date: addDays(today, 2), time: '', material: 'Ferro-manganese HC', locationId: 'baia-1', qty: 6, unit: 'sacconi', status: 'Programmato', notes: '' });
+  run(at(1, 9, giulia), { type: 'order.create', title: 'Caricare camion per Acciaierie Demo Nord', date: today, time: '14:30', material: 'Ferro-silicio FeSi 75', locationId: 'baia-1', qty: 10, unit: 't', status: 'Da fare', notes: 'Prelevare dal lotto DEMO-A.', vehicleId: 'pala' });
+  run(at(1, 10, giulia), { type: 'order.create', title: 'Spostare sacconi sotto tettoia', date: addDays(today, 2), time: '', material: 'Ferro-manganese HC', locationId: 'baia-1', qty: 6, unit: 'sacconi', status: 'Programmato', notes: '', vehicleId: 'muletto-1' });
   run(at(7, 10, marco), { type: 'order.create', title: 'Ritiro Ferro-molibdeno Baia 5', date: addDays(today, -6), time: '10:00', material: 'Ferro-molibdeno', locationId: 'baia-5', qty: 20, unit: 't', status: 'Completato', notes: 'Scarico eseguito dal lotto.' });
   run(at(0, 8, luca), { type: 'order.create', title: 'Verifica livello Mucchio 49', date: addDays(today, 1), time: '08:00', material: 'Silicio metallico', locationId: 'mucchio-49', qty: null, unit: 't', status: 'Da fare', notes: '' });
 
@@ -2133,6 +2496,10 @@ function buildDemoState(nowMs = Date.now()) {
   run(at(2, 9, giulia), { type: 'event.create', title: 'Manutenzione pala gommata', date: addDays(today, 1), time: '13:00', kind: 'Mezzi', notes: '' });
   run(at(2, 9, luca), { type: 'event.create', title: 'Visita cliente Demo Steel', date: addDays(today, 6), time: '10:30', kind: 'Visita', notes: '' });
   run(at(2, 9, luca), { type: 'event.create', title: 'Inventario mucchi 21–30', date: addDays(today, -3), time: '', kind: 'Promemoria', notes: '' });
+
+  // Mezzi.
+  run(at(0, 7, marco), { type: 'fleet.update', vehicleId: 'merlo', fields: { status: 'In uso', note: 'Sistemazione big bag sotto tettoia' } });
+  run(at(1, 17, luca), { type: 'fleet.update', vehicleId: 'muletto-2', fields: { status: 'Manutenzione', note: 'Cambio forche, rientra giovedì' } });
 
   return s;
 }
@@ -2292,14 +2659,14 @@ function reducedMotion() {
 /* Toast -------------------------------------------------------------- */
 
 let toastHost;
-function toast(message, { kind = 'ok', action, duration } = {}) {
+function toast(message, { kind = 'ok', action, duration, art } = {}) {
   if (!toastHost) {
     toastHost = h('div.toasts', { role: 'status', 'aria-live': 'polite' });
     document.body.append(toastHost);
   }
   const ms = duration ?? (kind === 'error' ? 0 : 4800);
   const el = h(`div.toast.${kind}`,
-    h('div.t-icon', icon(kind === 'error' ? 'alert' : kind === 'warn' ? 'info' : 'check', 18)),
+    art ? h('div.t-icon.art', art) : h('div.t-icon', icon(kind === 'error' ? 'alert' : kind === 'warn' ? 'info' : 'check', 18)),
     h('div.t-msg', message),
     h('div.t-actions',
       action && h('button', { type: 'button', on: { click: () => { close(); action.run(); } } }, action.label),
@@ -2571,6 +2938,289 @@ function initials(name) {
   return String(name || '?').split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 }
 
+// ---- art.js ----
+// Illustrazioni del piazzale: mezzi (pala gommata, sollevatore telescopico, muletto),
+// pallet, big bag, mucchi, camion con container. SVG disegnati a mano, con parti
+// mobili (ruote, bracci, forche, lampeggiante) animate dal CSS.
+
+const C = {
+  y: '#F5B700', ys: '#D79A00', yl: '#FFD54A',
+  o: '#E8622A', os: '#C24C1C', ol: '#F58A57',
+  dk: '#2A2E33', dk2: '#3B4148', ty: '#16181A', rim: '#A3AAB1',
+  gl: '#A8D2EC', skin: '#F1C7A0', wood: '#C79157', wood2: '#9E6A37',
+  bag: '#F5F3EE', bag2: '#D8D3C6', strap: '#2F6EA8',
+};
+
+function wheel(cx, cy, r) {
+  const s = [];
+  for (let i = 0; i < 4; i++) {
+    const a = (i * Math.PI) / 2;
+    s.push(`<line x1="${cx}" y1="${cy}" x2="${(cx + Math.cos(a) * r * 0.5).toFixed(1)}" y2="${(cy + Math.sin(a) * r * 0.5).toFixed(1)}" stroke="${C.dk}" stroke-width="${(r * 0.12).toFixed(1)}" stroke-linecap="round"/>`);
+  }
+  return `<g class="wheel"><circle cx="${cx}" cy="${cy}" r="${r}" fill="${C.ty}"/><circle cx="${cx}" cy="${cy}" r="${r * 0.62}" fill="${C.rim}"/>${s.join('')}<circle cx="${cx}" cy="${cy}" r="${r * 0.18}" fill="${C.dk}"/></g>`;
+}
+function driver(x, y) {
+  return `<g class="driver"><circle cx="${x}" cy="${y}" r="5" fill="${C.skin}"/><path d="M${x - 6} ${y - 1.5} Q${x} ${y - 10} ${x + 6} ${y - 1.5} Z" fill="${C.y}" stroke="${C.ys}" stroke-width=".8"/><rect x="${x - 7}" y="${y - 2.2}" width="14" height="1.8" rx=".9" fill="${C.ys}"/></g>`;
+}
+function beacon(x, y) {
+  return `<g class="beacon"><rect x="${x - 2.5}" y="${y}" width="5" height="3" fill="${C.dk}"/><circle class="beacon-light" cx="${x}" cy="${y - 1}" r="3" fill="#FF9500"/></g>`;
+}
+function palletSvg(x, y, w) {
+  const n = 3;
+  const gap = (w - n * 5) / (n - 1);
+  let blocks = '';
+  for (let i = 0; i < n; i++) blocks += `<rect x="${x + i * (5 + gap)}" y="${y + 2.5}" width="5" height="3" fill="${C.wood2}"/>`;
+  return `<g class="pallet"><rect x="${x}" y="${y}" width="${w}" height="2.5" rx=".5" fill="${C.wood}"/>${blocks}<rect x="${x}" y="${y + 5.5}" width="${w}" height="2" rx=".5" fill="${C.wood}"/></g>`;
+}
+function bagSvg(x, y, w, hgt, label = true) {
+  return `<g class="bag"><path d="M${x + 2} ${y + 4} Q${x} ${y + hgt} ${x + 3} ${y + hgt} L${x + w - 3} ${y + hgt} Q${x + w} ${y + hgt} ${x + w - 2} ${y + 4} Z" fill="${C.bag}" stroke="${C.bag2}" stroke-width="1"/>
+    <path d="M${x + 4} ${y + 4} q2 -5 4 0 M${x + w - 8} ${y + 4} q2 -5 4 0" stroke="${C.strap}" stroke-width="1.6" fill="none"/>
+    ${label ? `<rect x="${x + w * 0.3}" y="${y + hgt * 0.42}" width="${w * 0.4}" height="${hgt * 0.22}" rx="1" fill="${C.bag2}"/>` : ''}</g>`;
+}
+
+/* Mezzi -------------------------------------------------------------- */
+
+function forkliftSvg({ load = false } = {}) {
+  return `<svg viewBox="0 0 132 84" class="veh veh-forklift" aria-hidden="true">
+  <ellipse class="shadow" cx="62" cy="81" rx="56" ry="3" fill="rgba(0,0,0,.18)"/>
+  <g class="v-body">
+    <path d="M12 68 Q6 68 6 61 L6 46 Q6 40 13 40 L60 40 L66 54 L93 54 L93 68 Z" fill="${C.y}"/>
+    <path d="M6 61 L93 61 L93 68 L12 68 Q6 68 6 62 Z" fill="${C.ys}"/>
+    <path d="M9 45 h12 M9 49 h12 M9 53 h12" stroke="${C.ys}" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M40 40 L40 31 Q40 27 44 27 L51 27 L52 40 Z" fill="${C.dk}"/>
+    ${driver(50, 22)}
+    <path d="M61 40 L66 30" stroke="${C.dk}" stroke-width="2.6" stroke-linecap="round"/>
+    <ellipse cx="66" cy="29.5" rx="4" ry="1.6" fill="${C.dk}"/>
+    <rect x="35" y="7" width="3" height="34" rx="1" fill="${C.dk}"/>
+    <path d="M73 54 L71 8" stroke="${C.dk}" stroke-width="3" stroke-linecap="round"/>
+    <rect x="31" y="5" width="47" height="4" rx="2" fill="${C.dk}"/>
+    ${beacon(56, 1)}
+  </g>
+  <rect x="95" y="3" width="5" height="67" rx="1" fill="${C.dk2}"/>
+  <rect x="100" y="10" width="3" height="60" fill="${C.dk}"/>
+  <g class="v-forks">
+    <rect x="102" y="45" width="5" height="22" rx="1" fill="${C.dk}"/>
+    <rect x="102" y="64" width="28" height="4" rx="1" fill="${C.dk2}"/>
+    ${load ? `${palletSvg(104, 56.5, 26)}${bagSvg(104.5, 27, 25, 29)}` : ''}
+  </g>
+  ${wheel(28, 68, 12)}${wheel(80, 68, 13)}
+</svg>`;
+}
+
+function loaderSvg({ load = false } = {}) {
+  return `<svg viewBox="0 0 182 106" class="veh veh-loader" aria-hidden="true">
+  <ellipse class="shadow" cx="90" cy="102" rx="84" ry="4" fill="rgba(0,0,0,.18)"/>
+  <g class="v-body">
+    <rect x="24" y="28" width="4" height="17" rx="1" fill="${C.dk}"/>
+    <path d="M10 80 L10 53 Q10 45 18 45 L75 45 L81 63 L94 63 L94 82 L15 82 Z" fill="${C.y}"/>
+    <path d="M10 74 L94 74 L94 82 L15 82 Q10 82 10 76 Z" fill="${C.ys}"/>
+    <path d="M15 51 v18 M20 51 v18 M25 51 v18 M30 51 v18" stroke="${C.ys}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M50 47 L50 14 Q50 10 54 10 L85 10 Q89 10 89 14 L91 47 Z" fill="${C.dk}"/>
+    <path d="M55 16 L83 16 L85 41 L55 41 Z" fill="${C.gl}" opacity=".9"/>
+    <path d="M58 18 L66 18 L60 39 L57 39 Z" fill="#fff" opacity=".35"/>
+    ${driver(72, 30)}
+    ${beacon(70, 5)}
+    <circle cx="98" cy="72" r="6" fill="${C.dk}"/>
+  </g>
+  ${wheel(42, 82, 20)}
+  ${wheel(122, 82, 20)}
+  <g class="v-arm">
+    <path d="M88 50 L148 72 L144 82 L86 61 Z" fill="${C.y}"/>
+    <path d="M90 56 L146 77" stroke="${C.ys}" stroke-width="2"/>
+    <path d="M100 74 L138 70" stroke="${C.dk2}" stroke-width="4" stroke-linecap="round"/>
+    <g class="v-bucket">
+      <path d="M138 56 Q160 51 171 59 L173 89 L142 91 Q133 76 138 56 Z" fill="${C.dk2}"/>
+      <path d="M142 91 L173 89" stroke="${C.dk}" stroke-width="3"/>
+      <path d="M145 92 v3 M152 92 v3 M159 91 v3 M166 91 v3" stroke="${C.dk}" stroke-width="2.4" stroke-linecap="round"/>
+      ${load ? `<path class="bucket-load" d="M140 60 Q150 46 160 52 Q168 50 171 58 Z" fill="#6B6359"/>` : ''}
+    </g>
+    <circle cx="90" cy="54" r="4" fill="${C.dk}"/>
+  </g>
+</svg>`;
+}
+
+function telehandlerSvg({ load = false } = {}) {
+  return `<svg viewBox="0 0 196 98" class="veh veh-tele" aria-hidden="true">
+  <ellipse class="shadow" cx="88" cy="94" rx="80" ry="3.5" fill="rgba(0,0,0,.18)"/>
+  <g class="v-body">
+    <rect x="14" y="40" width="34" height="16" rx="5" fill="${C.o}"/>
+    <path d="M14 76 L14 60 Q14 53 21 53 L150 53 Q157 53 157 60 L157 76 Z" fill="${C.o}"/>
+    <path d="M14 70 L157 70 L157 76 L14 76 Z" fill="${C.os}"/>
+  </g>
+  <g class="v-boom">
+    <path d="M22 40 L122 31 L124 43 L26 51 Z" fill="${C.o}"/>
+    <path d="M26 46 L122 37" stroke="${C.os}" stroke-width="2"/>
+    <g class="v-tele">
+      <path d="M112 33 L160 28.5 L161 38.5 L114 42 Z" fill="${C.dk2}"/>
+      <rect x="158" y="22" width="6" height="28" rx="1" fill="${C.dk}"/>
+      <rect x="163" y="46" width="24" height="3.5" rx="1" fill="${C.dk2}"/>
+      ${load ? `${palletSvg(165, 38.5, 21)}${bagSvg(166, 18, 19, 20)}` : ''}
+    </g>
+    <circle cx="28" cy="45" r="4.5" fill="${C.dk}"/>
+  </g>
+  <g class="v-cab">
+    <path d="M60 55 L60 22 Q60 18 64 18 L90 18 Q94 18 94 22 L96 55 Z" fill="${C.dk}"/>
+    <path d="M65 24 L89 24 L90 48 L65 48 Z" fill="${C.gl}" opacity=".9"/>
+    <path d="M68 26 L74 26 L69 46 L66 46 Z" fill="#fff" opacity=".35"/>
+    ${driver(80, 37)}
+    ${beacon(77, 13)}
+  </g>
+  ${wheel(44, 76, 16)}${wheel(132, 76, 16)}
+</svg>`;
+}
+
+function truckSvg() {
+  let ribs = '';
+  for (let x = 18; x < 156; x += 6) ribs += `<rect x="${x}" y="22" width="2.2" height="36" fill="rgba(0,0,0,.14)"/>`;
+  return `<svg viewBox="0 0 232 92" class="veh veh-truck" aria-hidden="true">
+  <ellipse class="shadow" cx="116" cy="88" rx="108" ry="3.5" fill="rgba(0,0,0,.18)"/>
+  <g class="v-body">
+    <rect x="12" y="18" width="148" height="44" rx="2" fill="#2F6E9E"/>${ribs}
+    <rect x="12" y="18" width="148" height="4" fill="#3E86BD"/>
+    <text x="86" y="45" text-anchor="middle" font-family="Big Shoulders Stencil Display, sans-serif" font-size="13" font-weight="800" fill="rgba(255,255,255,.75)" letter-spacing="2">DEMO 40'</text>
+    <rect x="8" y="62" width="158" height="6" fill="${C.dk}"/>
+    <path d="M168 68 L168 34 Q168 26 176 26 L200 26 L214 44 L218 46 L218 68 Z" fill="#F4F4F2"/>
+    <path d="M176 32 L198 32 L209 45 L176 45 Z" fill="${C.gl}"/>
+    ${driver(188, 39)}
+    <rect x="166" y="60" width="54" height="8" fill="${C.dk2}"/>
+    <rect x="212" y="52" width="6" height="4" rx="1" fill="#FFD54A"/>
+  </g>
+  ${wheel(36, 72, 10)}${wheel(60, 72, 10)}${wheel(140, 72, 10)}${wheel(196, 72, 10)}
+</svg>`;
+}
+
+/* Oggetti ------------------------------------------------------------ */
+
+const MATERIAL_TONES = ['#5E646B', '#7B6B59', '#4B5058', '#8D8678', '#6F5D4F', '#3F444B', '#857360', '#5A5F55'];
+function materialTone(name = '') {
+  let hsh = 0;
+  for (const ch of name) hsh = (hsh * 31 + ch.charCodeAt(0)) >>> 0;
+  return MATERIAL_TONES[hsh % MATERIAL_TONES.length];
+}
+
+function heapSvg({ color = '#6B6359', scale = 1 } = {}) {
+  const hgt = 18 + 34 * scale;
+  return `<svg viewBox="0 0 120 60" class="obj obj-heap" aria-hidden="true">
+    <ellipse cx="60" cy="57" rx="56" ry="3" fill="rgba(0,0,0,.16)"/>
+    <path class="heap-body" d="M4 57 Q22 ${57 - hgt * 0.75} 44 ${57 - hgt} Q60 ${57 - hgt - 6} 74 ${57 - hgt + 2} Q98 ${57 - hgt * 0.6} 116 57 Z" fill="${color}"/>
+    <path d="M30 ${57 - hgt * 0.55} Q48 ${57 - hgt - 2} 66 ${57 - hgt + 1}" stroke="rgba(255,255,255,.22)" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="26" cy="54" r="1.6" fill="rgba(0,0,0,.25)"/><circle cx="92" cy="53" r="2" fill="rgba(0,0,0,.2)"/><circle cx="64" cy="50" r="1.3" fill="rgba(255,255,255,.2)"/>
+  </svg>`;
+}
+
+/** Big bag su pallet: n sacchi (max 9) impilati a piramide. */
+function bagsSvg(n = 3) {
+  n = Math.max(1, Math.min(9, n));
+  const rows = n <= 3 ? [n] : n <= 5 ? [3, n - 3] : [Math.ceil(n / 2), Math.floor(n / 2)].sort((a, b) => b - a);
+  let out = '';
+  const bw = 26, bh = 24;
+  rows.forEach((count, r) => {
+    const total = count * bw + (count - 1) * 2;
+    const x0 = (110 - total) / 2;
+    for (let i = 0; i < count; i++) out += bagSvg(x0 + i * (bw + 2), 59 - (r + 1) * bh - r * 1, bw, bh, r === 0);
+  });
+  return `<svg viewBox="0 0 110 72" class="obj obj-bags" aria-hidden="true">
+    <ellipse cx="55" cy="69" rx="50" ry="2.5" fill="rgba(0,0,0,.16)"/>${out}${palletSvg(8, 60, 94)}</svg>`;
+}
+
+function shedSvg() {
+  let stacks = '';
+  [[18, 2], [52, 1], [86, 2], [120, 1]].forEach(([x, levels]) => {
+    for (let l = 0; l < levels; l++) {
+      stacks += palletSvg(x, 104 - l * 25, 30);
+      stacks += bagSvg(x + 3, 84 - l * 25, 24, 20, false);
+    }
+  });
+  return `<svg viewBox="0 0 170 116" class="obj obj-shed" aria-hidden="true">
+    <path d="M2 22 L84 4 L168 22 L168 28 L2 28 Z" fill="#4A535C"/>
+    <path d="M2 22 L84 4 L168 22" stroke="#6C7680" stroke-width="2" fill="none"/>
+    <rect x="8" y="28" width="4" height="86" fill="#59626B"/><rect x="158" y="28" width="4" height="86" fill="#59626B"/><rect x="83" y="28" width="4" height="86" fill="#59626B" opacity=".6"/>
+    <rect x="56" y="32" width="58" height="12" rx="1.5" fill="${C.y}"/>
+    <text x="85" y="41.5" text-anchor="middle" font-family="Big Shoulders Stencil Display, sans-serif" font-size="10" font-weight="800" fill="#1A1A1A" letter-spacing="1.6">TETTOIA</text>
+    ${stacks}
+  </svg>`;
+}
+
+function containerStackSvg() {
+  const box = (x, y, color, light) => {
+    let ribs = '';
+    for (let i = x + 5; i < x + 70; i += 5) ribs += `<rect x="${i}" y="${y + 3}" width="1.8" height="22" fill="rgba(0,0,0,.15)"/>`;
+    return `<rect x="${x}" y="${y}" width="74" height="28" rx="1.5" fill="${color}"/><rect x="${x}" y="${y}" width="74" height="3" fill="${light}"/>${ribs}`;
+  };
+  return `<svg viewBox="0 0 160 64" class="obj obj-containers" aria-hidden="true">
+    ${box(4, 34, '#B4532A', '#CF6A3D')}${box(80, 34, '#2F6E9E', '#3E86BD')}${box(42, 4, '#5B7F4A', '#709A5D')}</svg>`;
+}
+
+/* Componenti DOM ---------------------------------------------------- */
+
+const MAKERS = { forklift: forkliftSvg, loader: loaderSvg, telehandler: telehandlerSvg, truck: truckSvg };
+
+/** Elemento con l'illustrazione di un mezzo. */
+function vehicle(kind, { load = false, cls = '', width } = {}) {
+  const el = h(`span.vehicle.k-${kind}${cls ? '.' + cls.split(' ').join('.') : ''}`, { 'aria-hidden': 'true' });
+  el.innerHTML = (MAKERS[kind] || forkliftSvg)({ load });
+  if (width) el.style.width = typeof width === 'number' ? `${width}px` : width;
+  return el;
+}
+
+function svgEl(markup, cls = '') {
+  const el = h(`span.art${cls ? '.' + cls : ''}`, { 'aria-hidden': 'true' });
+  el.innerHTML = markup;
+  return el;
+}
+
+/** Illustrazione del lotto: mucchio per lo sfuso, big bag per i sacconi. */
+function lotArt(lot) {
+  if (lot.format === 'Sacconi') return svgEl(bagsSvg(lot.bags || Math.ceil(lot.tons)), 'lot-art');
+  const scale = Math.max(0.15, Math.min(1, Math.log10(lot.tons + 1) / 3.1));
+  if (lot.format === 'Altro') return svgEl(bagsSvg(2), 'lot-art');
+  return svgEl(heapSvg({ color: materialTone(lot.material), scale }), 'lot-art');
+}
+
+/* Scena del piazzale: i mezzi seguono il loro stato (in uso, disponibile, manutenzione, fermo). */
+const SCENE_IDS = { pala: 'loader', merlo: 'telehandler', 'muletto-1': 'forklift', 'muletto-2': 'forklift' };
+
+function scene(fleet = [], { caption = null, wrenchIcon = null } = {}) {
+  const sky = h('div.scene-sky', h('span.sun'), h('span.moon'),
+    [[8, 18], [22, 9], [37, 24], [55, 12], [68, 28], [81, 8], [93, 20]].map(([x, y], i) => h('span.star', { style: { left: `${x}%`, top: `${y}%`, animationDelay: `${i * 0.4}s` } })),
+    h('span.cloud', { style: { width: '70px', top: '18%', animationDelay: '-12s' } }),
+    h('span.cloud', { style: { width: '50px', top: '32%', animationDelay: '-41s', animationDuration: '80s' } }));
+  const props = [
+    h('span.prop.p-lamp', { style: { left: '48cqw' } }),
+    h('span.prop.p-lamp', { style: { left: '91cqw' } }),
+    svgEl(containerStackSvg(), 'prop.p-containers'),
+    svgEl(heapSvg({ color: '#6E655A', scale: 0.55 }), 'prop.p-heap2'),
+    svgEl(shedSvg(), 'prop.p-shed'),
+    svgEl(heapSvg({ color: '#5E646B', scale: 0.95 }), 'prop.p-heap1'),
+  ];
+  const vehicles = [];
+  let palaRuns = false;
+  for (const v of fleet) {
+    const kind = SCENE_IDS[v.id];
+    if (!kind) continue;
+    const running = v.status === 'Disponibile' || v.status === 'In uso';
+    if (v.id === 'pala' && running) palaRuns = true;
+    const load = v.id === 'pala' ? true : v.status === 'In uso';
+    vehicles.push(h(`div.sv.sv-${v.id}.${running ? 'run' : 'parked'}${v.status === 'Fermo' ? '.fermo' : ''}`,
+      vehicle(kind, { load }),
+      h('span.sv-tag', `${v.name} · ${v.status}`),
+      !running ? h('span.cone') : null,
+      !running && v.status === 'Manutenzione' && wrenchIcon ? h('span.wrench', wrenchIcon()) : null));
+  }
+  return h('div.scene', { 'aria-hidden': 'true' },
+    sky, h('div.scene-ground'), props,
+    palaRuns ? h('div.dust', h('i'), h('i'), h('i')) : null,
+    vehicles,
+    caption ? h('div.scene-caption', h('span.live'), caption) : null);
+}
+
+/** Muletto che sonnecchia, per gli stati vuoti. */
+function idleLift() {
+  const el = h('div.idle-lift', { 'aria-hidden': 'true' }, h('span.zz', h('span', 'z'), h('span', 'z'), h('span', 'Z')));
+  el.insertAdjacentHTML('afterbegin', forkliftSvg({ load: false }));
+  return el;
+}
+
 // ---- fx.js ----
 // Effetti: scintille di conferma, fucina animata nell'accesso, numeri che scorrono.
 // Tutto si disattiva con "riduci movimento".
@@ -2615,7 +3265,10 @@ function burst(target, { count = 34, power = 1, hue = 'molten' } = {}) {
       vx: Math.cos(a) * v, vy: Math.sin(a) * v,
       life: 1, decay: 0.012 + Math.random() * 0.02,
       w: 1 + Math.random() * 1.8,
-      c: hue === 'cool' ? `hsl(${190 + Math.random() * 30}, 100%, ${60 + Math.random() * 25}%)` : `hsl(${18 + Math.random() * 30}, 100%, ${55 + Math.random() * 30}%)`,
+      c: hue === 'cool' ? `hsl(${190 + Math.random() * 30}, 100%, ${60 + Math.random() * 25}%)`
+        : hue === 'dust' ? `hsl(${28 + Math.random() * 14}, ${18 + Math.random() * 20}%, ${52 + Math.random() * 25}%)`
+        : `hsl(${38 + Math.random() * 16}, 100%, ${55 + Math.random() * 30}%)`,
+      dust: hue === 'dust',
     });
   }
   if (!raf) raf = requestAnimationFrame(tick);
@@ -2626,7 +3279,7 @@ function tick() {
   sparks = sparks.filter((s) => s.life > 0);
   for (const s of sparks) {
     s.px = s.x; s.py = s.y;
-    s.vy += 0.22; s.vx *= 0.985; s.vy *= 0.985;
+    s.vy += s.dust ? 0.05 : 0.22; s.vx *= s.dust ? 0.95 : 0.985; s.vy *= s.dust ? 0.95 : 0.985;
     s.x += s.vx; s.y += s.vy;
     s.life -= s.decay;
     ctx.strokeStyle = s.c;
@@ -2663,32 +3316,18 @@ function forge(canvasEl) {
       vy: 0.3 + Math.random() * 1.1,
       sway: Math.random() * Math.PI * 2,
       life: 0.4 + Math.random() * 0.6,
-      hue: 15 + Math.random() * 35,
+      hue: 35 + Math.random() * 20,
     };
   }
   resize();
   const ro = new ResizeObserver(resize);
   ro.observe(canvasEl);
-  const N = Math.round(Math.min(140, (w * h) / 6000));
+  const N = Math.round(Math.min(70, (w * h) / 12000));
   for (let i = 0; i < N; i++) embers.push(spawn(true));
   function draw() {
     if (!alive) return;
     frame++;
     c.clearRect(0, 0, w, h);
-    // griglia del piazzale in prospettiva
-    c.strokeStyle = 'rgba(255,255,255,0.05)';
-    c.lineWidth = 1;
-    const hz = h * 0.55;
-    for (let i = -12; i <= 12; i++) {
-      c.beginPath(); c.moveTo(w / 2 + i * 18, hz); c.lineTo(w / 2 + i * w * 0.16, h); c.stroke();
-    }
-    for (let j = 0; j < 10; j++) {
-      const t = ((j + (still ? 0 : (frame % 120) / 120)) / 10) ** 2;
-      const y = hz + (h - hz) * t;
-      c.globalAlpha = t;
-      c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke();
-    }
-    c.globalAlpha = 1;
     c.globalCompositeOperation = 'lighter';
     for (const e of embers) {
       if (!still) {
@@ -2798,7 +3437,7 @@ class LocalStore extends BaseStore {
   read() {
     const raw = safeGet(ls(), this.key);
     if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return null; }
+    try { return normalizeState(JSON.parse(raw)); } catch { return null; }
   }
   write() {
     if (!safeSet(ls(), this.key, JSON.stringify(this.state))) this.persistent = false;
@@ -2925,7 +3564,7 @@ class RemoteStore extends BaseStore {
     try { data = await res.json(); } catch { /* risposta vuota */ }
     if (!this.status.online) this.setStatus({ online: true, error: null });
     if (!res.ok) {
-      if (data.state) { this.state = data.state; this.emit('state'); }
+      if (data.state) { this.state = normalizeState(data.state); this.emit('state'); }
       if (res.status === 401 && this.user) { this.user = null; this.emit('auth'); }
       throw new DomainError(data.code || 'validation', data.error || `Errore ${res.status}`, data.extra);
     }
@@ -2945,14 +3584,14 @@ class RemoteStore extends BaseStore {
     const d = await this.api('GET', `/api/state${force || !this.state ? '' : `?since=${this.state.rev}`}`);
     if (d.serverTime) this.serverOffset = d.serverTime - Date.now();
     this.status.lastSync = Date.now();
-    if (!d.unchanged) { this.state = d.state; this.emit('remote'); } else this.emit('status');
+    if (!d.unchanged) { this.state = normalizeState(d.state); this.emit('remote'); } else this.emit('status');
   }
   async dispatch(op) {
     const full = { ...op, opId: op.opId || uid('op') };
     this.setStatus({ saving: true });
     try {
       const d = await this.api('POST', '/api/op', { op: full });
-      this.state = d.state;
+      this.state = normalizeState(d.state);
       this.status.lastSync = Date.now();
       this.emit('state');
       return d.result;
@@ -2999,6 +3638,7 @@ async function createStore() {
 
 
 
+
 const S = () => App.store.state;
 
 /* Esecuzione con esito chiaro --------------------------------------- */
@@ -3008,8 +3648,8 @@ async function act(op, { button, quiet = false } = {}) {
   try {
     const result = await App.store.dispatch(op);
     if (!quiet) {
-      burst(button);
-      toast(result?.message || 'Salvato');
+      burst(button, { hue: burstHue(op.type) });
+      toast(result?.message || 'Salvato', { art: artFor(op) });
     }
     return result;
   } catch (e) {
@@ -3018,6 +3658,38 @@ async function act(op, { button, quiet = false } = {}) {
   } finally {
     setBusy(button, false);
   }
+}
+
+/** Il mezzo che accompagna l'esito: muletto per i carichi, pala per gli scarichi, camion per gli arrivi. */
+function artFor(op) {
+  const t = op.type || '';
+  if (t === 'lot.create' || t === 'lot.load') return vehicle('forklift', { load: true });
+  if (t === 'lot.unload' || t === 'lot.unloadAll' || t === 'lot.delete') return vehicle('loader', { load: true });
+  if (t.startsWith('plan.receive') || t === 'plan.create' || t === 'plan.confirmEstimates') return vehicle('truck');
+  if (t === 'lot.transfer' || t === 'lot.update') return vehicle('telehandler', { load: true });
+  if (t === 'fleet.update') {
+    const v = App.store.state.fleet.find((x) => x.id === op.vehicleId);
+    return vehicle(v?.kind || 'forklift');
+  }
+  return null;
+}
+const burstHue = (t) => (t === 'lot.unload' || t === 'lot.unloadAll' || t === 'lot.delete' ? 'dust' : 'molten');
+
+/** Viaggi necessari con ciascun mezzo (stima, aggiunta di questa versione). */
+function tripsBox() {
+  const box = h('div.field', { hidden: true }, h('div.field-label', 'Con i mezzi del piazzale'), h('div.trips'));
+  return {
+    el: box,
+    update(t) {
+      const list = tripsFor(S(), t);
+      box.hidden = !list.length;
+      fill(box.lastChild, list.map((v) => {
+        const off = v.status === 'Manutenzione' || v.status === 'Fermo';
+        return h(`span.trip${off ? '.off' : ''}`, { title: off ? `${v.name}: ${v.status.toLowerCase()}` : `${v.name}, portata ${fmtNum(v.capacity)} t` },
+          vehicle(v.kind), h('span', v.name), h('b', `${v.trips} ${v.trips === 1 ? 'viaggio' : 'viaggi'}`));
+      }));
+    },
+  };
 }
 
 function reportError(e, { inline } = {}) {
@@ -3077,8 +3749,8 @@ function formDialog({ title, subtitle, content, submitLabel = 'Salva', danger = 
     setBusy(submitBtn, true);
     try {
       const result = await App.store.dispatch({ ...op, opId });
-      burst(submitBtn, { count: 46 });
-      toast(result?.message || 'Salvato');
+      burst(submitBtn, { count: 46, hue: burstHue(op.type) });
+      toast(result?.message || 'Salvato', { art: artFor(op) });
       d.close();
       after?.(result);
     } catch (e) {
@@ -3249,7 +3921,10 @@ function qtyDialog(lot, kind) {
     qty.setAttribute('aria-invalid', String(next < -EPS));
     if (submitBtn) submitBtn.textContent = Number.isFinite(v) && v > 0 ? `${isLoad ? 'Carica' : 'Scarica'} ${fmtTons(v)}` : (isLoad ? 'Carica' : 'Scarica');
   }
+  const trips = tripsBox();
   qty.addEventListener('input', upd);
+  qty.addEventListener('input', () => trips.update(parseNum(qty.value)));
+  quick.addEventListener('click', () => trips.update(parseNum(qty.value)));
   const d = formDialog({
     title: isLoad ? 'Carico' : 'Scarico',
     subtitle: isLoad ? 'Aggiunge quantità a questo lotto.' : 'Toglie quantità da questo lotto. Non può superare il disponibile.',
@@ -3261,6 +3936,7 @@ function qtyDialog(lot, kind) {
         h('div.pb-row', h('span', 'Ora'), h('b', fmtTons(lot.tons))),
         h('div.pb-track', { style: 'isolation:isolate' }, barGhost, barNow),
         h('div.pb-row', h('span', 'Dopo'), after)),
+      trips.el,
       field('Nota (facoltativa)', note)),
     submitLabel: isLoad ? 'Carica' : 'Scarica',
     build: () => ({ type: isLoad ? 'lot.load' : 'lot.unload', lotId: lot.id, expectRev: rev, tons: qty.value, note: note.value }),
@@ -3328,9 +4004,12 @@ function transferDialog(lot) {
       h('div.pb-row', h('span', dest.value ? getLocation(dest.value).name : 'Destinazione'), h('b', ok ? `+ ${fmtTons(v)}` : '—')),
       h('div.pb-row', h('span', 'Totale magazzino'), h('b', 'invariato')));
   }
+  const trips = tripsBox();
   qty.addEventListener('input', upd);
+  qty.addEventListener('input', () => trips.update(parseNum(qty.value)));
   dest.el.addEventListener('locchange', upd);
   upd();
+  trips.update(lot.tons);
   formDialog({
     title: 'Trasferisci',
     subtitle: 'Aggiunta di questa versione: sposta tutto o parte del lotto registrando origine e destinazione.',
@@ -3339,6 +4018,7 @@ function transferDialog(lot) {
       field('Destinazione', dest.el, { id: 'tr-loc' }),
       field('Quantità da spostare', h('div.big-num', qty, h('span.unit', 't')), { id: 'tr-t' }),
       info,
+      trips.el,
       field('Nota', note)),
     submitLabel: 'Trasferisci',
     build: () => {
@@ -3521,6 +4201,7 @@ function orderDialog(order, { date } = {}) {
   const status = select(ORDER_STATUSES, order?.status || 'Da fare', { id: 'or-s' });
   const notes = textarea({ id: 'or-n', placeholder: 'facoltative' });
   notes.value = order?.notes || '';
+  const veh = select([['', 'Nessuno'], ...S().fleet.map((v) => [v.id, `${v.name} · ${fmtNum(v.capacity)} t${v.status !== 'Disponibile' ? ` (${v.status.toLowerCase()})` : ''}`])], order?.vehicleId || '', { id: 'or-v' });
   formDialog({
     title: order ? 'Modifica ordine' : 'Nuovo ordine di lavoro',
     subtitle: 'Completare un ordine non scarica materiale: lo scarico si fa sul lotto.',
@@ -3529,12 +4210,12 @@ function orderDialog(order, { date } = {}) {
       field('Titolo', title),
       h('div.row', field('Data', d), field('Ora (facoltativa)', t), field('Stato', status)),
       h('div.row', field('Materiale', material), field('Posizione', loc.el, { id: 'or-loc' })),
-      h('div.row', field('Quantità', qty), field('Unità', unit)),
+      h('div.row', field('Quantità', qty), field('Unità', unit), field('Mezzo', veh)),
       field('Note', notes),
       datalist('dl-mat4', suggestionsFor('material'))),
     build: () => {
       if (!loc.validate()) throw 'Posizione non valida: sceglila dall\'elenco o lascia vuoto.';
-      const fields = { title: title.value, date: d.value, time: t.value, material: material.value, locationId: loc.value, qty: qty.value, unit: unit.value, status: status.value, notes: notes.value };
+      const fields = { title: title.value, date: d.value, time: t.value, material: material.value, locationId: loc.value, qty: qty.value, unit: unit.value, status: status.value, notes: notes.value, vehicleId: veh.value || null };
       return order ? { type: 'order.update', orderId: order.id, expectRev: order.rev, fields } : { type: 'order.create', ...fields };
     },
   });
@@ -3582,8 +4263,36 @@ function eventDialog(ev, { date } = {}) {
 }
 
 
+/* Mezzi -------------------------------------------------------------- */
+
+function fleetDialog(v) {
+  const isAdmin = App.store.user.role === 'admin';
+  let status = v.status;
+  const seg = h('div.seg', { role: 'radiogroup', 'aria-label': 'Stato del mezzo' });
+  const drawSeg = () => fill(seg, VEHICLE_STATUSES.map((st) => h('button', { type: 'button', role: 'radio', 'aria-checked': String(st === status), 'aria-pressed': String(st === status),
+    on: { click: () => { status = st; drawSeg(); } } }, st)));
+  drawSeg();
+  const note = input({ id: 'fl-n', value: v.note || '', placeholder: 'es. cambio forche, rientra giovedì' });
+  const name = input({ id: 'fl-name', value: v.name, disabled: !isAdmin });
+  const cap = input({ id: 'fl-cap', inputmode: 'decimal', value: fmtNum(v.capacity), disabled: !isAdmin });
+  const pic = vehicle(v.kind, { load: true, cls: 'dialog-veh' });
+  pic.style.cssText = 'width:min(260px,70%);justify-self:center;display:block';
+  formDialog({
+    title: v.name,
+    subtitle: `${VEHICLE_KINDS[v.kind] || 'Mezzo'} · portata ${fmtNum(v.capacity)} t${v.updatedByName ? ` · aggiornato da ${v.updatedByName}` : ''}`,
+    content: h('div', { style: 'display:grid;gap:16px' },
+      pic,
+      h('div.field', h('div.field-label', 'Stato'), seg),
+      field('Nota', note),
+      h('div.row', field('Nome', name), field('Portata (t)', cap, { hint: isAdmin ? '' : "Modificabili dall'amministratore." }))),
+    submitLabel: 'Salva',
+    build: () => ({ type: 'fleet.update', vehicleId: v.id, expectRev: v.rev, fields: { status, note: note.value, ...(isAdmin ? { name: name.value, capacity: cap.value } : {}) } }),
+  });
+}
+
 // ---- views.js ----
 // Pagine dell'applicazione. Ogni funzione riceve lo stato e restituisce il contenuto centrale.
+
 
 
 
@@ -3705,10 +4414,33 @@ function renderSearch(s) {
       h('div.kpi', h('div.kpi-label', 'In arrivo'), h('div.kpi-value', tonsEl(incoming, 'k:inc'), h('small', 't'))),
       h('div.kpi', h('div.kpi-label', 'Posizioni occupate'), h('div.kpi-value', String(occupied), h('small', `/ ${LOCATIONS.length}`))),
       h('div.kpi', h('div.kpi-label', 'Appunti aperti'), h('div.kpi-value', String(openNotes)))),
+    yardLive(s),
     plans.length ? h('section.section',
       h('div.section-head', h('h2.section-title', icon('truck', 18), 'Arrivi in corso', h('span.count', String(plans.length)))),
       h('div.arrivals-strip.stagger', plans.map((p, i) => miniPlan(s, p, i)))) : null,
     h('section.section', yard));
+}
+
+/** Piazzale animato: i mezzi si muovono secondo il loro stato (aggiunta di questa versione). */
+function yardLive(s) {
+  const inUse = s.fleet.filter((v) => v.status === 'In uso').length;
+  const down = s.fleet.filter((v) => v.status === 'Manutenzione' || v.status === 'Fermo').length;
+  return h('section.section',
+    h('div.section-head',
+      h('h2.section-title', icon('truck', 18), 'Mezzi sul piazzale', h('span.count', `${s.fleet.length}`)),
+      h('span.muted', { style: 'font-size:13px' }, `${inUse} in uso · ${s.fleet.length - inUse - down} disponibili${down ? ` · ${down} ferm${down === 1 ? 'o' : 'i'}` : ''}`)),
+    scene(s.fleet, { caption: 'Piazzale', wrenchIcon: () => icon('settings', 14) }),
+    h('div.fleet', s.fleet.map((v) => fleetCard(v))));
+}
+
+function fleetCard(v) {
+  const st = v.status;
+  const chip = st === 'Disponibile' ? '.ok' : st === 'In uso' ? '.accent' : st === 'Manutenzione' ? '.warn' : '.bad';
+  return h(`button.fleet-card.${st === 'In uso' ? 'inuso' : st.toLowerCase()}`, { type: 'button', 'aria-label': `${v.name}, portata ${fmtNum(v.capacity)} t, ${st}${v.note ? `: ${v.note}` : ''}. Cambia stato`, title: v.note || '',
+    on: { click: () => fleetDialog(v) } },
+  vehicle(v.kind, { load: st === 'In uso' }),
+  h('div', { style: 'min-width:0' }, h('b', v.name), h('small', `portata ${fmtNum(v.capacity)} t${v.note ? ` · ${v.note}` : ''}`)),
+  h(`span.chip${chip}`, st));
 }
 
 function miniPlan(s, p, i) {
@@ -3767,10 +4499,11 @@ function renderPosition(s, locId) {
   const resolved = notes.filter((n) => n.status === 'Risolto');
   const today = App.store.today();
 
-  const ghostText = loc.kind === 'deposito' ? 'T' : loc.code;
+  const code = loc.kind === 'deposito' ? 'TETTOIA' : loc.code;
   return h('div',
     h('section.pos-hero',
-      h('div.pos-ghost', { 'aria-hidden': 'true' }, ghostText),
+      h('div.rack-sign', { 'aria-hidden': 'true' }, h('div.chains', h('i'), h('i')),
+        h('div.plate', h('span.plate-kind', loc.kind === 'deposito' ? 'DEPOSITO' : KIND_LABEL[loc.kind].toUpperCase()), h(`span.plate-code${code.length > 3 ? '.long' : ''}`, code), h('span.hazard'))),
       h('button.btn.ghost.sm', { type: 'button', on: { click: () => App.navigate('ricerca') } }, icon('arrowL', 16), 'Ricerca'),
       h('div.eyebrow', { style: 'margin-top:14px' }, KIND_LABEL[loc.kind], st.capacity == null ? h('span.chip.outline', 'Capienza non impostata') : null),
       h('h1.pos-title', loc.name),
@@ -3797,7 +4530,7 @@ function renderPosition(s, locId) {
       h('div.section-head', h('h2.section-title', icon('ingot', 18), 'Lotti presenti', h('span.count', String(st.lots.length)))),
       st.lots.length
         ? h('div.grid.cols-2.stagger', st.lots.sort((a, b) => b.tons - a.tons).map((l, i) => lotCard(s, l, i)))
-        : h('div.empty', icon('ingot', 40), h('h3', 'Nessun materiale presente'),
+        : h('div.empty', idleLift(), h('h3', 'Nessun materiale presente'),
           h('p', st.plans.length ? 'Gli arrivi previsti sono qui sotto: diventano presenti quando vengono ricevuti o stimati.' : 'La posizione è vuota. Lo storico resta consultabile più in basso.'),
           h('button.btn.accent', { type: 'button', on: { click: () => addMaterialDialog({ locationId: locId }) } }, icon('plus', 18), 'Aggiungi materiale'))),
 
@@ -3820,17 +4553,26 @@ function occupancy(st, locId) {
   const iPct = (st.incoming / scale) * 100;
   const present = h('div.occ-present', { style: { width: `${previousWidth(`p${locId}`, pPct)}%` } });
   const incoming = h('div.occ-incoming', { style: { left: `${previousWidth(`l${locId}`, pPct)}%`, width: `${previousWidth(`i${locId}`, iPct)}%`, display: st.incoming ? '' : 'none' } });
+  const liftAt = (v) => `${Math.max(4, Math.min(93, v))}%`;
+  const lift = h('div.occ-lift', { style: { left: liftAt(previousWidth(`f${locId}`, pPct)) } });
+  lift.innerHTML = forkliftSvg({ load: true });
   requestAnimationFrame(() => requestAnimationFrame(() => {
     present.style.width = `${pPct}%`;
     incoming.style.left = `${pPct}%`;
     incoming.style.width = `${iPct}%`;
+    if (lift.style.left !== liftAt(pPct)) {
+      const bar = lift.parentElement;
+      bar?.classList.add('moving');
+      lift.style.left = liftAt(pPct);
+      setTimeout(() => bar?.classList.remove('moving'), 950);
+    }
   }));
   return h('section.card.occupancy', { 'aria-label': 'Occupazione' },
     h('div.occ-top',
       h('span', 'Occupazione · ', h('b', fmtTons(st.present)), cap ? ` (${pct(st.present, cap)})` : ''),
       h('span', 'A fine arrivi · ', h('b', fmtTons(st.final)), cap ? ` (${pct(st.final, cap)})` : '')),
     h(`div.occ-bar${st.over ? '.over' : ''}`, { role: 'img', 'aria-label': `Presente ${fmtTons(st.present)}, in arrivo ${fmtTons(st.incoming)}${cap ? `, capienza ${fmtTons(cap)}` : ''}` },
-      present, incoming,
+      present, incoming, lift,
       cap ? h('div.occ-cap', { style: { left: `calc(${(cap / scale) * 100}% - 1px)` }, 'data-label': 'capienza' }) : null),
     h('div.occ-scale', h('span', '0 t'), h('span', cap ? fmtTons(scale) : `${fmtTons(scale)} (nessuna capienza)`)),
     st.over ? h('div.occ-warn', icon('alert', 18), st.overNow ? `Già oltre la capienza provvisoria di ${fmtTons(round3(st.present - cap))}.` : `A fine arrivi supererà la capienza provvisoria di ${fmtTons(round3(st.final - cap))}.`) : null);
@@ -3864,6 +4606,7 @@ function lotCard(s, lot, i) {
     h('div.lot-top',
       h('div', { style: 'min-width:0' }, h('div.lot-material', lot.material), h('div.lot-client', lot.client)),
       h('div.lot-tons', tonsEl(lot.tons, `lot:${lot.id}`), h('small', 't'))),
+    h('div.lot-mid', h('div',
     h('div.lot-tags',
       h('span.code', lot.lotCode),
       h('span.chip', lot.format === 'Sacconi' && lot.bags ? `Sacconi · ${lot.bags}` : lot.format),
@@ -3871,7 +4614,8 @@ function lotCard(s, lot, i) {
       estimates ? h('span.chip.stripe', { title: 'Parte della quantità deriva da stime automatiche del piano, non da consegne confermate' }, 'Include stime') : null),
     h('div.lot-meta',
       h('span', `Aggiornato da ${lot.updatedByName} · ${fmtDateTime(lot.updatedAt)}`),
-      lot.pdfRef ? h('span', icon('file', 12), ' ', lot.pdfRef) : null),
+      lot.pdfRef ? h('span', icon('file', 12), ' ', lot.pdfRef) : null)),
+    lotArt(lot)),
     h('div.lot-actions',
       h('button.btn.load', { type: 'button', on: { click: () => qtyDialog(lot, 'load') } }, icon('plus', 18), 'Carico'),
       h('button.btn.unload', { type: 'button', on: { click: () => qtyDialog(lot, 'unload') } }, icon('minus', 18), 'Scarico'),
@@ -3908,7 +4652,9 @@ function planCard(s, p, today, i) {
         const kind = boxes[idx];
         col.push(h(`span.cbox${kind ? '.' + kind : ''}${kind && idx >= prevSeen ? '.pop' : ''}`, { style: kind && idx >= prevSeen ? `animation-delay:${(idx - prevSeen) * 90}ms` : '' }));
       }
-      return h(`div.track-day${d.state === 'today' ? '.today' : ''}`, h('div.track-boxes', col),
+      const truck = d.state === 'today' && !p.paused ? h('span.today-truck', { 'aria-hidden': 'true' }) : null;
+      if (truck) truck.innerHTML = truckSvg();
+      return h(`div.track-day${d.state === 'today' ? '.today' : ''}`, truck, h('div.track-boxes', col),
         h('div.track-label', `G${d.day}`, h('br'), fmtDayMonth(d.date)));
     }));
 
@@ -4054,6 +4800,8 @@ function renderOrders(s) {
       : h('div.empty', icon('orders', 40), h('h3', ui.ordersFilter === 'aperti' ? 'Nessun ordine da fare' : 'Nessun ordine'), h('button.btn.accent', { type: 'button', on: { click: () => orderDialog(null) } }, icon('plus', 18), 'Nuovo ordine')));
 }
 
+const vehOf = (o) => (o.vehicleId ? App.store.state.fleet.find((v) => v.id === o.vehicleId) : null);
+
 function orderCard(o, today, i) {
   const done = o.status === 'Completato';
   const cancelled = o.status === 'Annullato';
@@ -4068,7 +4816,8 @@ function orderCard(o, today, i) {
         h(`span.chip${o.status === 'Da fare' ? '.accent' : o.status === 'Programmato' ? '.info' : o.status === 'Completato' ? '.ok' : ''}`, o.status),
         loc ? h('button.chip.outline', { type: 'button', on: { click: () => App.navigate(`pos-${loc.id}`) } }, icon('pin', 12), loc.name) : null,
         o.material ? h('span.chip', o.material) : null,
-        o.qty != null ? h('span.chip.num', `${fmtNum(o.qty)} ${o.unit}`) : null),
+        o.qty != null ? h('span.chip.num', `${fmtNum(o.qty)} ${o.unit}`) : null,
+        vehOf(o) ? h('span.chip.veh-chip', vehicle(vehOf(o).kind), vehOf(o).name) : null),
       o.notes ? h('div.order-notes', o.notes) : null,
       h('div.muted', { style: 'font-size:12.5px;margin-top:8px' }, `${o.createdByName}${o.updatedByName !== o.createdByName ? ` · modificato da ${o.updatedByName}` : ''}`)),
     h('div.order-side',
@@ -4522,6 +5271,7 @@ function demoPanel(s, store) {
 
 
 
+
 /* Preferenze (solo comodità del singolo dispositivo) ---------------- */
 
 const PREF_KEY = 'magazzino-prefs';
@@ -4691,6 +5441,7 @@ function updateChrome() {
     off ? h('button.clock-chip', { type: 'button', title: 'Data simulata dalla demo', on: { click: () => navigate('impostazioni') } }, icon('clock', 14), `Data demo: ${fmtDayShort(store.today())}`) : null,
     h('span.top-status', { title: `${st.title} · ${st.sub}` }, h('span.dot.' + st.cls), h('span.sr-only', st.title)),
     h('button.kbd-btn', { type: 'button', on: { click: openPalette } }, icon('search', 16), 'Cerca ovunque', h('kbd', '⌘K')),
+    store.status.saving ? h('div.save-lane', { 'aria-hidden': 'true' }, vehicle('forklift', { load: true })) : null,
     h('button.icon-btn.top-avatar', { type: 'button', 'aria-label': `Profilo di ${user.name}`, on: { click: (e) => openMenu(e.currentTarget, [
       { label: `${user.name} · ${ROLES[user.role]}`, icon: 'user', run: () => navigate('impostazioni') },
       { label: isDark() ? 'Tema chiaro' : 'Tema scuro', icon: isDark() ? 'sun' : 'moon', run: cycleTheme },
@@ -4741,10 +5492,11 @@ function renderLogin() {
   const canvas = h('canvas', { 'aria-hidden': 'true' });
   const card = h('div.login-card');
   const art = h('div.login-art', canvas, h('div.glow'),
-    h('div', { style: 'position:relative;display:flex;align-items:center;gap:12px;margin-bottom:auto' }, brandMark(44),
+    h('div', { style: 'position:relative;display:flex;align-items:center;gap:12px' }, brandMark(44),
       h('span', { style: 'font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--on-steel-2)' }, 'MPR Logistics')),
     h('h1.login-word', h('span', 'MAGAZZINO'), h('span', 'FERROLEGHE')),
-    h('p.login-tag', 'Baie, mucchi e tettoia. Che materiale c\'è, dove si trova, quanto ne resta: dal telefono, senza passare in ufficio.'));
+    h('p.login-tag', 'Baie, mucchi e tettoia. Che materiale c\'è, dove si trova, quanto ne resta: dal telefono, senza passare in ufficio.'),
+    scene(store.state?.fleet || DEFAULT_FLEET.map((v) => ({ ...v, status: 'Disponibile' })), { wrenchIcon: () => icon('settings', 14) }));
   fill(root, h('div.login', art, h('div.login-panel', card)));
   requestAnimationFrame(() => { stopForge = forge(canvas); });
 

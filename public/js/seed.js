@@ -69,8 +69,8 @@ export function buildDemoState(nowMs = Date.now()) {
   run(at(3, 18, luca), { type: 'note.create', locationId: null, title: 'Pesa a ponte: taratura lunedì', text: 'Fino alla taratura usare la pesa esterna per i carichi sopra 25 t.', status: 'Aperto', important: true });
 
   // Ordini.
-  run(at(1, 9, giulia), { type: 'order.create', title: 'Caricare camion per Acciaierie Demo Nord', date: today, time: '14:30', material: 'Ferro-silicio FeSi 75', locationId: 'baia-1', qty: 10, unit: 't', status: 'Da fare', notes: 'Prelevare dal lotto DEMO-A.' });
-  run(at(1, 10, giulia), { type: 'order.create', title: 'Spostare sacconi sotto tettoia', date: addDays(today, 2), time: '', material: 'Ferro-manganese HC', locationId: 'baia-1', qty: 6, unit: 'sacconi', status: 'Programmato', notes: '' });
+  run(at(1, 9, giulia), { type: 'order.create', title: 'Caricare camion per Acciaierie Demo Nord', date: today, time: '14:30', material: 'Ferro-silicio FeSi 75', locationId: 'baia-1', qty: 10, unit: 't', status: 'Da fare', notes: 'Prelevare dal lotto DEMO-A.', vehicleId: 'pala' });
+  run(at(1, 10, giulia), { type: 'order.create', title: 'Spostare sacconi sotto tettoia', date: addDays(today, 2), time: '', material: 'Ferro-manganese HC', locationId: 'baia-1', qty: 6, unit: 'sacconi', status: 'Programmato', notes: '', vehicleId: 'muletto-1' });
   run(at(7, 10, marco), { type: 'order.create', title: 'Ritiro Ferro-molibdeno Baia 5', date: addDays(today, -6), time: '10:00', material: 'Ferro-molibdeno', locationId: 'baia-5', qty: 20, unit: 't', status: 'Completato', notes: 'Scarico eseguito dal lotto.' });
   run(at(0, 8, luca), { type: 'order.create', title: 'Verifica livello Mucchio 49', date: addDays(today, 1), time: '08:00', material: 'Silicio metallico', locationId: 'mucchio-49', qty: null, unit: 't', status: 'Da fare', notes: '' });
 
@@ -79,6 +79,10 @@ export function buildDemoState(nowMs = Date.now()) {
   run(at(2, 9, giulia), { type: 'event.create', title: 'Manutenzione pala gommata', date: addDays(today, 1), time: '13:00', kind: 'Mezzi', notes: '' });
   run(at(2, 9, luca), { type: 'event.create', title: 'Visita cliente Demo Steel', date: addDays(today, 6), time: '10:30', kind: 'Visita', notes: '' });
   run(at(2, 9, luca), { type: 'event.create', title: 'Inventario mucchi 21–30', date: addDays(today, -3), time: '', kind: 'Promemoria', notes: '' });
+
+  // Mezzi.
+  run(at(0, 7, marco), { type: 'fleet.update', vehicleId: 'merlo', fields: { status: 'In uso', note: 'Sistemazione big bag sotto tettoia' } });
+  run(at(1, 17, luca), { type: 'fleet.update', vehicleId: 'muletto-2', fields: { status: 'Manutenzione', note: 'Cambio forche, rientra giovedì' } });
 
   return s;
 }

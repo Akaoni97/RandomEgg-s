@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pub = path.join(root, 'public');
-const order = ['core.js', 'seed.js', 'ui.js', 'fx.js', 'store.js', 'dialogs.js', 'views.js', 'app.js'];
+const order = ['core.js', 'seed.js', 'ui.js', 'art.js', 'fx.js', 'store.js', 'dialogs.js', 'views.js', 'app.js'];
 
 const js = order.map((f) => {
   const src = fs.readFileSync(path.join(pub, 'js', f), 'utf8')
@@ -22,7 +22,7 @@ const html = `<meta charset="utf-8">
 <title>Magazzino Ferroleghe</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600..900&family=Instrument+Sans:wdth,wght@75..100,400..700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 ${css}
 </style>

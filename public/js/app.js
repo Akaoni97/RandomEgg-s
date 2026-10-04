@@ -1,7 +1,8 @@
 // Guscio dell'applicazione: accesso, menu, router, palette comandi, preferenze.
-import { getLocation, suggestLocations, presentLots, openPlans, ROLES, fmtTons, positionStats, KIND_LABEL, LOCATIONS } from './core.js';
+import { getLocation, suggestLocations, presentLots, openPlans, ROLES, fmtTons, positionStats, KIND_LABEL, LOCATIONS, DEFAULT_FLEET } from './core.js';
 import { App, h, icon, clear, fill, brandMark, toast, openDialog, openMenu, initials, fmtTime, fmtDayShort, dialogOpen, reducedMotion, input, field } from './ui.js';
 import { forge } from './fx.js';
+import { scene, vehicle } from './art.js';
 import { createStore } from './store.js';
 import { addMaterialDialog, orderDialog, noteDialog, eventDialog, reportError } from './dialogs.js';
 import {
@@ -177,6 +178,7 @@ function updateChrome() {
     off ? h('button.clock-chip', { type: 'button', title: 'Data simulata dalla demo', on: { click: () => navigate('impostazioni') } }, icon('clock', 14), `Data demo: ${fmtDayShort(store.today())}`) : null,
     h('span.top-status', { title: `${st.title} · ${st.sub}` }, h('span.dot.' + st.cls), h('span.sr-only', st.title)),
     h('button.kbd-btn', { type: 'button', on: { click: openPalette } }, icon('search', 16), 'Cerca ovunque', h('kbd', '⌘K')),
+    store.status.saving ? h('div.save-lane', { 'aria-hidden': 'true' }, vehicle('forklift', { load: true })) : null,
     h('button.icon-btn.top-avatar', { type: 'button', 'aria-label': `Profilo di ${user.name}`, on: { click: (e) => openMenu(e.currentTarget, [
       { label: `${user.name} · ${ROLES[user.role]}`, icon: 'user', run: () => navigate('impostazioni') },
       { label: isDark() ? 'Tema chiaro' : 'Tema scuro', icon: isDark() ? 'sun' : 'moon', run: cycleTheme },
@@ -227,10 +229,11 @@ function renderLogin() {
   const canvas = h('canvas', { 'aria-hidden': 'true' });
   const card = h('div.login-card');
   const art = h('div.login-art', canvas, h('div.glow'),
-    h('div', { style: 'position:relative;display:flex;align-items:center;gap:12px;margin-bottom:auto' }, brandMark(44),
+    h('div', { style: 'position:relative;display:flex;align-items:center;gap:12px' }, brandMark(44),
       h('span', { style: 'font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--on-steel-2)' }, 'MPR Logistics')),
     h('h1.login-word', h('span', 'MAGAZZINO'), h('span', 'FERROLEGHE')),
-    h('p.login-tag', 'Baie, mucchi e tettoia. Che materiale c\'è, dove si trova, quanto ne resta: dal telefono, senza passare in ufficio.'));
+    h('p.login-tag', 'Baie, mucchi e tettoia. Che materiale c\'è, dove si trova, quanto ne resta: dal telefono, senza passare in ufficio.'),
+    scene(store.state?.fleet || DEFAULT_FLEET.map((v) => ({ ...v, status: 'Disponibile' })), { wrenchIcon: () => icon('settings', 14) }));
   fill(root, h('div.login', art, h('div.login-panel', card)));
   requestAnimationFrame(() => { stopForge = forge(canvas); });
 
