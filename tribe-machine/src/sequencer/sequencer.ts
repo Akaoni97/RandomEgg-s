@@ -10,6 +10,7 @@ import type { AudioEngine } from '../audio/engine';
 import { isMelodic } from '../state/params';
 import { NUM_PARTS, type Pattern } from '../state/types';
 import { nearestStep, stepDuration, swingOffset, type StepTime } from './timing';
+import { motionAt } from '../state/motion';
 
 export const LOOKAHEAD = 0.12;
 const TICK_MS = 20;
@@ -23,10 +24,12 @@ export interface StepEvent {
 
 export interface SeqHost {
   getPattern(): { pattern: Pattern; index: number };
-  /** pattern in coda (cambio sincronizzato a fine battuta) */
-  getQueued(): number | null;
-  /** esegue il cambio pattern, ritorna il nuovo pattern */
-  commitQueued(): { pattern: Pattern; index: number };
+  /**
+   * Chiamata a ogni inizio battuta (step 0, 16, 32, 48) prima di programmarla.
+   * Ritorna il pattern su cui passare (cambio in coda o song mode) oppure null.
+   * `first` = prima battuta dopo PLAY.
+   */
+  atBar(step: number, first: boolean): { pattern: Pattern; index: number } | null;
   onStep(ev: StepEvent): void;
 }
 
@@ -38,6 +41,7 @@ export class Sequencer {
   private held: boolean[] = new Array(NUM_PARTS).fill(false);
   private suppress = new Set<string>();
   private history: StepTime[] = [];
+  private first = true;
   private worker: Worker | null = null;
   private interval: ReturnType<typeof setInterval> | null = null;
   private engine: AudioEngine;
@@ -75,6 +79,7 @@ export class Sequencer {
     this.playing = true;
     this.nextTime = this.engine.ctx.currentTime + 0.05;
     this.history = [];
+    this.first = true;
     this.startClock();
     this.tick();
   }
@@ -94,7 +99,7 @@ export class Sequencer {
     this.suppress.clear();
   }
 
-  private releaseHeld(time = this.engine.ctx.currentTime) {
+  releaseHeld(time = this.engine.ctx.currentTime) {
     for (let i = 0; i < NUM_PARTS; i++) {
       if (this.held[i]) this.engine.noteOff(i, time);
       this.held[i] = false;
@@ -118,10 +123,14 @@ export class Sequencer {
     const horizon = now + LOOKAHEAD;
     while (this.nextTime < horizon) {
       let cur = this.host.getPattern();
-      if (this.step % 16 === 0 && this.host.getQueued() !== null) {
-        this.releaseHeld(this.nextTime);
-        cur = this.host.commitQueued();
-        this.step = 0;
+      if (this.step % 16 === 0) {
+        const sw = this.host.atBar(this.step, this.first);
+        this.first = false;
+        if (sw) {
+          this.releaseHeld(this.nextTime);
+          cur = sw;
+          this.step = 0;
+        }
       }
       const pattern = cur.pattern;
       if (this.step >= pattern.length) this.step = 0;
@@ -148,7 +157,9 @@ export class Sequencer {
       const s = part.steps[step];
       const audible = !part.mute && (!anySolo || part.solo);
       const suppressed = this.suppress.delete(i + ':' + step);
-      e.applyPart(i, part);
+      const eff = motionAt(part, step);
+      e.stepParams(i, part, eff, time);
+      const params = eff ?? part.params;
       const vel = s.acc ? 1 : 0.72;
       if (isMelodic(part.type)) {
         if (!audible || !s.on) {
@@ -157,7 +168,7 @@ export class Sequencer {
           continue;
         }
         if (suppressed) continue;
-        e.trigger(i, part, { time, vel, note: s.note, accent: s.acc }, this.held[i]);
+        e.trigger(i, part, { time, vel, note: s.note, accent: s.acc }, this.held[i], params);
         const next = part.steps[(step + 1) % pattern.length];
         if (s.slide && next.on) {
           this.held[i] = true; // la nota prosegue in legato nello step successivo
@@ -167,7 +178,7 @@ export class Sequencer {
         }
         triggers.push(i);
       } else if (audible && s.on && !suppressed) {
-        e.trigger(i, part, { time, vel, note: s.note, accent: s.acc });
+        e.trigger(i, part, { time, vel, note: s.note, accent: s.acc }, false, params);
         triggers.push(i);
       }
     }
@@ -196,17 +207,10 @@ export class Sequencer {
     return best.step;
   }
 
-  /** Render non in tempo reale (export WAV / test): programma `count` step da `start`. */
-  renderSteps(pattern: Pattern, count: number, start: number): number {
-    let t = start;
-    const dur = stepDuration(pattern.bpm);
-    for (let n = 0; n < count; n++) {
-      const step = n % pattern.length;
-      this.scheduleStep(pattern, step, t + swingOffset(step, pattern.swing, dur));
-      t += dur;
-    }
-    this.releaseHeld(t);
-    for (let i = 0; i < NUM_PARTS; i++) this.engine.noteOff(i, t);
-    return t;
+  /** Rilascia le note in legato (fine di un render o di una sezione di song) */
+  releaseAll(time: number) {
+    this.releaseHeld(time);
+    for (let i = 0; i < NUM_PARTS; i++) this.engine.noteOff(i, time);
   }
+
 }

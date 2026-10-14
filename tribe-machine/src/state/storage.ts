@@ -66,19 +66,15 @@ export function downloadBlob(blob: Blob, filename: string) {
 
 export const fileSafe = (s: string) => s.trim().replace(/[^\w\- ]+/g, '').replace(/\s+/g, '_').toLowerCase() || 'progetto';
 
-export function exportProject(p: Project) {
-  downloadBlob(new Blob([JSON.stringify(p, null, 1)], { type: 'application/json' }), `${fileSafe(p.name)}.tribe.json`);
-}
-
-export function pickProjectFile(): Promise<Project> {
+export function pickFile(accept: string): Promise<File> {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json,application/json';
-    input.onchange = async () => {
+    input.accept = accept;
+    input.onchange = () => {
       const f = input.files?.[0];
-      if (!f) return reject(new Error('Nessun file'));
-      try { resolve(parseProject(await f.text())); } catch (e) { reject(e); }
+      if (f) resolve(f);
+      else reject(new Error('Nessun file'));
     };
     input.click();
   });

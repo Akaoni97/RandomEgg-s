@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Knob } from './Knob';
 import { formatParam, fromNorm, paramDef, toNorm, clampParam } from '../state/params';
-import { actions, curPattern, flash, useStore } from '../state/store';
+import { curPattern, flash, usePlayhead, useStore } from '../state/store';
+import * as M from '../machine';
 
 export type LedColor = 'red' | 'orange' | 'green' | 'off';
 
@@ -59,20 +60,27 @@ function parseNumber(text: string): number {
 export function ParamKnob({ id, label }: { id: string | null; label?: string }) {
   const part = useStore((s) => curPattern(s).parts[s.selectedPart]);
   const pi = useStore((s) => s.selectedPart);
+  const playing = useStore((s) => s.playing);
+  const lane = id ? part.motion[id] : undefined;
+  // la manopola "si muove da sola" seguendo la motion sequence, come sull'hardware
+  const step = usePlayhead((p) => (lane && playing ? p.step : -1));
   const d = id ? paramDef(part.type, id) : undefined;
   if (!d) return <Knob norm={0} label="—" value="" disabled onChange={() => {}} />;
-  const v = part.params[d.id];
+  const mv = lane && step >= 0 ? lane[step] : null;
+  const v = mv ?? part.params[d.id];
   const set = (nv: number) => {
-    actions.setParam(pi, d.id, nv);
-    flash(`${part.name} ${d.label} ${formatParam(d, clampParam(d, nv))}`, 900);
+    M.tweakParam(pi, d.id, nv);
+    const s = useStore.getState();
+    flash(`${s.recording && s.playing ? 'MOTION ' : ''}${part.name} ${d.label} ${formatParam(d, clampParam(d, nv))}`, 900);
   };
   return (
     <Knob
       norm={toNorm(d, v)}
       label={label ?? d.label}
       value={formatParam(d, v)}
-      hint={d.hint}
+      hint={d.hint + (lane ? '\n[MOTION registrata su questo parametro]' : '')}
       bipolar={d.min < 0 && d.max > 0}
+      motion={!!lane}
       onChange={(n) => set(fromNorm(d, n))}
       onReset={() => set(d.def)}
       onNumeric={(t) => {

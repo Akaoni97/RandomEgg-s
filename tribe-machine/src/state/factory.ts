@@ -1,6 +1,6 @@
 import { defaultParams, paramsFor, clampParam, TYPE_LABEL } from './params';
 import {
-  BPM_MAX, BPM_MIN, MAX_STEPS, NUM_PARTS, NUM_PATTERNS, PART_TYPES,
+  BPM_MAX, BPM_MIN, MAX_SONG, MAX_STEPS, NUM_PARTS, NUM_PATTERNS, PART_TYPES,
   type MasterFx, type PartState, type PartType, type Pattern, type Project, type Step,
 } from './types';
 
@@ -16,6 +16,8 @@ export function makePart(type: PartType, name = TYPE_LABEL[type]): PartState {
     steps: Array.from({ length: MAX_STEPS }, emptyStep),
     mute: false,
     solo: false,
+    motion: {},
+    sampleId: null,
   };
 }
 
@@ -39,6 +41,8 @@ export function makeProject(): Project {
     name: 'NUOVO PROGETTO',
     patterns: Array.from({ length: NUM_PATTERNS }, () => makePattern()),
     current: 0,
+    song: [{ pattern: 0, repeats: 4 }],
+    samples: [],
   };
 }
 
@@ -77,6 +81,15 @@ function sanitizePart(p: any, fallback: PartType): PartState {
   }
   part.mute = !!p?.mute;
   part.solo = !!p?.solo;
+  if (p?.motion && typeof p.motion === 'object') {
+    for (const d of paramsFor(type)) {
+      const m = p.motion[d.id];
+      if (!Array.isArray(m)) continue;
+      const lane = Array.from({ length: MAX_STEPS }, (_, i) => (typeof m[i] === 'number' && Number.isFinite(m[i]) ? clampParam(d, m[i]) : null));
+      if (lane.some((v) => v !== null)) part.motion[d.id] = lane;
+    }
+  }
+  part.sampleId = typeof p?.sampleId === 'string' ? p.sampleId.slice(0, 64) : null;
   return part;
 }
 
@@ -113,5 +126,16 @@ export function sanitizeProject(raw: any): Project {
     if (raw.patterns?.[i]) proj.patterns[i] = sanitizePattern(raw.patterns[i]);
   }
   proj.current = Math.round(num(raw.current, 0, 0, NUM_PATTERNS - 1));
+  if (Array.isArray(raw.song) && raw.song.length) {
+    proj.song = raw.song.slice(0, MAX_SONG).map((e: any) => ({
+      pattern: Math.round(num(e?.pattern, 0, 0, NUM_PATTERNS - 1)),
+      repeats: Math.round(num(e?.repeats, 1, 1, 16)),
+    }));
+  }
+  if (Array.isArray(raw.samples)) {
+    proj.samples = raw.samples
+      .filter((x: any) => typeof x?.id === 'string')
+      .map((x: any) => ({ id: x.id.slice(0, 64), name: typeof x.name === 'string' ? x.name.slice(0, 32) : 'SAMPLE' }));
+  }
   return proj;
 }

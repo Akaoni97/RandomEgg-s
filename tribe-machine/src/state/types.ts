@@ -1,9 +1,9 @@
 // Modello dati della macchina. Tutto ciò che sta qui è serializzabile in JSON
 // e costituisce un progetto salvabile.
 
-export type PartType = 'kick' | 'snare' | 'clap' | 'hat' | 'ohat' | 'perc' | 'bass' | 'acid';
+export type PartType = 'kick' | 'snare' | 'clap' | 'hat' | 'ohat' | 'perc' | 'bass' | 'acid' | 'sample';
 
-export const PART_TYPES: PartType[] = ['kick', 'snare', 'clap', 'hat', 'ohat', 'perc', 'bass', 'acid'];
+export const PART_TYPES: PartType[] = ['kick', 'snare', 'clap', 'hat', 'ohat', 'perc', 'bass', 'acid', 'sample'];
 
 export const MAX_STEPS = 64;
 export const NUM_PARTS = 8;
@@ -28,6 +28,13 @@ export interface PartState {
   steps: Step[];
   mute: boolean;
   solo: boolean;
+  /**
+   * Motion sequence: per parametro, un valore registrato per step (null = usa la manopola).
+   * Registrato muovendo le manopole con REC attivo durante la riproduzione.
+   */
+  motion: Record<string, (number | null)[]>;
+  /** id del campione (parti di tipo SAMPLE) */
+  sampleId: string | null;
 }
 
 export interface MasterFx {
@@ -54,13 +61,30 @@ export interface Pattern {
   fx: MasterFx;
 }
 
+export interface SongEntry {
+  pattern: number;
+  /** quante volte ripetere il pattern (1..16) */
+  repeats: number;
+}
+
+export interface SampleInfo {
+  id: string;
+  name: string;
+}
+
 export interface Project {
   format: 'tribe-machine';
   version: 1;
   name: string;
   patterns: Pattern[];
   current: number;
+  /** song mode: catena di pattern */
+  song: SongEntry[];
+  /** campioni usati dal progetto (i dati audio stanno in IndexedDB / nel file esportato) */
+  samples: SampleInfo[];
 }
+
+export const MAX_SONG = 64;
 
 export const DELAY_DIVS: { label: string; beats: number }[] = [
   { label: '1/32', beats: 0.125 },

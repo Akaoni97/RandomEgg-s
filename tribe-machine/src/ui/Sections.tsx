@@ -8,6 +8,7 @@ import { codesFor, keyLabel, STEP_CODES, subscribeKeymap } from '../input/keymap
 import { dispatch, padPress, stepPress, stepRelease } from '../input/keyboard';
 import { lcdCursor, lcdEnter, lcdNudge } from '../lcd/menu';
 import * as M from '../machine';
+import { redo, undo } from '../state/history';
 
 let keymapVersion = 0;
 subscribeKeymap(() => { keymapVersion++; });
@@ -299,6 +300,11 @@ export function TransportSection() {
   const queued = useStore((s) => s.queuedPattern);
   const step = usePlayhead((p) => p.step);
   const beat = playing && step >= 0 && step % 4 === 0;
+  const songMode = useStore((s) => s.songMode);
+  const songPos = useStore((s) => s.songPos);
+  const songLen = useStore((s) => s.project.song.length);
+  const canUndo = useStore((s) => s.canUndo);
+  const canRedo = useStore((s) => s.canRedo);
   return (
     <section className="sec transport-sec">
       <div className="sec-title">PATTERN · TRANSPORT</div>
@@ -330,8 +336,16 @@ export function TransportSection() {
           </HwButton>
           <HwButton size="sm" sub="TAP" led="red" ledOn={beat} onPress={() => M.tap()} title="Tap tempo (T)" />
         </div>
+        <div className="song-block">
+          <div className="song-pos" title="Posizione nella song">{songMode ? `S${String(songPos + 1).padStart(2, '0')}/${String(songLen).padStart(2, '0')}` : 'PATTERN'}</div>
+          <HwButton size="sm" sub="SONG" led="green" ledOn={songMode} onPress={() => M.toggleSongMode()} title="Song mode: suona la catena di pattern (L). Si modifica nella pagina SONG" />
+          <div className="pat-btns">
+            <HwButton size="sm" sub="UNDO" led="orange" ledOn={canUndo} onPress={() => undo()} title="Annulla (Ctrl+Z)" />
+            <HwButton size="sm" sub="REDO" led="orange" ledOn={canRedo} onPress={() => redo()} title="Ripeti (Ctrl+Y)" />
+          </div>
+        </div>
         <div className="transport-btns">
-          <HwButton size="lg" tone="red" led="red" ledOn={rec} ledBlink={rec && playing} sub="REC" onPress={() => M.toggleRec()} title="Registrazione LIVE quantizzata (Shift+Spazio)" />
+          <HwButton size="lg" tone="red" led="red" ledOn={rec} ledBlink={rec && playing} sub="REC" onPress={() => M.toggleRec()} title="Registrazione (Shift+Spazio): LIVE MODE = pad quantizzati, sempre = motion delle manopole" />
           <HwButton size="lg" tone="black" sub="STOP" onPress={() => M.stop()} title="Stop (Esc). Due volte = silenzia tutto" />
           <HwButton size="lg" tone="black" led="green" ledOn={playing} sub="PLAY/PAUSE" onPress={() => M.playPause()} title="Play / Pausa (Spazio)" />
         </div>

@@ -13,6 +13,8 @@ export interface KnobProps {
   /** inserimento numerico preciso (doppio click) */
   onNumeric?: (text: string) => void;
   cap?: 'black' | 'silver' | 'orange';
+  /** il parametro ha una motion sequence registrata */
+  motion?: boolean;
 }
 
 const clamp = (v: number) => Math.min(1, Math.max(0, v));
@@ -21,7 +23,7 @@ const clamp = (v: number) => Math.min(1, Math.max(0, v));
  * Manopola: trascinamento verticale (Shift = fine), rotellina del mouse,
  * doppio click = valore numerico, Alt/Ctrl+click o tasto destro = valore iniziale.
  */
-export function Knob({ norm, label, value, hint, bipolar, size = 58, disabled, onChange, onReset, onNumeric, cap = 'black' }: KnobProps) {
+export function Knob({ norm, label, value, hint, bipolar, size = 58, disabled, onChange, onReset, onNumeric, cap = 'black', motion }: KnobProps) {
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; n: number } | null>(null);
   const normRef = useRef(norm);
@@ -59,7 +61,7 @@ export function Knob({ norm, label, value, hint, bipolar, size = 58, disabled, o
   const from = bipolar ? 0 : -135;
 
   return (
-    <div className={`knob-wrap ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`} title={hint ? `${hint}\n(trascina, rotellina, doppio click = valore, tasto destro = reset)` : undefined}>
+    <div className={`knob-wrap ${disabled ? 'disabled' : ''} ${active ? 'active' : ''} ${motion ? 'has-motion' : ''}`} title={hint ? `${hint}\n(trascina, rotellina, doppio click = valore, tasto destro = reset)` : undefined}>
       <div
         ref={ref}
         className="knob-hit"
@@ -99,6 +101,7 @@ export function Knob({ norm, label, value, hint, bipolar, size = 58, disabled, o
           </div>
         </div>
       </div>
+      {motion && <span className="knob-motion" title="Motion sequence">M</span>}
       <div className="knob-label">{label}</div>
       <div className="knob-value">{disabled ? '--' : value}</div>
       {editing && (

@@ -44,7 +44,7 @@ export function Lcd() {
   const item = page.items[cur];
   const transport = s.playing ? '▶' : '■';
   const pat = 'P' + String(s.project.current + 1).padStart(2, '0');
-  const queued = s.queuedPattern !== null ? '>' + String(s.queuedPattern + 1).padStart(2, '0') : '   ';
+  const queued = s.songMode ? 'S' + String(s.songPos + 1).padStart(2, '0') : s.queuedPattern !== null ? '>' + String(s.queuedPattern + 1).padStart(2, '0') : '   ';
 
   return (
     <div className="lcd" ref={ref} title="Display: rotellina del mouse = VALUE, F2 = zoom">

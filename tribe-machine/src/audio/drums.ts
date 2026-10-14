@@ -17,6 +17,8 @@ export interface Hit {
   /** trasposizione in semitoni (note dello step / tastiera live) */
   pitch: number;
   params: Record<string, number>;
+  /** campione (solo parti SAMPLE) */
+  buffer?: AudioBuffer | null;
 }
 
 const st = (n: number) => Math.pow(2, n / 12);
@@ -269,6 +271,57 @@ function perc(ctx: BaseAudioContext, out: AudioNode, h: Hit): Voice {
   return finish(ctx, out, choke, sources, end);
 }
 
+const reversed = new WeakMap<AudioBuffer, AudioBuffer>();
+function reversedOf(b: AudioBuffer): AudioBuffer {
+  let r = reversed.get(b);
+  if (!r) {
+    r = new AudioBuffer({ length: b.length, numberOfChannels: b.numberOfChannels, sampleRate: b.sampleRate });
+    for (let c = 0; c < b.numberOfChannels; c++) {
+      const src = b.getChannelData(c);
+      const dst = r.getChannelData(c);
+      for (let i = 0, n = src.length; i < n; i++) dst[i] = src[n - 1 - i];
+    }
+    reversed.set(b, r);
+  }
+  return r;
+}
+
+function sample(ctx: BaseAudioContext, out: AudioNode, h: Hit): Voice | null {
+  if (!h.buffer) return null;
+  const P = h.params;
+  const t = h.time;
+  const buf = P.reverse >= 1 ? reversedOf(h.buffer) : h.buffer;
+  const rate = st(P.tune + h.pitch);
+  const offset = P.start * buf.duration;
+  const playable = (buf.duration - offset) / rate;
+  const decay = P.decay / 1000;
+  const len = Math.min(playable, decay);
+  const end = t + len + 0.02;
+
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = P.tone;
+  lp.Q.value = P.reso;
+  const amp = ctx.createGain();
+  // micro-fade in/out: nessun click anche con start nel mezzo di una forma d'onda
+  amp.gain.setValueAtTime(0, t);
+  amp.gain.linearRampToValueAtTime(h.vel * 1.2, t + 0.002);
+  if (len < playable) {
+    amp.gain.setValueAtTime(h.vel * 1.2, t + len * 0.75);
+    amp.gain.linearRampToValueAtTime(0, t + len);
+  } else {
+    amp.gain.setValueAtTime(h.vel * 1.2, Math.max(t + 0.003, t + len - 0.01));
+    amp.gain.linearRampToValueAtTime(0, t + len);
+  }
+  const choke = ctx.createGain();
+  src.connect(lp).connect(amp).connect(choke);
+  src.start(t, offset);
+  return finish(ctx, out, choke, [src], end);
+}
+
 export function playDrum(ctx: BaseAudioContext, type: PartType, out: AudioNode, h: Hit): Voice | null {
   switch (type) {
     case 'kick': return kick(ctx, out, h);
@@ -277,6 +330,7 @@ export function playDrum(ctx: BaseAudioContext, type: PartType, out: AudioNode, 
     case 'hat':
     case 'ohat': return hat(ctx, out, h);
     case 'perc': return perc(ctx, out, h);
+    case 'sample': return sample(ctx, out, h);
     default: return null;
   }
 }

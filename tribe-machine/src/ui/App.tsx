@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useStore } from '../state/store';
+import { flash, useStore } from '../state/store';
+import { RenameOverlay } from './Rename';
 import * as M from '../machine';
 import { toggleFullscreen } from '../input/keyboard';
 import { HwButton, Led } from './Controls';
@@ -44,6 +45,21 @@ export function App() {
   const scale = useScale();
   const powered = useStore((s) => s.powered);
   const [booting, setBooting] = useState(false);
+  const [dragging, setDragging] = useState(false);
+
+  // trascina un file audio sul pannello = campione nella parte selezionata; un .json = progetto
+  const onDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer.files?.[0];
+    if (!f) return;
+    if (!useStore.getState().powered) await power();
+    if (/\.json$/i.test(f.name)) {
+      try { await M.loadProjectText(await f.text()); } catch { flash('IMPORT ERROR', 2500); }
+    } else {
+      await M.loadSampleFile(useStore.getState().selectedPart, f);
+    }
+  };
 
   const power = async () => {
     if (powered || booting) return;
@@ -53,7 +69,12 @@ export function App() {
   };
 
   return (
-    <div className="stage">
+    <div
+      className="stage"
+      onDragOver={(e) => { e.preventDefault(); if (!dragging) setDragging(true); }}
+      onDragLeave={(e) => { if (e.currentTarget === e.target) setDragging(false); }}
+      onDrop={onDrop}
+    >
       <div className="machine-holder" style={{ width: W * scale, height: H * scale }}>
         <div className={`machine ${powered ? 'powered' : 'unpowered'}`} style={{ transform: `scale(${scale})` }}>
           <div className="panel-texture" />
@@ -112,10 +133,12 @@ export function App() {
             </div>
           )}
           <LcdZoom />
+          {dragging && <div className="drop-hint">RILASCIA: WAV → PARTE SELEZIONATA · .JSON → PROGETTO</div>}
         </div>
       </div>
       <HelpOverlay />
       <KeymapOverlay />
+      <RenameOverlay />
     </div>
   );
 }

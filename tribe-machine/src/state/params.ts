@@ -111,6 +111,14 @@ const TYPE_PARAMS: Record<PartType, ParamDef[]> = {
     p({ id: 'lfoRate', label: 'LFO RATE', hint: 'Velocità LFO sul filtro (sincronizzato)', min: 0, max: 6, def: 1, step: 1, options: ['4 BAR', '2 BAR', '1 BAR', '1/2', '1/4', '1/8', '1/16'], page: 'mod' }),
     p({ id: 'lfoAmt', label: 'LFO AMT', hint: 'Profondità LFO sul filtro', min: 0, max: 1, def: 0, page: 'mod' }),
   ],
+  sample: [
+    p({ id: 'tune', label: 'PITCH', hint: 'Intonazione del campione (semitoni)', min: -24, max: 24, def: 0, step: 1, unit: 'st', page: 'osc' }),
+    p({ id: 'start', label: 'START', hint: 'Punto di partenza nel campione', min: 0, max: 0.95, def: 0, page: 'osc' }),
+    p({ id: 'reverse', label: 'REVERSE', hint: 'Riproduzione al contrario', min: 0, max: 1, def: 0, step: 1, options: ['OFF', 'ON'], page: 'osc' }),
+    p({ id: 'tone', label: 'CUTOFF', hint: 'Passa-basso sul campione', min: 100, max: 20000, def: 20000, curve: 'exp', unit: 'Hz', page: 'filter' }),
+    p({ id: 'reso', label: 'RESO', hint: 'Risonanza', min: 0.3, max: 12, def: 0.7, page: 'filter' }),
+    p({ id: 'decay', label: 'DECAY', hint: 'Lunghezza massima (taglia la coda)', min: 10, max: 4000, def: 4000, curve: 'exp', unit: 'ms', page: 'env' }),
+  ],
 };
 
 /** Durata in battute (beat da 1/4) delle opzioni LFO RATE */
@@ -126,10 +134,11 @@ export const KNOB_MAP: Record<PartType, (string | null)[]> = {
   perc: ['tune', 'pamt', 'pdec', 'fm', 'ratio', 'noise', 'decay', null],
   bass: ['tune', 'wave', 'glide', 'cutoff', 'reso', 'egint', 'decay', 'lfoAmt'],
   acid: ['tune', 'glide', 'cutoff', 'reso', 'egint', 'decay', 'accent', 'lfoAmt'],
+  sample: ['tune', 'start', 'reverse', 'tone', 'reso', 'decay', null, null],
 };
 
 export const TYPE_LABEL: Record<PartType, string> = {
-  kick: 'KICK', snare: 'SNARE', clap: 'CLAP', hat: 'C.HAT', ohat: 'O.HAT', perc: 'PERC', bass: 'BASS', acid: 'ACID',
+  kick: 'KICK', snare: 'SNARE', clap: 'CLAP', hat: 'C.HAT', ohat: 'O.HAT', perc: 'PERC', bass: 'BASS', acid: 'ACID', sample: 'SAMPLE',
 };
 
 export const isMelodic = (t: PartType) => t === 'bass' || t === 'acid';

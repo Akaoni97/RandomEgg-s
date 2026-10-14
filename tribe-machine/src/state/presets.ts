@@ -204,6 +204,8 @@ function pack(name: string, pats: Pattern[]): Project {
   const proj = makeProject();
   proj.name = name;
   pats.forEach((p, i) => { proj.patterns[i] = p; });
+  // song dimostrativa: groove principale, variazione, ritorno
+  proj.song = [{ pattern: 0, repeats: 4 }, { pattern: 1, repeats: 2 }, { pattern: 0, repeats: 4 }];
   return proj;
 }
 

@@ -82,9 +82,8 @@ export class MonoSynth {
   }
 
   /** Applica i parametri delle manopole (chiamato ad ogni modifica) */
-  setParams(p: Record<string, number>, bpm: number) {
-    const ctx = this.ctx;
-    const now = ctx.currentTime;
+  setParams(p: Record<string, number>, bpm: number, time = this.ctx.currentTime) {
+    const now = Math.max(time, this.ctx.currentTime);
     this.params = { ...p };
     const wave = this.kind === 'acid' ? (p.wave >= 1 ? 'square' : 'sawtooth') : OSC_TYPES[Math.round(p.wave)] ?? 'sawtooth';
     if (this.osc.type !== wave) this.osc.type = wave;

@@ -3,6 +3,7 @@
 import { actions, curPart, curPattern, flash, useStore } from '../state/store';
 import { actionForCode, STEP_CODES } from './keymap';
 import * as M from '../machine';
+import { redo, undo } from '../state/history';
 import { lcdCursor, lcdEnter, lcdNudge } from '../lcd/menu';
 
 const set = useStore.setState;
@@ -131,6 +132,8 @@ function onKeyDown(e: KeyboardEvent) {
       KeyS: M.writeProject,
       KeyC: actions.copyPattern,
       KeyV: actions.pastePattern,
+      KeyZ: e.shiftKey ? redo : undo,
+      KeyY: redo,
     };
     const fn = map[e.code];
     if (fn && !e.repeat) {
@@ -183,6 +186,7 @@ export function dispatch(action: string, shift: boolean, code = '') {
     case 'play': M.playPause(); break;
     case 'stop': M.stop(); break;
     case 'tap': M.tap(); break;
+    case 'song': M.toggleSongMode(); break;
     case 'patPrev': actions.selectPattern(s.project.current - 1); break;
     case 'patNext': actions.selectPattern(s.project.current + 1); break;
     case 'mode':

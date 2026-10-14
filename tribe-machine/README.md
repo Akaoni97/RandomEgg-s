@@ -65,10 +65,12 @@ I 16 step corrispondono a una griglia 4×4 sulla tastiera (visibile anche sul pa
 | M / N | Mute / Solo della parte selezionata |
 | O / P | Banco step precedente / successivo (pattern da 32-64 step) |
 | Pag↑ / Pag↓ | Pattern successivo / precedente (in riproduzione: cambio a fine battuta) |
+| L | Song mode ON/OFF |
 | T | Tap tempo |
 | Canc | Cancella la parte (Shift+Canc = tutto il pattern) |
 | Ctrl+S | Salva (WRITE nello slot selezionato) |
 | Ctrl+C / Ctrl+V | Copia / incolla pattern |
+| Ctrl+Z / Ctrl+Y | Annulla / ripeti (fino a 100 passi) |
 | H o F1 | Aiuto con tutti i comandi |
 | F2 | Zoom del display |
 | F11 | Schermo intero |
@@ -119,6 +121,47 @@ Per parte: drive (waveshaper con oversampling e compensazione), pan, livello, ma
 Master: filtro LP/HP, bitcrusher (AudioWorklet), delay sincronizzato con feedback filtrato, riverbero a
 convoluzione con IR generata, **limiter + soft clipper di sicurezza** (picco massimo 0,98).
 
+## Motion sequence
+
+Premi **REC** (Shift+Spazio) mentre la macchina suona e muovi una manopola della parte (SOUND o PART MIX):
+il valore viene scritto su ogni step che passa. Da quel momento la manopola **si muove da sola** seguendo
+la registrazione (arco verde e badge **M**). Sugli step non registrati vale la posizione della manopola.
+Funziona anche con la rotella VALUE sulle pagine della parte e con i CC MIDI.
+Cancellazione: PART EDIT → pagina PART FX/MIX → MOTION → ENTER due volte (oppure Ctrl+Z subito dopo).
+
+## Song mode
+
+Pagina **SONG** (pulsante MODE SONG): catena fino a 64 voci, ognuna con pattern e numero di ripetizioni.
+POSITION sceglie la voce, PATTERN e REPEATS la modificano, INSERT duplica, DELETE elimina, LENGTH mostra la durata.
+Con **SONG** acceso (pulsante SONG sul pannello o tasto L) PLAY suona la catena: ogni pattern viene suonato
+per intero il numero di volte indicato, poi si passa al successivo; alla fine riparte dall'inizio. STOP torna
+all'inizio. Il display mostra `S03` (voce) e il pannello `S03/05`. In SONG MODE l'EXPORT WAV renderizza l'intera song.
+Ogni preset contiene una song dimostrativa (A ×4 → B ×2 → A ×4).
+
+## Campioni personali (WAV, MP3, OGG, FLAC, AIFF)
+
+- **Trascina un file audio sul pannello**: va nella parte selezionata, che diventa di tipo SAMPLE.
+- Oppure PART EDIT → SOUND/OSC → voce SAMPLE → ENTER.
+- Parametri: PITCH (±24 semitoni, e nota per step), START, REVERSE, CUTOFF, RESO, DECAY, più i comuni.
+- Limiti: 12 MB e 30 secondi per file. I campioni sono salvati sul PC (IndexedDB del browser) e
+  **incorporati nel file .tribe.json esportato**, quindi un progetto esportato è completo e portabile.
+- Trascinare un file `.tribe.json` sul pannello lo importa.
+
+## MIDI (Web MIDI, Chrome/Edge)
+
+GLOBAL → MIDI IN → ENTER (il browser chiede il permesso; poi si riattiva da solo a ogni accensione).
+
+| Messaggio | Funzione |
+|---|---|
+| Canale 10, note GM | 36 kick · 38/40 snare · 39 clap · 42/44 hat · 46 open hat · tom 41-50 perc |
+| Altri canali | Suonano la parte selezionata (F3 = nota base), con legato per BASS/ACID |
+| Velocity ≥ 100 | Accento |
+| CC 70-77 | Le 8 manopole SOUND della parte selezionata |
+| CC 7 / 10 / 91 / 93 / 94 | Level / Pan / Rev send / Dly send / Drive |
+| CC 1 (mod wheel) | Filtro master (passa-basso) |
+
+Con REC attivo, le note MIDI vengono registrate come i pad e i CC come motion.
+
 ## Preset (5, ognuno con pattern A + variazione B)
 
 OLD SCHOOL TRIBE (172) · FREETEKNO HYPNOTIC (176) · MENTAL ACID (186) · INDUSTRIAL TEKNO (168) · HARDTEK PUMPING (192).
@@ -129,8 +172,10 @@ Al primo avvio viene caricato OLD SCHOOL TRIBE; in seguito si riapre automaticam
 
 - **Autosave** continuo nel browser: chiudendo e riaprendo si ritrova tutto.
 - **8 slot** locali (SAVE/LOAD → SLOT, WRITE / LOAD; Ctrl+S salva nello slot selezionato).
-- **EXPORT/IMPORT FILE**: progetto completo in `.tribe.json` (16 pattern, suoni, step, effetti), da copiare dove vuoi.
-- **EXPORT WAV**: render offline del pattern corrente (4-64 battute) in WAV 16 bit.
+- **EXPORT/IMPORT FILE**: progetto completo in `.tribe.json` (16 pattern, suoni, step, motion, song, campioni), da copiare dove vuoi.
+- **EXPORT WAV**: render offline del pattern corrente (4-64 battute) o, in SONG MODE, dell'intera song (fino a 15 minuti) in WAV 16 bit.
+- **Nomi**: progetto (SAVE/LOAD → PROJECT), pattern (PATTERN → NAME), parte (PART FX/MIX → PART NAME), con ENTER.
+- **Undo/redo** di ogni modifica ai contenuti (Ctrl+Z / Ctrl+Y o pulsanti UNDO/REDO).
 
 I file importati vengono validati e riparati: un file corrotto non blocca la macchina.
 
@@ -145,12 +190,13 @@ src/
     drums.ts      voci percussive one-shot con choke senza click
     monosynth.ts  bass/acid persistenti (slide e legato reali)
     dsp.ts        curve di saturazione, rumore, IR riverbero, worklet bitcrusher
-    offline.ts    render offline + encoder WAV
+    samples.ts    campioni: IndexedDB, decodifica, incorporazione nei file
+    offline.ts    render offline a blocchi (pattern e song) + encoder WAV
   sequencer/    clock e scheduling
     sequencer.ts  lookahead scheduler sull'orologio audio, registrazione quantizzata
     timing.ts     funzioni pure (swing, quantizzazione, tap tempo)
-  state/        modello dati, store, preset, salvataggi
-  input/        tastiera: mappa riassegnabile, logica step/pad condivisa col mouse
+  state/        modello dati, store, preset, salvataggi, motion, undo/redo
+  input/        tastiera (mappa riassegnabile, logica step/pad condivisa col mouse) e MIDI
   lcd/          sistema di menu del display
   ui/           pannello React (manopole, pulsanti, LCD, step, overlay)
   machine.ts    "firmware": collega stato, motore, sequencer e animazione LED
@@ -164,6 +210,10 @@ immediato e senza salti. Se il PC si blocca, gli step persi vengono saltati inve
 **LED**: lo step si illumina quando `currentTime − latenza d'uscita` raggiunge il tempo dello step, cioè quando lo
 senti. La stessa compensazione è usata per quantizzare la registrazione live; lo step appena suonato a mano non
 viene risuonato dal sequencer (niente doppi colpi).
+
+**Motion e song**: il sequencer calcola per ogni step i parametri effettivi (manopole + valori registrati) e li
+programma nel motore allo stesso istante audio della nota; il song mode decide il pattern successivo a fine pattern
+nello stesso punto in cui avviene il cambio pattern in coda, quindi le transizioni sono a tempo.
 
 **Parametri senza click**: tutte le manopole usano rampe brevi; il cutoff dei synth sta su `frequency` mentre
 inviluppo e LFO agiscono su `detune`, così muovere il CUTOFF non interferisce con le automazioni programmate.
@@ -187,34 +237,34 @@ funzioni `livePlay`/`dispatch`) e una UI diversa (mobile) senza toccare il motor
 
 ## Verifiche effettuate
 
-- `npm test`: 11 test (timing, swing, quantizzazione, tap tempo, salvataggio→riapertura identica di tutti i preset,
-  riparazione di file corrotti, range dei parametri, nessun tasto assegnato due volte).
-- Render offline in Chromium di tutti i pattern dei preset: nessun NaN, picco massimo 0,971, RMS ≈ −9…−12 dBFS;
-  ogni parte in solo produce suono.
+- `npm test`: 18 test (timing, swing, quantizzazione, tap tempo, salvataggio→riapertura identica di tutti i preset,
+  riparazione di file corrotti anche con motion/song non validi, motion sequence, song insert/edit/delete,
+  undo/redo, rinomina, range dei parametri, nessun tasto assegnato due volte).
+- Render offline in Chromium di tutti i pattern dei preset: nessun NaN, picco massimo 0,979, RMS ≈ −9…−12 dBFS;
+  ogni parte in solo produce suono, compresa una parte SAMPLE con un WAV importato.
 - Precisione: kick a 172 BPM su 2 battute, intervalli misurati 16743-16745 campioni contro 16744,2 attesi (48 kHz).
-- Test end-to-end con tastiera simulata: step on/off, accento, tieni-step+nota, slide, mute, cambio pattern
-  in coda a fine battuta, LIVE + REC quantizzata, Ctrl+S, riapertura con autosave. Nessun errore in console.
+- Render di una song di 168 s in 36 s (≈4,7× il tempo reale), lineare con la durata.
+- Test end-to-end con tastiera e mouse simulati: step, accento, tieni-step+nota, slide, mute, cambio pattern
+  a fine battuta, LIVE + REC, Ctrl+S, autosave; song mode (A→B→A→B a ogni battuta), registrazione motion
+  trascinando CUTOFF, undo/redo della motion, import di un WAV dal display, rinomina. Nessun errore in console.
 
-Non verificato da qui: ascolto reale su PC Windows con scheda audio specifica (latenza effettiva dipende dal driver).
+Non verificato da qui: ascolto reale su PC Windows con una scheda audio specifica (la latenza effettiva dipende
+dal driver) e controller MIDI fisici (il codice usa la Web MIDI API standard).
 
 ---
 
 ## Stato delle funzioni
 
-**Implementato (fase 1 completa, buona parte della fase 2, export WAV della fase 3)**
-- Pannello hardware completo e scalabile, schermo intero, valvole reattive, display LCD con 11 pagine e zoom
-- Controllo completo da tastiera con STEP MODE e LIVE MODE, riassegnazione, aiuto, evidenziazione tasti
-- 8 parti a sintesi (kick, snare, clap, 2 hat, perc FM, bass, acid), tipo di parte cambiabile
-- Sequencer 16/32/48/64 step con banchi, 16 pattern, swing, accento, slide, nota e gate per step
-- Mute/solo, cambio pattern sincronizzato a fine battuta, copia/incolla/cancella, tap tempo
-- Effetti per parte e master, limiter di sicurezza
-- Registrazione live quantizzata, 5 preset con 10 pattern, autosave, slot, file, export WAV
+**Implementato**
+- Fase 1 completa: pannello hardware scalabile, LCD a menu con zoom, tastiera STEP/LIVE riassegnabile,
+  motore a sintesi, sequencer, BPM, preset, salvataggi
+- Fase 2: 8 parti (+ tipo SAMPLE), sequencer fino a 64 step, sintesi completa, effetti, importazione campioni,
+  16 pattern, registrazione live quantizzata, **motion sequencing**, 5 preset
+- Fase 3 (parziale): export WAV di pattern e song, **song mode / pattern chain**, **ingresso MIDI**
+- Extra: undo/redo, rinomina, drag & drop di campioni e progetti
 
 **Non ancora implementato**
-- Motion sequencing (registrazione dei movimenti delle manopole) — fase 2
-- Importazione di campioni WAV personali — fase 2
-- Song mode / catena di pattern (la pagina SONG lo indica esplicitamente) — fase 3
-- Controller MIDI (Web MIDI) — fase 3
-- Pacchetto desktop installabile (Tauri) e gestione avanzata della latenza/driver — fase 3
-- Rinomina di pattern e progetti da tastiera
-- Undo
+- MIDI clock (sincronizzazione con altre macchine) e uscita MIDI
+- Pacchetto desktop installabile (Tauri) e driver audio a bassa latenza (ASIO)
+- Motion sui parametri master (filtro, crush, delay)
+- Modalità smartphone (prevista dall'architettura, non sviluppata)

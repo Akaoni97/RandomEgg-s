@@ -50,7 +50,10 @@ export function HelpOverlay() {
               <li>Su BASS/ACID tieni premuto uno step e usa <b>+ / −</b> per cambiare nota, <b>G</b> per lo slide, <b>Shift</b>+step per l'accento.</li>
               <li>Gira CUTOFF e RESO sull'ACID mentre suona: è lì che nasce l'acid.</li>
               <li><b>Tab</b> = LIVE MODE: suona i pad a mano. <b>Shift+Spazio</b> arma la registrazione quantizzata.</li>
-              <li><b>Ctrl+S</b> salva. Il progetto è anche salvato automaticamente.</li>
+              <li>Con <b>REC</b> acceso e la macchina in play, muovi una manopola: viene registrata la <b>motion</b>.</li>
+              <li><b>L</b> = SONG MODE: la pagina SONG costruisce la catena di pattern.</li>
+              <li>Trascina un <b>file WAV</b> sul pannello: diventa un suono della parte selezionata.</li>
+              <li><b>Ctrl+S</b> salva, <b>Ctrl+Z</b> annulla. Il progetto è anche salvato automaticamente.</li>
             </ol>
           </div>
           <div>

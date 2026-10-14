@@ -5,6 +5,7 @@
 import { CRUSHER_WORKLET, driveCurve, masterClipCurve, reverbIR } from './dsp';
 import { chokeVoice, playDrum, type Voice } from './drums';
 import { MonoSynth } from './monosynth';
+import { getSampleBuffer } from './samples';
 import { DELAY_DIVS, NUM_PARTS, type MasterFx, type PartState, type PartType } from '../state/types';
 import { isMelodic } from '../state/params';
 
@@ -20,6 +21,8 @@ interface PartBus {
   mono: MonoSynth | null;
   voices: Voice[];
   driveQ: number;
+  /** i nodi stanno usando valori della motion sequence (vanno riallineati quando finisce) */
+  motionActive: boolean;
   /** ultimo stato applicato (per evitare lavoro inutile) */
   applied: PartState | null;
 }
@@ -149,7 +152,7 @@ export class AudioEngine {
     level.connect(this.sum);
     level.connect(dly).connect(this.delayIn);
     level.connect(rev).connect(this.revIn);
-    return { input, shaper, makeup, pan, level, dly, rev, type: null, mono: null, voices: [], driveQ: -1, applied: null };
+    return { input, shaper, makeup, pan, level, dly, rev, type: null, mono: null, voices: [], driveQ: -1, applied: null, motionActive: false };
   }
 
   /** Allinea i nodi persistenti allo stato di una parte (manopole mixer, synth mono). */
@@ -168,20 +171,39 @@ export class AudioEngine {
       b.type = part.type;
       if (isMelodic(part.type)) b.mono = new MonoSynth(this.ctx, part.type as 'bass' | 'acid', b.input);
     }
-    b.mono?.setParams(P, this.bpm);
+    this.setBusParams(b, P, now);
+  }
 
+  private setBusParams(b: PartBus, P: Record<string, number>, time: number) {
+    b.mono?.setParams(P, this.bpm, time);
     const dq = Math.round(P.drive * 50) / 50;
     if (dq !== b.driveQ) {
       b.driveQ = dq;
       b.shaper.curve = dq > 0 ? driveCurve(dq) : null;
     }
     // la saturazione alza il volume percepito: compensazione parziale
-    b.makeup.gain.setTargetAtTime(1 / (1 + dq * 1.3), now, 0.01);
-    b.pan.pan.setTargetAtTime(P.pan, now, 0.01);
+    b.makeup.gain.setTargetAtTime(1 / (1 + dq * 1.3), time, 0.01);
+    b.pan.pan.setTargetAtTime(P.pan, time, 0.01);
     // curva quadratica: la manopola LEVEL si comporta in modo più musicale
-    b.level.gain.setTargetAtTime(P.level * P.level, now, 0.01);
-    b.dly.gain.setTargetAtTime(P.dly, now, 0.01);
-    b.rev.gain.setTargetAtTime(P.rev, now, 0.01);
+    b.level.gain.setTargetAtTime(P.level * P.level, time, 0.01);
+    b.dly.gain.setTargetAtTime(P.dly, time, 0.01);
+    b.rev.gain.setTargetAtTime(P.rev, time, 0.01);
+  }
+
+  /**
+   * Motion sequence: applica allo step `time` i parametri effettivi (manopole + valori registrati).
+   * `eff` null = la parte non ha motion: se prima ne aveva, torna ai valori delle manopole.
+   */
+  stepParams(i: number, part: PartState, eff: Record<string, number> | null, time: number) {
+    const b = this.buses[i];
+    if (b.applied !== part) this.applyPart(i, part);
+    if (eff) {
+      this.setBusParams(b, eff, time);
+      b.motionActive = true;
+    } else if (b.motionActive) {
+      this.setBusParams(b, part.params, time);
+      b.motionActive = false;
+    }
   }
 
   applyFx(fx: MasterFx, bpm: number) {
@@ -190,7 +212,7 @@ export class AudioEngine {
     this.bpm = bpm;
     if (bpmChanged) {
       // gli LFO dei synth sono sincronizzati al tempo
-      for (const b of this.buses) if (b.mono && b.applied) b.mono.setParams(b.applied.params, bpm);
+      for (const b of this.buses) if (b.mono && b.applied) b.mono.setParams(b.applied.params, bpm, now);
     }
     if (this.fx === fx && !bpmChanged) return;
     this.fx = fx;
@@ -233,7 +255,7 @@ export class AudioEngine {
   }
 
   /** Colpo di una parte (percussioni) o nota (synth). Ritorna false se la parte non suona. */
-  trigger(i: number, part: PartState, o: TriggerOpts, legato = false) {
+  trigger(i: number, part: PartState, o: TriggerOpts, legato = false, params: Record<string, number> = part.params) {
     const b = this.buses[i];
     if (b.applied !== part) this.applyPart(i, part);
     if (b.mono) {
@@ -244,7 +266,9 @@ export class AudioEngine {
     this.cleanup(b);
     for (const v of b.voices) chokeVoice(v, o.time);
     if (part.type === 'hat') this.chokeType('ohat', o.time);
-    const v = playDrum(this.ctx, part.type, b.input, { time: o.time, vel: o.vel, pitch: o.note, params: part.params });
+    const v = playDrum(this.ctx, part.type, b.input, {
+      time: o.time, vel: o.vel, pitch: o.note, params, buffer: getSampleBuffer(part.sampleId),
+    });
     if (v) b.voices.push(v);
   }
 
@@ -260,7 +284,18 @@ export class AudioEngine {
 
   private cleanup(b: PartBus) {
     const now = this.ctx.currentTime;
-    if (b.voices.length) b.voices = b.voices.filter((v) => v.end > now);
+    if (!b.voices.length) return;
+    b.voices = b.voices.filter((v) => {
+      if (v.end > now) return true;
+      // scollega subito le voci finite: un grafo che cresce costa CPU (soprattutto offline)
+      try { v.choke.disconnect(); } catch { /* già scollegata */ }
+      return false;
+    });
+  }
+
+  /** Pulizia periodica delle voci terminate */
+  gc() {
+    for (const b of this.buses) this.cleanup(b);
   }
 
   /** Spegne tutte le note sostenute (stop, panic) */

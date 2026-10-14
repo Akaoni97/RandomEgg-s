@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import { clone, makePart, makePattern, makeProject } from './factory';
 import { clampParam, paramDef, TYPE_LABEL } from './params';
-import { BPM_MAX, BPM_MIN, NUM_PATTERNS, type MasterFx, type PartState, type PartType, type Pattern, type Project, type Step } from './types';
+import { BPM_MAX, BPM_MIN, MAX_SONG, MAX_STEPS, NUM_PATTERNS, type MasterFx, type SongEntry, type PartState, type PartType, type Pattern, type Project, type Step } from './types';
 
 export type PageId = 'pattern' | 'osc' | 'filter' | 'env' | 'mod' | 'partfx' | 'master' | 'step' | 'song' | 'global' | 'file';
 
@@ -45,6 +45,17 @@ export interface AppState {
   /** azione distruttiva in attesa di conferma (premere ENTER due volte) */
   confirm: string | null;
   latencyMs: number;
+  /** song mode attivo (PLAY suona la catena di pattern) */
+  songMode: boolean;
+  /** voce della song selezionata / in riproduzione */
+  songPos: number;
+  /** ripetizione corrente della voce di song in riproduzione */
+  songRep: number;
+  /** campo di testo aperto per rinominare */
+  rename: { target: 'pattern' | 'project' | 'part'; value: string } | null;
+  midi: { enabled: boolean; inputs: string[] };
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export const usePlayhead = create<{ step: number; pattern: number; flash: number[] }>(() => ({
@@ -79,6 +90,13 @@ const initial = (): AppState => ({
   wavBars: 8,
   confirm: null,
   latencyMs: 0,
+  songMode: false,
+  songPos: 0,
+  songRep: 0,
+  rename: null,
+  midi: { enabled: false, inputs: [] },
+  canUndo: false,
+  canRedo: false,
 });
 
 export const useStore = create<AppState>(initial);
@@ -139,6 +157,76 @@ export const actions = {
     const old = curPattern().parts[pi];
     if (old.type === type) return;
     updatePart(pi, () => ({ ...makePart(type), steps: old.steps, mute: old.mute, solo: old.solo, name: TYPE_LABEL[type] }));
+  },
+
+  setPartSample(pi: number, sampleId: string, name: string) {
+    const old = curPattern().parts[pi];
+    const base = old.type === 'sample' ? old : { ...makePart('sample'), steps: old.steps, mute: old.mute, solo: old.solo };
+    updatePart(pi, () => ({ ...base, sampleId, name: name.slice(0, 8) }));
+    const s = get();
+    if (!s.project.samples.some((x) => x.id === sampleId)) {
+      set({ project: { ...s.project, samples: [...s.project.samples, { id: sampleId, name }] } });
+    }
+  },
+
+  /** Scrive un valore nella motion sequence della parte allo step indicato */
+  recordMotion(pi: number, id: string, step: number, v: number) {
+    updatePart(pi, (p) => {
+      const lane = (p.motion[id] ?? new Array(MAX_STEPS).fill(null)).slice();
+      lane[step] = v;
+      return { ...p, motion: { ...p.motion, [id]: lane } };
+    });
+  },
+
+  clearMotion(pi: number, id?: string) {
+    updatePart(pi, (p) => {
+      if (!id) return { ...p, motion: {} };
+      const m = { ...p.motion };
+      delete m[id];
+      return { ...p, motion: m };
+    });
+  },
+
+  rename(target: 'pattern' | 'project' | 'part', value: string) {
+    const v = value.toUpperCase().replace(/[^A-Z0-9 .#&+_!-]/g, '').trim();
+    if (!v) return;
+    const s = get();
+    if (target === 'project') set({ project: { ...s.project, name: v.slice(0, 24) }, dirty: true });
+    else if (target === 'pattern') updatePattern((p) => ({ ...p, name: v.slice(0, 16) }));
+    else updatePart(s.selectedPart, (p) => ({ ...p, name: v.slice(0, 8) }));
+  },
+
+  // --- song ---
+  setSong(song: SongEntry[]) {
+    const s = get();
+    set({ project: { ...s.project, song: song.slice(0, MAX_SONG) }, dirty: true });
+  },
+
+  songEdit(pos: number, patch: Partial<SongEntry>) {
+    const song = get().project.song.slice();
+    if (!song[pos]) return;
+    const e = { ...song[pos], ...patch };
+    e.pattern = (e.pattern + NUM_PATTERNS) % NUM_PATTERNS;
+    e.repeats = Math.min(16, Math.max(1, e.repeats));
+    song[pos] = e;
+    actions.setSong(song);
+  },
+
+  songInsert(pos: number) {
+    const song = get().project.song.slice();
+    if (song.length >= MAX_SONG) { flash('SONG FULL (64)'); return; }
+    const src = song[pos] ?? { pattern: get().project.current, repeats: 1 };
+    song.splice(pos + 1, 0, { ...src });
+    actions.setSong(song);
+    set({ songPos: pos + 1 });
+  },
+
+  songDelete(pos: number) {
+    const song = get().project.song.slice();
+    if (song.length <= 1) { flash('SONG: MIN 1 VOCE'); return; }
+    song.splice(pos, 1);
+    actions.setSong(song);
+    set({ songPos: Math.min(pos, song.length - 1) });
   },
 
   toggleStep(pi: number, si: number) {

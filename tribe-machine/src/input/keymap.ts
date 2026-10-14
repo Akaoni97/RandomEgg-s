@@ -8,7 +8,7 @@ export type ActionId =
   | 'partPrev' | 'partNext' | 'paramPrev' | 'paramNext' | 'valUp' | 'valDown'
   | 'pagePrev' | 'pageNext' | 'mode' | 'mute' | 'solo' | 'tap'
   | 'bankPrev' | 'bankNext' | 'patPrev' | 'patNext'
-  | 'help' | 'zoom' | 'enter' | 'exit' | 'clear' | 'slide' | 'fullscreen';
+  | 'help' | 'zoom' | 'enter' | 'exit' | 'clear' | 'slide' | 'fullscreen' | 'song';
 
 export const STEP_CODES = [
   'Digit1', 'Digit2', 'Digit3', 'Digit4',
@@ -30,6 +30,7 @@ export const ACTIONS: ActionInfo[] = [
   { id: 'tap', label: 'Tap tempo', group: 'TRASPORTO', def: ['KeyT'] },
   { id: 'patPrev', label: 'Pattern precedente (in coda)', group: 'TRASPORTO', def: ['PageDown'] },
   { id: 'patNext', label: 'Pattern successivo (in coda)', group: 'TRASPORTO', def: ['PageUp'] },
+  { id: 'song', label: 'Song mode ON/OFF', group: 'TRASPORTO', def: ['KeyL'] },
   ...STEP_CODES.map((c, i) => ({ id: `step${i}` as ActionId, label: `Step ${i + 1} / Pad ${i + 1}`, group: 'STEP / PAD' as const, def: [c] })),
   { id: 'mode', label: 'Modalità tastiera STEP ↔ LIVE', group: 'STEP / PAD', def: ['Tab'] },
   { id: 'bankPrev', label: 'Banco step precedente (1-16 / 17-32 …)', group: 'STEP / PAD', def: ['KeyO'] },
@@ -60,6 +61,8 @@ export const FIXED_COMBOS: [string, string][] = [
   ['Tieni Step + +/−', 'Nota dello step (Shift = ottava)'],
   ['Ctrl + S', 'Salva (WRITE nello slot)'],
   ['Ctrl + C / Ctrl + V', 'Copia / incolla pattern'],
+  ['Ctrl + Z / Ctrl + Y', 'Annulla / ripeti'],
+  ['REC + manopole', 'Motion sequence (in riproduzione)'],
   ['Tasti + e − del layout', 'Funzionano anche su tastiera italiana'],
 ];
 
