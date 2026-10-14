@@ -10,6 +10,9 @@ on:
       - '.github/workflows/tribe-machine-windows.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -51,3 +54,32 @@ jobs:
             tribe-machine/release/smoke.png
           if-no-files-found: warn
           retention-days: 30
+
+      # Release GitHub: download diretto con un clic (una Release per versione, aggiornata a ogni build riuscita)
+      - name: Pubblica Release
+        if: success()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="tribe-machine-v$VERSION"
+          SHORT=$(echo "$GITHUB_SHA" | cut -c1-7)
+          cat > notes.md <<NOTES
+          **TRIBE MACHINE TM-1 per Windows 11 (64 bit)**
+
+          - \`TRIBE-MACHINE-Setup-$VERSION.exe\`: installer (icona su desktop e menu Start, si disinstalla da Impostazioni > App)
+          - \`TRIBE-MACHINE-Portable-$VERSION.exe\`: un solo file, nessuna installazione
+
+          Al primo avvio Windows SmartScreen può dire "PC protetto da Windows": l'eseguibile non è firmato con un
+          certificato commerciale. Clicca **Ulteriori informazioni → Esegui comunque**.
+
+          Build $SHORT, compilata e provata automaticamente su Windows (avvio, audio, riproduzione, LED, render).
+          NOTES
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "TRIBE MACHINE $VERSION per Windows" --notes-file notes.md
+          else
+            gh release edit "$TAG" --notes-file notes.md
+          fi
+          gh release upload "$TAG" release/TRIBE-MACHINE-Setup-$VERSION.exe release/TRIBE-MACHINE-Portable-$VERSION.exe --clobber
+          echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"

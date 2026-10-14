@@ -19,9 +19,11 @@ Due versioni, stesso programma:
   si disinstalla da *Impostazioni → App*. Non servono diritti di amministratore.
 - **`TRIBE-MACHINE-Portable-0.1.0.exe`** — un solo file, nessuna installazione: doppio clic e parte (anche da chiavetta USB).
 
-Dove trovarli: su GitHub, scheda **Actions** → workflow **"TRIBE MACHINE · Windows"** → ultima esecuzione →
-artifact **TRIBE-MACHINE-windows** (zip con installer, versione portatile e lo screenshot della prova di avvio).
-Il workflow parte da solo a ogni modifica della cartella `tribe-machine/` e si può lanciare a mano ("Run workflow").
+Dove trovarli: su GitHub, sezione **Releases** del repository → **TRIBE MACHINE 0.1.0 per Windows** →
+clic sul file `.exe` (download diretto, niente zip). La Release viene aggiornata automaticamente a ogni build
+riuscita: il workflow **"TRIBE MACHINE · Windows"** compila su Windows, prova l'app impacchettata e solo se
+la prova passa pubblica i file. In alternativa, ogni esecuzione del workflow ha anche l'artifact
+**TRIBE-MACHINE-windows** (zip con i due eseguibili e lo screenshot della prova).
 
 Al primo avvio Windows SmartScreen può mostrare *"PC protetto da Windows"*, perché l'eseguibile non è firmato
 con un certificato commerciale: clicca **Ulteriori informazioni → Esegui comunque**.
