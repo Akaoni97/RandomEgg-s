@@ -1,0 +1,32 @@
+{
+  "name": "tribe-machine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TRIBE MACHINE TM-1 — groovebox virtuale ispirata alle Electribe e alla scena Free Tekno",
+  "type": "module",
+  "scripts": {
+    "start": "vite build && vite preview --port 4173 --open",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/vt323": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

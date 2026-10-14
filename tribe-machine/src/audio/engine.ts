@@ -1,0 +1,293 @@
+// Motore audio: bus per parte, mixer, effetti master, limiter di sicurezza.
+// Funziona sia con un AudioContext (tempo reale) sia con un OfflineAudioContext
+// (export WAV e test automatici), perché non dipende da timer o dal DOM.
+
+import { CRUSHER_WORKLET, driveCurve, masterClipCurve, reverbIR } from './dsp';
+import { chokeVoice, playDrum, type Voice } from './drums';
+import { MonoSynth } from './monosynth';
+import { DELAY_DIVS, NUM_PARTS, type MasterFx, type PartState, type PartType } from '../state/types';
+import { isMelodic } from '../state/params';
+
+interface PartBus {
+  input: GainNode;
+  shaper: WaveShaperNode;
+  makeup: GainNode;
+  pan: StereoPannerNode;
+  level: GainNode;
+  dly: GainNode;
+  rev: GainNode;
+  type: PartType | null;
+  mono: MonoSynth | null;
+  voices: Voice[];
+  driveQ: number;
+  /** ultimo stato applicato (per evitare lavoro inutile) */
+  applied: PartState | null;
+}
+
+export interface TriggerOpts {
+  time: number;
+  vel: number;
+  note: number;
+  accent: boolean;
+}
+
+export class AudioEngine {
+  readonly ctx: BaseAudioContext;
+  readonly analyser: AnalyserNode;
+  private buses: PartBus[] = [];
+  private sum: GainNode;
+  private hp: BiquadFilterNode;
+  private lp: BiquadFilterNode;
+  private crusher: AudioWorkletNode | null = null;
+  private crushIn: GainNode;
+  private volume: GainNode;
+  private delay: DelayNode;
+  private delayFb: GainNode;
+  private delayIn: GainNode;
+  private reverb: ConvolverNode;
+  private revIn: GainNode;
+  private revSize = -1;
+  private revTimer: ReturnType<typeof setTimeout> | null = null;
+  private bpm = 160;
+  private fx: MasterFx | null = null;
+
+  constructor(ctx: BaseAudioContext) {
+    this.ctx = ctx;
+    const c = ctx;
+
+    this.sum = c.createGain();
+    this.hp = c.createBiquadFilter();
+    this.hp.type = 'highpass';
+    this.hp.frequency.value = 10;
+    this.hp.Q.value = 0.7;
+    this.lp = c.createBiquadFilter();
+    this.lp.type = 'lowpass';
+    this.lp.frequency.value = 20000;
+    this.lp.Q.value = 0.7;
+    this.crushIn = c.createGain();
+    this.volume = c.createGain();
+
+    const limiter = c.createDynamicsCompressor();
+    limiter.threshold.value = -4;
+    limiter.knee.value = 2;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.12;
+    const clip = c.createWaveShaper();
+    clip.curve = masterClipCurve();
+    clip.oversample = '2x';
+    this.analyser = c.createAnalyser();
+    this.analyser.fftSize = 1024;
+
+    this.sum.connect(this.hp).connect(this.lp).connect(this.crushIn);
+    this.crushIn.connect(this.volume);
+    this.volume.connect(limiter).connect(clip);
+    clip.connect(this.analyser);
+    clip.connect(c.destination);
+
+    // Delay sincronizzato con feedback filtrato (ripetizioni sempre più scure, stile dub)
+    this.delayIn = c.createGain();
+    this.delay = c.createDelay(4);
+    this.delayFb = c.createGain();
+    const fbHp = c.createBiquadFilter();
+    fbHp.type = 'highpass';
+    fbHp.frequency.value = 180;
+    const fbLp = c.createBiquadFilter();
+    fbLp.type = 'lowpass';
+    fbLp.frequency.value = 4200;
+    this.delayIn.connect(this.delay);
+    this.delay.connect(fbHp).connect(fbLp).connect(this.delayFb).connect(this.delay);
+    const dlyOut = c.createGain();
+    dlyOut.gain.value = 0.8;
+    fbLp.connect(dlyOut).connect(this.sum);
+
+    // Riverbero a convoluzione con IR generata (niente file esterni)
+    this.revIn = c.createGain();
+    const revHp = c.createBiquadFilter();
+    revHp.type = 'highpass';
+    revHp.frequency.value = 280;
+    this.reverb = c.createConvolver();
+    const revOut = c.createGain();
+    revOut.gain.value = 0.7;
+    this.revIn.connect(revHp).connect(this.reverb).connect(revOut).connect(this.sum);
+
+    for (let i = 0; i < NUM_PARTS; i++) this.buses.push(this.makeBus());
+  }
+
+  /** Carica l'AudioWorklet del bitcrusher. Se non disponibile il crush resta disattivato. */
+  async init() {
+    try {
+      const url = URL.createObjectURL(new Blob([CRUSHER_WORKLET], { type: 'application/javascript' }));
+      await this.ctx.audioWorklet.addModule(url);
+      URL.revokeObjectURL(url);
+      this.crusher = new AudioWorkletNode(this.ctx, 'tm-crusher', { outputChannelCount: [2] });
+      this.crushIn.disconnect();
+      this.crushIn.connect(this.crusher).connect(this.volume);
+    } catch (e) {
+      console.warn('Bitcrusher non disponibile', e);
+    }
+    this.setRevSize(0.45, true);
+  }
+
+  get hasCrusher() {
+    return this.crusher !== null;
+  }
+
+  private makeBus(): PartBus {
+    const c = this.ctx;
+    const input = c.createGain();
+    const shaper = c.createWaveShaper();
+    shaper.oversample = '2x';
+    const makeup = c.createGain();
+    const pan = c.createStereoPanner();
+    const level = c.createGain();
+    const dly = c.createGain();
+    const rev = c.createGain();
+    dly.gain.value = 0;
+    rev.gain.value = 0;
+    input.connect(shaper).connect(makeup).connect(pan).connect(level);
+    level.connect(this.sum);
+    level.connect(dly).connect(this.delayIn);
+    level.connect(rev).connect(this.revIn);
+    return { input, shaper, makeup, pan, level, dly, rev, type: null, mono: null, voices: [], driveQ: -1, applied: null };
+  }
+
+  /** Allinea i nodi persistenti allo stato di una parte (manopole mixer, synth mono). */
+  applyPart(i: number, part: PartState) {
+    const b = this.buses[i];
+    if (b.applied === part) return;
+    b.applied = part;
+    const P = part.params;
+    const now = this.ctx.currentTime;
+
+    if (b.type !== part.type) {
+      b.mono?.dispose();
+      b.mono = null;
+      for (const v of b.voices) chokeVoice(v, now);
+      b.voices = [];
+      b.type = part.type;
+      if (isMelodic(part.type)) b.mono = new MonoSynth(this.ctx, part.type as 'bass' | 'acid', b.input);
+    }
+    b.mono?.setParams(P, this.bpm);
+
+    const dq = Math.round(P.drive * 50) / 50;
+    if (dq !== b.driveQ) {
+      b.driveQ = dq;
+      b.shaper.curve = dq > 0 ? driveCurve(dq) : null;
+    }
+    // la saturazione alza il volume percepito: compensazione parziale
+    b.makeup.gain.setTargetAtTime(1 / (1 + dq * 1.3), now, 0.01);
+    b.pan.pan.setTargetAtTime(P.pan, now, 0.01);
+    // curva quadratica: la manopola LEVEL si comporta in modo più musicale
+    b.level.gain.setTargetAtTime(P.level * P.level, now, 0.01);
+    b.dly.gain.setTargetAtTime(P.dly, now, 0.01);
+    b.rev.gain.setTargetAtTime(P.rev, now, 0.01);
+  }
+
+  applyFx(fx: MasterFx, bpm: number) {
+    const now = this.ctx.currentTime;
+    const bpmChanged = bpm !== this.bpm;
+    this.bpm = bpm;
+    if (bpmChanged) {
+      // gli LFO dei synth sono sincronizzati al tempo
+      for (const b of this.buses) if (b.mono && b.applied) b.mono.setParams(b.applied.params, bpm);
+    }
+    if (this.fx === fx && !bpmChanged) return;
+    this.fx = fx;
+
+    // Filtro master performativo: sinistra = passa-basso, destra = passa-alto
+    const f = fx.filter;
+    const lpF = f < 0 ? 20000 * Math.pow(90 / 20000, -f) : 20000;
+    const hpF = f > 0 ? 15 * Math.pow(7000 / 15, f) : 10;
+    const q = Math.abs(f) > 0.02 ? 4 : 0.7;
+    this.lp.frequency.setTargetAtTime(lpF, now, 0.015);
+    this.hp.frequency.setTargetAtTime(hpF, now, 0.015);
+    this.lp.Q.setTargetAtTime(f < -0.02 ? q : 0.7, now, 0.02);
+    this.hp.Q.setTargetAtTime(f > 0.02 ? q : 0.7, now, 0.02);
+
+    if (this.crusher) {
+      const p = this.crusher.parameters;
+      const c = fx.crush;
+      p.get('mix')!.setValueAtTime(c > 0.01 ? Math.min(1, c * 3) : 0, now);
+      p.get('bits')!.setValueAtTime(16 - c * 12.5, now);
+      p.get('hold')!.setValueAtTime(1 + Math.round(c * c * 28), now);
+    }
+
+    const div = DELAY_DIVS[fx.delayDiv] ?? DELAY_DIVS[5];
+    this.delay.delayTime.setTargetAtTime(Math.min(3.9, (div.beats * 60) / bpm), now, 0.03);
+    this.delayFb.gain.setTargetAtTime(Math.min(0.88, fx.delayFb), now, 0.02);
+    this.setRevSize(fx.revSize);
+    // il volume master ha una curva quadratica e un trim per lasciare margine al limiter
+    this.volume.gain.setTargetAtTime(fx.volume * fx.volume * 1.4, now, 0.02);
+  }
+
+  private setRevSize(size: number, immediate = false) {
+    if (Math.abs(size - this.revSize) < 0.02) return;
+    this.revSize = size;
+    // generare l'IR costa qualche millisecondo: lo facciamo solo a manopola ferma
+    if (this.revTimer) clearTimeout(this.revTimer);
+    const apply = () => { this.reverb.buffer = reverbIR(this.ctx, this.revSize); };
+    // in render offline non ci sono pause: applica subito
+    if (immediate || 'startRendering' in this.ctx) apply();
+    else this.revTimer = setTimeout(apply, 180);
+  }
+
+  /** Colpo di una parte (percussioni) o nota (synth). Ritorna false se la parte non suona. */
+  trigger(i: number, part: PartState, o: TriggerOpts, legato = false) {
+    const b = this.buses[i];
+    if (b.applied !== part) this.applyPart(i, part);
+    if (b.mono) {
+      b.mono.noteOn({ time: o.time, note: o.note, vel: o.vel, accent: o.accent, legato });
+      return;
+    }
+    // le parti di batteria sono monofoniche come sull'hardware: il nuovo colpo strozza il precedente
+    this.cleanup(b);
+    for (const v of b.voices) chokeVoice(v, o.time);
+    if (part.type === 'hat') this.chokeType('ohat', o.time);
+    const v = playDrum(this.ctx, part.type, b.input, { time: o.time, vel: o.vel, pitch: o.note, params: part.params });
+    if (v) b.voices.push(v);
+  }
+
+  noteOff(i: number, time: number) {
+    this.buses[i].mono?.noteOff(time);
+  }
+
+  private chokeType(type: PartType, t: number) {
+    for (const b of this.buses) {
+      if (b.type === type) for (const v of b.voices) chokeVoice(v, t);
+    }
+  }
+
+  private cleanup(b: PartBus) {
+    const now = this.ctx.currentTime;
+    if (b.voices.length) b.voices = b.voices.filter((v) => v.end > now);
+  }
+
+  /** Spegne tutte le note sostenute (stop, panic) */
+  allNotesOff() {
+    const now = this.ctx.currentTime;
+    for (const b of this.buses) {
+      b.mono?.noteOff(now);
+    }
+  }
+
+  /** Panic: silenzia anche le code percussive */
+  panic() {
+    const now = this.ctx.currentTime;
+    for (const b of this.buses) {
+      b.mono?.kill();
+      for (const v of b.voices) chokeVoice(v, now);
+      b.voices = [];
+    }
+  }
+
+  /** Livello RMS master corrente (0..1) per i VU / valvole */
+  private meterBuf: Float32Array<ArrayBuffer> | null = null;
+  level(): number {
+    if (!this.meterBuf) this.meterBuf = new Float32Array(this.analyser.fftSize);
+    this.analyser.getFloatTimeDomainData(this.meterBuf);
+    let s = 0;
+    for (let i = 0; i < this.meterBuf.length; i++) s += this.meterBuf[i] * this.meterBuf[i];
+    return Math.sqrt(s / this.meterBuf.length);
+  }
+}
