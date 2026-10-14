@@ -8,7 +8,7 @@ export type ActionId =
   | 'partPrev' | 'partNext' | 'paramPrev' | 'paramNext' | 'valUp' | 'valDown'
   | 'pagePrev' | 'pageNext' | 'mode' | 'mute' | 'solo' | 'tap'
   | 'bankPrev' | 'bankNext' | 'patPrev' | 'patNext'
-  | 'help' | 'zoom' | 'enter' | 'exit' | 'clear' | 'slide' | 'fullscreen' | 'song';
+  | 'help' | 'zoom' | 'enter' | 'exit' | 'clear' | 'slide' | 'fullscreen' | 'song' | 'view' | 'shell';
 
 export const STEP_CODES = [
   'Digit1', 'Digit2', 'Digit3', 'Digit4',
@@ -51,6 +51,8 @@ export const ACTIONS: ActionInfo[] = [
   { id: 'exit', label: 'EXIT (torna a PATTERN)', group: 'NAVIGAZIONE', def: ['Backspace'] },
   { id: 'help', label: 'Aiuto comandi', group: 'SISTEMA', def: ['KeyH', 'F1'] },
   { id: 'zoom', label: 'Zoom display', group: 'SISTEMA', def: ['F2'] },
+  { id: 'view', label: 'Vista 3D / frontale', group: 'SISTEMA', def: ['F3'] },
+  { id: 'shell', label: 'Cambia scocca (Shift = precedente)', group: 'SISTEMA', def: ['F4'] },
   { id: 'fullscreen', label: 'Schermo intero', group: 'SISTEMA', def: ['F11'] },
 ];
 

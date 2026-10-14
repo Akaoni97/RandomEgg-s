@@ -17,44 +17,6 @@ const useKeymapVersion = () => useSyncExternalStore(subscribeKeymap, () => keyma
 const set = useStore.setState;
 
 // ---------------------------------------------------------------------------
-// Valvole: il bagliore segue il livello master reale
-// ---------------------------------------------------------------------------
-export function Tubes() {
-  const ref = useRef<HTMLDivElement>(null);
-  const powered = useStore((s) => s.powered);
-  useEffect(() => {
-    let raf = 0;
-    let smooth = 0;
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      const e = M.getEngine();
-      const lvl = e ? e.level() : 0;
-      smooth = Math.max(lvl, smooth * 0.9);
-      const flicker = 0.92 + Math.random() * 0.08;
-      const g = powered ? Math.min(1, 0.35 + smooth * 2.2) * flicker : 0;
-      ref.current?.style.setProperty('--glow', g.toFixed(3));
-    };
-    loop();
-    return () => cancelAnimationFrame(raf);
-  }, [powered]);
-  return (
-    <div className="tubes" ref={ref}>
-      {[0, 1].map((i) => (
-        <div className="tube" key={i}>
-          <div className="tube-glass">
-            <div className="tube-plate" />
-            <div className="tube-filament" />
-            <div className="tube-getter" />
-          </div>
-          <div className="tube-base" />
-        </div>
-      ))}
-      <div className="tubes-label">VALVE DRIVE · 12AX7</div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Sezione display + navigazione
 // ---------------------------------------------------------------------------
 

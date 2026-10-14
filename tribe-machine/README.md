@@ -4,7 +4,11 @@ Groovebox virtuale per PC ispirata alle Electribe EMX-1/ESX-1 e alla scena Free 
 Pannello hardware blu, display LCD arancione con menu veri, 16 step retroilluminati,
 motore audio a **sintesi in tempo reale** (nessun campione) e controllo completo da tastiera.
 
-![Pannello TM-1](docs/pannello.png)
+| TRIBE BLUE | UNDERGROUND |
+|---|---|
+| ![TRIBE BLUE](docs/shell-blue.jpg) | ![UNDERGROUND](docs/shell-underground.jpg) |
+| **ACID** | **MILLENNIUM CHROME** |
+| ![ACID](docs/shell-acid.jpg) | ![MILLENNIUM CHROME](docs/shell-chrome.jpg) |
 
 Progetto indipendente: nessun logo o marchio Korg, nessun campione o brano di terzi.
 Tutti i suoni sono generati dal codice, tutti i pattern sono originali.
@@ -15,11 +19,11 @@ Tutti i suoni sono generati dal codice, tutti i pattern sono originali.
 
 Due versioni, stesso programma:
 
-- **`TRIBE-MACHINE-Setup-0.1.0.exe`** — installer: scegli la cartella, crea l'icona sul desktop e nel menu Start,
+- **`TRIBE-MACHINE-Setup-<versione>.exe`** — installer: scegli la cartella, crea l'icona sul desktop e nel menu Start,
   si disinstalla da *Impostazioni → App*. Non servono diritti di amministratore.
-- **`TRIBE-MACHINE-Portable-0.1.0.exe`** — un solo file, nessuna installazione: doppio clic e parte (anche da chiavetta USB).
+- **`TRIBE-MACHINE-Portable-<versione>.exe`** — un solo file, nessuna installazione: doppio clic e parte (anche da chiavetta USB).
 
-Dove trovarli: su GitHub, sezione **Releases** del repository → **TRIBE MACHINE 0.1.0 per Windows** →
+Dove trovarli: su GitHub, sezione **Releases** del repository → la più recente **TRIBE MACHINE … per Windows** →
 clic sul file `.exe` (download diretto, niente zip). La Release viene aggiornata automaticamente a ogni build
 riuscita: il workflow **"TRIBE MACHINE · Windows"** compila su Windows, prova l'app impacchettata e solo se
 la prova passa pubblica i file. In alternativa, ogni esecuzione del workflow ha anche l'artifact
@@ -72,6 +76,29 @@ Browser consigliati: Chrome o Edge. Dopo l'installazione funziona offline.
 
 ---
 
+## Console 3D e scocche intercambiabili
+
+La macchina è una console in 3D appoggiata sul tavolo: pannello inclinato, spessore della scocca, fianchi,
+ombra, e una leggera parallasse che segue il mouse. **F3** (o il pulsante 3D/FLAT) passa alla vista frontale,
+più leggibile su schermi piccoli. Tutti i comandi funzionano in entrambe le viste.
+
+Quattro **scocche** (selettore SHELL in alto a destra, tasto **F4**, oppure GLOBAL → SHELL). Il cambio è animato:
+la console si solleva, gira e torna giù con la scocca nuova. Ogni scocca cambia chassis, materiali, LCD (colori
+e font), luci dei tasti step, LED, manopole, pulsanti, serigrafie, adesivi e stile del visualizzatore:
+
+| Scocca | Chassis | Display | Luci | Visualizzatore |
+|---|---|---|---|---|
+| **TRIBE BLUE** | metallo blu spazzolato (stile Electribe) | LCD ambra, font VT323 | rosso / arancio, playhead verde | barre a segmenti |
+| **UNDERGROUND** | nero verniciato a polvere, cemento graffiato, fianchi e fascia di pericolo gialli e neri | display rosso su nero tipo VFD, font Syne Mono | rosso fuoco, playhead bianco | blocchi LED |
+| **ACID** | giallo acido con retino, scacchi neri, manopole verdi trasparenti | LCD verde STN, font DotGothic16 | verde neon, accenti gialli, playhead rosa UV | oscilloscopio protagonista |
+| **MILLENNIUM CHROME** | alluminio cromato spazzolato, fianchi in acrilico fumé | LCD blu negativo, font Share Tech Mono | azzurro ghiaccio, playhead turchese | spettro a specchio |
+
+La scelta della scocca e della vista è salvata sul PC. Tutti i font sono inclusi: funziona offline.
+
+**Visualizzatore audio** (al posto delle valvole): spettro in 28 bande e oscilloscopio letti in tempo reale
+dall'uscita master, con impulsi sincronizzati al sequencer (flash su ogni quarto, rimbalzo su ogni kick) e una
+riga di 16 segmenti che segue la posizione nella battuta. A macchina ferma "respira" lentamente.
+
 ## Tastiera (codici fisici: la griglia resta uguale con QWERTY, AZERTY, QWERTZ)
 
 I 16 step corrispondono a una griglia 4×4 sulla tastiera (visibile anche sul pannello, sezione KEY GRID):
@@ -111,6 +138,8 @@ I 16 step corrispondono a una griglia 4×4 sulla tastiera (visibile anche sul pa
 | H o F1 | Aiuto con tutti i comandi |
 | F2 | Zoom del display |
 | F11 | Schermo intero |
+| F3 | Vista 3D / frontale |
+| F4 | Scocca successiva (Shift+F4 = precedente) |
 
 `+` e `−` sono riconosciuti anche dal carattere: sulla tastiera italiana funzionano i tasti `+` e `-` normali.
 Tutti i comandi a tasto singolo si **riassegnano** da GLOBAL → KEY MAP (o dall'aiuto): un tasto riassegnato
@@ -136,7 +165,7 @@ Rotellina sul display = VALUE. Mouse e tastiera si usano insieme.
 - **PARTI**: selezione (LED rosso = trigger), MUTE, SOLO. **TRANSPORT**: display pattern, PAT ±, COPY/PASTE/CLEAR,
   STEP/LIVE, TAP, REC, STOP, PLAY.
 - **16 STEP**: rosso = attivo, arancio = accento, verde = playhead, ⌒ = slide, numero = nota (parti melodiche).
-- Valvole: il bagliore segue il livello reale dell'uscita master.
+- Visualizzatore audio: spettro e oscilloscopio dell'uscita master, a tempo con il sequencer.
 
 ---
 

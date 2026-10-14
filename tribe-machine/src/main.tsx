@@ -1,6 +1,13 @@
 import { createRoot } from 'react-dom/client';
 import '@fontsource/vt323/400.css';
+import '@fontsource/share-tech-mono/400.css';
+import '@fontsource/dotgothic16/400.css';
+import '@fontsource/syne-mono/400.css';
+import '@fontsource/black-ops-one/400.css';
+import '@fontsource/orbitron/700.css';
+import '@fontsource/monoton/400.css';
 import './ui/panel.css';
+import './ui/skins.css';
 import { App } from './ui/App';
 import { boot } from './machine';
 import { installKeyboard } from './input/keyboard';

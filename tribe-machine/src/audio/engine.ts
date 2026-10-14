@@ -80,7 +80,8 @@ export class AudioEngine {
     clip.curve = masterClipCurve();
     clip.oversample = '2x';
     this.analyser = c.createAnalyser();
-    this.analyser.fftSize = 1024;
+    this.analyser.fftSize = 2048;
+    this.analyser.smoothingTimeConstant = 0.55;
 
     this.sum.connect(this.hp).connect(this.lp).connect(this.crushIn);
     this.crushIn.connect(this.volume);

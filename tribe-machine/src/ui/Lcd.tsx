@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { buildPage, lcdNudge, type LcdItem } from '../lcd/menu';
 import { curPattern, useStore } from '../state/store';
 import { TYPE_LABEL } from '../state/params';
+import { usePrefs } from './skins';
 
 function Bar({ item, segs = 20 }: { item: LcdItem; segs?: number }) {
   if (item.norm === undefined) return <span className="lcd-bar empty" />;
@@ -22,6 +23,7 @@ const pad = (s: string, n: number) => (s.length >= n ? s.slice(0, n) : s + ' '.r
 
 export function Lcd() {
   const s = useStore();
+  usePrefs((p) => p.skin + p.view);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -91,6 +93,7 @@ export function Lcd() {
 /** Display ingrandito: tutte le voci della pagina, cliccabili */
 export function LcdZoom() {
   const s = useStore();
+  usePrefs((p) => p.skin + p.view);
   if (!s.lcdZoom || !s.powered) return null;
   const page = buildPage(s);
   const cur = Math.min(s.cursor, page.items.length - 1);

@@ -1,0 +1,421 @@
+/* =========================================================================
+   SCOCCHE INTERCAMBIABILI + CONSOLE 3D + VISUALIZZATORE
+   La scocca predefinita (TRIBE BLUE) è definita in panel.css (.stage).
+   ========================================================================= */
+
+/* ------------------------------------------------------------------ UNDERGROUND */
+.stage[data-skin="underground"] {
+  --accent: #ff2a1a;
+  --ph: #f2f2f2;
+  --led-a: #ff2a1a;
+  --led-b: #ff7a00;
+  --led-c: #e9e9e9;
+  --key-led: #ff2a1a;
+  --key-acc: #ff9a00;
+  --key-bg: linear-gradient(180deg, #2e2e2e, #161616 70%, #0c0c0c);
+  --seg: #ff2a1a;
+  --seg-bg: #070000;
+  --chassis:
+    radial-gradient(ellipse at 15% -10%, rgba(255,255,255,0.10), transparent 45%),
+    radial-gradient(ellipse at 85% 110%, rgba(120,40,10,0.35), transparent 55%),
+    linear-gradient(180deg, #2c2c2c, #1b1b1b 45%, #0f0f0f);
+  --edge: linear-gradient(180deg, #151515, #050505);
+  --cheek: repeating-linear-gradient(45deg, #ffd000 0 22px, #111 22px 44px);
+  --ring: #000;
+  /* cemento / vernice a polvere graffiata */
+  --texture:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(-20deg, transparent 0 140px, rgba(255,255,255,0.05) 140px 141px, transparent 141px 260px);
+  --texture-opacity: 0.32;
+  --texture-blend: overlay;
+  --silk: #dcdcdc;
+  --silk-dim: rgba(220, 220, 220, 0.55);
+  --sec-border: rgba(255, 255, 255, 0.16);
+  --sec-bg: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.38));
+  --title-bg: #ff2a1a;
+  --title-fg: #0a0a0a;
+  --brand-font: 'Black Ops One', Impact, sans-serif;
+  --brand-size: 48px;
+  --brand-spacing: 1px;
+  --brand-style: normal;
+  --brand-color: #e8e8e8;
+  --brand-shadow: 0 0 1px #000, 3px 3px 0 rgba(255,42,26,0.55);
+  --grill-dot: #000;
+  --stencil-font: 'Black Ops One', Impact, sans-serif;
+  --stencil-color: rgba(255, 42, 26, 0.9);
+  --well: #080808;
+  --bezel: linear-gradient(180deg, #000, #121212);
+  --lcd-bg: radial-gradient(ellipse at 50% 40%, #1d0503, #090000 70%);
+  --lcd-off: #050000;
+  --lcd-ink: #ff3b22;
+  --lcd-hi: #0b0000;
+  --lcd-ghost: rgba(255, 59, 34, 0.12);
+  --lcd-vignette: rgba(0, 0, 0, 0.85);
+  --lcd-halo: rgba(255, 40, 20, 0.22);
+  --lcd-font: 'Syne Mono', monospace;
+  --lcd-size: 27px;
+  --lcd-text-shadow: 0 0 5px rgba(255, 60, 30, 0.95), 0 0 14px rgba(255, 30, 10, 0.55);
+  --knurl-a: #040404;
+  --knurl-b: #1d1d1d;
+  --cap: radial-gradient(circle at 38% 30%, #3c3c3c, #141414 60%, #050505 100%);
+  --pointer: #ff2a1a;
+  --btn-bg: linear-gradient(180deg, #3d3d3d, #1d1d1d);
+  --btn-edge: #000;
+  --btn-fg: #e0e0e0;
+  --btn2-bg: linear-gradient(180deg, #262626, #0a0a0a);
+  --btn3-bg: linear-gradient(180deg, #ff4b2b, #b31808);
+  --btn3-edge: #4a0800;
+  --viz-bg: #000;
+  --viz-a: #ff2a1a;
+  --viz-b: #ffb000;
+  --viz-line: #ffffff;
+}
+
+/* ------------------------------------------------------------------ ACID */
+.stage[data-skin="acid"] {
+  --accent: #ff2bd6;
+  --ph: #ff2bd6;
+  --led-a: #ff2b5a;
+  --led-b: #ffe600;
+  --led-c: #39ff14;
+  --key-led: #39ff14;
+  --key-acc: #fff200;
+  --key-bg: linear-gradient(180deg, #2a2d1a, #14160b 70%, #0b0c06);
+  --seg: #39ff14;
+  --seg-bg: #020a00;
+  --chassis:
+    radial-gradient(ellipse at 50% -20%, rgba(255,255,255,0.45), transparent 55%),
+    linear-gradient(180deg, #f6ff3a, #e3f000 45%, #b8d000);
+  --edge: linear-gradient(180deg, #9cb000, #5f6c00);
+  --cheek: linear-gradient(90deg, #0a0a0a, #2a2a2a 50%, #0a0a0a);
+  --ring: #2b3000;
+  /* retino a punti stile flyer */
+  --texture:
+    radial-gradient(circle, rgba(0,0,0,0.16) 1.2px, transparent 1.6px) 0 0 / 7px 7px,
+    linear-gradient(115deg, transparent 62%, rgba(0,0,0,0.06) 62% 70%, transparent 70%);
+  --texture-opacity: 0.6;
+  --texture-blend: multiply;
+  --silk: #0d0d0d;
+  --silk-dim: rgba(13, 13, 13, 0.62);
+  --sec-border: rgba(0, 0, 0, 0.55);
+  --sec-bg: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0.08));
+  --title-bg: #0d0d0d;
+  --title-fg: #f4ff2a;
+  --brand-font: 'Monoton', 'Arial Black', sans-serif;
+  --brand-size: 42px;
+  --brand-spacing: 0px;
+  --brand-style: normal;
+  --brand-color: #0d0d0d;
+  --brand-shadow: 2px 2px 0 rgba(255, 43, 214, 0.75);
+  --grill-dot: rgba(0, 0, 0, 0.8);
+  --stencil-font: 'Monoton', Impact, sans-serif;
+  --stencil-color: rgba(255, 43, 214, 0.95);
+  --well: #101300;
+  --bezel: linear-gradient(180deg, #0d0d0d, #1d1f12);
+  --lcd-bg: radial-gradient(ellipse at 50% 42%, #c9f06a, #a5d83e 60%, #84b923);
+  --lcd-off: #2a3311;
+  --lcd-ink: #0c2400;
+  --lcd-hi: #c3ec63;
+  --lcd-ghost: rgba(12, 36, 0, 0.12);
+  --lcd-vignette: rgba(40, 70, 0, 0.55);
+  --lcd-halo: rgba(170, 255, 60, 0.3);
+  --lcd-font: 'DotGothic16', monospace;
+  --lcd-size: 28px;
+  --lcd-text-shadow: 1.5px 1.5px 0 rgba(20, 60, 0, 0.22);
+  --knurl-a: #0b0b0b;
+  --knurl-b: #303030;
+  /* manopole in plastica verde trasparente */
+  --cap: radial-gradient(circle at 38% 30%, #c2ff8a, #3bd400 45%, #0d5c00 100%);
+  --pointer: #0a0a0a;
+  --btn-bg: linear-gradient(180deg, #2d2d2d, #0b0b0b);
+  --btn-edge: #000;
+  --btn-fg: #f4ff2a;
+  --btn2-bg: linear-gradient(180deg, #2d2d2d, #0b0b0b);
+  --btn3-bg: linear-gradient(180deg, #ff6be6, #c4009e);
+  --btn3-edge: #55003f;
+  --viz-bg: #020600;
+  --viz-a: #39ff14;
+  --viz-b: #fff200;
+  --viz-line: #ff2bd6;
+}
+
+/* ------------------------------------------------------------------ MILLENNIUM CHROME */
+.stage[data-skin="chrome"] {
+  --accent: #00a8ff;
+  --ph: #00ffd0;
+  --led-a: #ff2d55;
+  --led-b: #00b4ff;
+  --led-c: #00ffd0;
+  --key-led: #00b4ff;
+  --key-acc: #d6f4ff;
+  --key-bg: linear-gradient(180deg, #3a4452, #1c232d 70%, #131820);
+  --seg: #3fd8ff;
+  --seg-bg: #000c14;
+  --chassis:
+    linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0) 12%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.18) 100%),
+    linear-gradient(100deg, rgba(255,255,255,0) 25%, rgba(255,255,255,0.55) 40%, rgba(255,255,255,0) 52%),
+    linear-gradient(180deg, #eef1f5, #c7ccd4 45%, #a3aab4);
+  --edge: linear-gradient(180deg, #9aa2ad, #5b626c);
+  /* fianchi in acrilico fumé */
+  --cheek: linear-gradient(90deg, rgba(20,40,70,0.95), rgba(90,140,210,0.75) 50%, rgba(20,40,70,0.95));
+  --ring: #6b737e;
+  /* alluminio spazzolato */
+  --texture:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.18) 0 1px, rgba(0,0,0,0.05) 1px 2px, transparent 2px 3px),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0 9px, rgba(255,255,255,0.05) 9px 17px);
+  --texture-opacity: 0.75;
+  --texture-blend: overlay;
+  --silk: #18202c;
+  --silk-dim: rgba(24, 32, 44, 0.62);
+  --sec-border: rgba(24, 32, 44, 0.32);
+  --sec-bg: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(0,0,0,0.06));
+  --title-bg: #18202c;
+  --title-fg: #dff3ff;
+  --brand-font: 'Orbitron', 'Arial Black', sans-serif;
+  --brand-size: 40px;
+  --brand-spacing: 2px;
+  --brand-style: normal;
+  --brand-color: #18202c;
+  --brand-shadow: 0 1px 0 rgba(255,255,255,0.9), 0 -1px 0 rgba(0,0,0,0.25);
+  --grill-dot: rgba(10, 16, 26, 0.7);
+  --stencil-font: 'Orbitron', Impact, sans-serif;
+  --stencil-color: rgba(0, 80, 160, 0.95);
+  --well: #121a24;
+  --bezel: linear-gradient(180deg, #0c1118, #222a35);
+  --lcd-bg: radial-gradient(ellipse at 50% 40%, #2a64ee, #0f37b8 60%, #082688);
+  --lcd-off: #0a1430;
+  --lcd-ink: #eaf6ff;
+  --lcd-hi: #0f37b8;
+  --lcd-ghost: rgba(234, 246, 255, 0.13);
+  --lcd-vignette: rgba(0, 10, 50, 0.6);
+  --lcd-halo: rgba(60, 140, 255, 0.35);
+  --lcd-font: 'Share Tech Mono', monospace;
+  --lcd-size: 27px;
+  --lcd-text-shadow: 0 0 6px rgba(170, 215, 255, 0.85);
+  --knurl-a: #7e858f;
+  --knurl-b: #d9dde3;
+  --cap: radial-gradient(circle at 38% 30%, #ffffff, #c6cbd3 40%, #7c838d 100%);
+  --pointer: #00a8ff;
+  --btn-bg: linear-gradient(180deg, #ffffff, #c4c9d1);
+  --btn-edge: #6b737e;
+  --btn-fg: #18202c;
+  --btn2-bg: linear-gradient(180deg, #3a4452, #141a22);
+  --btn3-bg: linear-gradient(180deg, #6fd6ff, #0088cc);
+  --btn3-edge: #004466;
+  --viz-bg: #000812;
+  --viz-a: #00b4ff;
+  --viz-b: #00ffd0;
+  --viz-line: #ffffff;
+}
+
+/* testi chiari su fondi scuri restano leggibili anche sulle scocche chiare */
+.bank-btn { color: #dfe3ea; }
+.mode-leds { color: inherit; }
+
+/* =========================================================================
+   CONSOLE 3D
+   ========================================================================= */
+
+.console {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1600px;
+  height: 940px;
+  transform-origin: 0 0;
+  perspective: 2600px;
+  perspective-origin: 50% 0%;
+}
+.console-tilt {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 60%;
+  transform: rotateX(calc(var(--tilt, 0deg) + var(--tilt-add, 0deg))) rotateY(var(--yaw, 0deg));
+  transition: transform 0.5s cubic-bezier(.2,.8,.2,1);
+}
+.stage.view-3d .console-tilt { --tilt: 20deg; }
+.console-body {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.console-body.swapping { animation: shell-swap 0.8s cubic-bezier(.5,0,.3,1); }
+@keyframes shell-swap {
+  0% { transform: none; }
+  45% { transform: translateZ(180px) rotateX(-10deg) rotateY(-12deg) rotateZ(-1.5deg); filter: brightness(1.2); }
+  50% { transform: translateZ(190px) rotateX(-10deg) rotateY(-12deg) rotateZ(-1.5deg); filter: brightness(2.4) saturate(0.4); }
+  100% { transform: none; filter: none; }
+}
+
+.stage .machine { position: absolute; transform: translateZ(0); }
+
+/* spessore della scocca: frontale, fianchi, fondo */
+.console-front, .console-back {
+  position: absolute;
+  left: 18px;
+  width: calc(100% - 36px);
+  height: 64px;
+  background: var(--edge);
+  transform-origin: top;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.18), inset 0 -10px 18px rgba(0,0,0,0.45);
+}
+.console-front { top: 100%; transform: rotateX(-90deg); border-radius: 0 0 10px 10px; }
+.console-front::after {
+  /* targhetta frontale con le prese */
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  width: 360px;
+  height: 22px;
+  margin-left: -180px;
+  border-radius: 11px;
+  background:
+    radial-gradient(circle, #050505 6px, #3a3a3a 7px, transparent 8px) 0 0 / 40px 22px repeat-x;
+  opacity: 0.85;
+}
+.console-back { top: 0; transform: rotateX(-90deg); filter: brightness(0.6); }
+.console-side {
+  position: absolute;
+  top: 14px;
+  width: 64px;
+  height: calc(100% - 28px);
+  background: var(--cheek);
+  transform-origin: left;
+  transform: rotateY(90deg);
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,0.4), inset 0 0 24px rgba(0,0,0,0.5);
+  border-radius: 8px;
+}
+.console-side.left { left: 0; }
+.console-side.right { left: 100%; }
+.console-floor {
+  position: absolute;
+  inset: 30px -20px -10px -20px;
+  transform: translateZ(-70px);
+  background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0.85), rgba(0,0,0,0.5) 55%, transparent 72%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+.stage.view-flat .console-front,
+.stage.view-flat .console-back,
+.stage.view-flat .console-side { display: none; }
+
+/* sfondo della scena: club buio, luce dall'alto */
+.stage {
+  transition: background 0.6s;
+}
+.stage::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% -5%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 80% 30% at 50% 105%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%);
+  transition: background 0.6s;
+}
+
+/* =========================================================================
+   SELETTORE SCOCCA
+   ========================================================================= */
+
+.shell-block { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 150px; }
+.shell-swatches { display: flex; gap: 6px; }
+.shell-swatch {
+  width: 28px;
+  height: 22px;
+  border-radius: 4px;
+  border: 2px solid rgba(0,0,0,0.65);
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.5);
+  transition: transform 0.08s;
+}
+.shell-swatch:active { transform: translateY(2px); }
+.shell-swatch.on { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 12px var(--accent); }
+.shell-name { font: 700 10px var(--font-silk); letter-spacing: 1.5px; color: var(--silk); white-space: nowrap; }
+.shell-row { display: flex; gap: 8px; align-items: center; }
+
+/* =========================================================================
+   VISUALIZZATORE AUDIO (al posto delle valvole)
+   ========================================================================= */
+
+.viz {
+  --pulse: 0;
+  position: relative;
+  width: 380px;
+  height: 108px;
+  margin-left: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #050608, #14161c);
+  box-shadow:
+    inset 0 3px 8px rgba(0,0,0,0.9),
+    0 1px 0 rgba(255,255,255,0.2),
+    0 0 calc(var(--pulse) * 26px) color-mix(in srgb, var(--viz-a) calc(var(--pulse) * 70%), transparent);
+  border: 2px solid var(--ring);
+  flex: none;
+}
+.viz canvas { display: block; width: 100%; height: 100%; border-radius: 6px; }
+.viz-label {
+  position: absolute;
+  bottom: -14px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font: 700 9px var(--font-silk);
+  letter-spacing: 2px;
+  color: var(--silk-dim);
+}
+
+/* =========================================================================
+   DECORAZIONI SPECIFICHE
+   ========================================================================= */
+
+/* UNDERGROUND: fascia di pericolo e tag spray */
+.stage[data-skin="underground"] .machine::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  background: repeating-linear-gradient(45deg, #ffd000 0 14px, #111 14px 28px);
+  opacity: 0.9;
+}
+.stage[data-skin="underground"] .sticker { background: #ff2a1a; color: #000; }
+.stage[data-skin="underground"] .stencil { font-size: 24px; transform: rotate(-2.5deg); }
+.stage[data-skin="underground"] .sec-title .silk-orange { color: #fff; }
+.stage[data-skin="underground"] .step-keycap { background: #1a1a1a; color: #ff3b22; box-shadow: 0 2px 0 #000; }
+
+/* ACID: smiley sull'adesivo e scacchi neri */
+.stage[data-skin="acid"] .machine::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 7px;
+  background: repeating-conic-gradient(#0d0d0d 0 25%, #f6ff3a 0 50%) 0 0 / 14px 14px;
+}
+.stage[data-skin="acid"] .sticker { background: #fff200; color: #0d0d0d; border: 2px solid #0d0d0d; border-radius: 12px; }
+.stage[data-skin="acid"] .stencil { font-size: 20px; letter-spacing: 1px; -webkit-mask-image: none; text-shadow: 2px 2px 0 #0d0d0d, -1px -1px 0 #0d0d0d; }
+.stage[data-skin="acid"] .screw { background: radial-gradient(circle at 35% 30%, #ffffff, #b9b9b9 45%, #555 80%); }
+.stage[data-skin="acid"] .step-keycap { background: #0d0d0d; color: #f4ff2a; box-shadow: 0 2px 0 #444; }
+.stage[data-skin="acid"] .engrave { color: rgba(0,0,0,0.55); text-shadow: none; }
+
+/* CHROME: profilo cromato e targhetta incisa */
+.stage[data-skin="chrome"] .machine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,0.7), inset 0 0 0 5px rgba(0,0,0,0.12);
+}
+.stage[data-skin="chrome"] .sticker { background: #18202c; color: #dff3ff; }
+.stage[data-skin="chrome"] .stencil { font-size: 15px; letter-spacing: 4px; top: 38px; }
+.stage[data-skin="chrome"] .step-keycap { background: #18202c; color: #8fe4ff; box-shadow: 0 2px 0 #000; }
+.stage[data-skin="chrome"] .engrave { color: rgba(0,0,0,0.45); text-shadow: 0 1px 0 rgba(255,255,255,0.6); }
+.stage[data-skin="chrome"] .grill { background-color: rgba(0,0,0,0.06); }

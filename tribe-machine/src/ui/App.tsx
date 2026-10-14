@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { flash, useStore } from '../state/store';
 import { RenameOverlay } from './Rename';
 import * as M from '../machine';
@@ -7,21 +7,53 @@ import { HwButton, Led } from './Controls';
 import { LcdZoom } from './Lcd';
 import { HelpOverlay, KeymapOverlay } from './Overlays';
 import {
-  DisplaySection, KeyGrid, MasterSection, MixSection, PartsSection, SoundSection, StepSection, TransportSection, Tubes,
+  DisplaySection, KeyGrid, MasterSection, MixSection, PartsSection, SoundSection, StepSection, TransportSection,
 } from './Sections';
+import { Visualizer } from './Visualizer';
+import { SKINS, setSkin, skinById, toggleView, usePrefs } from './skins';
 
 const W = 1600;
 const H = 940;
 
-function useScale() {
+function useScale(view: string) {
   const [scale, setScale] = useState(1);
   useEffect(() => {
-    const f = () => setScale(Math.min(window.innerWidth / (W + 24), window.innerHeight / (H + 24)));
+    // in 3D la console inclinata occupa un po' più di spazio (spessore, prospettiva)
+    const k = view === '3d' ? 0.9 : 1;
+    const f = () => setScale(k * Math.min(window.innerWidth / (W + 24), window.innerHeight / (H + 24)));
     f();
     window.addEventListener('resize', f);
     return () => window.removeEventListener('resize', f);
-  }, []);
+  }, [view]);
   return scale;
+}
+
+/** Selettore delle scocche intercambiabili + vista 3D/piatta */
+function ShellSelector() {
+  const skin = usePrefs((p) => p.skin);
+  const view = usePrefs((p) => p.view);
+  return (
+    <div className="shell-block">
+      <div className="silk">SHELL</div>
+      <div className="shell-swatches">
+        {SKINS.map((s) => (
+          <button
+            key={s.id}
+            tabIndex={-1}
+            className={`shell-swatch ${skin === s.id ? 'on' : ''}`}
+            style={{ background: s.swatch }}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setSkin(s.id)}
+            title={`Scocca ${s.name} (F4 = scocca successiva)`}
+          />
+        ))}
+      </div>
+      <div className="shell-row">
+        <span className="shell-name">{skinById(skin).name}</span>
+        <HwButton size="sm" sub={view === '3d' ? '3D' : 'FLAT'} onPress={() => toggleView()} title="Vista 3D / frontale (F3)" />
+      </div>
+    </div>
+  );
 }
 
 /** Spirale "free tekno" disegnata a mano */
@@ -39,11 +71,42 @@ function Spiral({ size = 46 }: { size?: number }) {
   );
 }
 
+/** Faccina acid (disegnata qui, nessun logo di terzi) */
+const Smiley = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20">
+    <circle cx="10" cy="10" r="9" fill="#ffe600" stroke="#0d0d0d" strokeWidth="1.6" />
+    <circle cx="7" cy="8" r="1.4" fill="#0d0d0d" />
+    <circle cx="13" cy="8" r="1.4" fill="#0d0d0d" />
+    <path d="M5.5 11.5 Q10 16.5 14.5 11.5" fill="none" stroke="#0d0d0d" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
 const Screw = ({ x, y }: { x: string; y: string }) => <div className="screw" style={{ left: x, top: y }} />;
 
 export function App() {
-  const scale = useScale();
+  const skinId = usePrefs((p) => p.skin);
+  const view = usePrefs((p) => p.view);
+  const swapping = usePrefs((p) => p.swapping);
+  const skin = skinById(skinId);
+  const scale = useScale(view);
   const powered = useStore((s) => s.powered);
+  const tiltRef = useRef<HTMLDivElement>(null);
+
+  // parallasse: la console segue leggermente il mouse (non mentre si trascina una manopola)
+  const onMove = (e: React.PointerEvent) => {
+    const el = tiltRef.current;
+    if (!el || view !== '3d' || e.buttons) return;
+    const nx = e.clientX / window.innerWidth - 0.5;
+    const ny = e.clientY / window.innerHeight - 0.5;
+    el.style.setProperty('--yaw', (nx * 5).toFixed(2) + 'deg');
+    el.style.setProperty('--tilt-add', (ny * -3).toFixed(2) + 'deg');
+  };
+  useEffect(() => {
+    if (view === 'flat') {
+      tiltRef.current?.style.setProperty('--yaw', '0deg');
+      tiltRef.current?.style.setProperty('--tilt-add', '0deg');
+    }
+  }, [view]);
   const [booting, setBooting] = useState(false);
   const [dragging, setDragging] = useState(false);
 
@@ -70,13 +133,23 @@ export function App() {
 
   return (
     <div
-      className="stage"
+      className={`stage view-${view}`}
+      data-skin={skinId}
+      onPointerMove={onMove}
       onDragOver={(e) => { e.preventDefault(); if (!dragging) setDragging(true); }}
       onDragLeave={(e) => { if (e.currentTarget === e.target) setDragging(false); }}
       onDrop={onDrop}
     >
       <div className="machine-holder" style={{ width: W * scale, height: H * scale }}>
-        <div className={`machine ${powered ? 'powered' : 'unpowered'}`} style={{ transform: `scale(${scale})` }}>
+       <div className="console" style={{ transform: `scale(${scale})` }}>
+        <div className="console-tilt" ref={tiltRef}>
+         <div className={`console-body ${swapping ? 'swapping' : ''}`}>
+          <div className="console-floor" />
+          <div className="console-back" />
+          <div className="console-side left" />
+          <div className="console-side right" />
+          <div className="console-front" />
+        <div className={`machine ${powered ? 'powered' : 'unpowered'}`}>
           <div className="panel-texture" />
           <Screw x="14px" y="14px" /><Screw x="calc(100% - 30px)" y="14px" />
           <Screw x="14px" y="calc(100% - 30px)" /><Screw x="calc(100% - 30px)" y="calc(100% - 30px)" />
@@ -87,17 +160,18 @@ export function App() {
               <Spiral />
               <div>
                 <div className="brand-name">TRIBE<span>MACHINE</span></div>
-                <div className="brand-sub">TM-1 · RHYTHM SYNTHESIZER · REAL-TIME DSP ENGINE</div>
+                <div className="brand-sub">{skin.tagline}</div>
               </div>
             </div>
             <div className="sticker" title="adesivo consumato">
-              <Spiral size={20} /> NO SYSTEM · NO BORDER
+              {skinId === 'acid' ? <Smiley /> : <Spiral size={20} />} {skin.sticker}
             </div>
-            <Tubes />
+            <Visualizer />
             <div className="grill-area">
               <div className="grill" />
-              <div className="stencil">FREE TEKNO SOUND SYSTEM</div>
+              <div className="stencil">{skin.stencil}</div>
             </div>
+            <ShellSelector />
             <div className="power-block">
               <div className="silk">POWER</div>
               <button tabIndex={-1} className={`power-switch ${powered ? 'on' : ''}`} onClick={power} title="Accensione (avvia il motore audio)">
@@ -132,10 +206,13 @@ export function App() {
               <small>il motore audio del browser si avvia solo dopo un gesto dell'utente</small>
             </div>
           )}
-          <LcdZoom />
           {dragging && <div className="drop-hint">RILASCIA: WAV → PARTE SELEZIONATA · .JSON → PROGETTO</div>}
         </div>
+         </div>
+        </div>
+       </div>
       </div>
+      <LcdZoom />
       <HelpOverlay />
       <KeymapOverlay />
       <RenameOverlay />

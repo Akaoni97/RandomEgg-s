@@ -4,6 +4,7 @@ import { actions, curPart, curPattern, flash, useStore } from '../state/store';
 import { actionForCode, STEP_CODES } from './keymap';
 import * as M from '../machine';
 import { redo, undo } from '../state/history';
+import { cycleSkin, toggleView } from '../ui/skins';
 import { lcdCursor, lcdEnter, lcdNudge } from '../lcd/menu';
 
 const set = useStore.setState;
@@ -233,6 +234,8 @@ export function dispatch(action: string, shift: boolean, code = '') {
     case 'exit': set({ page: 'pattern', cursor: 0, confirm: null, lcdZoom: false }); break;
     case 'help': set({ help: !s.help }); break;
     case 'zoom': set({ lcdZoom: !s.lcdZoom }); break;
+    case 'view': toggleView(); break;
+    case 'shell': cycleSkin(shift ? -1 : 1); break;
     case 'fullscreen': void toggleFullscreen(); break;
   }
 }

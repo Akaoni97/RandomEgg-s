@@ -11,6 +11,7 @@ import * as M from '../machine';
 import { songSeconds } from '../audio/offline';
 import { hasSample } from '../audio/samples';
 import { enableMidi } from '../input/midi';
+import { cycleSkin, skinById, toggleView, usePrefs } from '../ui/skins';
 
 export interface LcdItem {
   label: string;
@@ -209,6 +210,14 @@ export function buildPage(s: AppState): LcdPageView {
         title,
         items: [
           { label: 'KBD MODE', value: s.kbdMode.toUpperCase(), nudge: () => set({ kbdMode: s.kbdMode === 'step' ? 'live' : 'step' }) },
+          {
+            label: 'SHELL', value: skinById(usePrefs.getState().skin).name,
+            nudge: (d) => cycleSkin(d), enter: () => cycleSkin(1), hint: 'Scocca intercambiabile: colori, LCD, font e luci (F4)',
+          },
+          {
+            label: 'VIEW', value: usePrefs.getState().view === '3d' ? '3D CONSOLE' : 'FLAT', nudge: () => toggleView(), enter: () => toggleView(),
+            hint: 'Console inclinata in 3D o vista frontale (F3)',
+          },
           { label: 'LED FOLLOW', value: onOff(s.follow), nudge: () => set({ follow: !s.follow }), hint: 'I tasti step seguono il banco in riproduzione (pattern > 16 step)' },
           { label: 'LCD ZOOM', value: onOff(s.lcdZoom), nudge: () => set({ lcdZoom: !s.lcdZoom }), enter: () => set({ lcdZoom: !s.lcdZoom }) },
           { label: 'KEY MAP', value: 'ENTER', enter: () => set({ keymapOpen: true }), hint: 'Riassegna i tasti della tastiera' },
