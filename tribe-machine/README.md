@@ -11,16 +11,53 @@ Tutti i suoni sono generati dal codice, tutti i pattern sono originali.
 
 ---
 
-## Avvio su Windows 11
+## App desktop per Windows 11 (consigliata)
 
-1. Installa **Node.js LTS** (20.19 o successivo) da <https://nodejs.org> (Avanti → Avanti → Fine).
-2. Fai doppio clic su **`AVVIA-TRIBE-MACHINE.bat`**.
-   La prima volta scarica le dipendenze (serve internet solo per questo), poi si apre il browser su
+Due versioni, stesso programma:
+
+- **`TRIBE-MACHINE-Setup-0.1.0.exe`** — installer: scegli la cartella, crea l'icona sul desktop e nel menu Start,
+  si disinstalla da *Impostazioni → App*. Non servono diritti di amministratore.
+- **`TRIBE-MACHINE-Portable-0.1.0.exe`** — un solo file, nessuna installazione: doppio clic e parte (anche da chiavetta USB).
+
+Dove trovarli: su GitHub, scheda **Actions** → workflow **"TRIBE MACHINE · Windows"** → ultima esecuzione →
+artifact **TRIBE-MACHINE-windows** (zip con installer, versione portatile e lo screenshot della prova di avvio).
+Il workflow parte da solo a ogni modifica della cartella `tribe-machine/` e si può lanciare a mano ("Run workflow").
+
+Al primo avvio Windows SmartScreen può mostrare *"PC protetto da Windows"*, perché l'eseguibile non è firmato
+con un certificato commerciale: clicca **Ulteriori informazioni → Esegui comunque**.
+
+Cosa cambia rispetto alla versione browser:
+- finestra dedicata a pieno schermo (massimizzata all'avvio, F11 = schermo intero), nessuna barra del browser;
+- l'audio parte senza restrizioni di autoplay e il sequencer non rallenta quando la finestra è in secondo piano;
+- **Salva con nome** nativo per WAV e progetti, con cartella predefinita `Documenti\TRIBE MACHINE`;
+- progetti, slot, campioni e mappa tasti salvati nella cartella utente dell'app (`%APPDATA%\TRIBE MACHINE`);
+- permessi ridotti al minimo: solo MIDI e schermo intero (niente microfono, webcam, posizione), nessuna navigazione esterna;
+- completamente offline; una sola istanza alla volta; se l'interfaccia va in crash si ricarica (il progetto è salvato in automatico).
+
+### Compilare l'app da sé
+
+Su Windows (PowerShell, nella cartella `tribe-machine`):
+
+```powershell
+npm install
+npm run dist:win     # crea release\TRIBE-MACHINE-Setup-*.exe e release\TRIBE-MACHINE-Portable-*.exe
+npm run app          # prova l'app desktop senza impacchettarla
+npm run test:app     # prova automatica di avvio (finestra, audio, LED, render)
+```
+
+Da Linux la stessa build funziona con Wine installato (anche a 32 bit, per lo stub dell'installer NSIS).
+
+Scelta tecnica: **Electron** invece di Tauri. Electron include lo stesso Chromium su cui il motore audio è stato
+misurato (AudioWorklet, timing, Web MIDI identici), mentre Tauri userebbe WebView2 con comportamenti diversi su
+download, MIDI e autoplay da riverificare. Il prezzo è la dimensione: circa 110 MB invece di pochi MB.
+La latenza resta quella dell'audio di Chromium su Windows (WASAPI condiviso, tipicamente 10-40 ms); ASIO non è supportato.
+
+## Versione browser (senza installare nulla)
+
+1. Installa **Node.js LTS** (20.19 o successivo) da <https://nodejs.org>.
+2. Fai doppio clic su **`AVVIA-TRIBE-MACHINE.bat`**: la prima volta scarica le dipendenze, poi si apre il browser su
    `http://localhost:4173`.
-3. Clicca sul pannello o premi un tasto qualsiasi per **accendere** la macchina (il browser avvia
-   l'audio solo dopo un gesto dell'utente). Premi **Spazio**.
-
-Dal terminale (PowerShell, nella cartella `tribe-machine`):
+3. Clicca sul pannello o premi un tasto per **accendere** la macchina, poi **Spazio**.
 
 ```powershell
 npm install      # una sola volta
@@ -29,9 +66,7 @@ npm run dev      # modalità sviluppo con ricarica automatica
 npm test         # test automatici
 ```
 
-Browser consigliati: **Chrome** o **Edge** (migliore latenza audio e nomi dei tasti secondo il layout reale).
-Dopo l'installazione funziona **completamente offline**: niente server remoti, account o cloud.
-**F11** (o il tasto FULL SCR) = schermo intero; il pannello si ridimensiona in proporzione alla finestra.
+Browser consigliati: Chrome o Edge. Dopo l'installazione funziona offline.
 
 ---
 
@@ -248,6 +283,11 @@ funzioni `livePlay`/`dispatch`) e una UI diversa (mobile) senza toccare il motor
   a fine battuta, LIVE + REC, Ctrl+S, autosave; song mode (A→B→A→B a ogni battuta), registrazione motion
   trascinando CUTOFF, undo/redo della motion, import di un WAV dal display, rinomina. Nessun errore in console.
 
+App desktop: l'app Electron è stata avviata e controllata automaticamente (finestra, accensione, riproduzione,
+LED, render, nessun errore, permesso MIDI); l'installer e il portatile Windows sono stati compilati e ispezionati
+(eseguibile x64 con icona e informazioni di versione, pacchetto con solo i file dell'app). La prova dell'eseguibile
+su un Windows reale la fa il workflow GitHub Actions.
+
 Non verificato da qui: ascolto reale su PC Windows con una scheda audio specifica (la latenza effettiva dipende
 dal driver) e controller MIDI fisici (il codice usa la Web MIDI API standard).
 
@@ -260,11 +300,12 @@ dal driver) e controller MIDI fisici (il codice usa la Web MIDI API standard).
   motore a sintesi, sequencer, BPM, preset, salvataggi
 - Fase 2: 8 parti (+ tipo SAMPLE), sequencer fino a 64 step, sintesi completa, effetti, importazione campioni,
   16 pattern, registrazione live quantizzata, **motion sequencing**, 5 preset
-- Fase 3 (parziale): export WAV di pattern e song, **song mode / pattern chain**, **ingresso MIDI**
+- Fase 3: export WAV di pattern e song, **song mode / pattern chain**, **ingresso MIDI**,
+  **app desktop Windows** (installer + portatile, build e prova automatiche su Windows)
 - Extra: undo/redo, rinomina, drag & drop di campioni e progetti
 
 **Non ancora implementato**
 - MIDI clock (sincronizzazione con altre macchine) e uscita MIDI
-- Pacchetto desktop installabile (Tauri) e driver audio a bassa latenza (ASIO)
+- Driver audio a bassa latenza (ASIO) e firma digitale dell'eseguibile
 - Motion sui parametri master (filtro, crush, delay)
 - Modalità smartphone (prevista dall'architettura, non sviluppata)

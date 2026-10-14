@@ -10,23 +10,76 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 4173",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@fontsource/vt323": "^5.3.0",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "zustand": "^5.0.15"
+    "typecheck": "tsc --noEmit",
+    "app": "vite build && electron .",
+    "dist:win": "tsc --noEmit && vite build && electron-builder --win --x64 --publish never",
+    "test:app": "node scripts/smoke-app.mjs"
   },
   "devDependencies": {
+    "@fontsource/vt323": "^5.3.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.7.2",
+    "electron-builder": "^26.15.3",
+    "playwright": "^1.64.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.4",
+    "zustand": "^5.0.15"
   },
   "engines": {
     "node": ">=20.19"
+  },
+  "main": "electron/main.cjs",
+  "author": "TRIBE MACHINE",
+  "build": {
+    "appId": "it.tribemachine.tm1",
+    "productName": "TRIBE MACHINE",
+    "copyright": "TRIBE MACHINE TM-1",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "TRIBE-MACHINE-${version}-${arch}-${target}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TRIBE MACHINE",
+      "language": "1040",
+      "artifactName": "TRIBE-MACHINE-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "TRIBE-MACHINE-Portable-${version}.${ext}"
+    },
+    "publish": []
   }
 }

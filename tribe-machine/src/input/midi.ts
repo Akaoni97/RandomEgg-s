@@ -70,8 +70,8 @@ export async function enableMidi() {
     attach();
     try { localStorage.setItem('tm.midi', '1'); } catch { /* ok */ }
     flash(`MIDI ON: ${access.inputs.size} IN`);
-  } catch {
-    flash('MIDI NEGATO', 2500);
+  } catch (e) {
+    flash((e as Error)?.name === 'NotAllowedError' ? 'MIDI NEGATO' : 'MIDI NON DISPONIBILE', 2500);
   }
 }
 

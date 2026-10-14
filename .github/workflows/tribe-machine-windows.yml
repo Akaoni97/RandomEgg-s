@@ -1,0 +1,53 @@
+name: TRIBE MACHINE · Windows
+
+# Compila l'installer Windows su una macchina Windows reale, avvia l'app impacchettata
+# con una prova automatica e pubblica installer, versione portatile e screenshot come artifact.
+
+on:
+  push:
+    paths:
+      - 'tribe-machine/**'
+      - '.github/workflows/tribe-machine-windows.yml'
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: tribe-machine
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tribe-machine/package-lock.json
+
+      - name: Dipendenze
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build installer e portatile
+        run: npm run dist:win
+
+      - name: Prova di avvio dell'app impacchettata
+        run: node scripts/smoke-app.mjs --packaged
+
+      - name: Pubblica artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TRIBE-MACHINE-windows
+          path: |
+            tribe-machine/release/TRIBE-MACHINE-Setup-*.exe
+            tribe-machine/release/TRIBE-MACHINE-Portable-*.exe
+            tribe-machine/release/smoke.png
+          if-no-files-found: warn
+          retention-days: 30
