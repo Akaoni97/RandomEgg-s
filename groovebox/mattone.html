@@ -813,27 +813,32 @@ function satCurve(amount) {
   for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(k * x) / Math.tanh(k); }
   return c;
 }
+function limitCurve() {
+  const n = 2048, c = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1, a = Math.abs(x); c[i] = Math.sign(x) * (a < 0.6 ? a : 0.6 + 0.4 * Math.tanh((a - 0.6) / 0.4)); }
+  return c;
+}
 function initAudio() {
   if (ctx) { if (ctx.state === "suspended") ctx.resume(); return true; }
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) { msg("QUESTO BROWSER NON HA L’AUDIO WEB"); return false; }
-  try { ctx = new AC({ latencyHint: "interactive" }); } catch (e) { ctx = new AC(); }
+  try { ctx = new AC({ latencyHint: 0 }); } catch (e) { try { ctx = new AC({ latencyHint: "interactive" }); } catch (e2) { ctx = new AC(); } }
   SR = ctx.sampleRate;
-  // voices -> bus (punch FX) -> master -> tape (wow, saturation, tone) -> comp -> out
+  // voices -> bus (punch FX) -> master -> tape (wow, saturation, tone) -> soft limiter -> out (no look-ahead anywhere)
   N.bus = ctx.createGain();
   N.hp = ctx.createBiquadFilter(); N.hp.type = "highpass"; N.hp.frequency.value = 10;
   N.lp = ctx.createBiquadFilter(); N.lp.type = "lowpass"; N.lp.frequency.value = 20000;
   N.shaper = ctx.createWaveShaper(); N.busOut = ctx.createGain();
-  N.master = ctx.createGain();
+  N.master = ctx.createGain(); N.master.gain.value = 0.8;
   N.bus.connect(N.hp).connect(N.lp).connect(N.shaper).connect(N.busOut).connect(N.master);
-  N.wow = ctx.createDelay(0.1); N.wow.delayTime.value = 0.012;
+  N.wow = ctx.createDelay(0.1); N.wow.delayTime.value = 0.001;
   N.lfo = ctx.createOscillator(); N.lfo.frequency.value = 0.55; N.lfoAmt = ctx.createGain(); N.lfo.connect(N.lfoAmt).connect(N.wow.delayTime); N.lfo.start();
   N.flutter = ctx.createOscillator(); N.flutter.frequency.value = 7.3; N.flutAmt = ctx.createGain(); N.flutter.connect(N.flutAmt).connect(N.wow.delayTime); N.flutter.start();
   N.sat = ctx.createWaveShaper(); N.sat.oversample = "2x";
   N.tone = ctx.createBiquadFilter(); N.tone.type = "lowpass";
-  N.comp = ctx.createDynamicsCompressor(); N.comp.threshold.value = -12; N.comp.ratio.value = 4; N.comp.attack.value = 0.003; N.comp.release.value = 0.12;
+  N.limit = ctx.createWaveShaper(); N.limit.curve = limitCurve();
   N.out = ctx.createGain();
-  N.master.connect(N.wow).connect(N.sat).connect(N.tone).connect(N.comp).connect(N.out).connect(ctx.destination);
+  N.master.connect(N.wow).connect(N.sat).connect(N.tone).connect(N.limit).connect(N.out).connect(ctx.destination);
   N.revIn = ctx.createGain(); N.conv = ctx.createConvolver(); N.conv.buffer = impulse(2.4);
   N.revOut = ctx.createGain(); N.revOut.gain.value = 0.8;
   N.revIn.connect(N.conv).connect(N.revOut).connect(N.master);
@@ -843,7 +848,7 @@ function initAudio() {
   N.busOut.connect(N.dSend).connect(N.delay); N.delay.connect(N.dLp).connect(N.dFb).connect(N.delay); N.dLp.connect(N.master);
   // vinyl dust bed
   N.dust = ctx.createBufferSource(); N.dust.buffer = SYNTH.sy_vinyl(); N.dust.loop = true;
-  N.dustGain = ctx.createGain(); N.dust.connect(N.dustGain).connect(N.comp); N.dust.start();
+  N.dustGain = ctx.createGain(); N.dust.connect(N.dustGain).connect(N.limit); N.dust.start();
   // meters
   N.split = ctx.createChannelSplitter(2); N.out.connect(N.split);
   N.anL = ctx.createAnalyser(); N.anR = ctx.createAnalyser(); N.anL.fftSize = N.anR.fftSize = 1024;
@@ -859,6 +864,7 @@ function applyMaster() {
   const t = ctx.currentTime, w = state.warmth;
   N.sat.curve = satCurve(w);
   N.tone.frequency.setTargetAtTime(20000 - w * 13500, t, 0.05);
+  N.wow.delayTime.setTargetAtTime(0.0003 + w * 0.0022, t, 0.05);
   N.lfoAmt.gain.setTargetAtTime(w * 0.0016, t, 0.05);
   N.flutAmt.gain.setTargetAtTime(w * 0.00018, t, 0.05);
   N.out.gain.setTargetAtTime(state.volume, t, 0.03);
@@ -869,7 +875,10 @@ function preloadBanks() {
   let n = 0, failed = 0;
   msg("CARICO I SUONI 0/" + ids.length);
   Promise.all(ids.map(id => loadSound(id).catch(() => { failed++; }).then(() => { n++; if (n < ids.length) msg("CARICO I SUONI " + n + "/" + ids.length); })))
-    .then(() => msg(failed ? failed + " SUONI NON CARICATI" : "PRONTO · " + ids.length + " SUONI IN MEMORIA"));
+    .then(() => {
+      const lat = Math.round(((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000);
+      msg(failed ? failed + " SUONI NON CARICATI" : "PRONTO · " + ids.length + " SUONI" + (lat ? " · LATENZA " + lat + " MS" : ""));
+    });
 }
 function updateDelayTime() { if (ctx) N.delay.delayTime.setTargetAtTime(60 / state.bpm * 0.75, ctx.currentTime, 0.05); }
 
@@ -994,82 +1003,120 @@ function liveRecord(b, p, note) {
 }
 
 /* ================= turntable / scratch ================= */
-const SEC_PER_REV = 1.8; // 33⅓ giri
-const deck = {
-  buf: null, sr: 44100, pos: 0, target: 0, touching: false, motor: false, rate: 0, auto: "", anchor: 0, autoOrigin: 0,
-  gain: 0, cut: false, velAmp: 0, prevP: 0, angleVis: 0, hist: [], src: "phrase", userBeat: null,
-};
+const SEC_PER_REV = 1.8;   // 33⅓ giri: serve solo per far girare il disco disegnato
+const SCRATCH_SEC = 1.3;   // trascinare per tutta la larghezza del disco = 1,3 s di audio
+// The deck DSP lives in one class so it can run inside an AudioWorklet (audio thread)
+// or, if the browser refuses the worklet, inside a ScriptProcessor.
+class DeckCore {
+  constructor(sr) {
+    this.sr = sr; this.buf = null; this.L = 0; this.bsr = sr; this.pos = 0; this.target = 0; this.touch = false;
+    this.motor = false; this.rate = 0; this.auto = ""; this.anchor = 0; this.origin = 0; this.six = 0.17;
+    this.xf = 1; this.cut = false; this.pitch = 0; this.g = 0; this.amp = 0; this.prev = 0;
+  }
+  msg(m) {
+    if (m.buf) { this.buf = m.buf; this.L = m.buf.length; this.bsr = m.sr; this.pos = this.target = this.anchor = this.prev = 0; this.rate = 0; }
+    if (m.set) Object.assign(this, m.set);
+    if (m.touch === true) { this.touch = true; this.auto = ""; this.target = this.pos; }
+    if (m.move) this.target += m.move * this.bsr;
+    if (m.touch === false) { this.touch = false; this.rate = m.rate || 0; }
+    if (m.auto !== undefined) { this.auto = m.auto; this.anchor = this.pos; this.origin = m.origin; }
+  }
+  render(out, n, t0) {
+    if (!this.buf) { out.fill(0); return; }
+    const buf = this.buf, L = this.L, sr = this.sr, step = this.bsr / sr, mstep = step * (1 + this.pitch / 100);
+    const goal = this.motor ? 1 : 0, kUp = 5 / (0.1 * sr), kDn = 3 / (0.3 * sr);
+    const follow = 1 - Math.exp(-1 / (0.004 * sr));
+    const open = this.cut ? (this.xf > 0.5 ? 0 : 1) : this.xf;
+    let p = this.pos, g = this.g, amp = this.amp, prev = this.prev;
+    for (let i = 0; i < n; i++) {
+      let gate = 1;
+      if (this.auto && !this.touch) {
+        const ph = (t0 + i / sr - this.origin) / this.six, m = ((ph % 2) + 2) % 2, tri = m < 1 ? m : 2 - m;
+        p = this.anchor + 0.24 * this.bsr * (0.5 - 0.5 * Math.cos(Math.PI * tri));
+        if (this.auto === "trans") gate = (Math.floor(ph * 4) & 1) === 0 ? 1 : 0;
+      } else if (this.touch) {
+        p += (this.target - p) * follow;          // the record follows the hand smoothly, no steps
+      } else {
+        this.rate += (goal - this.rate) * (goal > this.rate ? kUp : kDn);
+        p += this.rate * mstep;
+      }
+      const sp = Math.abs(p - prev) / step; prev = p;
+      const ta = Math.min(1, sp * 5);
+      amp += (ta - amp) * (ta > amp ? 0.2 : 0.006);
+      g += (open * gate - g) * 0.08;
+      const x = ((p % L) + L) % L, i0 = x | 0, f = x - i0;
+      const s = buf[i0] * (1 - f) + buf[(i0 + 1) % L] * f + (Math.random() * 2 - 1) * 0.02 * Math.min(1, sp);
+      out[i] = s * g * amp;
+    }
+    if (Math.abs(p) > L * 8) { const off = Math.floor(p / L) * L; p -= off; prev -= off; this.target -= off; this.anchor -= off; }
+    this.pos = p; this.prev = prev; this.g = g; this.amp = amp;
+  }
+}
+const deck = { pos: 0, sr: 44100, touching: false, motor: false, auto: "", cut: false, hist: [], src: "phrase", userBeat: null, send: () => {} };
 function toMono(buf) {
   const n = buf.length, out = new Float32Array(n);
   for (let c = 0; c < buf.numberOfChannels; c++) { const d = buf.getChannelData(c); for (let i = 0; i < n; i++) out[i] += d[i] / buf.numberOfChannels; }
   return { data: out, sr: buf.sampleRate };
 }
 function setDeckBuffer(mono, label) {
-  deck.buf = mono.data; deck.sr = mono.sr; deck.pos = deck.target = deck.anchor = 0;
+  let peak = 0; for (let i = 0; i < mono.data.length; i++) peak = Math.max(peak, Math.abs(mono.data[i]));
+  const data = new Float32Array(mono.data); if (peak > 0) for (let i = 0; i < data.length; i++) data[i] *= 0.95 / peak;
+  deck.sr = mono.sr; deck.pos = 0;
+  deck.send({ buf: data, sr: mono.sr });
   if (label) msg("SUL DISCO: " + label.toUpperCase());
 }
 function buildPhrase() {
-  const parts = ["gm_choir", "gm_brass", "sy_vox", "vc_snare"].map(id => cache.get(id)).filter(Boolean);
-  const lens = [0.5, 0.32, 0.55, 0.25];
+  const parts = ["gm_brass", "gm_choir", "sy_vox", "vc_snare"].map(id => cache.get(id)).filter(Boolean);
+  const lens = [0.32, 0.5, 0.55, 0.25];
   const gap = Math.floor(SR * 0.12);
   const out = new Float32Array(Math.ceil(SR * (lens.reduce((a, b) => a + b, 0) + 1)) + gap * 4);
   let o = 0;
   parts.forEach((b, i) => {
     const m = toMono(b), n = Math.min(m.data.length, Math.floor(lens[i] * m.sr)), ratio = m.sr / SR;
-    const outN = Math.floor(n / ratio);
-    for (let k = 0; k < outN; k++) { const fade = Math.min(1, (outN - k) / (SR * 0.02)); out[o + k] = m.data[Math.floor(k * ratio)] * fade; }
+    let pk = 0; for (let k = 0; k < n; k++) pk = Math.max(pk, Math.abs(m.data[k]));
+    const outN = Math.floor(n / ratio), norm = pk > 0 ? 0.95 / pk : 1;
+    for (let k = 0; k < outN; k++) { const fade = Math.min(1, (outN - k) / (SR * 0.02)); out[o + k] = m.data[Math.floor(k * ratio)] * fade * norm; }
     o += outN + gap;
   });
   return { data: out, sr: SR };
 }
 function initDeck() {
-  N.deckOut = ctx.createGain(); N.deckOut.connect(N.comp);
-  N.deckSP = ctx.createScriptProcessor(256, 1, 1);
-  N.deckSP.onaudioprocess = deckProcess;
-  N.deckSP.connect(N.deckOut);
-  Promise.all(["gm_choir", "gm_brass", "sy_vox", "vc_snare"].map(id => loadSound(id).catch(() => null))).then(() => {
-    if (!deck.buf || deck.src === "phrase") setDeckBuffer(buildPhrase());
-  });
+  // deck -> grit (light drive) -> body (low shelf) -> bite (presence) -> out
+  N.deckDrive = ctx.createWaveShaper(); N.deckDrive.curve = satCurve(0.45);
+  N.deckBody = ctx.createBiquadFilter(); N.deckBody.type = "lowshelf"; N.deckBody.frequency.value = 220; N.deckBody.gain.value = 5;
+  N.deckBite = ctx.createBiquadFilter(); N.deckBite.type = "peaking"; N.deckBite.frequency.value = 2400; N.deckBite.Q.value = 0.9; N.deckBite.gain.value = 4;
+  N.deckOut = ctx.createGain(); N.deckOut.gain.value = 0.62;
+  N.deckDrive.connect(N.deckBody).connect(N.deckBite).connect(N.deckOut).connect(N.limit);
+  const useSP = () => {
+    const core = new DeckCore(SR);
+    N.deckSP = ctx.createScriptProcessor(256, 1, 1);
+    N.deckSP.onaudioprocess = e => { core.render(e.outputBuffer.getChannelData(0), e.outputBuffer.length, e.playbackTime || ctx.currentTime); deck.pos = core.pos; };
+    N.deckSP.connect(N.deckDrive);
+    deck.send = m => core.msg(m);
+  };
+  const ready = () => {
+    deck.send({ set: { six: sixteenth(), xf: state.xf, pitch: state.deckPitch } });
+    Promise.all(["gm_choir", "gm_brass", "sy_vox", "vc_snare"].map(id => loadSound(id).catch(() => null))).then(() => {
+      if (deck.src === "phrase") setDeckBuffer(buildPhrase());
+    });
+  };
+  if (ctx.audioWorklet && window.Blob && window.URL) {
+    const src = DeckCore.toString() + "\nclass P extends AudioWorkletProcessor{constructor(){super();this.c=new DeckCore(sampleRate);this.k=0;this.port.onmessage=e=>this.c.msg(e.data);}" +
+      "process(i,o){const out=o[0][0];this.c.render(out,out.length,currentTime);if((++this.k&3)===0)this.port.postMessage(this.c.pos);return true;}}\nregisterProcessor('mattone-deck',P);";
+    const url = URL.createObjectURL(new Blob([src], { type: "application/javascript" }));
+    ctx.audioWorklet.addModule(url).then(() => {
+      const node = new AudioWorkletNode(ctx, "mattone-deck", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1] });
+      node.port.onmessage = e => { deck.pos = e.data; };
+      node.connect(N.deckDrive);
+      deck.send = m => node.port.postMessage(m, m.buf ? [m.buf.buffer] : []);
+      ready();
+    }).catch(() => { useSP(); ready(); });
+  } else { useSP(); ready(); }
 }
-function deckProcess(e) {
-  const out = e.outputBuffer.getChannelData(0), n = out.length, D = deck;
-  if (!D.buf) { out.fill(0); return; }
-  const buf = D.buf, L = buf.length, step = D.sr / SR;
-  const motorStep = step * (1 + state.deckPitch / 100);
-  const t0 = e.playbackTime || ctx.currentTime, six = sixteenth();
-  const auto = D.auto && !D.touching ? D.auto : "";
-  const goal = D.motor ? 1 : 0;
-  const k = goal > D.rate ? 1 / (0.12 * SR) * 6 : 1 / (0.35 * SR) * 3;
-  const startPos = D.pos, startTarget = D.target;
-  let p = D.pos, g = D.gain, amp = D.velAmp, prev = D.prevP;
-  const xfOpen = D.cut ? (state.xf > 0.5 ? 0 : 1) : state.xf;
-  for (let i = 0; i < n; i++) {
-    let gate = 1;
-    if (auto) {
-      const ph = (t0 + i / SR - D.autoOrigin) / six;
-      const m = ((ph % 2) + 2) % 2;
-      p = D.anchor + 0.16 * D.sr * (m < 1 ? m : 2 - m);
-      if (auto === "trans") gate = (Math.floor(ph * 4) % 2) === 0 ? 1 : 0;
-    } else if (D.touching) {
-      p = startPos + (startTarget - startPos) * (i + 1) / n;
-    } else {
-      D.rate += (goal - D.rate) * k;
-      p += D.rate * motorStep;
-    }
-    const speed = Math.abs(p - prev) / step; prev = p;
-    amp += (Math.min(1, speed * 3) - amp) * 0.02;
-    g += (xfOpen * gate - g) * 0.03;
-    const x = ((p % L) + L) % L, i0 = Math.floor(x), f = x - i0;
-    out[i] = (buf[i0] * (1 - f) + buf[(i0 + 1) % L] * f) * g * amp;
-  }
-  if (Math.abs(p) > L * 8) { const off = Math.floor(p / L) * L; p -= off; prev -= off; D.target -= off; D.anchor -= off; }
-  D.pos = p; D.prevP = prev; D.gain = g; D.velAmp = amp;
-  if (D.touching) D.pos = D.target;
-}
-function deckAngle() { return deck.buf ? (deck.pos / deck.sr) / SEC_PER_REV * Math.PI * 2 : 0; }
+function deckAngle() { return (deck.pos / deck.sr) / SEC_PER_REV * Math.PI * 2; }
 function setAuto(mode) {
   if (!initAudio()) return;
-  deck.auto = mode; deck.anchor = deck.pos; deck.autoOrigin = playing ? gridOrigin : ctx.currentTime;
+  deck.auto = mode; deck.send({ auto: mode, origin: playing ? gridOrigin : ctx.currentTime, set: { six: sixteenth() } });
   [...$("autoSeg").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.auto === mode));
   msg(mode === "baby" ? "BABY SCRATCH A TEMPO" : mode === "trans" ? "TRANSFORMER A TEMPO" : "SCRATCH A MANO");
 }
@@ -1088,7 +1135,6 @@ function grabBeat() {
       let peak = 0; for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(data[i]));
       $("grab").classList.remove("on");
       if (peak < 0.01) { msg("SILENZIO: PREMI PLAY E RIPROVA"); return; }
-      for (let i = 0; i < len; i++) data[i] *= 0.9 / peak;
       deck.userBeat = { data, sr: SR };
       deck.src = "beat"; renderDeckSrc(); setDeckBuffer(deck.userBeat, "il tuo beat · trascina il disco");
     }
@@ -1107,50 +1153,56 @@ function setDeckSource(src) {
 }
 function bindDeck() {
   const cv = $("deck");
-  let rect = null, lastA = 0;
-  const angleOf = e => Math.atan2(e.clientY - (rect.top + rect.height / 2), e.clientX - (rect.left + rect.width / 2));
+  let rect = null, lx = 0, ly = 0, travel = 0;
+  // movement along the groove (tangent to the record) moves the audio; works with circles and short strokes
+  const onMove = (x, y) => {
+    const dx = x - lx, dy = y - ly; lx = x; ly = y;
+    const rx = x - (rect.left + rect.width / 2), ry = y - (rect.top + rect.height / 2), r = Math.hypot(rx, ry);
+    const d = r > rect.width * 0.12 ? (dx * -ry + dy * rx) / r : dy;
+    const sec = d / rect.width * SCRATCH_SEC;
+    if (!sec) return;
+    travel += sec; deck.send({ move: sec });
+    deck.hist.push([performance.now(), travel]); while (deck.hist.length > 6) deck.hist.shift();
+  };
   cv.addEventListener("pointerdown", e => {
     if (!initAudio()) return;
     e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) {}
-    rect = cv.getBoundingClientRect(); lastA = angleOf(e);
+    rect = cv.getBoundingClientRect(); lx = e.clientX; ly = e.clientY; travel = 0;
     if (deck.auto) setAuto("");
-    deck.target = deck.pos; deck.touching = true; deck.hist = [[performance.now(), deck.target]];
+    deck.touching = true; deck.hist = [[performance.now(), 0]]; deck.send({ touch: true });
   });
   cv.addEventListener("pointermove", e => {
     if (!deck.touching) return;
-    const a = angleOf(e); let d = a - lastA; lastA = a;
-    if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2;
-    deck.target += d / (Math.PI * 2) * SEC_PER_REV * deck.sr;
-    const now = performance.now(); deck.hist.push([now, deck.target]); while (deck.hist.length > 6) deck.hist.shift();
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+    if (evs.length) evs.forEach(c => onMove(c.clientX, c.clientY)); else onMove(e.clientX, e.clientY);
   });
   const release = () => {
     if (!deck.touching) return;
-    const h = deck.hist, a = h[0], b = h[h.length - 1];
-    const dt = (b[0] - a[0]) / 1000;
-    const recent = performance.now() - b[0] < 60;
-    deck.rate = dt > 0 && recent ? Math.max(-4, Math.min(4, (b[1] - a[1]) / dt / deck.sr)) : 0;
-    deck.touching = false;
+    const h = deck.hist, a = h[0], b = h[h.length - 1], dt = (b[0] - a[0]) / 1000;
+    const rate = dt > 0 && performance.now() - b[0] < 60 ? Math.max(-4, Math.min(4, (b[1] - a[1]) / dt)) : 0;
+    deck.touching = false; deck.send({ touch: false, rate });
   };
   ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => cv.addEventListener(ev, release));
   cv.addEventListener("wheel", e => {
     if (!initAudio()) return;
     e.preventDefault();
-    deck.target = deck.pos + e.deltaY * 0.0009 * deck.sr; deck.touching = true;
-    clearTimeout(cv._w); cv._w = setTimeout(() => { deck.touching = false; deck.rate = 0; }, 90);
+    if (!cv._w) deck.send({ touch: true });
+    deck.send({ move: e.deltaY * 0.0012 });
+    clearTimeout(cv._w); cv._w = setTimeout(() => { cv._w = 0; deck.send({ touch: false, rate: 0 }); }, 90);
   }, { passive: false });
 
-  $("motor").addEventListener("click", () => { if (!initAudio()) return; deck.motor = !deck.motor; $("motor").classList.toggle("on", deck.motor); msg(deck.motor ? "IL DISCO GIRA" : "DISCO FERMO · SCRATCHA A MANO"); });
+  $("motor").addEventListener("click", () => { if (!initAudio()) return; deck.motor = !deck.motor; deck.send({ set: { motor: deck.motor } }); $("motor").classList.toggle("on", deck.motor); msg(deck.motor ? "IL DISCO GIRA" : "DISCO FERMO · SCRATCHA A MANO"); });
   $("autoSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setAuto(b.dataset.auto); });
   $("grab").addEventListener("click", grabBeat);
   $("deckSrc").addEventListener("change", e => setDeckSource(e.target.value));
   $("toDeck").addEventListener("click", () => { $("deckSrc").value = "pad"; setDeckSource("pad"); });
   $("xf").value = Math.round(state.xf * 100);
-  $("xf").addEventListener("input", e => { state.xf = +e.target.value / 100; save(); });
+  $("xf").addEventListener("input", e => { state.xf = +e.target.value / 100; deck.send({ set: { xf: state.xf } }); save(); });
   $("dPitch").value = state.deckPitch; $("dPitchOut").textContent = (state.deckPitch > 0 ? "+" : "") + state.deckPitch;
-  $("dPitch").addEventListener("input", e => { state.deckPitch = +e.target.value; $("dPitchOut").textContent = (state.deckPitch > 0 ? "+" : "") + state.deckPitch; save(); });
+  $("dPitch").addEventListener("input", e => { state.deckPitch = +e.target.value; $("dPitchOut").textContent = (state.deckPitch > 0 ? "+" : "") + state.deckPitch; deck.send({ set: { pitch: state.deckPitch } }); save(); });
   const cut = $("cut");
-  const cutOn = e => { if (e) e.preventDefault(); initAudio(); deck.cut = true; cut.classList.add("on"); };
-  const cutOff = () => { deck.cut = false; cut.classList.remove("on"); };
+  const cutOn = e => { if (e) e.preventDefault(); initAudio(); deck.cut = true; deck.send({ set: { cut: true } }); cut.classList.add("on"); };
+  const cutOff = () => { if (!deck.cut) return; deck.cut = false; deck.send({ set: { cut: false } }); cut.classList.remove("on"); };
   cut.addEventListener("pointerdown", e => { try { cut.setPointerCapture(e.pointerId); } catch (_) {} cutOn(e); });
   ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => cut.addEventListener(ev, cutOff));
   deck.cutOn = cutOn; deck.cutOff = cutOff;
@@ -1308,6 +1360,7 @@ function padPress(i) {
   const changed = state.pad !== i;
   state.pad = i;
   if (ctx) { trigger(state.bank, i, ctx.currentTime, 0.9, 0, true); liveRecord(state.bank, i, 0); }
+  if (navigator.vibrate) try { navigator.vibrate(5); } catch (e) { /* not allowed here */ }
   if (changed) { requestAnimationFrame(() => { renderPads(); renderInspector(); renderEditor(); }); save(); }
 }
 function selectBank(bi) { state.bank = bi; save(); renderAll(); msg("GRUPPO " + BANKS[bi].id + " · " + BANKS[bi].name.toUpperCase() + (state.mutes[bi] ? " (MUTO)" : "")); }
@@ -1331,7 +1384,7 @@ function armed(id, label, fn) {
   clearTimeout(armedT[id]); armedT[id] = 0; b.textContent = b.dataset.orig; b.classList.remove("on"); fn();
 }
 function toggleRec() { recording = !recording; renderTransport(); msg(recording ? (playing ? "REC: SUONA SUI PAD" : "REC PRONTO: PREMI PLAY") : "REC SPENTO"); }
-function setBpm(v) { state.bpm = Math.max(50, Math.min(200, Math.round(v))); $("bpmNum").textContent = state.bpm; $("vBpm").textContent = pad3(state.bpm); updateDelayTime(); save(); }
+function setBpm(v) { state.bpm = Math.max(50, Math.min(200, Math.round(v))); $("bpmNum").textContent = state.bpm; $("vBpm").textContent = pad3(state.bpm); updateDelayTime(); deck.send({ set: { six: sixteenth() } }); save(); }
 let taps = [];
 function tapTempo() {
   const now = performance.now(); taps = taps.filter(t => now - t < 2500); taps.push(now);
