@@ -8,6 +8,7 @@ import { pawnSpot } from './three/layout';
 
 const SAVE_KEY = 'napoli-monopoli-save-v1';
 const SETTINGS_KEY = 'napoli-monopoli-settings-v1';
+const SAVED_AT_KEY = 'napoli-monopoli-saved-at-v1';
 
 export interface UISettings {
   nonna: boolean;
@@ -127,8 +128,10 @@ function loadSettings(): UISettings {
 
 function saveGame(g: GameState | null) {
   try {
-    if (g && g.winner === null) localStorage.setItem(SAVE_KEY, JSON.stringify(g));
-    else localStorage.removeItem(SAVE_KEY);
+    if (g && g.winner === null) {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(g));
+      localStorage.setItem(SAVED_AT_KEY, String(Date.now()));
+    } else localStorage.removeItem(SAVE_KEY);
   } catch {
     /* storage unavailable */
   }
@@ -188,7 +191,15 @@ export const useStore = create<Store>((set, get) => ({
 
   resume() {
     const g = loadGame();
-    if (g) start(g);
+    if (!g) return;
+    // the clock doesn't run while the game is closed
+    try {
+      const savedAt = Number(localStorage.getItem(SAVED_AT_KEY));
+      if (savedAt > 0) g.startedAt += Math.max(0, Date.now() - savedAt);
+    } catch {
+      /* ignore */
+    }
+    start(g);
   },
 
   quit() {

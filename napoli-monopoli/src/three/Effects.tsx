@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { VESUVIO_SIDE } from '../engine/board';
 import { useStore } from '../store';
 import { BOARD_TOP, bandCenter, sideRotation, tileCenter } from './layout';
-import { Box, Cyl, G, Sph, mat } from './prims';
+import { Box, Cyl, G, Person, Sph, mat } from './prims';
 
 const PALETTE = ['#ff3b3b', '#ffd23f', '#3ec7f0', '#7dff7a', '#ff6ad5', '#ffffff', '#2a9df4'];
 
@@ -209,6 +209,27 @@ function Scudetto() {
   );
 }
 
+/** the auctioneer banging his gavel while an auction is running */
+function Banditore() {
+  const active = useStore((s) => s.game?.pending?.kind === 'auction');
+  const arm = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    if (arm.current) arm.current.rotation.x = -0.4 - Math.abs(Math.sin(clock.elapsedTime * 5)) * 1.1;
+  });
+  if (!active) return null;
+  return (
+    <G p={[0, BOARD_TOP, -1.3]} s={2.6}>
+      <Box p={[0, 0.06, 0.12]} s={[0.36, 0.12, 0.14]} c="#6b3a1e" />
+      <Person body="#1b1b1b" hair="#8a8a8a" />
+      <Box p={[0, 0.2, 0.062]} s={[0.03, 0.08, 0.004]} c="#e0262f" />
+      <group ref={arm} position={[0.07, 0.17, 0]}>
+        <Cyl p={[0, 0, 0.07]} r={[Math.PI / 2, 0, 0]} a={[0.008, 0.008, 0.14, 4]} c="#8a5a2b" />
+        <Box p={[0, 0, 0.15]} s={[0.07, 0.035, 0.035]} c="#5b3a1e" />
+      </group>
+    </G>
+  );
+}
+
 export function Effects() {
   return (
     <>
@@ -217,6 +238,7 @@ export function Effects() {
       <Ruspa />
       <PaccoBox />
       <Scudetto />
+      <Banditore />
     </>
   );
 }

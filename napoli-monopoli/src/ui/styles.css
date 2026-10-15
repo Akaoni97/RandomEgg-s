@@ -963,15 +963,30 @@ select {
     font-size: 15px;
   }
   .top-right {
-    top: auto;
-    bottom: 160px;
+    top: 128px;
     right: 6px;
-    flex-direction: column;
-    align-items: flex-end;
+    left: 6px;
+    gap: 5px;
     max-width: none;
   }
+  .stat,
+  .vesuvio {
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+  .vesuvio-bar {
+    width: 56px;
+  }
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
   .banners {
-    top: 112px;
+    top: 172px;
+  }
+  .side-panel {
+    top: 172px;
   }
   .btn {
     font-size: 14px;
