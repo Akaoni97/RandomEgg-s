@@ -12,7 +12,7 @@ Si gioca in 4 sullo stesso dispositivo (hot-seat). Ogni posto può essere preso 
 ```bash
 npm install
 npm run dev      # gioca su http://localhost:5173
-npm test         # 45 test vitest su motore, carte, frasi e layout
+npm test         # 47 test vitest su motore, carte, frasi e layout
 npm run build    # build di produzione in dist/ (servibile da qualsiasi hosting statico)
 ```
 

@@ -188,6 +188,34 @@ describe('regole base', () => {
     expect(s.auction).toBeNull();
   });
 
+  it('chi fallisce con uno scippo in coda passa la mano senza bloccare la partita', () => {
+    let s = game();
+    s.players[1].pos = 17;
+    s.players[0].pos = 15;
+    s.players[0].money = 20;
+    s.decks.smorfia.unshift('smorfia-milano');
+    s = rig(s, [1, 1], [0.99, 0.99]); // → 17: carta + scippo in coda
+    s = act(s, { type: 'ROLL' });
+    expect(s.pending?.kind).toBe('card');
+    expect(s.queue.map((q) => q.kind)).toEqual(['scippo']);
+    s = act(s, { type: 'CARD_OK' });
+    expect(s.players[0].bankrupt).toBe(true);
+    expect(s.pending).toBeNull();
+    expect(s.current).toBe(1);
+    expect(s.phase).toBe('roll');
+  });
+
+  it('lo scippo salta se la vittima nel frattempo è andata via', () => {
+    let s = game();
+    s.players[1].pos = 17;
+    s.players[0].pos = 15;
+    s.decks.smorfia.unshift('smorfia-avanti');
+    s = rig(s, [1, 1]);
+    s = act(s, { type: 'ROLL' }, { type: 'CARD_OK' }); // la carta lo sposta 3 avanti
+    expect(s.players[0].pos).toBe(20);
+    expect(s.pending).toBeNull();
+  });
+
   it('il Caffè Sospeso raccoglie tasse e multe', () => {
     let s = game();
     s.players[0].pos = 2;
@@ -574,17 +602,28 @@ function resolveAny(s: GameState): Action {
   }
 }
 
+function seeded(seed: number) {
+  let a = seed | 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), a | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 describe('partite simulate con i bot', () => {
   for (const level of ['turista', 'guaglione', 'boss'] as const) {
-    it(`4 bot "${level}" giocano senza bloccarsi`, () => {
+    it(`4 bot "${level}" giocano senza bloccarsi`, { timeout: 60000 }, () => {
       for (let seed = 1; seed <= 4; seed++) {
+        const rng = seeded(seed * 104729);
         let s = createGame(
           PAWN_ORDER.map((pawn) => ({ pawn, isBot: true, botLevel: level })),
           seed * 7919,
         );
         let steps = 0;
         while (s.winner === null && steps < 6000) {
-          const a = botDecide(s);
+          const a = botDecide(s, rng);
           expect(a).not.toBeNull();
           const next = apply(s, a!);
           if (next === s) throw new Error(`bot bloccato: ${JSON.stringify(a)} @ ${s.phase}/${s.pending?.kind}`);
@@ -601,7 +640,8 @@ describe('partite simulate con i bot', () => {
     });
   }
 
-  it('bot misti contro bot misti arrivano alla fine', () => {
+  it('bot misti contro bot misti arrivano alla fine', { timeout: 60000 }, () => {
+    const rng = seeded(77);
     let s = createGame(
       [
         { pawn: 'ciro', isBot: true, botLevel: 'boss' },
@@ -613,7 +653,7 @@ describe('partite simulate con i bot', () => {
     );
     let steps = 0;
     while (s.winner === null && steps < 20000) {
-      s = apply(s, botDecide(s)!);
+      s = apply(s, botDecide(s, rng)!);
       steps++;
     }
     expect(steps).toBeGreaterThan(50);

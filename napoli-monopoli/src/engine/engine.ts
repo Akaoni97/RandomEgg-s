@@ -154,8 +154,23 @@ function pushPending(s: GameState, p: Pending) {
   else s.queue.push(p);
 }
 
+/** a queued scippo is moot once its victims have left the tile, gone to jail or to Milan */
+function stale(s: GameState, p: Pending) {
+  if (p.kind !== 'scippo') return false;
+  const me = cur(s);
+  p.targets = p.targets.filter((id) => {
+    const o = s.players[id];
+    return !o.bankrupt && !o.inJail && o.pos === me.pos;
+  });
+  return p.targets.length === 0 || me.bankrupt || me.inJail;
+}
+
 function settle(s: GameState) {
-  if (!s.pending && s.queue.length) s.pending = s.queue.shift()!;
+  if (s.pending && stale(s, s.pending)) s.pending = null;
+  while (!s.pending && s.queue.length) {
+    const next = s.queue.shift()!;
+    if (!stale(s, next)) s.pending = next;
+  }
   if (s.winner !== null) s.phase = 'over';
   else if (s.pending) s.phase = 'pending';
   else if (s.phase === 'pending') s.phase = 'manage';
@@ -433,6 +448,7 @@ function land(s: GameState, pid: number) {
 
 function payRent(s: GameState, pid: number, owner: number, tileIdx: number, amount: number) {
   const o = s.players[owner];
+  if (o.bankrupt) return;
   let due = amount;
   if (o.malocchio) {
     due = Math.floor(amount / 2);
@@ -907,10 +923,13 @@ export function apply(state: GameState, action: Action): GameState {
   const ok = step(s, action);
   if (!ok) return state;
   settle(s);
-  // a current player who went bankrupt during their turn passes the hand
-  if (s.winner === null && cur(s).bankrupt && !s.pending) {
-    s.queue = [];
-    nextTurn(s);
+  // a current player who went bankrupt during their turn drops their own decisions and passes the hand
+  if (s.winner === null && cur(s).bankrupt) {
+    const others = (p: Pending) => p.kind === 'auction' || p.kind === 'trade' || (p.kind === 'miracle' && p.player !== s.current);
+    if (s.pending && !others(s.pending)) s.pending = null;
+    s.queue = s.queue.filter(others);
+    settle(s);
+    if (!s.pending) nextTurn(s);
   }
   return s;
 }

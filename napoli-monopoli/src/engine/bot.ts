@@ -35,7 +35,7 @@ const PROFILES: Record<BotLevel, Profile> = {
 /** bot-side memory: one trade proposal per turn */
 const proposedOnTurn = new Map<number, number>();
 
-const rnd = Math.random;
+let rnd: () => number = Math.random;
 
 function tileValue(s: GameState, pid: number, tile: number): number {
   const def = BOARD[tile];
@@ -140,8 +140,9 @@ function bossTrade(s: GameState, pid: number, prof: Profile): Trade | null {
   return null;
 }
 
-/** Returns the bot's next action, or null if it's not a bot's turn to act. */
-export function botDecide(s: GameState): Action | null {
+/** Returns the bot's next action, or null if it's not a bot's turn to act. `random` makes bots reproducible in tests. */
+export function botDecide(s: GameState, random: () => number = Math.random): Action | null {
+  rnd = random;
   const pid = actor(s);
   if (pid === null) return null;
   const me = s.players[pid];
