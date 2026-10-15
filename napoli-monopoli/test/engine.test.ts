@@ -619,3 +619,15 @@ describe('partite simulate con i bot', () => {
     expect(steps).toBeGreaterThan(50);
   });
 });
+
+import { tileAt, tileCenter } from '../src/three/layout';
+
+describe('layout del tabellone', () => {
+  it('tileAt è l\'inverso di tileCenter', () => {
+    for (let i = 0; i < 40; i++) {
+      const [x, z] = tileCenter(i);
+      expect(tileAt(x, z)).toBe(i);
+    }
+    expect(tileAt(0, 0)).toBeNull();
+  });
+});
