@@ -1,0 +1,97 @@
+{
+  "name": "lucatekno-machine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LucaTekno_Machine LT-1 — groovebox tekno: motore a sintesi della TRIBE MACHINE + campioni, piatto scratch ed effetti al volo del Mattone Groovebox",
+  "type": "module",
+  "scripts": {
+    "start": "vite build && vite preview --port 4173 --open",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "app": "vite build && electron .",
+    "dist:win": "tsc --noEmit && vite build && electron-builder --win --x64 --publish never",
+    "test:app": "node scripts/smoke-app.mjs"
+  },
+  "devDependencies": {
+    "@fontsource/black-ops-one": "^5.3.0",
+    "@fontsource/bungee": "^5.3.0",
+    "@fontsource/dotgothic16": "^5.3.1",
+    "@fontsource/monoton": "^5.3.0",
+    "@fontsource/orbitron": "^5.3.0",
+    "@fontsource/share-tech-mono": "^5.3.0",
+    "@fontsource/silkscreen": "^5.3.0",
+    "@fontsource/syne-mono": "^5.3.0",
+    "@fontsource/vt323": "^5.3.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.7.2",
+    "electron-builder": "^26.15.3",
+    "playwright": "^1.64.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4",
+    "zustand": "^5.0.15"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "main": "electron/main.cjs",
+  "author": "LucaTekno",
+  "build": {
+    "appId": "it.lucatekno.machine",
+    "productName": "LucaTekno_Machine",
+    "copyright": "LucaTekno_Machine LT-1",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "LucaTekno_Machine-${version}-${arch}-${target}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LucaTekno_Machine",
+      "language": "1040",
+      "artifactName": "LucaTekno_Machine-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "LucaTekno_Machine-Portable-${version}.${ext}"
+    },
+    "publish": [],
+    "linux": {
+      "target": "dir",
+      "executableName": "lucatekno-machine"
+    }
+  }
+}

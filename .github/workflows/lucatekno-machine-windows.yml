@@ -1,0 +1,88 @@
+name: LucaTekno_Machine · Windows
+
+# LucaTekno_Machine: compila l'installer Windows su una macchina Windows reale, avvia l'app impacchettata
+# con una prova automatica e pubblica installer, versione portatile e screenshot come artifact.
+
+on:
+  push:
+    paths:
+      - 'lucatekno-machine/**'
+      - '.github/workflows/lucatekno-machine-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: lucatekno-machine
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: lucatekno-machine/package-lock.json
+
+      - name: Dipendenze
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build installer e portatile
+        run: npm run dist:win
+
+      - name: Prova di avvio dell'app impacchettata
+        run: node scripts/smoke-app.mjs --packaged
+
+      - name: Pubblica artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LucaTekno_Machine-windows
+          path: |
+            lucatekno-machine/release/LucaTekno_Machine-Setup-*.exe
+            lucatekno-machine/release/LucaTekno_Machine-Portable-*.exe
+            lucatekno-machine/release/smoke.png
+          if-no-files-found: warn
+          retention-days: 30
+
+      # Release GitHub: download diretto con un clic (una Release per versione, aggiornata a ogni build riuscita)
+      - name: Pubblica Release
+        if: success()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="lucatekno-machine-v$VERSION"
+          SHORT=$(echo "$GITHUB_SHA" | cut -c1-7)
+          cat > notes.md <<NOTES
+          **LucaTekno_Machine LT-1 per Windows 11 (64 bit)**
+
+          Groovebox tekno: motore a sintesi della TRIBE MACHINE + cassa di 240 suoni, piatto scratch
+          ed effetti al volo del Mattone Groovebox.
+
+          - \`LucaTekno_Machine-Setup-$VERSION.exe\`: installer (icona su desktop e menu Start, si disinstalla da Impostazioni > App)
+          - \`LucaTekno_Machine-Portable-$VERSION.exe\`: un solo file, nessuna installazione
+
+          Al primo avvio Windows SmartScreen può dire "PC protetto da Windows": l'eseguibile non è firmato con un
+          certificato commerciale. Clicca **Ulteriori informazioni → Esegui comunque**.
+
+          Build $SHORT, compilata e provata automaticamente su Windows (avvio, audio, riproduzione, LED, piatto, render).
+          NOTES
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "LucaTekno_Machine $VERSION per Windows" --notes-file notes.md
+          else
+            gh release edit "$TAG" --notes-file notes.md
+          fi
+          gh release upload "$TAG" release/LucaTekno_Machine-Setup-$VERSION.exe release/LucaTekno_Machine-Portable-$VERSION.exe --clobber
+          echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
