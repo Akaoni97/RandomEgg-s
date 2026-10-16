@@ -1,4 +1,5 @@
 import type { PawnId } from '../engine/types';
+import { midiToFreq, parseAbc, type AbcTune } from './abc';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -214,30 +215,12 @@ export function speak(pawn: PawnId, text: string) {
   }
 }
 
-// ───────────── mandolin tarantella (original melody, A minor 6/8) ─────────────
+// ───────────── mandolin: plays every tune in ./tunes/*.abc in turn ─────────────
 
-const NOTE = (n: string) => {
-  const m = /^([A-G])(#?)(\d)$/.exec(n)!;
-  const idx = { C: -9, D: -7, E: -5, F: -4, G: -2, A: 0, B: 2 }[m[1] as 'A'] + (m[2] ? 1 : 0);
-  return 440 * 2 ** ((idx + (Number(m[3]) - 4) * 12) / 12);
-};
-
-// [note, eighths]
-const MELODY: [string, number][] = [
-  ['E5', 1], ['E5', 1], ['E5', 1], ['F5', 1], ['E5', 1], ['D5', 1],
-  ['C5', 2], ['B4', 1], ['A4', 3],
-  ['C5', 1], ['C5', 1], ['C5', 1], ['D5', 1], ['C5', 1], ['B4', 1],
-  ['A4', 2], ['G#4', 1], ['E4', 3],
-  ['E5', 1], ['E5', 1], ['E5', 1], ['F5', 1], ['E5', 1], ['D5', 1],
-  ['C5', 2], ['D5', 1], ['E5', 3],
-  ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 1], ['G#4', 1],
-  ['A4', 3], ['A4', 3],
-  ['A5', 1], ['G5', 1], ['F5', 1], ['E5', 2], ['C5', 1],
-  ['D5', 1], ['C5', 1], ['B4', 1], ['A4', 3],
-  ['G4', 1], ['A4', 1], ['B4', 1], ['C5', 2], ['E5', 1],
-  ['D5', 2], ['B4', 1], ['G#4', 3],
-];
-const BASS = ['A2', 'A2', 'D3', 'E2', 'A2', 'C3', 'D3', 'A2', 'F2', 'D3', 'C3', 'E2'];
+const TUNES: AbcTune[] = Object.values(
+  import.meta.glob('./tunes/*.abc', { query: '?raw', import: 'default', eager: true }) as Record<string, string>,
+).map(parseAbc);
+let tuneIdx = 0;
 
 function pluck(freq: number, when: number, dur: number, gain: number) {
   const c = ctx!;
@@ -264,21 +247,24 @@ function pluck(freq: number, when: number, dur: number, gain: number) {
 
 function scheduleLoop() {
   const c = ac();
-  if (!c || !musicGain) return 0;
-  const eighth = 0.19;
-  let t = c.currentTime + 0.1;
-  for (const [n, len] of MELODY) {
-    pluck(NOTE(n), t, len * eighth * 0.95, 0.5);
-    t += len * eighth;
+  if (!c || !musicGain || !TUNES.length) return 0;
+  const tune = TUNES[tuneIdx % TUNES.length];
+  tuneIdx += 1;
+  const t0 = c.currentTime + 0.1;
+  for (const n of tune.notes) {
+    if (n.midi !== null) pluck(midiToFreq(n.midi), t0 + n.start * tune.unit, n.len * tune.unit * 0.95, 0.5);
   }
-  const total = t - c.currentTime - 0.1;
-  const bar = total / BASS.length;
-  BASS.forEach((n, k) => {
-    const when = c.currentTime + 0.1 + k * bar;
-    pluck(NOTE(n), when, 0.08, 0.6);
-    pluck(NOTE(n) * 2, when + bar / 2, 0.08, 0.35);
-  });
-  return total;
+  // bass: chord root on the strong beats of every bar
+  for (let bar = 0; bar < tune.total; bar += tune.bar) {
+    for (const half of [0, tune.bar / 2]) {
+      const at = bar + half;
+      const chord = [...tune.chords].reverse().find((ch) => ch.start <= at);
+      if (!chord) continue;
+      const f = midiToFreq(chord.root) * (half ? 2 : 1);
+      pluck(f, t0 + at * tune.unit, 0.08, half ? 0.35 : 0.6);
+    }
+  }
+  return tune.total * tune.unit;
 }
 
 function startMusic() {

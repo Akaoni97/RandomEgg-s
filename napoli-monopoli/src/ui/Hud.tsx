@@ -170,7 +170,7 @@ function SettingsPanel() {
       <div className="settings" onClick={(e) => e.stopPropagation()}>
         <h3>⚙️ Impostazioni</h3>
         {toggle('nonna', '👵 Modalità Nonna (bip sulle parolacce)')}
-        {toggle('music', '🪕 Mandolino (Funiculì, funiculà)')}
+        {toggle('music', '🪕 Mandolino')}
         {toggle('sfx', '🔊 Effetti sonori')}
         {toggle('tts', '🗣️ Voce sintetica del browser (al posto del borbottio)')}
         {toggle('cinematic', '🎥 Camera cinematica')}

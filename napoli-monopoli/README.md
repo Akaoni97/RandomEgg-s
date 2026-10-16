@@ -12,7 +12,7 @@ Si gioca in 4 sullo stesso dispositivo (hot-seat). Ogni posto può essere preso 
 ```bash
 npm install
 npm run dev      # gioca su http://localhost:5173
-npm test         # 55 test vitest su motore, carte, frasi e layout
+npm test         # 60 test vitest su motore, carte, frasi, layout e lettore ABC
 npm run build    # build di produzione in dist/ (servibile da qualsiasi hosting statico)
 ```
 
@@ -46,6 +46,14 @@ e *Boss* una partita porta in media 2-2,6 fallimenti in circa 130 turni (≈ 45-
 quattro pedine vincono tra il 23% e il 27% delle volte (1.200 partite) con i posti a rotazione. Rispetto al Monopoli
 classico gli affitti delle proprietà sono ×1,5, bassi e palazzi costano il 25% in meno e nel Caffè Sospeso
 finisce solo metà di tasse e multe.
+
+## Musica
+
+Il mandolino suona in ciclo tutti i brani in `src/audio/tunes/*.abc`, scritti in
+[notazione ABC](https://abcnotation.com/wiki/abc:standard:v2.1) (una voce, con le sigle degli accordi tra
+virgolette per il basso). Per aggiungere un brano basta mettere un nuovo file `.abc` in quella cartella:
+non serve toccare il codice. Il lettore (`src/audio/abc.ts`) capisce intestazioni X/T/M/L/Q/K, note con
+ottave e alterazioni, durate, pause, legature e accordi. I ritornelli non vengono ripetuti.
 
 ## Struttura
 
