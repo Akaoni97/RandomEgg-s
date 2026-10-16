@@ -3,7 +3,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Silkscreen&family=VT323&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Righteous&family=Black+Ops+One&family=Permanent+Marker&family=Silkscreen&family=VT323&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: a smoky basement rig. Rack header (logo plate, VFD screen, analog VU meters, transport); pads beside a turntable; selected pad beside the mixer; sequencer strip below. One committed dark look, like real gear. */
 :root {
@@ -28,6 +28,19 @@
   --hC: #4fbcaa;
   --hD: #b48ddb;
   --hue: var(--hA);
+  --room-glow: #2a2620;
+  --well: #141311; --well-ink: #7d7663; --well-text: #ebe1c6;
+  --edge: #0e0d0c;
+  --key-1: #4a463e; --key-2: #36332d; --key-ink: #ebe1c6;
+  --on-1: #f6b14f; --on-2: #d7882a; --on-ink: #1a1408;
+  --pad-ink: #ebe1c6; --pad-ink-2: #7d7663;
+  --led-off: #5a2a22;
+  --vfd-mid: #3f8f7a; --vfd-hi: #bff9e8;
+  --cell: #2a2823; --cell-beat: #312e28; --cell-hover: #3b3831;
+  --cap-1: #d9d0b8; --cap-2: #b5ac94;
+  --screw-1: #8b8577; --screw-2: #3b3830;
+  --vu-1: #f3e9cf; --vu-2: #d8cba7; --vu-ink: #2a241a; --vu-red: #c2392b;
+  --stripe-1: #f2a43a; --stripe-2: #df6a3c; --stripe-3: #b04a3a; --stripe-4: #4fbcaa;
   --f-logo: "Bungee", "Arial Black", Impact, sans-serif;
   --f-label: "Silkscreen", "Courier New", monospace;
   --f-vfd: "VT323", "Courier New", monospace;
@@ -41,7 +54,7 @@
 [hidden] { display: none !important; }
 html { background: var(--room); }
 body {
-  background: radial-gradient(120% 80% at 50% 0%, #2a2620 0%, var(--room) 60%) fixed, var(--room);
+  background: radial-gradient(120% 80% at 50% 0%, var(--room-glow) 0%, var(--room) 60%) fixed, var(--room);
   color: var(--cream); font-family: var(--f-ui); font-size: 14px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -57,28 +70,28 @@ button { cursor: pointer; }
 .unit {
   position: relative; background: linear-gradient(180deg, var(--chassis-2), var(--chassis)); border-radius: 10px; padding: 18px 20px;
   box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 -1px 0 rgba(0,0,0,.6) inset, 0 18px 40px -20px rgba(0,0,0,.9); min-width: 0;
-  border: 1px solid #0c0b0a;
+  border: 1px solid var(--edge);
 }
-.unit::before, .unit::after { content: ""; position: absolute; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #8b8577, #3b3830 70%); box-shadow: 0 1px 0 rgba(255,255,255,.08); }
+.unit::before, .unit::after { content: ""; position: absolute; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--screw-1), var(--screw-2) 70%); box-shadow: 0 1px 0 rgba(255,255,255,.08); }
 .unit::before { left: 8px; } .unit::after { right: 8px; }
 .lbl { font-family: var(--f-label); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--cream-3); }
 .hd { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .hd h2 { margin: 0; font-family: var(--f-label); font-weight: 400; font-size: 12px; letter-spacing: .1em; color: var(--cream-2); text-transform: uppercase; }
 
 .key {
-  border: 0; border-radius: 6px; height: 34px; padding: 0 12px; background: linear-gradient(180deg, #4a463e, #36332d);
-  color: var(--cream); font-family: var(--f-label); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
-  box-shadow: 0 2px 0 #121110, 0 1px 0 rgba(255,255,255,.12) inset; display: inline-flex; align-items: center; justify-content: center; gap: 6px; touch-action: manipulation;
+  border: 0; border-radius: 6px; height: 34px; padding: 0 12px; background: linear-gradient(180deg, var(--key-1), var(--key-2));
+  color: var(--key-ink); font-family: var(--f-label); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+  box-shadow: 0 2px 0 var(--edge), 0 1px 0 rgba(255,255,255,.12) inset; display: inline-flex; align-items: center; justify-content: center; gap: 6px; touch-action: manipulation;
 }
-.key:active, .key.on { transform: translateY(1px); box-shadow: 0 1px 0 #121110, 0 1px 0 rgba(255,255,255,.1) inset; }
-.key.on { background: linear-gradient(180deg, #f6b14f, #d7882a); color: #1a1408; }
+.key:active, .key.on { transform: translateY(1px); box-shadow: 0 1px 0 var(--edge), 0 1px 0 rgba(255,255,255,.1) inset; }
+.key.on { background: linear-gradient(180deg, var(--on-1), var(--on-2)); color: var(--on-ink); }
 .key.small { height: 28px; padding: 0 9px; font-size: 10px; }
-.key .ledi { width: 6px; height: 6px; border-radius: 50%; background: #5a2a1e; box-shadow: none; }
-.key.on .ledi { background: #fff3d6; }
-.seg { display: inline-flex; background: #141311; border-radius: 8px; padding: 3px; gap: 3px; box-shadow: 0 1px 0 rgba(255,255,255,.05); }
-.seg button { border: 0; background: transparent; border-radius: 6px; height: 28px; padding: 0 10px; font-family: var(--f-label); font-size: 10px; text-transform: uppercase; color: var(--cream-3); white-space: nowrap; }
-.seg button[aria-pressed="true"] { background: linear-gradient(180deg, #4a463e, #36332d); color: var(--cream); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset; }
-select { height: 30px; border-radius: 6px; border: 1px solid var(--line); background: #141311; padding: 0 6px; font-size: 13px; color: var(--cream); }
+.key .ledi { width: 6px; height: 6px; border-radius: 50%; background: var(--led-off); box-shadow: none; }
+.key.on .ledi { background: var(--on-1); }
+.seg { display: inline-flex; background: var(--well); border-radius: 8px; padding: 3px; gap: 3px; box-shadow: 0 1px 0 rgba(255,255,255,.05); }
+.seg button { border: 0; background: transparent; border-radius: 6px; height: 28px; padding: 0 10px; font-family: var(--f-label); font-size: 10px; text-transform: uppercase; color: var(--well-ink); white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: linear-gradient(180deg, var(--key-1), var(--key-2)); color: var(--key-ink); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset; }
+select { height: 30px; border-radius: 6px; border: 1px solid var(--line); background: var(--well); padding: 0 6px; font-size: 13px; color: var(--well-text); }
 
 /* ---------- rack header ---------- */
 .rack { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 18px; align-items: stretch; padding-top: 22px; }
@@ -90,35 +103,35 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 .logo small { font-family: var(--f-label); font-size: 9px; color: var(--cream-3); letter-spacing: .08em; }
 .vfd {
   position: relative; background: var(--vfd-bg); border-radius: 6px; padding: 10px 14px; min-width: 0; overflow: hidden;
-  box-shadow: 0 0 0 3px #0b0a09, 0 0 0 4px #3a372f, inset 0 0 30px rgba(0,0,0,.9); display: grid; grid-template-rows: auto minmax(0,1fr) auto auto; gap: 6px;
-  font-family: var(--f-vfd); color: var(--vfd); text-shadow: 0 0 6px rgba(124,243,211,.55);
+  box-shadow: 0 0 0 3px var(--edge), 0 0 0 4px var(--line), inset 0 0 30px rgba(0,0,0,.9); display: grid; grid-template-rows: auto minmax(0,1fr) auto auto; gap: 6px;
+  font-family: var(--f-vfd); color: var(--vfd); text-shadow: 0 0 6px color-mix(in srgb, var(--vfd) 55%, transparent);
 }
 .vfd::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
 .vfd .row { display: flex; gap: 18px; align-items: baseline; white-space: nowrap; min-width: 0; }
 .vfd .cell { display: flex; gap: 6px; align-items: baseline; }
-.vfd .k { font-size: 15px; color: #3f8f7a; text-shadow: none; }
+.vfd .k { font-size: 15px; color: var(--vfd-mid); text-shadow: none; }
 .vfd .v { font-size: 26px; line-height: 1; }
 .vfd .msg { font-size: 19px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .vfd canvas { width: 100%; height: 78px; display: block; cursor: pointer; }
 .visbtn { border: 0; background: transparent; color: var(--vfd); font-family: var(--f-vfd); font-size: 18px; padding: 0 2px; text-shadow: inherit; white-space: nowrap; }
-.visbtn:hover { color: #c7fbec; }
-.vfd.beat { box-shadow: 0 0 0 3px #0b0a09, 0 0 0 4px #3a372f, inset 0 0 30px rgba(0,0,0,.9), 0 0 24px -6px rgba(124,243,211,.45); }
+.visbtn:hover { color: var(--vfd-hi); }
+.vfd.beat { box-shadow: 0 0 0 3px var(--edge), 0 0 0 4px var(--line), inset 0 0 30px rgba(0,0,0,.9), 0 0 24px -6px color-mix(in srgb, var(--vfd) 45%, transparent); }
 .steps16 { display: grid; grid-template-columns: repeat(16, minmax(0,1fr)); gap: 3px; }
 .steps16 i { height: 5px; border-radius: 1px; background: var(--vfd-dim); display: block; }
-.steps16 i.has { background: #2f6d5e; }
+.steps16 i.has { background: var(--vfd-mid); }
 .steps16 i.now { background: var(--vfd); box-shadow: 0 0 8px var(--vfd); }
 .vus { display: flex; gap: 10px; align-items: center; }
-.vus canvas { width: 132px; height: 84px; border-radius: 5px; display: block; box-shadow: 0 0 0 3px #0b0a09, 0 0 0 4px #3a372f; }
+.vus canvas { width: 132px; height: 84px; border-radius: 5px; display: block; box-shadow: 0 0 0 3px var(--edge), 0 0 0 4px var(--line); }
 .transport { display: grid; gap: 8px; align-content: center; }
 .transport .row { display: flex; gap: 8px; align-items: center; }
 .bigkey {
   width: 64px; height: 52px; border: 0; border-radius: 8px; display: grid; place-items: center;
-  background: linear-gradient(180deg, #4a463e, #36332d); box-shadow: 0 3px 0 #121110, 0 1px 0 rgba(255,255,255,.12) inset; color: var(--cream);
+  background: linear-gradient(180deg, var(--key-1), var(--key-2)); box-shadow: 0 3px 0 var(--edge), 0 1px 0 rgba(255,255,255,.12) inset; color: var(--key-ink);
 }
 .bigkey svg { width: 20px; height: 20px; fill: currentColor; }
-.bigkey:active { transform: translateY(2px); box-shadow: 0 1px 0 #121110; }
-.bigkey.play.on { background: linear-gradient(180deg, #8ef6d9, #45bfa1); color: #06231c; box-shadow: 0 3px 0 #0b3a2f, 0 0 20px -4px rgba(124,243,211,.7); }
-.bigkey.rec .dot { width: 16px; height: 16px; border-radius: 50%; background: #5a2a22; }
+.bigkey:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
+.bigkey.play.on { background: linear-gradient(180deg, var(--vfd-hi), var(--vfd)); color: var(--vfd-bg); box-shadow: 0 3px 0 var(--edge), 0 0 20px -4px color-mix(in srgb, var(--vfd) 70%, transparent); }
+.bigkey.rec .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--led-off); }
 .bigkey.rec.on .dot { background: var(--red); box-shadow: 0 0 12px var(--red); animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: .35; } }
 .tempo { display: flex; align-items: center; gap: 6px; }
@@ -126,33 +139,33 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 .tempo b { font-family: var(--f-vfd); font-weight: 400; font-size: 26px; color: var(--led); text-shadow: 0 0 8px rgba(255,159,46,.5); min-width: 3ch; text-align: center; font-variant-numeric: tabular-nums; }
 .pats { display: grid; grid-template-columns: repeat(8, 26px); gap: 4px; }
 .pats button {
-  height: 26px; border: 0; border-radius: 4px; background: #141311; color: var(--cream-3); font-family: var(--f-vfd); font-size: 18px; line-height: 1; position: relative;
+  height: 26px; border: 0; border-radius: 4px; background: var(--well); color: var(--well-ink); font-family: var(--f-vfd); font-size: 18px; line-height: 1; position: relative;
   box-shadow: 0 1px 0 rgba(255,255,255,.05);
 }
-.pats button.has { color: var(--cream-2); }
-.pats button[aria-pressed="true"] { background: var(--led); color: #1a1408; box-shadow: 0 0 10px -2px var(--led); }
+.pats button.has { color: var(--well-text); }
+.pats button[aria-pressed="true"] { background: var(--led); color: var(--on-ink); box-shadow: 0 0 10px -2px var(--led); }
 .pats button.queued { animation: blink .5s steps(2) infinite; outline: 1px solid var(--led); }
 
 /* ---------- pads ---------- */
 .grid2 { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 14px; align-items: start; }
 .banks button .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
 .banks button.muted { text-decoration: line-through; opacity: .55; }
-.pads { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; padding: 12px; background: #141311; border-radius: 8px; box-shadow: inset 0 2px 8px rgba(0,0,0,.7); }
+.pads { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; padding: 12px; background: var(--well); border-radius: 8px; box-shadow: inset 0 2px 8px rgba(0,0,0,.7); }
 .pad {
   position: relative; aspect-ratio: 1 / .9; max-width: 100%; border: 0; border-radius: 8px; padding: 9px; text-align: left;
-  background: radial-gradient(120% 90% at 50% 0%, var(--rubber-hi), var(--rubber) 70%); color: var(--cream);
-  box-shadow: 0 3px 0 #0e0d0c, 0 1px 0 rgba(255,255,255,.08) inset; display: grid; grid-template-rows: auto 1fr auto; gap: 2px;
+  background: radial-gradient(120% 90% at 50% 0%, var(--rubber-hi), var(--rubber) 70%); color: var(--pad-ink);
+  box-shadow: 0 3px 0 var(--edge), 0 1px 0 rgba(255,255,255,.08) inset; display: grid; grid-template-rows: auto 1fr auto; gap: 2px;
   touch-action: none; user-select: none; -webkit-user-select: none; overflow: hidden;
 }
 .pad::after { content: ""; position: absolute; inset: 0; border-radius: 8px; pointer-events: none; box-shadow: inset 0 0 0 2px var(--hue); opacity: 0; }
 .pad .top { display: flex; justify-content: space-between; gap: 4px; }
-.pad .idx, .pad .ky { font-family: var(--f-label); font-size: 9px; color: var(--cream-3); text-transform: uppercase; }
+.pad .idx, .pad .ky { font-family: var(--f-label); font-size: 9px; color: var(--pad-ink-2); text-transform: uppercase; }
 .pad .nm { align-self: end; font-weight: 700; font-size: 13px; line-height: 1.1; overflow-wrap: anywhere; }
-.pad .sub { font-size: 10px; color: var(--cream-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pad .use { position: absolute; top: 9px; left: 50%; width: 14px; margin-left: -7px; height: 3px; border-radius: 2px; background: #1a1916; }
+.pad .sub { font-size: 10px; color: var(--pad-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pad .use { position: absolute; top: 9px; left: 50%; width: 14px; margin-left: -7px; height: 3px; border-radius: 2px; background: var(--well); }
 .pad.used .use { background: var(--hue); box-shadow: 0 0 6px var(--hue); }
 .pad.sel::after { opacity: .9; }
-.pad.hit { transform: translateY(2px); box-shadow: 0 1px 0 #0e0d0c, 0 0 24px -2px var(--hue); background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 60%, var(--rubber-hi)), color-mix(in srgb, var(--hue) 30%, var(--rubber)) 75%); }
+.pad.hit { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge), 0 0 24px -2px var(--hue); background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 60%, var(--rubber-hi)), color-mix(in srgb, var(--hue) 30%, var(--rubber)) 75%); }
 .pad.drop { outline: 2px dashed var(--hue); }
 .pads.notes .pad { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 22%, var(--rubber-hi)), var(--rubber) 75%); }
 .pads.notes .pad.root { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 50%, var(--rubber-hi)), color-mix(in srgb, var(--hue) 18%, var(--rubber)) 80%); }
@@ -167,7 +180,7 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 /* ---------- turntable ---------- */
 .deckwrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .deckbody { display: grid; grid-template-columns: minmax(0,1fr) 46px; gap: 12px; align-items: stretch; }
-.platter { position: relative; aspect-ratio: 1 / 1; max-width: 100%; background: linear-gradient(145deg, #2c2a25, #1a1916); border-radius: 8px; box-shadow: inset 0 0 0 1px #0b0a09, inset 0 2px 10px rgba(0,0,0,.6); }
+.platter { position: relative; aspect-ratio: 1 / 1; max-width: 100%; background: linear-gradient(145deg, var(--plate), var(--well)); border-radius: 8px; box-shadow: inset 0 0 0 1px var(--edge), inset 0 2px 10px rgba(0,0,0,.6); }
 .platter canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; display: block; }
 .platter canvas:active { cursor: grabbing; }
 .pitchf { display: grid; grid-template-rows: auto minmax(0,1fr) auto; justify-items: center; gap: 6px; }
@@ -177,25 +190,26 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 .deckctl .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .xfader { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 10px; align-items: center; }
 .cutbtn { height: 40px; min-width: 64px; }
+#autoSeg { flex-wrap: wrap; justify-content: flex-end; }
 .deckknobs { grid-template-columns: repeat(2, minmax(0, 90px)); justify-content: start; }
 .cutbtn.on { background: linear-gradient(180deg, #ff7a6b, var(--red)); color: #fff; }
 
 /* sliders: vintage fader caps */
 input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; height: 24px; width: 100%; touch-action: none; cursor: pointer; }
-input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: #0d0c0b; box-shadow: 0 1px 0 rgba(255,255,255,.06); }
-input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: #0d0c0b; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 22px; margin-top: -9px; border-radius: 3px; background: linear-gradient(180deg, #d9d0b8 0 45%, #1d1c19 45% 55%, #b5ac94 55%); box-shadow: 0 2px 3px rgba(0,0,0,.6); }
-input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; border-radius: 3px; background: linear-gradient(180deg, #d9d0b8 0 45%, #1d1c19 45% 55%, #b5ac94 55%); }
+input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--well); box-shadow: 0 1px 0 rgba(255,255,255,.06); }
+input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--well); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 22px; margin-top: -9px; border-radius: 3px; background: linear-gradient(180deg, var(--cap-1) 0 45%, var(--edge) 45% 55%, var(--cap-2) 55%); box-shadow: 0 2px 3px rgba(0,0,0,.6); }
+input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; border-radius: 3px; background: linear-gradient(180deg, var(--cap-1) 0 45%, var(--edge) 45% 55%, var(--cap-2) 55%); }
 .pitchf input[type=range]::-webkit-slider-runnable-track { width: 4px; height: 100%; }
-.pitchf input[type=range]::-webkit-slider-thumb { width: 22px; height: 14px; margin-top: 0; margin-left: -9px; background: linear-gradient(90deg, #d9d0b8 0 45%, #1d1c19 45% 55%, #b5ac94 55%); }
+.pitchf input[type=range]::-webkit-slider-thumb { width: 22px; height: 14px; margin-top: 0; margin-left: -9px; background: linear-gradient(90deg, var(--cap-1) 0 45%, var(--edge) 45% 55%, var(--cap-2) 55%); }
 
 /* ---------- inspector + mixer ---------- */
 .ins { display: grid; gap: 14px; }
 .soundline { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 12px; align-items: center; }
-.tag { width: 54px; height: 54px; border-radius: 6px; background: var(--hue); color: #15120c; display: grid; place-items: center; font-family: var(--f-logo); font-size: 18px; box-shadow: 0 0 18px -6px var(--hue); }
+.tag { width: 54px; height: 54px; border-radius: 6px; background: var(--hue); color: var(--on-ink); display: grid; place-items: center; font-family: var(--f-logo); font-size: 18px; box-shadow: 0 0 18px -6px var(--hue); }
 .soundline h3 { margin: 2px 0 4px; font-size: 20px; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.chip { font-family: var(--f-label); font-size: 9px; text-transform: uppercase; padding: 3px 6px; border-radius: 3px; background: #141311; color: var(--cream-3); }
+.chip { font-family: var(--f-label); font-size: 9px; text-transform: uppercase; padding: 3px 6px; border-radius: 3px; background: var(--well); color: var(--well-ink); }
 .chip.tuned { color: var(--hue); }
 .knobs { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
 .knob { display: grid; justify-items: center; gap: 4px; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -207,12 +221,12 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .fxpads { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; }
 .fx {
   height: 56px; border: 0; border-radius: 7px; padding: 4px; touch-action: none; user-select: none; -webkit-user-select: none;
-  background: linear-gradient(180deg, #4a463e, #36332d); box-shadow: 0 3px 0 #121110, 0 1px 0 rgba(255,255,255,.12) inset;
-  display: grid; align-content: center; gap: 2px; font-family: var(--f-label); font-size: 11px; text-transform: uppercase; color: var(--cream);
+  background: linear-gradient(180deg, var(--key-1), var(--key-2)); box-shadow: 0 3px 0 var(--edge), 0 1px 0 rgba(255,255,255,.12) inset;
+  display: grid; align-content: center; gap: 2px; font-family: var(--f-label); font-size: 11px; text-transform: uppercase; color: var(--key-ink);
 }
 .fx small { font-family: var(--f-ui); text-transform: none; font-size: 10px; color: var(--cream-3); }
-.fx.on { transform: translateY(2px); box-shadow: 0 1px 0 #121110, 0 0 18px -4px var(--led); background: linear-gradient(180deg, #f6b14f, #d7882a); color: #1a1408; }
-.fx.on small { color: #3b2a0e; }
+.fx.on { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge), 0 0 18px -4px var(--led); background: linear-gradient(180deg, var(--on-1), var(--on-2)); color: var(--on-ink); }
+.fx.on small { color: var(--on-ink); }
 .master { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
 
 /* ---------- sequencer ---------- */
@@ -220,27 +234,27 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .grid { display: grid; grid-template-columns: 160px repeat(4, minmax(0,1fr)); gap: 4px 10px; min-width: 720px; }
 .grid .lab { border: 0; background: transparent; display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 6px; border-radius: 4px; text-align: left; font-size: 12px; font-weight: 600; color: var(--cream-2); min-width: 0; }
 .grid .lab span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.grid .lab i { width: 6px; height: 6px; border-radius: 50%; background: #3a372f; flex: none; }
-.grid .lab.sel { background: #141311; color: var(--cream); }
+.grid .lab i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); flex: none; }
+.grid .lab.sel { background: var(--well); color: var(--well-text); }
 .grid .lab.sel i { background: var(--hue); box-shadow: 0 0 6px var(--hue); }
 .grid .lab.note { font-family: var(--f-vfd); font-size: 18px; font-weight: 400; }
 .grid .lab.rootrow i { background: var(--hue); }
 .beat { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }
 .colnum { font-family: var(--f-vfd); font-size: 15px; color: var(--cream-3); text-align: center; }
-.cell { height: 28px; border: 0; border-radius: 3px; background: #2a2823; box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 1px 0 #0c0b0a; padding: 0; position: relative; }
-.beat .cell:first-child:not(.on):not(.acc) { background: #312e28; }
-.cell:hover { background: #3b3831; }
-.cell.on { background: color-mix(in srgb, var(--hue) 55%, #2a2823); }
+.cell { height: 28px; border: 0; border-radius: 3px; background: var(--cell); box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 1px 0 var(--edge); padding: 0; position: relative; }
+.beat .cell:first-child:not(.on):not(.acc) { background: var(--cell-beat); }
+.cell:hover { background: var(--cell-hover); }
+.cell.on { background: color-mix(in srgb, var(--hue) 55%, var(--cell)); }
 .cell.acc { background: var(--hue); box-shadow: 0 0 10px -3px var(--hue); }
 .cell.pitched::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 5px; height: 2px; background: rgba(20,16,10,.6); border-radius: 1px; }
 .cell.now { box-shadow: inset 0 0 0 2px var(--cream); }
 .roll .cell, .roll .lab { height: 22px; }
-.rootrow-cells .cell:not(.on):not(.acc) { background: #34302a; }
+.rootrow-cells .cell:not(.on):not(.acc) { background: var(--cell-beat); }
 
 /* ---------- library ---------- */
 .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 30; }
 .drawer {
-  position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); z-index: 31; background: var(--chassis); border-left: 1px solid #0b0a09;
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); z-index: 31; background: var(--chassis); border-left: 1px solid var(--edge);
   display: grid; grid-template-rows: auto auto auto minmax(0,1fr) auto; gap: 12px;
   padding: calc(18px + env(safe-area-inset-top, 0px)) calc(18px + env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) 18px;
   box-shadow: -30px 0 60px -20px rgba(0,0,0,.9);
@@ -248,16 +262,16 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .drawer h3 { margin: 0; font-family: var(--f-logo); font-weight: 400; font-size: 18px; }
 .drawer .dh { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
 .drawer .dh p { margin: 4px 0 0; font-size: 13px; color: var(--cream-2); }
-.search { height: 38px; border-radius: 6px; border: 1px solid var(--line); background: #141311; padding: 0 12px; width: 100%; font-size: 14px; }
+.search { height: 38px; border-radius: 6px; border: 1px solid var(--line); background: var(--well); color: var(--well-text); padding: 0 12px; width: 100%; font-size: 14px; }
 .cats { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
 .cats button { border: 1px solid var(--line); background: transparent; border-radius: 4px; height: 28px; padding: 0 10px; font-family: var(--f-label); font-size: 9px; text-transform: uppercase; white-space: nowrap; color: var(--cream-2); }
-.cats button[aria-pressed="true"] { background: var(--led); color: #1a1408; border-color: var(--led); }
+.cats button[aria-pressed="true"] { background: var(--led); color: var(--on-ink); border-color: var(--led); }
 .list { overflow-y: auto; display: grid; align-content: start; gap: 2px; margin: 0 -6px; padding: 0 6px; }
 .list .grp { font-family: var(--f-label); font-size: 9px; text-transform: uppercase; color: var(--cream-3); padding: 12px 6px 4px; }
 .item { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 5px 6px; border-radius: 6px; }
 .item:hover { background: var(--chassis-2); }
-.item.cur { background: #2b2822; box-shadow: inset 3px 0 0 var(--hue); }
-.item .pv { width: 32px; height: 32px; border: 0; border-radius: 5px; background: #141311; display: grid; place-items: center; color: var(--vfd); }
+.item.cur { background: var(--chassis-2); box-shadow: inset 3px 0 0 var(--hue); }
+.item .pv { width: 32px; height: 32px; border: 0; border-radius: 5px; background: var(--vfd-bg); display: grid; place-items: center; color: var(--vfd); }
 .item .pv svg { width: 11px; height: 11px; fill: currentColor; }
 .item .tx { border: 0; background: transparent; text-align: left; padding: 0; min-width: 0; }
 .item .tx b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -271,9 +285,83 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .help ol, .help ul { margin: 0; padding-left: 1.15em; display: grid; gap: 6px; line-height: 1.5; color: var(--cream-2); }
 .help p { margin: 0 0 8px; color: var(--cream-2); line-height: 1.5; font-size: 13px; }
 .help a { color: var(--cream); }
-kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 1px 4px; background: #141311; color: var(--cream); }
+kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 1px 4px; background: var(--well); color: var(--well-text); }
 .keys { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 7px 12px; font-size: 13px; color: var(--cream-2); align-items: baseline; }
 .keys dt { white-space: nowrap; } .keys dd { margin: 0; }
+
+
+/* ---------- scocche ---------- */
+.app[data-skin="hifi"] {
+  --room: #140e0a; --room-glow: #3a2618;
+  --chassis: #b4b0a6; --chassis-2: #d9d6cd; --plate: #8e8a80; --rubber: #2a2825; --rubber-hi: #3a3834; --line: #8f8b81;
+  --cream: #1c1a16; --cream-2: #37342e; --cream-3: #5f5b51;
+  --well: #22201d; --well-ink: #a7a296; --well-text: #ece8dd; --edge: #6e6a61;
+  --key-1: #2f2d2a; --key-2: #181715; --key-ink: #ece8dd;
+  --on-1: #ffb15e; --on-2: #e0782a; --on-ink: #1f1206;
+  --pad-ink: #ece8dd; --pad-ink-2: #8d887c; --led-off: #4a2216;
+  --vfd: #8fd6ff; --vfd-dim: #10243a; --vfd-bg: #040b14; --vfd-mid: #3c78a8; --vfd-hi: #d6f1ff; --led: #ff8a3a;
+  --cell: #a5a197; --cell-beat: #99958b; --cell-hover: #8d897f;
+  --cap-1: #f4f2ec; --cap-2: #c9c5bb; --screw-1: #f0eee8; --screw-2: #7c786f;
+  --vu-1: #ffd98c; --vu-2: #f0a94a; --vu-ink: #2b1a07; --vu-red: #b3261e;
+  --stripe-1: #6b3f22; --stripe-2: #8a5530; --stripe-3: #b07443; --stripe-4: #d39a5e;
+  --f-logo: "Righteous", "Arial Black", sans-serif;
+}
+.app[data-skin="hifi"] .unit {
+  border-radius: 3px; border: 0; border-left: 16px solid #5a361d; border-right: 16px solid #5a361d;
+  border-image: repeating-linear-gradient(90deg, #4a2b16 0 3px, #6b4022 3px 7px, #5a361d 7px 12px, #7a4a28 12px 14px) 1;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 3px), linear-gradient(180deg, var(--chassis-2), var(--chassis));
+}
+.app[data-skin="surplus"] {
+  --room: #0d0f09; --room-glow: #262b1a;
+  --chassis: #3a4029; --chassis-2: #4a5134; --plate: #30351f; --rubber: #2b2e21; --rubber-hi: #3b3f2d; --line: #2a2e1c;
+  --cream: #e6dfc2; --cream-2: #bdb694; --cream-3: #8c8767;
+  --well: #1e2115; --well-ink: #8c8767; --well-text: #e6dfc2; --edge: #14160d;
+  --key-1: #5c6342; --key-2: #41472d; --key-ink: #ece5c8;
+  --on-1: #e3c97c; --on-2: #b89b4c; --on-ink: #211c08;
+  --pad-ink: #e6dfc2; --pad-ink-2: #8c8767; --led-off: #4a1a12;
+  --vfd: #ff9b3d; --vfd-dim: #2c1806; --vfd-bg: #110903; --vfd-mid: #9a5a1e; --vfd-hi: #ffd7a3; --led: #ff4433;
+  --cell: #2f3322; --cell-beat: #363b27; --cell-hover: #41472f;
+  --cap-1: #d8d1b4; --cap-2: #aaa385; --screw-1: #9da07f; --screw-2: #3c4029;
+  --vu-1: #262a1a; --vu-2: #1b1e12; --vu-ink: #e6dfc2; --vu-red: #ff5a3a;
+  --stripe-1: #e6dfc2; --stripe-2: #1e2115; --stripe-3: #e6dfc2; --stripe-4: #1e2115;
+  --f-logo: "Black Ops One", "Arial Black", sans-serif;
+}
+.app[data-skin="surplus"] .unit {
+  border-radius: 4px;
+  background: radial-gradient(60% 40% at 80% 10%, rgba(0,0,0,.18), transparent 70%), radial-gradient(30% 20% at 15% 85%, rgba(230,223,194,.05), transparent 70%), linear-gradient(180deg, var(--chassis-2), var(--chassis));
+}
+.app[data-skin="surplus"] .rack::after { content: "APP. RITMICO M-68 · PROPRIETÀ DEL GENIO · NON APRIRE"; position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); width: auto; height: auto; top: auto; right: auto; border-radius: 0; background: none; box-shadow: none; font-family: var(--f-label); font-size: 8px; letter-spacing: .2em; color: var(--cream-3); white-space: nowrap; }
+.app[data-skin="metro"] {
+  --room: #0a0a0c; --room-glow: #1e1a24;
+  --chassis: #1a1a1e; --chassis-2: #26262c; --plate: #2b2b31; --rubber: #2e2e35; --rubber-hi: #3d3d46; --line: #34343c;
+  --cream: #f1efe9; --cream-2: #bdbbb5; --cream-3: #85837e;
+  --well: #111114; --well-ink: #8a8890; --well-text: #f1efe9; --edge: #070709;
+  --key-1: #3a3a42; --key-2: #26262c; --key-ink: #f1efe9;
+  --on-1: #ffe066; --on-2: #f2b705; --on-ink: #1a1400;
+  --pad-ink: #f1efe9; --pad-ink-2: #8a8890; --led-off: #4a1430;
+  --vfd: #ff5fae; --vfd-dim: #33102a; --vfd-bg: #0c040a; --vfd-mid: #a3306f; --vfd-hi: #ffc4e2; --led: #ffd23f;
+  --cell: #26262c; --cell-beat: #2e2e35; --cell-hover: #3a3a42;
+  --cap-1: #f1efe9; --cap-2: #b9b7b1; --screw-1: #bdbbb5; --screw-2: #3a3a42;
+  --vu-1: #f1efe9; --vu-2: #d9d6ce; --vu-ink: #111114; --vu-red: #ff2f7d;
+  --stripe-1: #ff5fae; --stripe-2: #ffd23f; --stripe-3: #3ad6ff; --stripe-4: #9dff57;
+  --f-logo: "Permanent Marker", "Comic Sans MS", cursive;
+}
+.app[data-skin="metro"] .unit {
+  border-radius: 6px;
+  background:
+    radial-gradient(18% 30% at 92% 18%, rgba(255,95,174,.16), transparent 70%),
+    radial-gradient(14% 24% at 6% 80%, rgba(255,210,63,.12), transparent 70%),
+    radial-gradient(10% 16% at 55% 100%, rgba(58,214,255,.10), transparent 70%),
+    linear-gradient(180deg, var(--chassis-2), var(--chassis));
+}
+.app[data-skin="metro"] .logo b { transform: rotate(-4deg); letter-spacing: .02em; text-shadow: 3px 3px 0 #ff5fae, -1px -1px 0 #111; }
+.app[data-skin="metro"] .logo b span { color: #ffd23f; }
+.app[data-skin="hifi"] .logo b { letter-spacing: .06em; }
+.app[data-skin="surplus"] .logo b { letter-spacing: .08em; }
+.skins { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 4px; }
+.skins button { border: 0; border-radius: 4px; height: 22px; padding: 0 6px; background: var(--well); color: var(--well-ink); font-family: var(--f-label); font-size: 8px; text-transform: uppercase; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.skins button i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.skins button[aria-pressed="true"] { color: var(--well-text); box-shadow: inset 0 0 0 1px var(--led); }
 
 @media (max-width: 1080px) {
   .rack { grid-template-columns: auto minmax(0,1fr); }
@@ -321,8 +409,9 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
   <header class="unit rack">
     <div class="logo">
       <b>MAT<span>·</span>TONE</b>
-      <div class="stripes" aria-hidden="true"><i style="background:#f2a43a"></i><i style="background:#df6a3c"></i><i style="background:#b04a3a"></i><i style="background:#4fbcaa"></i></div>
-      <small>SP-88 · CAMPIONATORE DA CANTINA</small>
+      <div class="stripes" aria-hidden="true"><i style="background:var(--stripe-1)"></i><i style="background:var(--stripe-2)"></i><i style="background:var(--stripe-3)"></i><i style="background:var(--stripe-4)"></i></div>
+      <small id="skinTag">SP-88 · CAMPIONATORE DA CANTINA</small>
+      <div class="skins" id="skins" role="group" aria-label="Scocca"></div>
     </div>
     <div class="vfd" id="vfd">
       <div class="row">
@@ -377,7 +466,11 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
         <div class="seg" role="group" aria-label="Scratch automatico" id="autoSeg">
           <button type="button" data-auto="" aria-pressed="true">A mano</button>
           <button type="button" data-auto="baby" aria-pressed="false">Baby</button>
+          <button type="button" data-auto="chirp" aria-pressed="false">Chirp</button>
+          <button type="button" data-auto="flare" aria-pressed="false">Flare</button>
+          <button type="button" data-auto="tear" aria-pressed="false">Tear</button>
           <button type="button" data-auto="trans" aria-pressed="false">Transformer</button>
+          <button type="button" data-auto="scribble" aria-pressed="false">Scribble</button>
         </div>
       </div>
       <div class="deckbody">
@@ -458,6 +551,7 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
         <li><b>Ritmo</b>: un tocco = colpo, due = accento, tre = spento. <b>Melodia</b>: righe = note della scala.</li>
         <li><b>Note</b> trasforma i pad in una tastiera sulla scala scelta, col suono selezionato.</li>
         <li>Pallino rosso + Play: quello che suoni viene registrato.</li>
+        <li>In alto a sinistra scegli la <b>scocca</b>: Cantina, Hi-Fi ’76, Surplus ’68 o Metro ’89.</li>
       </ol>
     </div>
     <div>
@@ -466,7 +560,8 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
         <li>Trascina il disco avanti e indietro: la velocità della mano è la velocità del suono.</li>
         <li><b>Taglio</b> (o tasto <kbd>G</kbd>) apre e chiude il fader al volo, come un crossfader.</li>
         <li><b>Campiona il beat</b> registra una battuta di quello che sta suonando e la mette sul disco.</li>
-        <li><b>Baby</b> e <b>Transformer</b> scratchano da soli, a tempo.</li>
+        <li><b>Baby</b>, <b>Chirp</b>, <b>Flare</b>, <b>Tear</b>, <b>Transformer</b> e <b>Scribble</b> sono le tecniche classiche: il piatto le esegue da solo, a tempo. Tocca il disco per riprendere il controllo.</li>
+        <li>Il disco gira esattamente sotto il dito; tenerlo fermo fa silenzio, come su un vinile vero.</li>
         <li><b>Cupo ↔ chiaro</b> e <b>Sporco</b> cambiano il colore dello scratch: tutto a sinistra è scuro, tutto a destra è sporco come un campionatore a 12 bit.</li>
         <li><b>Start / Stop</b> fa girare il disco; il pitch lo accelera o lo rallenta.</li>
       </ol>
@@ -722,6 +817,7 @@ const SYNTH_ROWS = [
   ["sy_drop","Caduta","Effetti",null], ["sy_whoosh","Soffio","Effetti",null], ["sy_glitch","Glitch","Effetti",null],
   ["sy_vinyl","Fruscio vinile","Effetti",null], ["sy_laser","Laser","Effetti",null], ["sy_ping","Ping","Effetti",84],
   ["sy_noise","Botta di rumore","Effetti",null], ["sy_vox","Voce “ah”","Voci",48],
+  ["sy_ahh","Voce “aaah” da scratch","Voci",null], ["sy_yeah","Voce “yeah”","Voci",null], ["sy_hey","Voce “hey”","Voci",null], ["sy_ooh","Voce “uuoh”","Voci",null],
 ];
 const SOUNDS = new Map();
 for (const [id, name, cat, root] of SYNTH_ROWS) SOUNDS.set(id, { id, name, cat, root, kind: "synth", src: "Sintetizzato" });
@@ -790,13 +886,15 @@ function demoPatterns() {
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
-  warmth: 0.35, volume: 0.85, dust: 0.25, xf: 1, deckPitch: 0, deckTone: 0.3, deckDirt: 0.6, vis: 0,
+  warmth: 0.35, volume: 0.85, dust: 0.25, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "cantina", ver: 4,
 };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("mattone-groovebox-v2") || "null");
   if (saved && saved.banks && saved.patterns) {
     state = Object.assign(state, saved);
     state.banks.forEach((b, bi) => b.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
+    if ((saved.ver || 0) < 4) { state.deckTone = 0.62; state.deckDirt = 0.25; }
+    state.ver = 4;
   }
 } catch (e) { /* storage unavailable */ }
 let saveTimer = 0;
@@ -854,6 +952,36 @@ function chord(notes, dur = 1.8) {
     }
   });
 }
+// formant voice: glottal pulses through four vocal-tract resonances, with breath and a human pitch contour
+const VOWELS = { a: [730, 1090, 2440, 3400], e: [530, 1840, 2480, 3500], i: [300, 2250, 3000, 3600], o: [570, 840, 2410, 3300], u: [320, 870, 2240, 3300] };
+function vocal(frames, dur, f0, breathLead = 0.04, pitchCurve = [1.1, 1, 0.94]) {
+  return mk(dur, (d, n) => {
+    const bws = [90, 110, 170, 250], gains = [1, 0.62, 0.3, 0.12];
+    const res = [0, 1, 2, 3].map(k => new BQ("bp", VOWELS.a[k], VOWELS.a[k] / bws[k]));
+    let ph = 0, prevG = 0, jit = 0;
+    for (let i = 0; i < n; i++) {
+      const t = i / SR, u = t / dur;
+      if (i % 48 === 0) {
+        let j = 0; while (j < frames.length - 1 && frames[j + 1][0] <= u) j++;
+        const A = frames[j], B = frames[Math.min(j + 1, frames.length - 1)];
+        const w = B[0] > A[0] ? Math.min(1, (u - A[0]) / (B[0] - A[0])) : 0, ws = w * w * (3 - 2 * w);
+        for (let k = 0; k < 4; k++) { const f = VOWELS[A[1]][k] * (1 - ws) + VOWELS[B[1]][k] * ws; res[k].set(f, f / bws[k]); }
+        jit += ((Math.random() - 0.5) * 0.02 - jit) * 0.3;
+      }
+      const pc = u < 0.5 ? pitchCurve[0] + (pitchCurve[1] - pitchCurve[0]) * (u / 0.5) : pitchCurve[1] + (pitchCurve[2] - pitchCurve[1]) * ((u - 0.5) / 0.5);
+      const vib = t > 0.15 ? 1 + 0.014 * Math.sin(TAU * 5.4 * t) : 1;
+      ph += f0 * pc * vib * (1 + jit) / SR; const x = ph % 1;
+      const gl = x < 0.4 ? 0.5 * (1 - Math.cos(Math.PI * x / 0.4)) : x < 0.62 ? Math.cos(Math.PI * (x - 0.4) / 0.44) : 0;
+      const src = (gl - prevG) * 18; prevG = gl;                       // glottal flow derivative: bright, buzzy
+      const voiced = t < breathLead ? t / breathLead : 1;
+      const breath = rnd() * (t < breathLead ? 0.9 : 0.06 + 0.12 * gl);
+      const exc = src * voiced + breath;
+      let y = 0; for (let k = 0; k < 4; k++) y += res[k].p(exc) * gains[k];
+      const env = Math.min(1, t / 0.012) * (t > dur - 0.09 ? Math.max(0, (dur - t) / 0.09) : 1);
+      d[i] = Math.tanh(y * 1.6) * env;
+    }
+  });
+}
 const SYNTH = {
   sy_kick: () => mk(0.6, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (45 + 115 * Math.exp(-t * 28)) / SR; const click = t < 0.004 ? rnd() * (1 - t / 0.004) * 0.4 : 0; d[i] = Math.tanh(1.7 * Math.sin(ph) * Math.exp(-t * 6.5)) + click; } }),
   sy_kick808: () => mk(1.6, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (48 + 90 * Math.exp(-t * 35)) / SR; d[i] = Math.tanh(1.3 * Math.sin(ph)) * Math.exp(-t * 2.2); } }),
@@ -888,6 +1016,10 @@ const SYNTH = {
   sy_laser: () => mk(0.4, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (500 + 700 * Math.exp(-t * 6) + 120 * Math.sin(TAU * 32 * t)) / SR; d[i] = sq(ph) * 0.5 * Math.exp(-t * 6); } }),
   sy_ping: () => mk(1.2, (d, n) => { const f = mtof(84); for (let i = 0; i < n; i++) { const t = i / SR; d[i] = (Math.sin(TAU * f * t) + 0.3 * Math.sin(TAU * f * 1.5 * t)) * Math.exp(-t * 5); } }),
   sy_noise: () => mk(0.45, (d, n) => { const lp = new BQ("lp", 2800, 0.8); let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (60 + 60 * Math.exp(-t * 20)) / SR; d[i] = Math.tanh(2 * (lp.p(rnd()) + 0.8 * Math.sin(ph))) * Math.exp(-t * 9); } }),
+  sy_ahh: () => vocal([[0, "a"], [1, "a"]], 0.75, 142, 0.05, [1.08, 1, 0.9]),
+  sy_yeah: () => vocal([[0, "i"], [0.14, "e"], [0.32, "a"], [1, "a"]], 0.62, 160, 0.01, [1.0, 1.12, 0.92]),
+  sy_hey: () => vocal([[0, "e"], [0.55, "e"], [1, "i"]], 0.5, 185, 0.07, [1.0, 1.06, 1.18]),
+  sy_ooh: () => vocal([[0, "u"], [0.6, "o"], [1, "o"]], 0.7, 150, 0.02, [0.95, 1.02, 0.96]),
   sy_vox: () => mk(1.2, (d, n) => { const f1 = new BQ("bp", 800, 8), f2 = new BQ("bp", 1150, 10), f3 = new BQ("bp", 2900, 12); let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += mtof(48) * (1 + 0.012 * Math.sin(TAU * 5 * t)) / SR; const s = 2 * (ph % 1) - 1; d[i] = (f1.p(s) + 0.6 * f2.p(s) + 0.25 * f3.p(s)) * Math.min(1, t / 0.05) * (t > 1 ? Math.max(0, 1 - (t - 1) / 0.2) : 1); } }),
 };
 function trimLead(buf) {
@@ -1123,7 +1255,7 @@ function liveRecord(b, p, note) {
 
 /* ================= turntable / scratch ================= */
 const SEC_PER_REV = 1.8;   // 33⅓ giri: serve solo per far girare il disco disegnato
-const SCRATCH_SEC = 0.75;  // trascinare per tutta la larghezza del disco = 0,75 s di audio (mano più lenta = suono più grave)
+const SCRATCH_SEC = 0.9;   // vicino al perno: trascinare per tutta la larghezza = 0,9 s di audio
 // The deck DSP lives in one class so it can run inside an AudioWorklet (audio thread)
 // or, if the browser refuses the worklet, inside a ScriptProcessor.
 class DeckCore {
@@ -1131,7 +1263,7 @@ class DeckCore {
     this.sr = sr; this.buf = null; this.L = 0; this.bsr = sr; this.pos = 0; this.target = 0; this.touch = false;
     this.motor = false; this.rate = 0; this.auto = ""; this.anchor = 0; this.origin = 0; this.six = 0.17;
     this.xf = 1; this.cut = false; this.pitch = 0; this.g = 0; this.amp = 0; this.prev = 0;
-    this.dirt = 0.6; this.held = 0; this.hc = 0; this.lp = 0;
+    this.dirt = 0.25; this.held = 0; this.hc = 0; this.lp = 0; this.hpX = 0; this.hpY = 0;
   }
   msg(m) {
     if (m.buf) { this.buf = m.buf; this.L = m.buf.length; this.bsr = m.sr; this.pos = this.target = this.anchor = this.prev = 0; this.rate = 0; }
@@ -1141,40 +1273,50 @@ class DeckCore {
     if (m.touch === false) { this.touch = false; this.rate = m.rate || 0; }
     if (m.auto !== undefined) { this.auto = m.auto; this.anchor = this.pos; this.origin = m.origin; }
   }
+  // hand motion and crossfader for the automatic patterns; u = time in sixteenths
+  pattern(u) {
+    const A = 0.26 * this.bsr, a = this.auto;
+    const stroke = (period) => { const m = ((u % period) + period) % period / period * 2; const fwd = m < 1; const k = fwd ? m : m - 1; return { y: 0.5 - 0.5 * Math.cos(Math.PI * (fwd ? k : 1 - k)), k, fwd }; };
+    if (a === "baby") { const s = stroke(2); return [this.anchor + A * s.y, 1]; }
+    if (a === "chirp") { const s = stroke(2); return [this.anchor + A * s.y, s.k < 0.62 ? 1 : 0]; }
+    if (a === "flare") { const s = stroke(2); return [this.anchor + A * s.y, s.k > 0.42 && s.k < 0.58 ? 0 : 1]; }
+    if (a === "trans") { const s = stroke(4); return [this.anchor + A * 1.2 * s.y, (Math.floor(u * 4) & 1) === 0 ? 1 : 0]; }
+    if (a === "tear") { const s = stroke(3); const y = s.fwd ? s.y : (s.k < 0.5 ? 1 - 0.5 * (0.5 - 0.5 * Math.cos(Math.PI * s.k * 2)) : 0.5 - 0.5 * (0.5 - 0.5 * Math.cos(Math.PI * (s.k - 0.5) * 2))); return [this.anchor + A * y, 1]; }
+    if (a === "scribble") { const s = stroke(0.25); return [this.anchor + A * 0.12 * s.y + (u % 8) * 0.004 * this.bsr, 1]; }
+    return [this.anchor, 1];
+  }
   render(out, n, t0) {
     if (!this.buf) { out.fill(0); return; }
     const buf = this.buf, L = this.L, sr = this.sr, step = this.bsr / sr, mstep = step * (1 + this.pitch / 100);
-    const goal = this.motor ? 1 : 0, kUp = 5 / (0.1 * sr), kDn = 3 / (0.3 * sr);
-    const follow = 1 - Math.exp(-1 / (0.004 * sr));
+    const goal = this.motor ? 1 : 0, kUp = 1 / (0.09 * sr), kDn = 1 / (0.45 * sr);
+    const follow = 1 - Math.exp(-1 / (0.0035 * sr));
     const open = this.cut ? (this.xf > 0.5 ? 0 : 1) : this.xf;
-    let p = this.pos, g = this.g, amp = this.amp, prev = this.prev, held = this.held, hc = this.hc, lp = this.lp;
-    // "dirt": fewer bits and a lower sample rate, like an old 12-bit sampler
-    const hold = 1 + Math.floor(this.dirt * 3), q = Math.pow(2, 15 - this.dirt * 8), lpk = 0.55 - this.dirt * 0.3;
+    const hold = 1 + Math.floor(this.dirt * 3), q = Math.pow(2, 15 - this.dirt * 8), lpk = 0.85 - this.dirt * 0.45;
+    const hpk = 1 - Math.exp(-2 * Math.PI * 35 / sr);
+    let p = this.pos, g = this.g, amp = this.amp, prev = this.prev, held = this.held, hc = this.hc, lp = this.lp, hx = this.hpX, hy = this.hpY;
     for (let i = 0; i < n; i++) {
       let gate = 1;
-      if (this.auto && !this.touch) {
-        const ph = (t0 + i / sr - this.origin) / this.six, m = ((ph % 2) + 2) % 2, tri = m < 1 ? m : 2 - m;
-        p = this.anchor + 0.24 * this.bsr * (0.5 - 0.5 * Math.cos(Math.PI * tri));
-        if (this.auto === "trans") gate = (Math.floor(ph * 4) & 1) === 0 ? 1 : 0;
-      } else if (this.touch) {
-        p += (this.target - p) * follow;          // the record follows the hand smoothly, no steps
-      } else {
-        this.rate += (goal - this.rate) * (goal > this.rate ? kUp : kDn);
-        p += this.rate * mstep;
-      }
+      if (this.auto && !this.touch) { const r = this.pattern((t0 + i / sr - this.origin) / this.six); p = r[0]; gate = r[1]; }
+      else if (this.touch) p += (this.target - p) * follow;          // the record follows the hand
+      else { this.rate += (goal - this.rate) * (goal > this.rate ? kUp : kDn) * (Math.abs(goal - this.rate) > 0.02 ? 1 : 3); p += this.rate * mstep; }
+      // a magnetic cartridge outputs a voltage proportional to stylus speed: slow = quiet and dull, fast = loud
       const sp = Math.abs(p - prev) / step; prev = p;
-      const ta = Math.min(1, sp * 5);
-      amp += (ta - amp) * (ta > amp ? 0.2 : 0.006);
-      g += (open * gate - g) * 0.08;
-      const x = ((p % L) + L) % L, i0 = x | 0, f = x - i0;
-      let s = buf[i0] * (1 - f) + buf[(i0 + 1) % L] * f + (Math.random() * 2 - 1) * 0.03 * Math.min(1, sp);
+      const ta = Math.min(1.7, sp);
+      amp += (ta - amp) * 0.035;
+      g += (open * gate - g) * 0.12;
+      // 4-point Hermite interpolation keeps fast scratches clean
+      const x = ((p % L) + L) % L, i1 = x | 0, f = x - i1;
+      const y0 = buf[(i1 - 1 + L) % L], y1 = buf[i1], y2 = buf[(i1 + 1) % L], y3 = buf[(i1 + 2) % L];
+      const c1 = 0.5 * (y2 - y0), c2 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3, c3 = 0.5 * (y3 - y0) + 1.5 * (y1 - y2);
+      let s = ((c3 * f + c2) * f + c1) * f + y1;
+      s += (Math.random() * 2 - 1) * 0.012 * Math.min(1, sp);       // stylus noise only while moving
       if (++hc >= hold) { hc = 0; held = Math.round(s * q) / q; }
       lp += (held - lp) * lpk;
-      out[i] = lp * g * amp;
+      hx += (lp - hx) * hpk;                                            // remove rumble and clicks below 35 Hz
+      out[i] = (lp - hx) * g * amp;
     }
-    this.held = held; this.hc = hc; this.lp = lp;
     if (Math.abs(p) > L * 8) { const off = Math.floor(p / L) * L; p -= off; prev -= off; this.target -= off; this.anchor -= off; }
-    this.pos = p; this.prev = prev; this.g = g; this.amp = amp;
+    this.pos = p; this.prev = prev; this.g = g; this.amp = amp; this.held = held; this.hc = hc; this.lp = lp; this.hpX = hx;
   }
 }
 const deck = { pos: 0, sr: 44100, touching: false, motor: false, auto: "", cut: false, hist: [], src: "phrase", userBeat: null, send: () => {} };
@@ -1191,8 +1333,10 @@ function setDeckBuffer(mono, label) {
   if (label) msg("SUL DISCO: " + label.toUpperCase());
 }
 function buildPhrase() {
-  const parts = ["gm_orchhit", "gm_choir", "sy_vox", "gm_brass"].map(id => cache.get(id)).filter(Boolean);
-  const lens = [0.45, 0.5, 0.55, 0.32];
+  const ids = ["sy_ahh", "gm_orchhit", "sy_yeah", "sy_hey", "sy_ooh"];
+  ids.forEach(id => { if (!cache.has(id) && SYNTH[id]) cache.set(id, SYNTH[id]()); });
+  const parts = ids.map(id => cache.get(id)).filter(Boolean);
+  const lens = [0.75, 0.45, 0.62, 0.5, 0.7];
   const gap = Math.floor(SR * 0.12);
   const out = new Float32Array(Math.ceil(SR * (lens.reduce((a, b) => a + b, 0) + 1)) + gap * 4);
   let o = 0;
@@ -1203,7 +1347,7 @@ function buildPhrase() {
     for (let k = 0; k < outN; k++) { const fade = Math.min(1, (outN - k) / (SR * 0.02)); out[o + k] = m.data[Math.floor(k * ratio)] * fade * norm; }
     o += outN + gap;
   });
-  return { data: out, sr: SR * 0.8 };  // declared faster than it is, so it plays about 4 semitones lower
+  return { data: out, sr: SR };
 }
 function initDeck() {
   // deck -> drive (dirt) -> dark low-pass (tone) -> fat low shelf -> out
@@ -1222,7 +1366,7 @@ function initDeck() {
   };
   const ready = () => {
     deck.send({ set: { six: sixteenth(), xf: state.xf, pitch: state.deckPitch, dirt: state.deckDirt } });
-    Promise.all(["gm_orchhit", "gm_choir", "sy_vox", "gm_brass"].map(id => loadSound(id).catch(() => null))).then(() => {
+    Promise.all(["gm_orchhit"].map(id => loadSound(id).catch(() => null))).then(() => {
       if (deck.src === "phrase") setDeckBuffer(buildPhrase());
     });
   };
@@ -1250,7 +1394,8 @@ function setAuto(mode) {
   if (!initAudio()) return;
   deck.auto = mode; deck.send({ auto: mode, origin: playing ? gridOrigin : ctx.currentTime, set: { six: sixteenth() } });
   [...$("autoSeg").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.auto === mode));
-  msg(mode === "baby" ? "BABY SCRATCH A TEMPO" : mode === "trans" ? "TRANSFORMER A TEMPO" : "SCRATCH A MANO");
+  const names = { baby: "BABY SCRATCH", chirp: "CHIRP", flare: "FLARE", tear: "TEAR", trans: "TRANSFORMER", scribble: "SCRIBBLE" };
+  msg(mode ? names[mode] + " A TEMPO · TOCCA IL DISCO PER RIPRENDERLO" : "SCRATCH A MANO");
 }
 function grabBeat() {
   if (!initAudio()) return;
@@ -1288,10 +1433,15 @@ function bindDeck() {
   let rect = null, lx = 0, ly = 0, travel = 0;
   // movement along the groove (tangent to the record) moves the audio; works with circles and short strokes
   const onMove = (x, y) => {
-    const dx = x - lx, dy = y - ly; lx = x; ly = y;
-    const rx = x - (rect.left + rect.width / 2), ry = y - (rect.top + rect.height / 2), r = Math.hypot(rx, ry);
-    const d = r > rect.width * 0.12 ? (dx * -ry + dy * rx) / r : dy;
-    const sec = d / rect.width * SCRATCH_SEC;
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const r0 = Math.hypot(lx - cx, ly - cy), r1 = Math.hypot(x - cx, y - cy);
+    let sec;
+    if (Math.min(r0, r1) > rect.width * 0.1) {
+      let d = Math.atan2(y - cy, x - cx) - Math.atan2(ly - cy, lx - cx);
+      if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2;
+      sec = d / (Math.PI * 2) * SEC_PER_REV;                     // the record turns exactly with the finger
+    } else sec = (y - ly) / rect.width * SCRATCH_SEC;            // near the spindle: plain up/down
+    lx = x; ly = y;
     if (!sec) return;
     travel += sec; deck.send({ move: sec });
     deck.hist.push([performance.now(), travel]); while (deck.hist.length > 6) deck.hist.shift();
@@ -1341,7 +1491,7 @@ function bindDeck() {
 }
 function renderDeckSrc() {
   const sel = $("deckSrc"); sel.innerHTML = "";
-  const opts = [["phrase", "Frase scratch"], ["gm_orchhit", "Orchestra hit"], ["gm_choir", "Coro “aah”"], ["sy_vox", "Voce “ah”"], ["gm_brass", "Stab di fiati"], ["sy_kick808", "Cassa 808"], ["gm_synthbass", "Basso synth"], ["sy_chord_m9", "Accordo"], ["pad", "Il pad selezionato"]];
+  const opts = [["phrase", "Frase scratch"], ["sy_ahh", "Voce “aaah”"], ["sy_yeah", "Voce “yeah”"], ["sy_hey", "Voce “hey”"], ["gm_orchhit", "Orchestra hit"], ["gm_choir", "Coro “aah”"], ["gm_brass", "Stab di fiati"], ["sy_kick808", "Cassa 808"], ["gm_synthbass", "Basso synth"], ["sy_chord_m9", "Accordo"], ["pad", "Il pad selezionato"]];
   if (deck.userBeat) opts.unshift(["beat", "Il tuo beat"]);
   opts.forEach(([v, l]) => sel.appendChild(new Option(l, v)));
   sel.value = deck.src;
@@ -1372,15 +1522,15 @@ function makeKnob(host, { label, min, max, get, set, fmt, center }) {
     c.clearRect(0, 0, 116, 116);
     const a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, a = a0 + (a1 - a0) * u;
     c.lineWidth = 6; c.lineCap = "round";
-    c.strokeStyle = "#141311"; c.beginPath(); c.arc(58, 58, 50, a0, a1); c.stroke();
+    c.strokeStyle = SK.well; c.beginPath(); c.arc(58, 58, 50, a0, a1); c.stroke();
     const from = center ? a0 + (a1 - a0) * ((0 - min) / (max - min)) : a0;
     c.strokeStyle = hueColor;
     c.beginPath(); c.arc(58, 58, 50, Math.min(from, a), Math.max(from, a)); c.stroke();
-    const g = c.createRadialGradient(50, 46, 4, 58, 58, 38); g.addColorStop(0, "#5a564c"); g.addColorStop(1, "#24221e");
+    const g = c.createRadialGradient(50, 46, 4, 58, 58, 38); g.addColorStop(0, SK.key1); g.addColorStop(1, SK.key2);
     c.fillStyle = g; c.beginPath(); c.arc(58, 58, 38, 0, Math.PI * 2); c.fill();
     c.strokeStyle = "rgba(0,0,0,.6)"; c.lineWidth = 2; c.stroke();
     for (let i = 0; i < 24; i++) { const r = i / 24 * Math.PI * 2; c.strokeStyle = "rgba(255,255,255,.05)"; c.lineWidth = 1; c.beginPath(); c.moveTo(58 + Math.cos(r) * 30, 58 + Math.sin(r) * 30); c.lineTo(58 + Math.cos(r) * 37, 58 + Math.sin(r) * 37); c.stroke(); }
-    c.strokeStyle = "#ebe1c6"; c.lineWidth = 4; c.beginPath(); c.moveTo(58 + Math.cos(a) * 12, 58 + Math.sin(a) * 12); c.lineTo(58 + Math.cos(a) * 32, 58 + Math.sin(a) * 32); c.stroke();
+    c.strokeStyle = SK.keyInk; c.lineWidth = 4; c.beginPath(); c.moveTo(58 + Math.cos(a) * 12, 58 + Math.sin(a) * 12); c.lineTo(58 + Math.cos(a) * 32, 58 + Math.sin(a) * 32); c.stroke();
     out.textContent = fmt(v); cv.setAttribute("aria-valuetext", fmt(v));
   } };
   let startY = 0, startV = 0, drag = false;
@@ -1470,6 +1620,7 @@ function build() {
   $("scrim").addEventListener("click", closeLibrary);
   $("search").addEventListener("input", renderLibrary);
   $("file").addEventListener("change", e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ""; });
+  SKINS.forEach(([id, name, , col]) => { const b = el("button", null, '<i style="background:' + col + '"></i>' + name); b.type = "button"; b.dataset.skin = id; b.addEventListener("click", () => { applySkin(id); save(); }); $("skins").appendChild(b); });
   bindDeck(); renderDeckSrc();
   $("visBtn").addEventListener("click", () => cycleVis(1));
   $("spec").addEventListener("click", () => cycleVis(1));
@@ -1785,6 +1936,9 @@ function drawSpec(idle) {
     }
   } else { specBins.fill(0); for (let b = 0; b < nb; b++) specPeak[b] = Math.max(0, specPeak[b] - 0.02); }
   c.clearRect(0, 0, W, H);
+  // the display breathes with the beat: small between beats, full size on the beat
+  const sc = playing ? 0.82 + 0.18 * Math.min(1, beatPulse) : 1;
+  c.setTransform(sc, 0, 0, sc, W * (1 - sc) / 2, H * (1 - sc) / 2);
   const mode = VIS[state.vis] ? VIS[state.vis][0] : "spec";
   if (mode === "spec") {
     const segs = 10, gap = Math.max(2, W * 0.004), bw = (W - gap * (nb - 1)) / nb, sh = (H - (segs - 1) * 2) / segs;
@@ -1792,7 +1946,7 @@ function drawSpec(idle) {
       const x = b * (bw + gap), lit = Math.round(specBins[b] * segs), pk = Math.min(segs - 1, Math.round(specPeak[b] * segs));
       for (let s = 0; s < segs; s++) {
         const y = H - (s + 1) * sh - s * 2;
-        c.fillStyle = s < lit ? (s >= segs - 2 ? "#ffb648" : "#7cf3d3") : (s === pk && pk > 0 ? "#bff9e8" : "#12271f");
+        c.fillStyle = s < lit ? (s >= segs - 2 ? SK.led : SK.vfd) : (s === pk && pk > 0 ? SK.vfdHi : SK.vfdDim);
         c.fillRect(x, y, bw, sh);
       }
     }
@@ -1801,16 +1955,16 @@ function drawSpec(idle) {
     const half = nb, bw = W / (half * 2), mid = H / 2;
     for (let b = 0; b < half; b++) {
       const v = Math.pow(specBins[b], 1.8), h = Math.max(1, v * mid * 0.95);
-      const col = v > 0.75 ? "#ffb648" : v > 0.4 ? "#7cf3d3" : "#3fae92";
+      const col = v > 0.75 ? SK.led : v > 0.4 ? SK.vfd : SK.vfdMid;
       c.fillStyle = col;
       [W / 2 + b * bw, W / 2 - (b + 1) * bw].forEach(x => { c.fillRect(x + 1, mid - h, bw - 2, h * 2); });
-      c.fillStyle = "#bff9e8";
+      c.fillStyle = SK.vfdHi;
       const pk = Math.pow(specPeak[b], 1.8) * mid * 0.95;
       [W / 2 + b * bw, W / 2 - (b + 1) * bw].forEach(x => { c.fillRect(x + 1, mid - pk - 2, bw - 2, 2); c.fillRect(x + 1, mid + pk, bw - 2, 2); });
     }
-    c.fillStyle = "rgba(124,243,211,.25)"; c.fillRect(0, mid, W, 1);
+    c.fillStyle = SK.vfdA25; c.fillRect(0, mid, W, 1);
   } else if (mode === "scope") {
-    c.strokeStyle = "#12271f"; c.lineWidth = 1;
+    c.strokeStyle = SK.vfdDim; c.lineWidth = 1;
     for (let i = 1; i < 8; i++) { c.beginPath(); c.moveTo(W * i / 8, 0); c.lineTo(W * i / 8, H); c.stroke(); }
     c.beginPath(); c.moveTo(0, H / 2); c.lineTo(W, H / 2); c.stroke();
     if (ctx && N.spec && !idle) {
@@ -1818,7 +1972,7 @@ function drawSpec(idle) {
       N.spec.getFloatTimeDomainData(sbuf);
       let start = 0; for (let i = 1; i < sbuf.length / 2; i++) if (sbuf[i - 1] < 0 && sbuf[i] >= 0) { start = i; break; }
       const span = Math.floor(sbuf.length / 2);
-      [[6, "rgba(124,243,211,.18)"], [2, "#9ff7df"]].forEach(([lw, col]) => {
+      [[6, SK.vfdA18], [2, SK.vfdHi]].forEach(([lw, col]) => {
         c.lineWidth = lw * DPR(); c.strokeStyle = col; c.beginPath();
         for (let i = 0; i < span; i++) { const x = i / span * W, y = H / 2 - Math.max(-1, Math.min(1, sbuf[start + i] * 1.4)) * H * 0.45; i ? c.lineTo(x, y) : c.moveTo(x, y); }
         c.stroke();
@@ -1827,18 +1981,18 @@ function drawSpec(idle) {
   } else if (mode === "ring") {
     const cx = W / 2, cy = H / 2, r0 = H * (0.2 + kickGlow * 0.06);
     let bass = 0; for (let b = 0; b < 5; b++) bass += specBins[b] / 5;
-    c.fillStyle = "rgba(255,182,72," + (0.15 + bass * 0.5) + ")"; c.beginPath(); c.arc(cx, cy, r0 * (0.6 + bass * 0.5), 0, Math.PI * 2); c.fill();
+    c.fillStyle = withAlpha(SK.led, 0.15 + bass * 0.5); c.beginPath(); c.arc(cx, cy, r0 * (0.6 + bass * 0.5), 0, Math.PI * 2); c.fill();
     const n = nb * 2;
     for (let i = 0; i < n; i++) {
       const b = i < nb ? i : n - 1 - i, v = specBins[b], a = i / n * Math.PI * 2 - Math.PI / 2, len = 3 + v * H * 0.32;
-      c.strokeStyle = v > 0.8 ? "#ffb648" : "#7cf3d3"; c.lineWidth = Math.max(2, W / 260);
+      c.strokeStyle = v > 0.8 ? SK.led : SK.vfd; c.lineWidth = Math.max(2, W / 260);
       c.beginPath(); c.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); c.lineTo(cx + Math.cos(a) * (r0 + len), cy + Math.sin(a) * (r0 + len)); c.stroke();
     }
     // side meters: low, mid and high energy as long horizontal bars
     const bands = [[0, 6], [6, 18], [18, nb]].map(([a, z]) => { let s = 0; for (let b = a; b < z; b++) s += specBins[b]; return s / (z - a); });
     bands.forEach((v, k) => {
       const y = H * (0.22 + k * 0.28), len = (W / 2 - r0 - H * 0.6) * v;
-      c.fillStyle = k === 0 ? "#ffb648" : "#7cf3d3";
+      c.fillStyle = k === 0 ? SK.led : SK.vfd;
       c.fillRect(cx - r0 - H * 0.3 - len, y, len, H * 0.12); c.fillRect(cx + r0 + H * 0.3, y, len, H * 0.12);
     });
   } else if (mode === "fall") {
@@ -1855,13 +2009,14 @@ function drawSpec(idle) {
     }
     c.drawImage(fallCv, 0, 0);
   }
+  c.setTransform(1, 0, 0, 1, 0, 0);
 }
 const VIS = [["spec", "Spettro"], ["mirror", "Specchio"], ["scope", "Oscilloscopio"], ["ring", "Cerchio"], ["fall", "Cascata"]];
 let sbuf = null, fallCv = null;
 function fallColor(v) {
-  if (v < 0.25) return "rgb(7," + Math.round(18 + v * 80) + "," + Math.round(16 + v * 70) + ")";
-  if (v < 0.6) { const u = (v - 0.25) / 0.35; return "rgb(" + Math.round(10 + u * 114) + "," + Math.round(38 + u * 205) + "," + Math.round(33 + u * 178) + ")"; }
-  const u = (v - 0.6) / 0.4; return "rgb(" + Math.round(124 + u * 131) + "," + Math.round(243 - u * 61) + "," + Math.round(211 - u * 139) + ")";
+  const stops = [SK.rgb.bg, SK.rgb.mid, SK.rgb.vfd, SK.rgb.led, [255, 255, 255]], x = Math.min(0.999, Math.max(0, v)) * 4, i = Math.floor(x), f = x - i;
+  const a = stops[i], b = stops[i + 1];
+  return "rgb(" + Math.round(a[0] + (b[0] - a[0]) * f) + "," + Math.round(a[1] + (b[1] - a[1]) * f) + "," + Math.round(a[2] + (b[2] - a[2]) * f) + ")";
 }
 function cycleVis(dir = 1) {
   state.vis = ((state.vis || 0) + dir + VIS.length) % VIS.length; save();
@@ -1882,16 +2037,16 @@ function drawVU(idle) {
     vuState[ch] += (target - vuState[ch]) * (target > vuState[ch] ? 0.35 : 0.12);
     const c = $(id).getContext("2d"), W = 264, H = 168;
     c.clearRect(0, 0, W, H);
-    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#f3e9cf"); g.addColorStop(1, "#d8cba7"); c.fillStyle = g; c.fillRect(0, 0, W, H);
+    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, SK.vu1); g.addColorStop(1, SK.vu2); c.fillStyle = g; c.fillRect(0, 0, W, H);
     const cx = W / 2, cy = H + 40, R = 150, a0 = -Math.PI / 2 - 0.72, a1 = -Math.PI / 2 + 0.72;
-    c.lineWidth = 2; c.strokeStyle = "#2a241a"; c.beginPath(); c.arc(cx, cy, R, a0, a0 + (a1 - a0) * 0.72); c.stroke();
-    c.strokeStyle = "#c2392b"; c.lineWidth = 6; c.beginPath(); c.arc(cx, cy, R - 2, a0 + (a1 - a0) * 0.74, a1); c.stroke();
+    c.lineWidth = 2; c.strokeStyle = SK.vuInk; c.beginPath(); c.arc(cx, cy, R, a0, a0 + (a1 - a0) * 0.72); c.stroke();
+    c.strokeStyle = SK.vuRed; c.lineWidth = 6; c.beginPath(); c.arc(cx, cy, R - 2, a0 + (a1 - a0) * 0.74, a1); c.stroke();
     const marks = [-20, -10, -7, -5, -3, -1, 0, 1, 2, 3];
-    c.fillStyle = "#2a241a"; c.font = "16px VT323, monospace"; c.textAlign = "center";
-    marks.forEach(m => { const u = (m + 20) / 23, a = a0 + (a1 - a0) * u; c.strokeStyle = m >= 0 ? "#c2392b" : "#2a241a"; c.lineWidth = 2; c.beginPath(); c.moveTo(cx + Math.cos(a) * (R + 4), cy + Math.sin(a) * (R + 4)); c.lineTo(cx + Math.cos(a) * (R + 14), cy + Math.sin(a) * (R + 14)); c.stroke(); if ([-20, -10, -5, 0, 3].includes(m)) { c.fillStyle = m >= 0 ? "#c2392b" : "#2a241a"; c.fillText(String(m), cx + Math.cos(a) * (R + 26), cy + Math.sin(a) * (R + 26) + 5); } });
-    c.fillStyle = "#2a241a"; c.font = "22px VT323, monospace"; c.fillText("VU " + ch, cx, H - 16);
+    c.fillStyle = SK.vuInk; c.font = "16px VT323, monospace"; c.textAlign = "center";
+    marks.forEach(m => { const u = (m + 20) / 23, a = a0 + (a1 - a0) * u; c.strokeStyle = m >= 0 ? SK.vuRed : SK.vuInk; c.lineWidth = 2; c.beginPath(); c.moveTo(cx + Math.cos(a) * (R + 4), cy + Math.sin(a) * (R + 4)); c.lineTo(cx + Math.cos(a) * (R + 14), cy + Math.sin(a) * (R + 14)); c.stroke(); if ([-20, -10, -5, 0, 3].includes(m)) { c.fillStyle = m >= 0 ? SK.vuRed : SK.vuInk; c.fillText(String(m), cx + Math.cos(a) * (R + 26), cy + Math.sin(a) * (R + 26) + 5); } });
+    c.fillStyle = SK.vuInk; c.font = "22px VT323, monospace"; c.fillText("VU " + ch, cx, H - 16);
     const a = a0 + (a1 - a0) * vuState[ch];
-    c.strokeStyle = "#111"; c.lineWidth = 2.5; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * (R + 12), cy + Math.sin(a) * (R + 12)); c.stroke();
+    c.strokeStyle = SK.vuInk; c.lineWidth = 2.5; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * (R + 12), cy + Math.sin(a) * (R + 12)); c.stroke();
     const sh = c.createLinearGradient(0, 0, 0, H); sh.addColorStop(0, "rgba(255,255,255,.35)"); sh.addColorStop(.45, "rgba(255,255,255,0)"); sh.addColorStop(1, "rgba(0,0,0,.18)"); c.fillStyle = sh; c.fillRect(0, 0, W, H);
   });
 }
@@ -1952,22 +2107,48 @@ function tick() {
     if (changed) {
       $("vPos").textContent = (Math.floor(shownStep / 4) + 1) + "." + (shownStep % 4 + 1);
       renderPlayhead();
-      if (shownStep % 4 === 0) { $("vfd").classList.add("beat"); clearTimeout(beatTimer); beatTimer = setTimeout(() => $("vfd").classList.remove("beat"), 90); }
+      if (shownStep % 4 === 0) { beatPulse = 1; $("vfd").classList.add("beat"); clearTimeout(beatTimer); beatTimer = setTimeout(() => $("vfd").classList.remove("beat"), 90); }
     }
   }
   if (ctx) {
     const now = ctx.currentTime;
     while (kickAt.length && kickAt[0] <= now) { kickAt.shift(); kickGlow = 1; }
   }
-  kickGlow *= 0.86;
+  kickGlow *= 0.86; beatPulse *= 0.9;
   logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
   drawSpec(!ctx); drawVU(!ctx); drawDeck(false);
   requestAnimationFrame(tick);
 }
-let kickGlow = 0, logoDot = null, hueColor = "#f2a43a";
+let kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a";
+const SKINS = [
+  ["cantina", "Cantina", "SP-88 · CAMPIONATORE DA CANTINA", "#2a2620"],
+  ["hifi", "Hi-Fi ’76", "STEREO GROOVE CENTER · MOD. 76", "#c9c5bb"],
+  ["surplus", "Surplus ’68", "APPARATO RITMICO M-68 · USO CAMPO", "#4a5134"],
+  ["metro", "Metro ’89", "LINEA 89 · NON SPORGERSI", "#ff5fae"],
+];
+const SK = {};
+const hexRgb = h => { h = h.trim().replace("#", ""); if (h.length === 3) h = h.split("").map(x => x + x).join(""); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const withAlpha = (h, a) => { const [r, g, b] = hexRgb(h); return "rgba(" + r + "," + g + "," + b + "," + a.toFixed(3) + ")"; };
+function readSkin() {
+  const cs = getComputedStyle($("app")), v = n => cs.getPropertyValue(n).trim();
+  Object.assign(SK, { vfd: v("--vfd"), vfdDim: v("--vfd-dim"), vfdHi: v("--vfd-hi"), vfdMid: v("--vfd-mid"), vfdBg: v("--vfd-bg"), led: v("--led"),
+    well: v("--well"), key1: v("--key-1"), key2: v("--key-2"), keyInk: v("--key-ink"), vu1: v("--vu-1"), vu2: v("--vu-2"), vuInk: v("--vu-ink"), vuRed: v("--vu-red"), cap: v("--cap-2") });
+  SK.vfdA25 = withAlpha(SK.vfd, 0.25); SK.vfdA18 = withAlpha(SK.vfd, 0.18);
+  SK.rgb = { bg: hexRgb(SK.vfdBg), mid: hexRgb(SK.vfdMid), vfd: hexRgb(SK.vfd), led: hexRgb(SK.led) };
+}
+function applySkin(id) {
+  const sk = SKINS.find(x => x[0] === id) || SKINS[0];
+  state.skin = sk[0]; $("app").dataset.skin = sk[0]; $("skinTag").textContent = sk[2];
+  [...$("skins").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.skin === sk[0]));
+  readSkin(); fallCv = null; deckBase = null;
+  hueColor = getComputedStyle($("app")).getPropertyValue("--hue").trim() || hueColor;
+  knobs.forEach(k => k.draw()); drawDeck(true); drawSpec(!ctx); drawVU(!ctx);
+}
 
 logoDot = document.querySelector(".logo b span");
+readSkin();
 build();
+applySkin(state.skin);
 renderAll();
 requestAnimationFrame(tick);
 })();
