@@ -41,6 +41,8 @@
   --screw-1: #8b8577; --screw-2: #3b3830;
   --vu-1: #f3e9cf; --vu-2: #d8cba7; --vu-ink: #2a241a; --vu-red: #c2392b;
   --stripe-1: #f2a43a; --stripe-2: #df6a3c; --stripe-3: #b04a3a; --stripe-4: #4fbcaa;
+  --lcd-1: #f5bb5c; --lcd-2: #d98a2b; --lcd-ink: #2a1404;
+  --knob-1: #5a564c; --knob-2: #24221e; --knob-ink: #ebe1c6;
   --f-logo: "Bungee", "Arial Black", Impact, sans-serif;
   --f-label: "Silkscreen", "Courier New", monospace;
   --f-vfd: "VT323", "Courier New", monospace;
@@ -101,25 +103,17 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 .stripes { display: grid; gap: 3px; width: 120px; }
 .stripes i { display: block; height: 4px; border-radius: 1px; }
 .logo small { font-family: var(--f-label); font-size: 9px; color: var(--cream-3); letter-spacing: .08em; }
-.vfd {
-  position: relative; background: var(--vfd-bg); border-radius: 6px; padding: 10px 14px; min-width: 0; overflow: hidden;
-  box-shadow: 0 0 0 3px var(--edge), 0 0 0 4px var(--line), inset 0 0 30px rgba(0,0,0,.9); display: grid; grid-template-rows: auto minmax(0,1fr) auto auto; gap: 6px;
-  font-family: var(--f-vfd); color: var(--vfd); text-shadow: 0 0 6px color-mix(in srgb, var(--vfd) 55%, transparent);
-}
-.vfd::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
-.vfd .row { display: flex; gap: 18px; align-items: baseline; white-space: nowrap; min-width: 0; }
-.vfd .cell { display: flex; gap: 6px; align-items: baseline; }
-.vfd .k { font-size: 15px; color: var(--vfd-mid); text-shadow: none; }
-.vfd .v { font-size: 26px; line-height: 1; }
-.vfd .msg { font-size: 19px; line-height: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.vfd canvas { width: 100%; height: 78px; display: block; cursor: pointer; }
-.visbtn { border: 0; background: transparent; color: var(--vfd); font-family: var(--f-vfd); font-size: 18px; padding: 0 2px; text-shadow: inherit; white-space: nowrap; }
-.visbtn:hover { color: var(--vfd-hi); }
-.vfd.beat { box-shadow: 0 0 0 3px var(--edge), 0 0 0 4px var(--line), inset 0 0 30px rgba(0,0,0,.9), 0 0 24px -6px color-mix(in srgb, var(--vfd) 45%, transparent); }
-.steps16 { display: grid; grid-template-columns: repeat(16, minmax(0,1fr)); gap: 3px; }
-.steps16 i { height: 5px; border-radius: 1px; background: var(--vfd-dim); display: block; }
-.steps16 i.has { background: var(--vfd-mid); }
-.steps16 i.now { background: var(--vfd); box-shadow: 0 0 8px var(--vfd); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lcdwrap { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.lcdhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.lcd { position: relative; border-radius: 7px; padding: 9px; min-width: 0; background: linear-gradient(180deg, #0a0a09, #1d1c19); box-shadow: inset 0 2px 7px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px var(--edge); }
+.lcd canvas { display: block; width: 100%; max-width: 100%; aspect-ratio: 144 / 44; border-radius: 3px; cursor: pointer; }
+.lcd::after { content: ""; position: absolute; inset: 9px; border-radius: 3px; pointer-events: none; background: linear-gradient(165deg, rgba(255,255,255,.16), rgba(255,255,255,0) 38%), linear-gradient(0deg, rgba(0,0,0,.12), transparent 30%); box-shadow: inset 0 0 12px rgba(0,0,0,.35); }
+.steps16 { display: grid; grid-template-columns: repeat(16, minmax(0,1fr)); gap: 3px; justify-items: center; }
+.steps16 i { width: 8px; height: 8px; border-radius: 50%; background: var(--led-off); box-shadow: inset 0 1px 1px rgba(0,0,0,.5); display: block; }
+.steps16 i:nth-child(4n+1) { outline: 1px solid var(--line); outline-offset: 2px; }
+.steps16 i.has { background: color-mix(in srgb, var(--led) 45%, var(--led-off)); }
+.steps16 i.now { background: var(--led); box-shadow: 0 0 8px var(--led), inset 0 -1px 1px rgba(0,0,0,.3); }
 .vus { display: flex; gap: 10px; align-items: center; }
 .vus canvas { width: 132px; height: 84px; border-radius: 5px; display: block; box-shadow: 0 0 0 3px var(--edge), 0 0 0 4px var(--line); }
 .transport { display: grid; gap: 8px; align-content: center; }
@@ -305,6 +299,9 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
   --vu-1: #ffd98c; --vu-2: #f0a94a; --vu-ink: #2b1a07; --vu-red: #b3261e;
   --stripe-1: #6b3f22; --stripe-2: #8a5530; --stripe-3: #b07443; --stripe-4: #d39a5e;
   --f-logo: "Righteous", "Arial Black", sans-serif;
+  --lcd-1: #3563c4; --lcd-2: #1d3d8f; --lcd-ink: #e8f1ff;
+  --knob-1: #fbfaf6; --knob-2: #a9a59b; --knob-ink: #1c1a16;
+  --rubber: #d8d1bf; --rubber-hi: #f1ecdf; --pad-ink: #2a261d; --pad-ink-2: #7a7262;
 }
 .app[data-skin="hifi"] .unit {
   border-radius: 3px; border: 0; border-left: 16px solid #5a361d; border-right: 16px solid #5a361d;
@@ -325,6 +322,9 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
   --vu-1: #262a1a; --vu-2: #1b1e12; --vu-ink: #e6dfc2; --vu-red: #ff5a3a;
   --stripe-1: #e6dfc2; --stripe-2: #1e2115; --stripe-3: #e6dfc2; --stripe-4: #1e2115;
   --f-logo: "Black Ops One", "Arial Black", sans-serif;
+  --lcd-1: #c8d38e; --lcd-2: #a2af63; --lcd-ink: #182009;
+  --knob-1: #3a3d2e; --knob-2: #15170e; --knob-ink: #e6dfc2;
+  --rubber: #5a5a3e; --rubber-hi: #6e6e4c; --pad-ink: #f0e9cc; --pad-ink-2: #b3ac8a;
 }
 .app[data-skin="surplus"] .unit {
   border-radius: 4px;
@@ -345,6 +345,8 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
   --vu-1: #f1efe9; --vu-2: #d9d6ce; --vu-ink: #111114; --vu-red: #ff2f7d;
   --stripe-1: #ff5fae; --stripe-2: #ffd23f; --stripe-3: #3ad6ff; --stripe-4: #9dff57;
   --f-logo: "Permanent Marker", "Comic Sans MS", cursive;
+  --lcd-1: #ff9cc3; --lcd-2: #e0568d; --lcd-ink: #2b0516;
+  --knob-1: #3d3d46; --knob-2: #101013; --knob-ink: #ffd23f;
 }
 .app[data-skin="metro"] .unit {
   border-radius: 6px;
@@ -362,6 +364,25 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
 .skins button { border: 0; border-radius: 4px; height: 22px; padding: 0 6px; background: var(--well); color: var(--well-ink); font-family: var(--f-label); font-size: 8px; text-transform: uppercase; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 .skins button i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
 .skins button[aria-pressed="true"] { color: var(--well-text); box-shadow: inset 0 0 0 1px var(--led); }
+
+
+/* targhette e dettagli delle scocche */
+.rack { position: relative; }
+.badge { position: absolute; top: 5px; right: 26px; font-family: var(--f-label); font-size: 8px; letter-spacing: .14em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; pointer-events: none; z-index: 1;
+  color: #2a2620; background: linear-gradient(180deg, #d7d2c4, #a9a394); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 2px rgba(0,0,0,.6); }
+.app[data-skin="cantina"] .unit { background: repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px), radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.04), transparent 60%), linear-gradient(180deg, var(--chassis-2), var(--chassis)); }
+.app[data-skin="hifi"] .badge { color: #e8e4da; background: linear-gradient(180deg, #2b2926, #121110); box-shadow: inset 0 0 0 1px #8a8579; letter-spacing: .2em; }
+.app[data-skin="hifi"] .pad { box-shadow: 0 3px 0 #8e8778, 0 1px 0 rgba(255,255,255,.7) inset; }
+.app[data-skin="hifi"] .pads { background: #1c1b18; }
+.app[data-skin="hifi"] .lcd { background: linear-gradient(180deg, #121110, #2b2926); }
+.app[data-skin="surplus"] .badge { font-family: "Black Ops One", var(--f-label); font-size: 10px; color: #e6dfc2; background: transparent; box-shadow: none; border: 1px dashed rgba(230,223,194,.5); }
+.app[data-skin="surplus"] .rack { border-bottom: 7px solid; border-image: repeating-linear-gradient(-45deg, #d6b23a 0 9px, #1e2115 9px 18px) 1; }
+.app[data-skin="surplus"] .pad { border-radius: 3px; }
+.app[data-skin="surplus"] .pad::before { content: ""; position: absolute; inset: 4px; border: 1px dashed rgba(240,233,204,.18); border-radius: 2px; pointer-events: none; }
+.app[data-skin="metro"] .badge { top: 2px; right: 34px; font-family: "Permanent Marker", var(--f-label); font-size: 13px; letter-spacing: .02em; text-transform: none; color: #111; background: #ffd23f; transform: rotate(3deg); box-shadow: 2px 2px 0 #ff5fae; padding: 2px 10px; }
+.app[data-skin="metro"] .unit { background-image: var(--drips), radial-gradient(18% 30% at 92% 18%, rgba(255,95,174,.16), transparent 70%), radial-gradient(14% 24% at 6% 80%, rgba(255,210,63,.12), transparent 70%), radial-gradient(10% 16% at 55% 100%, rgba(58,214,255,.10), transparent 70%), linear-gradient(180deg, var(--chassis-2), var(--chassis)); background-repeat: repeat-x, no-repeat, no-repeat, no-repeat, no-repeat; background-size: 260px 40px, auto, auto, auto, auto; background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+.app[data-skin="metro"] .pad { box-shadow: 0 3px 0 #070709, inset 0 0 0 1px rgba(255,95,174,.25); }
+.app[data-skin="metro"] .pad.sel::after { box-shadow: inset 0 0 0 2px #ffd23f; }
 
 @media (max-width: 1080px) {
   .rack { grid-template-columns: auto minmax(0,1fr); }
@@ -407,23 +428,18 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
 
 <div class="app" id="app" data-bank="A">
   <header class="unit rack">
+    <div class="badge" id="badge" aria-hidden="true"></div>
     <div class="logo">
       <b>MAT<span>·</span>TONE</b>
       <div class="stripes" aria-hidden="true"><i style="background:var(--stripe-1)"></i><i style="background:var(--stripe-2)"></i><i style="background:var(--stripe-3)"></i><i style="background:var(--stripe-4)"></i></div>
       <small id="skinTag">SP-88 · CAMPIONATORE DA CANTINA</small>
       <div class="skins" id="skins" role="group" aria-label="Scocca"></div>
     </div>
-    <div class="vfd" id="vfd">
-      <div class="row">
-        <span class="cell"><span class="k">PAT</span><span class="v" id="vPat">01</span></span>
-        <span class="cell"><span class="k">BPM</span><span class="v" id="vBpm">088</span></span>
-        <span class="cell"><span class="k">BAR</span><span class="v" id="vPos">1.1</span></span>
-        <span style="flex:1"></span>
-        <button class="visbtn" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · SPETTRO</button>
-      </div>
-      <canvas id="spec" aria-hidden="true"></canvas>
-      <div class="msg" id="msg">PREMI PLAY O TOCCA UN PAD</div>
+    <div class="lcdwrap">
+      <div class="lcdhead"><span class="lbl">Display · matrice di punti</span><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button></div>
+      <div class="lcd" id="vfd"><canvas id="spec" aria-label="Display: tocca per cambiare visualizzatore"></canvas></div>
       <div class="steps16" id="leds" aria-hidden="true"></div>
+      <div class="sr-only" aria-live="polite"><span id="vPat">01</span> <span id="vBpm">088</span> <span id="vPos">1.1</span> <span id="msg">PREMI PLAY O TOCCA UN PAD</span></div>
     </div>
     <div class="vus" aria-hidden="true"><canvas id="vuL" width="264" height="168"></canvas><canvas id="vuR" width="264" height="168"></canvas></div>
     <div class="transport">
@@ -1526,11 +1542,11 @@ function makeKnob(host, { label, min, max, get, set, fmt, center }) {
     const from = center ? a0 + (a1 - a0) * ((0 - min) / (max - min)) : a0;
     c.strokeStyle = hueColor;
     c.beginPath(); c.arc(58, 58, 50, Math.min(from, a), Math.max(from, a)); c.stroke();
-    const g = c.createRadialGradient(50, 46, 4, 58, 58, 38); g.addColorStop(0, SK.key1); g.addColorStop(1, SK.key2);
+    const g = c.createRadialGradient(50, 46, 4, 58, 58, 38); g.addColorStop(0, SK.knob1); g.addColorStop(1, SK.knob2);
     c.fillStyle = g; c.beginPath(); c.arc(58, 58, 38, 0, Math.PI * 2); c.fill();
     c.strokeStyle = "rgba(0,0,0,.6)"; c.lineWidth = 2; c.stroke();
     for (let i = 0; i < 24; i++) { const r = i / 24 * Math.PI * 2; c.strokeStyle = "rgba(255,255,255,.05)"; c.lineWidth = 1; c.beginPath(); c.moveTo(58 + Math.cos(r) * 30, 58 + Math.sin(r) * 30); c.lineTo(58 + Math.cos(r) * 37, 58 + Math.sin(r) * 37); c.stroke(); }
-    c.strokeStyle = SK.keyInk; c.lineWidth = 4; c.beginPath(); c.moveTo(58 + Math.cos(a) * 12, 58 + Math.sin(a) * 12); c.lineTo(58 + Math.cos(a) * 32, 58 + Math.sin(a) * 32); c.stroke();
+    c.strokeStyle = SK.knobInk; c.lineWidth = 4; c.beginPath(); c.moveTo(58 + Math.cos(a) * 12, 58 + Math.sin(a) * 12); c.lineTo(58 + Math.cos(a) * 32, 58 + Math.sin(a) * 32); c.stroke();
     out.textContent = fmt(v); cv.setAttribute("aria-valuetext", fmt(v));
   } };
   let startY = 0, startV = 0, drag = false;
@@ -1550,6 +1566,11 @@ function makeKnob(host, { label, min, max, get, set, fmt, center }) {
 /* ================= UI build ================= */
 const PLAY_ICON = '<path d="M5 3.5v13l11-6.5z"/>', STOP_ICON = '<rect x="4" y="4" width="12" height="12" rx="1.5"/>';
 const PV_ICON = '<svg viewBox="0 0 12 12"><path d="M2.5 1.5v9l8-4.5z"/></svg>';
+function makeDrips() {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="260" height="40" viewBox="0 0 260 40"><g fill="%23ff5fae" fill-opacity=".22">' +
+    '<path d="M0 0h260v4H0z"/><path d="M18 3h5v18a2.5 2.5 0 0 1-5 0z"/><path d="M61 3h3v9a1.5 1.5 0 0 1-3 0z"/><path d="M104 3h6v28a3 3 0 0 1-6 0z"/><path d="M150 3h3v12a1.5 1.5 0 0 1-3 0z"/><path d="M197 3h5v20a2.5 2.5 0 0 1-5 0z"/><path d="M236 3h3v7a1.5 1.5 0 0 1-3 0z"/></g></svg>';
+  document.documentElement.style.setProperty("--drips", "url('data:image/svg+xml;utf8," + svg + "')");
+}
 function makeGrain() {
   const c = document.createElement("canvas"); c.width = c.height = 160;
   const x = c.getContext("2d"), img = x.createImageData(160, 160);
@@ -1558,7 +1579,7 @@ function makeGrain() {
   try { document.documentElement.style.setProperty("--grain", "url(" + c.toDataURL() + ")"); } catch (e) { /* no grain */ }
 }
 function build() {
-  makeGrain();
+  makeGrain(); makeDrips();
   for (let i = 0; i < 16; i++) $("leds").appendChild(el("i"));
   for (let i = 0; i < NPAT; i++) { const b = el("button"); b.type = "button"; b.textContent = i + 1; b.setAttribute("aria-label", "Pattern " + (i + 1)); b.addEventListener("click", () => selectPattern(i)); $("pats").appendChild(b); }
   BANKS.forEach((bk, bi) => { const b = el("button", null, '<span class="dot" style="background:var(--h' + bk.id + ')"></span>' + bk.id + ' <span class="nmfull">' + bk.name + "</span>"); b.type = "button"; b.addEventListener("click", () => selectBank(bi)); $("banks").appendChild(b); });
@@ -1624,7 +1645,7 @@ function build() {
   bindDeck(); renderDeckSrc();
   $("visBtn").addEventListener("click", () => cycleVis(1));
   $("spec").addEventListener("click", () => cycleVis(1));
-  $("visBtn").textContent = "VIS · " + VIS[state.vis || 0][1].toUpperCase();
+  $("visBtn").textContent = "VIS · " + VIS[state.vis || 0][1];
 
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", e => {
@@ -1919,10 +1940,49 @@ function sizeCanvases() {
   if (size !== deckSize) { deckSize = size; deckCv.width = deckCv.height = size; deckBase = null; }
   drawDeck(true); drawSpec(true); drawVU(true);
 }
-const specBins = new Float32Array(28), specPeak = new Float32Array(28);
-let fbuf = null;
-function drawSpec(idle) {
-  const c = specCv.getContext("2d"), W = specCv.width, H = specCv.height, nb = specBins.length;
+/* ---------- dot-matrix LCD (144 × 44 punti) ---------- */
+const LCD_W = 144, LCD_H = 44, VIZ_Y = 10, VIZ_H = 25;
+const lcdBuf = new Uint8Array(LCD_W * LCD_H);
+const FONT = {
+  "0":[62,81,73,69,62],"1":[0,66,127,64,0],"2":[66,97,81,73,70],"3":[33,65,69,75,49],"4":[24,20,18,127,16],"5":[39,69,69,69,57],"6":[60,74,73,73,48],"7":[1,113,9,5,3],"8":[54,73,73,73,54],"9":[6,73,73,41,30],
+  A:[126,17,17,17,126],B:[127,73,73,73,54],C:[62,65,65,65,34],D:[127,65,65,34,28],E:[127,73,73,73,65],F:[127,9,9,9,1],G:[62,65,73,73,122],H:[127,8,8,8,127],I:[0,65,127,65,0],J:[32,64,65,63,1],K:[127,8,20,34,65],L:[127,64,64,64,64],M:[127,2,12,2,127],
+  N:[127,4,8,16,127],O:[62,65,65,65,62],P:[127,9,9,9,6],Q:[62,65,81,33,94],R:[127,9,25,41,70],S:[70,73,73,73,49],T:[1,1,127,1,1],U:[63,64,64,64,63],V:[31,32,64,32,31],W:[63,64,56,64,63],X:[99,20,8,20,99],Y:[7,8,112,8,7],Z:[97,81,73,69,67],
+  " ":[0,0,0,0,0],".":[0,96,96,0,0],",":[0,80,48,0,0],":":[0,54,54,0,0],"-":[8,8,8,8,8],"+":[8,8,62,8,8],"/":[32,16,8,4,2],"%":[35,19,8,100,98],"!":[0,0,95,0,0],"?":[2,1,81,9,6],"(":[0,28,34,65,0],")":[0,65,34,28,0],
+  "·":[0,0,8,0,0],"'":[0,5,3,0,0],"\"":[0,7,0,7,0],"<":[8,20,34,65,0],">":[0,65,34,20,8],"#":[20,127,20,127,20],"▶":[127,62,28,8,0],"●":[28,62,62,62,28],"■":[62,62,62,62,62],"=":[20,20,20,20,20],
+};
+const LCD_MAP = { "→": ">", "♯": "#", "♭": "B", "“": "\"", "”": "\"", "’": "'", "×": "X", "↔": "-", "…": "." };
+function lcdNorm(s) { return String(s).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/./g, ch => LCD_MAP[ch] || (FONT[ch] ? ch : " ")); }
+const px = (x, y) => { if (x >= 0 && x < LCD_W && y >= 0 && y < LCD_H) lcdBuf[y * LCD_W + (x | 0)] = 1; };
+function lcdText(s, x, y) { for (const ch of s) { const g = FONT[ch]; if (g) for (let c = 0; c < 5; c++) for (let r = 0; r < 7; r++) if (g[c] >> r & 1) px(x + c, y + r); x += 6; } return x; }
+function lcdLine(x0, y0, x1, y1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let i = 0; i <= n; i++) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n)); }
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const fallBuf = new Float32Array(LCD_W * VIZ_H);
+let lcdBg = null, lcdBgKey = "";
+function lcdBackground(W, H, pitch) {
+  const key = W + "x" + H + SK.lcd1 + SK.lcdInk;
+  if (lcdBg && lcdBgKey === key) return lcdBg;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const c = cv.getContext("2d"), g = c.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, SK.lcd1); g.addColorStop(1, SK.lcd2); c.fillStyle = g; c.fillRect(0, 0, W, H);
+  const vg = c.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, W * 0.7); vg.addColorStop(0, "rgba(255,255,255,.10)"); vg.addColorStop(1, "rgba(0,0,0,.22)");
+  c.fillStyle = vg; c.fillRect(0, 0, W, H);
+  c.fillStyle = withAlpha(SK.lcdInk, 0.07);                         // unlit dots stay faintly visible
+  const d = pitch * 0.84;
+  for (let y = 0; y < LCD_H; y++) for (let x = 0; x < LCD_W; x++) c.fillRect(x * pitch + (pitch - d) / 2, y * pitch + (pitch - d) / 2, d, d);
+  lcdBg = cv; lcdBgKey = key; return cv;
+}
+function lcdRender() {
+  const c = specCv.getContext("2d"), W = specCv.width, H = specCv.height, pitch = Math.min(W / LCD_W, H / LCD_H), d = pitch * 0.84, o = (pitch - d) / 2;
+  c.drawImage(lcdBackground(W, H, pitch), 0, 0);
+  const path = new Path2D();
+  for (let y = 0; y < LCD_H; y++) for (let x = 0; x < LCD_W; x++) if (lcdBuf[y * LCD_W + x]) path.rect(x * pitch + o, y * pitch + o, d, d);
+  c.save(); c.translate(pitch * 0.22, pitch * 0.26); c.fillStyle = withAlpha(SK.lcdInk, 0.16); c.fill(path); c.restore();   // pixel shadow on the backlight
+  c.fillStyle = withAlpha(SK.lcdInk, 0.9); c.fill(path);
+}
+const specBins = new Float32Array(24), specPeak = new Float32Array(24);
+let fbuf = null, sbuf = null;
+function readBins(idle) {
+  const nb = specBins.length;
   if (ctx && N.spec && !idle) {
     if (!fbuf) fbuf = new Uint8Array(N.spec.frequencyBinCount);
     N.spec.getByteFrequencyData(fbuf);
@@ -1931,97 +1991,80 @@ function drawSpec(idle) {
       const f0 = 40 * Math.pow(16000 / 40, b / nb), f1 = 40 * Math.pow(16000 / 40, (b + 1) / nb);
       const i0 = Math.floor(f0 / nyq * n), i1 = Math.max(i0 + 1, Math.floor(f1 / nyq * n));
       let m = 0; for (let i = i0; i < i1 && i < n; i++) m = Math.max(m, fbuf[i]);
-      const v = m / 255; specBins[b] = v;
-      specPeak[b] = Math.max(v, specPeak[b] - 0.012);
+      specBins[b] = m / 255; specPeak[b] = Math.max(specBins[b], specPeak[b] - 0.012);
     }
   } else { specBins.fill(0); for (let b = 0; b < nb; b++) specPeak[b] = Math.max(0, specPeak[b] - 0.02); }
-  c.clearRect(0, 0, W, H);
-  // the display breathes with the beat: small between beats, full size on the beat
-  const sc = playing ? 0.82 + 0.18 * Math.min(1, beatPulse) : 1;
-  c.setTransform(sc, 0, 0, sc, W * (1 - sc) / 2, H * (1 - sc) / 2);
-  const mode = VIS[state.vis] ? VIS[state.vis][0] : "spec";
+}
+function drawSpec(idle) {
+  if (!specCv) return;
+  readBins(idle);
+  lcdBuf.fill(0);
+  // status line
+  const play = recording ? "●" : playing ? "▶" : "■";
+  let x = lcdText(play, 0, 0);
+  lcdText(" P" + String(state.pattern + 1).padStart(2, "0") + " " + pad3(state.bpm) + "BPM " + $("vPos").textContent, x, 0);
+  const vn = VIS[state.vis || 0][2];
+  lcdText(vn, LCD_W - vn.length * 6 + 1, 0);
+  for (let i = 0; i < LCD_W; i += 2) px(i, 8);
+  // visualizer, always the same size: only its contents move with the music
+  const mode = VIS[state.vis || 0][0], y0 = VIZ_Y, h = VIZ_H;
   if (mode === "spec") {
-    const segs = 10, gap = Math.max(2, W * 0.004), bw = (W - gap * (nb - 1)) / nb, sh = (H - (segs - 1) * 2) / segs;
-    for (let b = 0; b < nb; b++) {
-      const x = b * (bw + gap), lit = Math.round(specBins[b] * segs), pk = Math.min(segs - 1, Math.round(specPeak[b] * segs));
-      for (let s = 0; s < segs; s++) {
-        const y = H - (s + 1) * sh - s * 2;
-        c.fillStyle = s < lit ? (s >= segs - 2 ? SK.led : SK.vfd) : (s === pk && pk > 0 ? SK.vfdHi : SK.vfdDim);
-        c.fillRect(x, y, bw, sh);
-      }
+    for (let b = 0; b < 24; b++) {
+      const top = Math.round(specBins[b] * h), pk = Math.round(specPeak[b] * h);
+      for (let k = 0; k < top; k++) for (let c = 0; c < 5; c++) px(b * 6 + c, y0 + h - 1 - k);
+      if (pk > 0) for (let c = 0; c < 5; c++) px(b * 6 + c, y0 + h - 1 - Math.min(h - 1, pk));
     }
   } else if (mode === "mirror") {
-    // bass in the middle, highs to the sides, mirrored up and down like an old hi-fi display
-    const half = nb, bw = W / (half * 2), mid = H / 2;
-    for (let b = 0; b < half; b++) {
-      const v = Math.pow(specBins[b], 1.8), h = Math.max(1, v * mid * 0.95);
-      const col = v > 0.75 ? SK.led : v > 0.4 ? SK.vfd : SK.vfdMid;
-      c.fillStyle = col;
-      [W / 2 + b * bw, W / 2 - (b + 1) * bw].forEach(x => { c.fillRect(x + 1, mid - h, bw - 2, h * 2); });
-      c.fillStyle = SK.vfdHi;
-      const pk = Math.pow(specPeak[b], 1.8) * mid * 0.95;
-      [W / 2 + b * bw, W / 2 - (b + 1) * bw].forEach(x => { c.fillRect(x + 1, mid - pk - 2, bw - 2, 2); c.fillRect(x + 1, mid + pk, bw - 2, 2); });
+    const mid = y0 + 12;
+    for (let b = 0; b < 12; b++) {
+      const v = Math.pow(specBins[b * 2], 1.4), hh = Math.round(v * 12);
+      for (const bx of [72 + b * 6, 72 - (b + 1) * 6]) for (let k = -hh; k <= hh; k++) for (let c = 1; c < 6; c++) px(bx + c, mid + k);
     }
-    c.fillStyle = SK.vfdA25; c.fillRect(0, mid, W, 1);
   } else if (mode === "scope") {
-    c.strokeStyle = SK.vfdDim; c.lineWidth = 1;
-    for (let i = 1; i < 8; i++) { c.beginPath(); c.moveTo(W * i / 8, 0); c.lineTo(W * i / 8, H); c.stroke(); }
-    c.beginPath(); c.moveTo(0, H / 2); c.lineTo(W, H / 2); c.stroke();
+    for (let i = 0; i < LCD_W; i += 4) px(i, y0 + 12);
     if (ctx && N.spec && !idle) {
       if (!sbuf) sbuf = new Float32Array(N.spec.fftSize);
       N.spec.getFloatTimeDomainData(sbuf);
-      let start = 0; for (let i = 1; i < sbuf.length / 2; i++) if (sbuf[i - 1] < 0 && sbuf[i] >= 0) { start = i; break; }
-      const span = Math.floor(sbuf.length / 2);
-      [[6, SK.vfdA18], [2, SK.vfdHi]].forEach(([lw, col]) => {
-        c.lineWidth = lw * DPR(); c.strokeStyle = col; c.beginPath();
-        for (let i = 0; i < span; i++) { const x = i / span * W, y = H / 2 - Math.max(-1, Math.min(1, sbuf[start + i] * 1.4)) * H * 0.45; i ? c.lineTo(x, y) : c.moveTo(x, y); }
-        c.stroke();
-      });
+      let st = 0; for (let i = 1; i < sbuf.length / 2; i++) if (sbuf[i - 1] < 0 && sbuf[i] >= 0) { st = i; break; }
+      const span = Math.floor(sbuf.length / 2); let prevY = null;
+      for (let xx = 0; xx < LCD_W; xx++) {
+        const v = Math.max(-1, Math.min(1, sbuf[st + Math.floor(xx / LCD_W * span)] * 1.5)), yy = Math.round(y0 + 12 - v * 12);
+        if (prevY === null) px(xx, yy); else lcdLine(xx - 1, prevY, xx, yy);
+        prevY = yy;
+      }
     }
   } else if (mode === "ring") {
-    const cx = W / 2, cy = H / 2, r0 = H * (0.2 + kickGlow * 0.06);
-    let bass = 0; for (let b = 0; b < 5; b++) bass += specBins[b] / 5;
-    c.fillStyle = withAlpha(SK.led, 0.15 + bass * 0.5); c.beginPath(); c.arc(cx, cy, r0 * (0.6 + bass * 0.5), 0, Math.PI * 2); c.fill();
-    const n = nb * 2;
-    for (let i = 0; i < n; i++) {
-      const b = i < nb ? i : n - 1 - i, v = specBins[b], a = i / n * Math.PI * 2 - Math.PI / 2, len = 3 + v * H * 0.32;
-      c.strokeStyle = v > 0.8 ? SK.led : SK.vfd; c.lineWidth = Math.max(2, W / 260);
-      c.beginPath(); c.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); c.lineTo(cx + Math.cos(a) * (r0 + len), cy + Math.sin(a) * (r0 + len)); c.stroke();
+    const cx = 72, cy = y0 + 12, r0 = 5;
+    for (let a = 0; a < 40; a++) { const t = a / 40 * Math.PI * 2; px(Math.round(cx + Math.cos(t) * r0), Math.round(cy + Math.sin(t) * r0)); }
+    for (let i = 0; i < 32; i++) {
+      const b = i < 16 ? i : 31 - i, v = specBins[Math.min(23, b + 2)], t = i / 32 * Math.PI * 2 - Math.PI / 2, len = 1 + v * 7;
+      lcdLine(Math.round(cx + Math.cos(t) * (r0 + 2)), Math.round(cy + Math.sin(t) * (r0 + 2)), Math.round(cx + Math.cos(t) * (r0 + 2 + len)), Math.round(cy + Math.sin(t) * (r0 + 2 + len)));
     }
-    // side meters: low, mid and high energy as long horizontal bars
-    const bands = [[0, 6], [6, 18], [18, nb]].map(([a, z]) => { let s = 0; for (let b = a; b < z; b++) s += specBins[b]; return s / (z - a); });
+    const bands = [[0, 6], [6, 15], [15, 24]].map(([a, z]) => { let s = 0; for (let b = a; b < z; b++) s += specBins[b]; return s / (z - a); });
     bands.forEach((v, k) => {
-      const y = H * (0.22 + k * 0.28), len = (W / 2 - r0 - H * 0.6) * v;
-      c.fillStyle = k === 0 ? SK.led : SK.vfd;
-      c.fillRect(cx - r0 - H * 0.3 - len, y, len, H * 0.12); c.fillRect(cx + r0 + H * 0.3, y, len, H * 0.12);
+      const yy = y0 + 4 + k * 7, len = Math.round(v * 50);
+      for (let q = 0; q < len; q += 2) for (let r = 0; r < 4; r++) { px(cx - 18 - q, yy + r); px(cx + 18 + q, yy + r); }
     });
   } else if (mode === "fall") {
-    // scrolling spectrogram: time runs right to left, bass at the bottom
-    if (!fallCv || fallCv.width !== W || fallCv.height !== H) { fallCv = document.createElement("canvas"); fallCv.width = W; fallCv.height = H; }
-    const f = fallCv.getContext("2d"), dx = Math.max(2, Math.round(W / 300));
-    f.drawImage(fallCv, -dx, 0);
-    const rows = 48, rh = H / rows;
-    for (let r = 0; r < rows; r++) {
+    for (let r = 0; r < h; r++) { const row = r * LCD_W; fallBuf.copyWithin(row, row + 1, row + LCD_W); }   // scroll each row left
+    for (let r = 0; r < h; r++) {
       let v = 0;
-      if (fbuf && ctx && !idle) { const fr = 40 * Math.pow(16000 / 40, r / rows), i = Math.min(fbuf.length - 1, Math.floor(fr / (SR / 2) * fbuf.length)); v = fbuf[i] / 255; }
-      f.fillStyle = fallColor(v);
-      f.fillRect(W - dx, H - (r + 1) * rh, dx, rh + 1);
+      if (fbuf && ctx && !idle) { const fr = 40 * Math.pow(16000 / 40, r / h), i = Math.min(fbuf.length - 1, Math.floor(fr / (SR / 2) * fbuf.length)); v = fbuf[i] / 255; }
+      fallBuf[(h - 1 - r) * LCD_W + LCD_W - 1] = v;
     }
-    c.drawImage(fallCv, 0, 0);
+    for (let r = 0; r < h; r++) for (let xx = 0; xx < LCD_W; xx++) { const v = fallBuf[r * LCD_W + xx]; if (v * 1.3 > (BAYER[(xx & 3) + (r & 3) * 4] + 0.5) / 16) px(xx, y0 + r); }
   }
-  c.setTransform(1, 0, 0, 1, 0, 0);
+  // message line, scrolling when it does not fit
+  const m = lcdNorm($("msg").textContent), maxC = Math.floor(LCD_W / 6);
+  if (m.length <= maxC) lcdText(m, 0, 37);
+  else { const full = m + "   ·   ", off = Math.floor(performance.now() / 160) % full.length; lcdText((full + full).slice(off, off + maxC + 1), 0, 37); }
+  lcdRender();
 }
-const VIS = [["spec", "Spettro"], ["mirror", "Specchio"], ["scope", "Oscilloscopio"], ["ring", "Cerchio"], ["fall", "Cascata"]];
-let sbuf = null, fallCv = null;
-function fallColor(v) {
-  const stops = [SK.rgb.bg, SK.rgb.mid, SK.rgb.vfd, SK.rgb.led, [255, 255, 255]], x = Math.min(0.999, Math.max(0, v)) * 4, i = Math.floor(x), f = x - i;
-  const a = stops[i], b = stops[i + 1];
-  return "rgb(" + Math.round(a[0] + (b[0] - a[0]) * f) + "," + Math.round(a[1] + (b[1] - a[1]) * f) + "," + Math.round(a[2] + (b[2] - a[2]) * f) + ")";
-}
+const VIS = [["spec", "Spettro", "SPET"], ["mirror", "Specchio", "SPEC"], ["scope", "Oscilloscopio", "OSCI"], ["ring", "Cerchio", "CERC"], ["fall", "Cascata", "CASC"]];
 function cycleVis(dir = 1) {
   state.vis = ((state.vis || 0) + dir + VIS.length) % VIS.length; save();
-  $("visBtn").textContent = "VIS · " + VIS[state.vis][1].toUpperCase();
-  fallCv = null; drawSpec(!ctx);
+  $("visBtn").textContent = "VIS · " + VIS[state.vis][1];
+  fallBuf.fill(0); drawSpec(!ctx);
 }
 const vuState = { L: 0, R: 0 };
 let tbuf = null;
@@ -2107,7 +2150,7 @@ function tick() {
     if (changed) {
       $("vPos").textContent = (Math.floor(shownStep / 4) + 1) + "." + (shownStep % 4 + 1);
       renderPlayhead();
-      if (shownStep % 4 === 0) { beatPulse = 1; $("vfd").classList.add("beat"); clearTimeout(beatTimer); beatTimer = setTimeout(() => $("vfd").classList.remove("beat"), 90); }
+
     }
   }
   if (ctx) {
@@ -2121,10 +2164,10 @@ function tick() {
 }
 let kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a";
 const SKINS = [
-  ["cantina", "Cantina", "SP-88 · CAMPIONATORE DA CANTINA", "#2a2620"],
-  ["hifi", "Hi-Fi ’76", "STEREO GROOVE CENTER · MOD. 76", "#c9c5bb"],
-  ["surplus", "Surplus ’68", "APPARATO RITMICO M-68 · USO CAMPO", "#4a5134"],
-  ["metro", "Metro ’89", "LINEA 89 · NON SPORGERSI", "#ff5fae"],
+  ["cantina", "Cantina", "SP-88 · CAMPIONATORE DA CANTINA", "#2a2620", "SER. Nº 0088 · 220V~ 50HZ"],
+  ["hifi", "Hi-Fi ’76", "STEREO GROOVE CENTER · MOD. 76", "#c9c5bb", "HIGH FIDELITY · 2×40W"],
+  ["surplus", "Surplus ’68", "APPARATO RITMICO M-68 · USO CAMPO", "#4a5134", "LOTTO 0417 · NON APRIRE"],
+  ["metro", "Metro ’89", "LINEA 89 · NON SPORGERSI", "#ff5fae", "NO WAVE CREW"],
 ];
 const SK = {};
 const hexRgb = h => { h = h.trim().replace("#", ""); if (h.length === 3) h = h.split("").map(x => x + x).join(""); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
@@ -2132,7 +2175,7 @@ const withAlpha = (h, a) => { const [r, g, b] = hexRgb(h); return "rgba(" + r + 
 function readSkin() {
   const cs = getComputedStyle($("app")), v = n => cs.getPropertyValue(n).trim();
   Object.assign(SK, { vfd: v("--vfd"), vfdDim: v("--vfd-dim"), vfdHi: v("--vfd-hi"), vfdMid: v("--vfd-mid"), vfdBg: v("--vfd-bg"), led: v("--led"),
-    well: v("--well"), key1: v("--key-1"), key2: v("--key-2"), keyInk: v("--key-ink"), vu1: v("--vu-1"), vu2: v("--vu-2"), vuInk: v("--vu-ink"), vuRed: v("--vu-red"), cap: v("--cap-2") });
+    well: v("--well"), key1: v("--key-1"), key2: v("--key-2"), keyInk: v("--key-ink"), vu1: v("--vu-1"), vu2: v("--vu-2"), vuInk: v("--vu-ink"), vuRed: v("--vu-red"), cap: v("--cap-2"), lcd1: v("--lcd-1"), knob1: v("--knob-1"), knob2: v("--knob-2"), knobInk: v("--knob-ink"), lcd2: v("--lcd-2"), lcdInk: v("--lcd-ink") });
   SK.vfdA25 = withAlpha(SK.vfd, 0.25); SK.vfdA18 = withAlpha(SK.vfd, 0.18);
   SK.rgb = { bg: hexRgb(SK.vfdBg), mid: hexRgb(SK.vfdMid), vfd: hexRgb(SK.vfd), led: hexRgb(SK.led) };
 }
@@ -2140,9 +2183,10 @@ function applySkin(id) {
   const sk = SKINS.find(x => x[0] === id) || SKINS[0];
   state.skin = sk[0]; $("app").dataset.skin = sk[0]; $("skinTag").textContent = sk[2];
   [...$("skins").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.skin === sk[0]));
-  readSkin(); fallCv = null; deckBase = null;
+  readSkin(); lcdBg = null; deckBase = null;
   hueColor = getComputedStyle($("app")).getPropertyValue("--hue").trim() || hueColor;
   knobs.forEach(k => k.draw()); drawDeck(true); drawSpec(!ctx); drawVU(!ctx);
+  const badge = $("badge"); if (badge) badge.textContent = sk[4];
 }
 
 logoDot = document.querySelector(".logo b span");
