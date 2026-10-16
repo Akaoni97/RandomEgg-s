@@ -118,6 +118,11 @@ La latenza resta quella dell'audio di Chromium su Windows (WASAPI condiviso, tip
 
 ## Versione browser (senza installare nulla)
 
+**Subito, senza Node**: `npm run build:artifact` crea `dist-artifact/lucatekno-machine.html`, un unico file
+(10 MB, campioni e font inclusi) che si apre con un doppio clic in Chrome/Edge. Aperto da file il bitcrusher è
+disattivato e il piatto usa il motore di riserva: per il suono completo usa l'app desktop o `npm start`.
+
+
 1. Installa **Node.js LTS** (20.19 o successivo) da <https://nodejs.org>.
 2. Fai doppio clic su **`AVVIA-LUCATEKNO-MACHINE.bat`**: la prima volta scarica le dipendenze, poi si apre il browser su
    `http://localhost:4173`.

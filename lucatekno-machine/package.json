@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "app": "vite build && electron .",
     "dist:win": "tsc --noEmit && vite build && electron-builder --win --x64 --publish never",
-    "test:app": "node scripts/smoke-app.mjs"
+    "test:app": "node scripts/smoke-app.mjs",
+    "build:artifact": "node scripts/build-artifact.mjs"
   },
   "devDependencies": {
     "@fontsource/black-ops-one": "^5.3.0",
