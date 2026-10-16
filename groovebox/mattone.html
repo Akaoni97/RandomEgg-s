@@ -42,6 +42,7 @@
   --vu-1: #f3e9cf; --vu-2: #d8cba7; --vu-ink: #2a241a; --vu-red: #c2392b;
   --stripe-1: #f2a43a; --stripe-2: #df6a3c; --stripe-3: #b04a3a; --stripe-4: #4fbcaa;
   --lcd-1: #f5bb5c; --lcd-2: #d98a2b; --lcd-ink: #2a1404;
+  --scr-bg: #0b0806; --scr-ink: #ffb247; --scr-acc: #fff2d8;
   --knob-1: #5a564c; --knob-2: #24221e; --knob-ink: #ebe1c6;
   --f-logo: "Bungee", "Arial Black", Impact, sans-serif;
   --f-label: "Silkscreen", "Courier New", monospace;
@@ -106,9 +107,9 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .lcdwrap { display: grid; gap: 8px; min-width: 0; align-content: start; }
 .lcdhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.lcd { position: relative; border-radius: 7px; padding: 9px; min-width: 0; background: linear-gradient(180deg, #0a0a09, #1d1c19); box-shadow: inset 0 2px 7px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px var(--edge); }
-.lcd canvas { display: block; width: 100%; max-width: 100%; aspect-ratio: 144 / 44; border-radius: 3px; cursor: pointer; }
-.lcd::after { content: ""; position: absolute; inset: 9px; border-radius: 3px; pointer-events: none; background: linear-gradient(165deg, rgba(255,255,255,.16), rgba(255,255,255,0) 38%), linear-gradient(0deg, rgba(0,0,0,.12), transparent 30%); box-shadow: inset 0 0 12px rgba(0,0,0,.35); }
+.lcd { position: relative; border-radius: 9px; padding: 7px; min-width: 0; background: linear-gradient(180deg, #050505, #161616); box-shadow: inset 0 2px 7px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px var(--edge); }
+.lcd canvas { display: block; width: 100%; max-width: 100%; aspect-ratio: 256 / 72; border-radius: 4px; cursor: pointer; }
+.lcd::after { content: ""; position: absolute; inset: 7px; border-radius: 4px; pointer-events: none; background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,0) 30%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
 .steps16 { display: grid; grid-template-columns: repeat(16, minmax(0,1fr)); gap: 3px; justify-items: center; }
 .steps16 i { width: 8px; height: 8px; border-radius: 50%; background: var(--led-off); box-shadow: inset 0 1px 1px rgba(0,0,0,.5); display: block; }
 .steps16 i:nth-child(4n+1) { outline: 1px solid var(--line); outline-offset: 2px; }
@@ -300,6 +301,7 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
   --stripe-1: #6b3f22; --stripe-2: #8a5530; --stripe-3: #b07443; --stripe-4: #d39a5e;
   --f-logo: "Righteous", "Arial Black", sans-serif;
   --lcd-1: #3563c4; --lcd-2: #1d3d8f; --lcd-ink: #e8f1ff;
+  --scr-bg: #03070e; --scr-ink: #79cfff; --scr-acc: #ffffff;
   --knob-1: #fbfaf6; --knob-2: #a9a59b; --knob-ink: #1c1a16;
   --rubber: #d8d1bf; --rubber-hi: #f1ecdf; --pad-ink: #2a261d; --pad-ink-2: #7a7262;
 }
@@ -323,6 +325,7 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
   --stripe-1: #e6dfc2; --stripe-2: #1e2115; --stripe-3: #e6dfc2; --stripe-4: #1e2115;
   --f-logo: "Black Ops One", "Arial Black", sans-serif;
   --lcd-1: #c8d38e; --lcd-2: #a2af63; --lcd-ink: #182009;
+  --scr-bg: #060904; --scr-ink: #b6f266; --scr-acc: #f4ffd8;
   --knob-1: #3a3d2e; --knob-2: #15170e; --knob-ink: #e6dfc2;
   --rubber: #5a5a3e; --rubber-hi: #6e6e4c; --pad-ink: #f0e9cc; --pad-ink-2: #b3ac8a;
 }
@@ -346,6 +349,7 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
   --stripe-1: #ff5fae; --stripe-2: #ffd23f; --stripe-3: #3ad6ff; --stripe-4: #9dff57;
   --f-logo: "Permanent Marker", "Comic Sans MS", cursive;
   --lcd-1: #ff9cc3; --lcd-2: #e0568d; --lcd-ink: #2b0516;
+  --scr-bg: #0b0409; --scr-ink: #ff6fb5; --scr-acc: #ffe066;
   --knob-1: #3d3d46; --knob-2: #101013; --knob-ink: #ffd23f;
 }
 .app[data-skin="metro"] .unit {
@@ -436,7 +440,7 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
       <div class="skins" id="skins" role="group" aria-label="Scocca"></div>
     </div>
     <div class="lcdwrap">
-      <div class="lcdhead"><span class="lbl">Display · matrice di punti</span><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button></div>
+      <div class="lcdhead"><span class="lbl">Display OLED · 256×72</span><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button></div>
       <div class="lcd" id="vfd"><canvas id="spec" aria-label="Display: tocca per cambiare visualizzatore"></canvas></div>
       <div class="steps16" id="leds" aria-hidden="true"></div>
       <div class="sr-only" aria-live="polite"><span id="vPat">01</span> <span id="vBpm">088</span> <span id="vPos">1.1</span> <span id="msg">PREMI PLAY O TOCCA UN PAD</span></div>
@@ -1935,14 +1939,15 @@ const DPR = () => Math.min(2, window.devicePixelRatio || 1);
 let specCv, deckCv, deckBase = null, deckSize = 0;
 function sizeCanvases() {
   specCv = $("spec"); deckCv = $("deck");
-  const r = specCv.getBoundingClientRect(); specCv.width = Math.max(1, Math.round(r.width * DPR())); specCv.height = Math.max(1, Math.round(r.height * DPR()));
+  const r = specCv.getBoundingClientRect(), k = Math.max(2, Math.round(r.width * DPR() / LCD_W));   // whole device pixels per dot
+  specCv.width = LCD_W * k; specCv.height = LCD_H * k;
   const d = deckCv.getBoundingClientRect(), size = Math.max(1, Math.round(Math.min(d.width, d.height) * DPR()));
   if (size !== deckSize) { deckSize = size; deckCv.width = deckCv.height = size; deckBase = null; }
   drawDeck(true); drawSpec(true); drawVU(true);
 }
-/* ---------- dot-matrix LCD (144 × 44 punti) ---------- */
-const LCD_W = 144, LCD_H = 44, VIZ_Y = 10, VIZ_H = 25;
-const lcdBuf = new Uint8Array(LCD_W * LCD_H);
+/* ---------- display a matrice di punti, stile OLED moderno (256 × 72) ---------- */
+const LCD_W = 256, LCD_H = 72, VX = 62, VY = 11, VW = LCD_W - VX, VH = 49;
+const lcdBuf = new Uint8Array(LCD_W * LCD_H);   // 0 spento, 1 colore principale, 2 accento
 const FONT = {
   "0":[62,81,73,69,62],"1":[0,66,127,64,0],"2":[66,97,81,73,70],"3":[33,65,69,75,49],"4":[24,20,18,127,16],"5":[39,69,69,69,57],"6":[60,74,73,73,48],"7":[1,113,9,5,3],"8":[54,73,73,73,54],"9":[6,73,73,41,30],
   A:[126,17,17,17,126],B:[127,73,73,73,54],C:[62,65,65,65,34],D:[127,65,65,34,28],E:[127,73,73,73,65],F:[127,9,9,9,1],G:[62,65,73,73,122],H:[127,8,8,8,127],I:[0,65,127,65,0],J:[32,64,65,63,1],K:[127,8,20,34,65],L:[127,64,64,64,64],M:[127,2,12,2,127],
@@ -1952,34 +1957,55 @@ const FONT = {
 };
 const LCD_MAP = { "→": ">", "♯": "#", "♭": "B", "“": "\"", "”": "\"", "’": "'", "×": "X", "↔": "-", "…": "." };
 function lcdNorm(s) { return String(s).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/./g, ch => LCD_MAP[ch] || (FONT[ch] ? ch : " ")); }
-const px = (x, y) => { if (x >= 0 && x < LCD_W && y >= 0 && y < LCD_H) lcdBuf[y * LCD_W + (x | 0)] = 1; };
-function lcdText(s, x, y) { for (const ch of s) { const g = FONT[ch]; if (g) for (let c = 0; c < 5; c++) for (let r = 0; r < 7; r++) if (g[c] >> r & 1) px(x + c, y + r); x += 6; } return x; }
-function lcdLine(x0, y0, x1, y1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let i = 0; i <= n; i++) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n)); }
+const px = (x, y, v = 1) => { x |= 0; y |= 0; if (x >= 0 && x < LCD_W && y >= 0 && y < LCD_H) lcdBuf[y * LCD_W + x] = v; };
+function lcdText(s, x, y, sc = 1, v = 1) {
+  for (const ch of s) { const g = FONT[ch]; if (g) for (let c = 0; c < 5; c++) for (let r = 0; r < 7; r++) if (g[c] >> r & 1) for (let a = 0; a < sc; a++) for (let b = 0; b < sc; b++) px(x + c * sc + a, y + r * sc + b, v); x += 6 * sc; }
+  return x;
+}
+function lcdLine(x0, y0, x1, y1, v = 1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let i = 0; i <= n; i++) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), v); }
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-const fallBuf = new Float32Array(LCD_W * VIZ_H);
+const fallBuf = new Float32Array(VW * VH);
 let lcdBg = null, lcdBgKey = "";
 function lcdBackground(W, H, pitch) {
-  const key = W + "x" + H + SK.lcd1 + SK.lcdInk;
+  const key = W + "x" + H + SK.scrBg + SK.scrInk;
   if (lcdBg && lcdBgKey === key) return lcdBg;
   const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
-  const c = cv.getContext("2d"), g = c.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, SK.lcd1); g.addColorStop(1, SK.lcd2); c.fillStyle = g; c.fillRect(0, 0, W, H);
-  const vg = c.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, W * 0.7); vg.addColorStop(0, "rgba(255,255,255,.10)"); vg.addColorStop(1, "rgba(0,0,0,.22)");
-  c.fillStyle = vg; c.fillRect(0, 0, W, H);
-  c.fillStyle = withAlpha(SK.lcdInk, 0.07);                         // unlit dots stay faintly visible
-  const d = pitch * 0.84;
-  for (let y = 0; y < LCD_H; y++) for (let x = 0; x < LCD_W; x++) c.fillRect(x * pitch + (pitch - d) / 2, y * pitch + (pitch - d) / 2, d, d);
+  const c = cv.getContext("2d");
+  c.fillStyle = SK.scrBg; c.fillRect(0, 0, W, H);
+  c.fillStyle = withAlpha(SK.scrInk, 0.045);                         // pixel grid, barely visible
+  const d = pitch * 0.86, o = (pitch - d) / 2;
+  for (let y = 0; y < LCD_H; y++) for (let x = 0; x < LCD_W; x++) c.fillRect(x * pitch + o, y * pitch + o, d, d);
   lcdBg = cv; lcdBgKey = key; return cv;
 }
 function lcdRender() {
-  const c = specCv.getContext("2d"), W = specCv.width, H = specCv.height, pitch = Math.min(W / LCD_W, H / LCD_H), d = pitch * 0.84, o = (pitch - d) / 2;
-  c.drawImage(lcdBackground(W, H, pitch), 0, 0);
-  const path = new Path2D();
-  for (let y = 0; y < LCD_H; y++) for (let x = 0; x < LCD_W; x++) if (lcdBuf[y * LCD_W + x]) path.rect(x * pitch + o, y * pitch + o, d, d);
-  c.save(); c.translate(pitch * 0.22, pitch * 0.26); c.fillStyle = withAlpha(SK.lcdInk, 0.16); c.fill(path); c.restore();   // pixel shadow on the backlight
-  c.fillStyle = withAlpha(SK.lcdInk, 0.9); c.fill(path);
+  const c = specCv.getContext("2d"), W = specCv.width, H = specCv.height, k = W / LCD_W;
+  c.drawImage(lcdBackground(W, H, k), 0, 0);
+  if (!glowCv) { glowCv = document.createElement("canvas"); glowCv.width = LCD_W; glowCv.height = LCD_H; glowImg = glowCv.getContext("2d").createImageData(LCD_W, LCD_H); }
+  const gd = glowImg.data, ci = SK.rgbInk, ca = SK.rgbAcc;
+  for (let i = 0; i < lcdBuf.length; i++) { const v = lcdBuf[i], q = i * 4; if (v) { const col = v === 2 ? ca : ci; gd[q] = col[0]; gd[q + 1] = col[1]; gd[q + 2] = col[2]; gd[q + 3] = 255; } else gd[q + 3] = 0; }
+  glowCv.getContext("2d").putImageData(glowImg, 0, 0);
+  c.save();
+  // soft bloom: the same image stretched with smoothing
+  c.imageSmoothingEnabled = true; c.globalAlpha = 0.32; c.drawImage(glowCv, -k, -k, W + k * 2, H + k * 2);
+  c.globalAlpha = 0.2; c.drawImage(glowCv, -k * 3, -k * 2, W + k * 6, H + k * 4);
+  // crisp pixels, then the dark gaps between them
+  c.globalAlpha = 1; c.imageSmoothingEnabled = false; c.drawImage(glowCv, 0, 0, W, H);
+  c.restore();
+  c.drawImage(lcdGrid(W, H, k), 0, 0);
 }
-const specBins = new Float32Array(24), specPeak = new Float32Array(24);
+let lcdGridCv = null, lcdGridKey = "";
+function lcdGrid(W, H, k) {
+  const key = W + "x" + H + SK.scrBg;
+  if (lcdGridCv && lcdGridKey === key) return lcdGridCv;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const c = cv.getContext("2d"), g = Math.max(1, Math.round(k * 0.16));
+  c.fillStyle = withAlpha(SK.scrBg, 0.9);
+  for (let x = 0; x < LCD_W; x++) c.fillRect(Math.round(x * k + k - g), 0, g, H);
+  for (let y = 0; y < LCD_H; y++) c.fillRect(0, Math.round(y * k + k - g), W, g);
+  lcdGridCv = cv; lcdGridKey = key; return cv;
+}
+let glowCv = null, glowImg = null;
+const specBins = new Float32Array(32), specPeak = new Float32Array(32);
 let fbuf = null, sbuf = null;
 function readBins(idle) {
   const nb = specBins.length;
@@ -1991,7 +2017,7 @@ function readBins(idle) {
       const f0 = 40 * Math.pow(16000 / 40, b / nb), f1 = 40 * Math.pow(16000 / 40, (b + 1) / nb);
       const i0 = Math.floor(f0 / nyq * n), i1 = Math.max(i0 + 1, Math.floor(f1 / nyq * n));
       let m = 0; for (let i = i0; i < i1 && i < n; i++) m = Math.max(m, fbuf[i]);
-      specBins[b] = m / 255; specPeak[b] = Math.max(specBins[b], specPeak[b] - 0.012);
+      specBins[b] = m / 255; specPeak[b] = Math.max(specBins[b], specPeak[b] - 0.01);
     }
   } else { specBins.fill(0); for (let b = 0; b < nb; b++) specPeak[b] = Math.max(0, specPeak[b] - 0.02); }
 }
@@ -1999,68 +2025,78 @@ function drawSpec(idle) {
   if (!specCv) return;
   readBins(idle);
   lcdBuf.fill(0);
-  // status line
-  const play = recording ? "●" : playing ? "▶" : "■";
-  let x = lcdText(play, 0, 0);
-  lcdText(" P" + String(state.pattern + 1).padStart(2, "0") + " " + pad3(state.bpm) + "BPM " + $("vPos").textContent, x, 0);
-  const vn = VIS[state.vis || 0][2];
-  lcdText(vn, LCD_W - vn.length * 6 + 1, 0);
-  for (let i = 0; i < LCD_W; i += 2) px(i, 8);
-  // visualizer, always the same size: only its contents move with the music
-  const mode = VIS[state.vis || 0][0], y0 = VIZ_Y, h = VIZ_H;
+  // top bar
+  lcdText("PAT", 0, 0); lcdText(String(state.pattern + 1).padStart(2, "0"), 20, 0, 1, 2);
+  const st = recording ? "● REC" : playing ? "▶ PLAY" : "■ STOP";
+  lcdText(st, 46, 0, 1, recording ? 2 : 1);
+  const bank = BANKS[state.bank];
+  lcdText("GRP " + bank.id + " " + lcdNorm(bank.name), 96, 0);
+  const vn = VIS[state.vis || 0][2]; lcdText(vn, LCD_W - vn.length * 6 + 1, 0, 1, 2);
+  for (let i = 0; i < LCD_W; i++) px(i, 8);
+  // left panel: tempo and position in big digits
+  lcdText("BPM", 0, 11); lcdText(pad3(state.bpm), 0, 19, 2, 1);
+  lcdText("BAR", 0, 37); lcdText($("vPos").textContent.slice(0, 3), 0, 45, 2, playing ? 2 : 1);
+  for (let y = 11; y < 61; y += 2) px(57, y);
+  // step strip under the left panel
+  const pat = state.patterns[state.pattern];
+  for (let s = 0; s < 16; s++) { const x0 = 1 + s * 3 + Math.floor(s / 4), on = pat.some(b => b.some(p => p[s])), now = playing && s === shownStep; for (let k = 0; k < 2; k++) { px(x0 + k, 60, now ? 2 : on ? 1 : 0); if (now) px(x0 + k, 59, 2); } }
+  // visualizer area: fixed size, only its contents move
+  const mode = VIS[state.vis || 0][0], x0 = VX, y0 = VY, w = VW, h = VH;
   if (mode === "spec") {
-    for (let b = 0; b < 24; b++) {
-      const top = Math.round(specBins[b] * h), pk = Math.round(specPeak[b] * h);
-      for (let k = 0; k < top; k++) for (let c = 0; c < 5; c++) px(b * 6 + c, y0 + h - 1 - k);
-      if (pk > 0) for (let c = 0; c < 5; c++) px(b * 6 + c, y0 + h - 1 - Math.min(h - 1, pk));
+    for (let b = 0; b < 32; b++) {
+      const top = Math.round(specBins[b] * (h - 1)), pk = Math.round(specPeak[b] * (h - 1)), bx = x0 + b * 6;
+      for (let k = 0; k < top; k++) for (let c = 0; c < 5; c++) px(bx + c, y0 + h - 1 - k, 1);
+      if (pk > 1) for (let c = 0; c < 5; c++) px(bx + c, y0 + h - 1 - pk, 2);
     }
   } else if (mode === "mirror") {
-    const mid = y0 + 12;
-    for (let b = 0; b < 12; b++) {
-      const v = Math.pow(specBins[b * 2], 1.4), hh = Math.round(v * 12);
-      for (const bx of [72 + b * 6, 72 - (b + 1) * 6]) for (let k = -hh; k <= hh; k++) for (let c = 1; c < 6; c++) px(bx + c, mid + k);
+    const mid = y0 + Math.floor(h / 2), cx = x0 + w / 2;
+    for (let b = 0; b < 16; b++) {
+      const v = Math.pow(specBins[b * 2], 1.3), hh = Math.round(v * (h / 2 - 1));
+      for (const bx of [cx + b * 6, cx - (b + 1) * 6]) for (let k = -hh; k <= hh; k++) for (let c = 1; c < 6; c++) px(bx + c, mid + k, Math.abs(k) === hh && hh > 2 ? 2 : 1);
     }
   } else if (mode === "scope") {
-    for (let i = 0; i < LCD_W; i += 4) px(i, y0 + 12);
+    const mid = y0 + Math.floor(h / 2);
+    for (let x = x0; x < LCD_W; x += 4) px(x, mid); for (let y = y0; y < y0 + h; y += 4) for (let gx = 1; gx < 4; gx++) px(x0 + Math.round(w * gx / 4), y);
     if (ctx && N.spec && !idle) {
       if (!sbuf) sbuf = new Float32Array(N.spec.fftSize);
       N.spec.getFloatTimeDomainData(sbuf);
-      let st = 0; for (let i = 1; i < sbuf.length / 2; i++) if (sbuf[i - 1] < 0 && sbuf[i] >= 0) { st = i; break; }
+      let s0 = 0; for (let i = 1; i < sbuf.length / 2; i++) if (sbuf[i - 1] < 0 && sbuf[i] >= 0) { s0 = i; break; }
       const span = Math.floor(sbuf.length / 2); let prevY = null;
-      for (let xx = 0; xx < LCD_W; xx++) {
-        const v = Math.max(-1, Math.min(1, sbuf[st + Math.floor(xx / LCD_W * span)] * 1.5)), yy = Math.round(y0 + 12 - v * 12);
-        if (prevY === null) px(xx, yy); else lcdLine(xx - 1, prevY, xx, yy);
+      for (let x = 0; x < w; x++) {
+        const v = Math.max(-1, Math.min(1, sbuf[s0 + Math.floor(x / w * span)] * 1.5)), yy = Math.round(mid - v * (h / 2 - 1));
+        if (prevY === null) px(x0 + x, yy, 2); else lcdLine(x0 + x - 1, prevY, x0 + x, yy, 2);
         prevY = yy;
       }
     }
   } else if (mode === "ring") {
-    const cx = 72, cy = y0 + 12, r0 = 5;
-    for (let a = 0; a < 40; a++) { const t = a / 40 * Math.PI * 2; px(Math.round(cx + Math.cos(t) * r0), Math.round(cy + Math.sin(t) * r0)); }
-    for (let i = 0; i < 32; i++) {
-      const b = i < 16 ? i : 31 - i, v = specBins[Math.min(23, b + 2)], t = i / 32 * Math.PI * 2 - Math.PI / 2, len = 1 + v * 7;
-      lcdLine(Math.round(cx + Math.cos(t) * (r0 + 2)), Math.round(cy + Math.sin(t) * (r0 + 2)), Math.round(cx + Math.cos(t) * (r0 + 2 + len)), Math.round(cy + Math.sin(t) * (r0 + 2 + len)));
+    const cx = x0 + Math.floor(w / 2), cy = y0 + Math.floor(h / 2), r0 = 9;
+    for (let a = 0; a < 64; a++) { const t = a / 64 * Math.PI * 2; px(Math.round(cx + Math.cos(t) * r0), Math.round(cy + Math.sin(t) * r0), 2); }
+    for (let i = 0; i < 48; i++) {
+      const b = i < 24 ? i : 47 - i, v = specBins[Math.min(31, b + 3)], t = i / 48 * Math.PI * 2 - Math.PI / 2, len = 1 + v * 13;
+      lcdLine(Math.round(cx + Math.cos(t) * (r0 + 3)), Math.round(cy + Math.sin(t) * (r0 + 3)), Math.round(cx + Math.cos(t) * (r0 + 3 + len)), Math.round(cy + Math.sin(t) * (r0 + 3 + len)));
     }
-    const bands = [[0, 6], [6, 15], [15, 24]].map(([a, z]) => { let s = 0; for (let b = a; b < z; b++) s += specBins[b]; return s / (z - a); });
+    const bands = [[0, 8], [8, 20], [20, 32]].map(([a, z]) => { let s = 0; for (let b = a; b < z; b++) s += specBins[b]; return s / (z - a); });
     bands.forEach((v, k) => {
-      const yy = y0 + 4 + k * 7, len = Math.round(v * 50);
-      for (let q = 0; q < len; q += 2) for (let r = 0; r < 4; r++) { px(cx - 18 - q, yy + r); px(cx + 18 + q, yy + r); }
+      const yy = y0 + 8 + k * 13, len = Math.round(v * 66);
+      for (let q = 0; q < len; q += 2) for (let r = 0; r < 6; r++) { px(cx - 30 - q, yy + r); px(cx + 30 + q, yy + r); }
     });
   } else if (mode === "fall") {
-    for (let r = 0; r < h; r++) { const row = r * LCD_W; fallBuf.copyWithin(row, row + 1, row + LCD_W); }   // scroll each row left
+    for (let r = 0; r < h; r++) { const row = r * w; fallBuf.copyWithin(row, row + 1, row + w); }
     for (let r = 0; r < h; r++) {
       let v = 0;
       if (fbuf && ctx && !idle) { const fr = 40 * Math.pow(16000 / 40, r / h), i = Math.min(fbuf.length - 1, Math.floor(fr / (SR / 2) * fbuf.length)); v = fbuf[i] / 255; }
-      fallBuf[(h - 1 - r) * LCD_W + LCD_W - 1] = v;
+      fallBuf[(h - 1 - r) * w + w - 1] = v;
     }
-    for (let r = 0; r < h; r++) for (let xx = 0; xx < LCD_W; xx++) { const v = fallBuf[r * LCD_W + xx]; if (v * 1.3 > (BAYER[(xx & 3) + (r & 3) * 4] + 0.5) / 16) px(xx, y0 + r); }
+    for (let r = 0; r < h; r++) for (let x = 0; x < w; x++) { const v = fallBuf[r * w + x]; if (v * 1.3 > (BAYER[(x & 3) + (r & 3) * 4] + 0.5) / 16) px(x0 + x, y0 + r, v > 0.72 ? 2 : 1); }
   }
   // message line, scrolling when it does not fit
+  for (let i = 0; i < LCD_W; i++) px(i, 62);
   const m = lcdNorm($("msg").textContent), maxC = Math.floor(LCD_W / 6);
-  if (m.length <= maxC) lcdText(m, 0, 37);
-  else { const full = m + "   ·   ", off = Math.floor(performance.now() / 160) % full.length; lcdText((full + full).slice(off, off + maxC + 1), 0, 37); }
+  if (m.length <= maxC) lcdText(m, 0, 65);
+  else { const full = m + "   ·   ", off = Math.floor(performance.now() / 140) % full.length; lcdText((full + full).slice(off, off + maxC + 1), 0, 65); }
   lcdRender();
 }
-const VIS = [["spec", "Spettro", "SPET"], ["mirror", "Specchio", "SPEC"], ["scope", "Oscilloscopio", "OSCI"], ["ring", "Cerchio", "CERC"], ["fall", "Cascata", "CASC"]];
+const VIS = [["spec", "Spettro", "SPETTRO"], ["mirror", "Specchio", "SPECCHIO"], ["scope", "Oscilloscopio", "OSCILLO"], ["ring", "Cerchio", "CERCHIO"], ["fall", "Cascata", "CASCATA"]];
 function cycleVis(dir = 1) {
   state.vis = ((state.vis || 0) + dir + VIS.length) % VIS.length; save();
   $("visBtn").textContent = "VIS · " + VIS[state.vis][1];
@@ -2175,8 +2211,9 @@ const withAlpha = (h, a) => { const [r, g, b] = hexRgb(h); return "rgba(" + r + 
 function readSkin() {
   const cs = getComputedStyle($("app")), v = n => cs.getPropertyValue(n).trim();
   Object.assign(SK, { vfd: v("--vfd"), vfdDim: v("--vfd-dim"), vfdHi: v("--vfd-hi"), vfdMid: v("--vfd-mid"), vfdBg: v("--vfd-bg"), led: v("--led"),
-    well: v("--well"), key1: v("--key-1"), key2: v("--key-2"), keyInk: v("--key-ink"), vu1: v("--vu-1"), vu2: v("--vu-2"), vuInk: v("--vu-ink"), vuRed: v("--vu-red"), cap: v("--cap-2"), lcd1: v("--lcd-1"), knob1: v("--knob-1"), knob2: v("--knob-2"), knobInk: v("--knob-ink"), lcd2: v("--lcd-2"), lcdInk: v("--lcd-ink") });
+    well: v("--well"), key1: v("--key-1"), key2: v("--key-2"), keyInk: v("--key-ink"), vu1: v("--vu-1"), vu2: v("--vu-2"), vuInk: v("--vu-ink"), vuRed: v("--vu-red"), cap: v("--cap-2"), lcd1: v("--lcd-1"), scrBg: v("--scr-bg"), scrInk: v("--scr-ink"), scrAcc: v("--scr-acc"), knob1: v("--knob-1"), knob2: v("--knob-2"), knobInk: v("--knob-ink"), lcd2: v("--lcd-2"), lcdInk: v("--lcd-ink") });
   SK.vfdA25 = withAlpha(SK.vfd, 0.25); SK.vfdA18 = withAlpha(SK.vfd, 0.18);
+  SK.rgbInk = hexRgb(SK.scrInk); SK.rgbAcc = hexRgb(SK.scrAcc);
   SK.rgb = { bg: hexRgb(SK.vfdBg), mid: hexRgb(SK.vfdMid), vfd: hexRgb(SK.vfd), led: hexRgb(SK.led) };
 }
 function applySkin(id) {
