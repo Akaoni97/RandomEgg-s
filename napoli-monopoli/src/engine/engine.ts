@@ -40,7 +40,7 @@ export const MAX_CORNI = 3;
 
 /** tunables, adjusted with the bot simulations */
 export const BALANCE = {
-  gigiBonus: 25,
+  gigiBonus: 30,
   /** Gennaro's ampolla recharges every N laps (0 = once per game) */
   miracleEvery: 3,
   rentMult: 1,
@@ -49,7 +49,7 @@ export const BALANCE = {
   houseMult: 1,
   /** Totò haggles every rent down: "siamo uomini o caporali?" */
   totoDiscount: 0.1,
-  municipale: 0.3,
+  municipale: 0.35,
 };
 
 // ───────────────────────── randomness ─────────────────────────
@@ -301,7 +301,7 @@ export function pay(s: GameState, from: number, to: Creditor, amount: number): n
   p.money -= paid;
   emit(s, { type: 'money', player: from, delta: -paid });
   if (typeof to === 'number') gain(s, to, paid);
-  else if (to === 'pot') s.pot += Math.round(paid * BALANCE.potShare);
+  else if (to === 'pot') s.pot += Math.floor(paid * BALANCE.potShare);
   if (paid < amount) bankrupt(s, from, to);
   return paid;
 }
@@ -575,6 +575,39 @@ function applyCard(s: GameState, pid: number, card: Card) {
       else log(s, `${p.name} non ha costruito niente. Per una volta l'abusivismo non conviene.`);
       break;
     }
+    case 'richestPays': {
+      const rich = alive(s)
+        .filter((o) => o.id !== pid)
+        .sort((a, b) => b.money - a.money)[0];
+      if (rich) {
+        log(s, `${rich.name} è il più ricco del tavolo e paga la "protezione".`);
+        pay(s, rich.id, pid, e.amount);
+      }
+      break;
+    }
+    case 'everyonePot':
+      for (const o of alive(s)) pay(s, o.id, 'pot', e.amount);
+      break;
+    case 'freeAbusivo': {
+      const spot = s.tiles
+        .map((t, i) => ({ t, i }))
+        .filter(({ t, i }) => t.owner === pid && !t.mortgaged && t.houses < 5 && BOARD[i].kind === 'property')
+        .sort((a, b) => (BOARD[a.i].price ?? 0) - (BOARD[b.i].price ?? 0))[0];
+      if (spot) {
+        spot.t.houses += 1;
+        spot.t.abusivo = true;
+        log(s, `🧱 Spunta un basso abusivo a ${BOARD[spot.i].short}. Nessuno ha visto niente.`);
+      } else {
+        log(s, "Il geometra cerca un terreno tuo, non lo trova, e se ne va a prendere il caffè.");
+      }
+      break;
+    }
+    case 'napoliSegna':
+      napoliSegna(s);
+      break;
+    case 'ruspa':
+      if (!ruspa(s)) log(s, '🚜 La ruspa gira tutto il rione ma non trova manco un abusivo. Miracolo.');
+      break;
     case 'potToMe': {
       const pot = s.pot;
       s.pot = 0;
@@ -598,7 +631,8 @@ function curse(s: GameState, target: number) {
 // ───────────────────────── Vesuvio & events ─────────────────────────
 
 function bumpVesuvio(s: GameState, amount: number) {
-  s.vesuvio = Math.min(100, s.vesuvio + amount);
+  s.vesuvio = Math.max(0, Math.min(100, s.vesuvio + amount));
+  if (amount < 0) log(s, `🌋 Il Vesuvio si calma un poco: ${s.vesuvio}/100.`);
   if (s.vesuvio >= 100) erupt(s);
 }
 
@@ -644,14 +678,15 @@ function napoliSegna(s: GameState) {
   }
 }
 
-function ruspa(s: GameState) {
+function ruspa(s: GameState): boolean {
   const abusivi = s.tiles.map((t, i) => ({ t, i })).filter(({ t }) => t.abusivo && t.houses > 0);
-  if (!abusivi.length) return;
+  if (!abusivi.length) return false;
   const { t, i } = abusivi[Math.floor(rand(s) * abusivi.length)];
   const owner = t.owner !== null ? nameOf(s, t.owner) : 'nessuno';
   t.houses = 0;
   t.abusivo = false;
   banner(s, 'ruspa', `🚜 Arriva la RUSPA DEL COMUNE a ${BOARD[i].name}! Abbattuto l'abusivo di ${owner}.`, { tile: i });
+  return true;
 }
 
 // ───────────────────────── turns ─────────────────────────

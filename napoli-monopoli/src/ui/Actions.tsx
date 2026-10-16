@@ -265,7 +265,7 @@ function PendingPanel({ g }: { g: GameState }) {
               </button>
             ))}
           </div>
-          <p className="muted">Attento: c'è il 30% che ti ferma la Municipale.</p>
+          <p className="muted">Attento: c'è il 35% che ti ferma la Municipale.</p>
         </div>
       );
     case 'malocchioTarget':

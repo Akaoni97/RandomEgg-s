@@ -17,7 +17,12 @@ export type CardEffect =
   | { kind: 'sciopero' }
   | { kind: 'vesuvio'; amount: number }
   | { kind: 'repairs'; perBasso: number; perPalazzo: number }
-  | { kind: 'potToMe' };
+  | { kind: 'potToMe' }
+  | { kind: 'richestPays'; amount: number }
+  | { kind: 'everyonePot'; amount: number }
+  | { kind: 'freeAbusivo' }
+  | { kind: 'napoliSegna' }
+  | { kind: 'ruspa' };
 
 export interface Card {
   id: string;
@@ -61,6 +66,18 @@ export const SMORFIA_CARDS: Card[] = [
   c('smorfia', 'neomelodico', 'Concerto neomelodico', "Hai cantato al matrimonio di tua cugina: 'Nu bacio annascuso'. Ogni giocatore ti dà 20 ₵ per farti smettere.", { kind: 'collectEach', amount: 20 }),
   c('smorfia', 'vesuvio', "'O Vesuvio s'arrabbia", "Hai bestemmiato vicino al Vesuvio. Lui ha sentito: il Vesuvio sale di 15.", { kind: 'vesuvio', amount: 15 }, true),
   c('smorfia', 'sospeso', 'Il barista ti vuole bene', 'Il barista ti dà tutti i caffè sospesi: prendi il piatto del Caffè Sospeso.', { kind: 'potToMe' }),
+  c('smorfia', 'scudetto', 'Festa scudetto in piazza', "Il Napoli vince in TV e mezzo quartiere scende in strada coi clacson. Il Napoli segna: 50 ₵ a tutti, malocchi e galere perdonati!", { kind: 'napoliSegna' }),
+  c('smorfia', 'geometra', 'Il geometra cugino', "Tuo cugino geometra firma tutto senza guardare. Ti ritrovi un basso ABUSIVO gratis sulla tua proprietà più scarsa. Se arriva la ruspa, lui non ti conosce.", { kind: 'freeAbusivo' }),
+  c('smorfia', 'protezione', 'La protezione', "Il più ricco del tavolo ti deve 100 ₵ \"per la protezione\". Non chiedere protezione da cosa. Non chiedere proprio.", { kind: 'richestPays', amount: 100 }),
+  c('smorfia', 'processione', 'La processione', "Porti la statua di San Gennaro in spalla per tre ore sotto il sole. Il santo apprezza e calma il Vesuvio: -25.", { kind: 'vesuvio', amount: -25 }),
+  c('smorfia', 'tombola', 'Tombola di Natale', "Hai fatto ambo, terno, cinquina e pure tombola. Ogni giocatore ti paga 30 ₵ e ti dà del ladro. Con ragione.", { kind: 'collectEach', amount: 30 }),
+  c('smorfia', 'numeri', "I numeri della vecchia", "La vecchia del vicolo ti dà i numeri: 47 'o muorto che parla, 90 'a paura. Terno secco sulla ruota di Napoli: +120 ₵.", { kind: 'money', amount: 120 }),
+  c('smorfia', 'matrimonio', 'Il matrimonio di tua cugina', "600 invitati, 14 portate, il neomelodico e i fuochi alle 3 di notte. La busta da 40 ₵ la dai a ogni giocatore, pezzente.", { kind: 'payEach', amount: 40 }, true),
+  c('smorfia', 'guida', 'Guida turistica abusiva', "Due americani ti pagano per il tour: \"This is the house of Maradona\". Era casa di tua zia. +80 ₵.", { kind: 'money', amount: 80 }),
+  c('smorfia', 'sfogliatella', 'La sfogliatella riccia', "Sta uscendo la sfogliatella calda. Corri a Piazza Garibaldi, e se passi dal VIA ritiri pure. La dieta comincia lunedì.", { kind: 'moveTo', to: 21, collectGo: true }),
+  c('smorfia', 'whatsapp', 'Il gruppo di famiglia', "Hai scritto \"che schifo 'o presepe 'e zì Nina\" nel gruppo WhatsApp sbagliato. Paga 70 ₵ di fiori per farti perdonare.", { kind: 'money', amount: -70 }, true),
+  c('smorfia', 'peperoncino', 'Il cornetto del pizzaiolo', "Il pizzaiolo ti regala un corno portafortuna. È un peperoncino. Funziona lo stesso: +1 Corno.", { kind: 'corno' }),
+  c('smorfia', 'pazzariello', "'O pazzariello", "Fai il pazzariello per strada col tamburo e la fascia. Ogni giocatore ti dà 15 ₵ pur di farti stare zitto.", { kind: 'collectEach', amount: 15 }),
 ];
 
 export const MALOCCHIO_CARDS: Card[] = [
@@ -86,6 +103,18 @@ export const MALOCCHIO_CARDS: Card[] = [
   c('malocchio', 'buca', 'La buca in Via Marina', "Sei finito in una buca in Via Marina. Ci abitava una famiglia. Paga 40 ₵ di cerchioni.", { kind: 'money', amount: -40 }, true),
   c('malocchio', 'garibaldi', "Vai a Piazza Garibaldi", "Devi prendere il treno. Vai a Piazza Garibaldi e tieni stretto il portafoglio. Se passi dal VIA ritiri.", { kind: 'moveTo', to: 21, collectGo: true }),
   c('malocchio', 'boss', "Il compare d'anello", "Hai fatto da compare d'anello a nozze. Regali d'oro per tutti: paga 25 ₵ a ogni giocatore.", { kind: 'payEach', amount: 25 }, true),
+  c('malocchio', 'denuncia', 'Il vicino infame', "Il vicino ha fatto la segnalazione al Comune. Arriva la RUSPA su un abusivo a caso: magari il tuo, magari no. Il vicino intanto ride.", { kind: 'ruspa' }),
+  c('malocchio', 'colletta', 'La colletta per il santo', "Festa del santo patrono: tutti mettono 25 ₵ nel Caffè Sospeso, pure tu. Chi non paga, il santo lo vede.", { kind: 'everyonePot', amount: 25 }, true),
+  c('malocchio', 'offro', '"Offro io!"', "Hai fatto il ricco al bar e hai detto \"offro io\" a tutto il quartiere. Paga 20 ₵ a ogni giocatore, sbruffone.", { kind: 'payEach', amount: 20 }, true),
+  c('malocchio', 'suocera2', 'La suocera "per due giorni"', "Tua suocera è venuta \"per due giorni\". Sono tre settimane. Salti un turno a farle da tassista.", { kind: 'skip', turns: 1 }, true),
+  c('malocchio', 'vigili', 'Multa completa', "Seconda fila, sul marciapiede, sulle strisce e sul posto dei disabili, tutto in una volta. Pure il vigile ti fa i complimenti. Paga 100 ₵.", { kind: 'money', amount: -100 }, true),
+  c('malocchio', 'collina', '"È solo una collina"', "Hai detto che il Vesuvio è \"solo una collina\". Si è offeso a morte: sale di 25.", { kind: 'vesuvio', amount: 25 }, true),
+  c('malocchio', 'lancia4', 'Il corno a testa in giù', "Infili di nascosto un corno a punta in giù nella tasca di un nemico. Scegli la vittima: il suo prossimo affitto è dimezzato.", { kind: 'throwMalocchio' }),
+  c('malocchio', 'specchio', 'Lo specchio di nonna', "Hai rotto lo specchio del bagno di nonna. Sette anni di guai, a cominciare dal tuo prossimo affitto, dimezzato.", { kind: 'selfMalocchio' }, true),
+  c('malocchio', 'mondezza', 'Emergenza mondezza', "Crisi della spazzatura: paga 15 ₵ per ogni basso e 60 ₵ per ogni palazzo per far portare via i sacchetti. In nero, ovviamente.", { kind: 'repairs', perBasso: 15, perPalazzo: 60 }, true),
+  c('malocchio', 'accendini', 'Gli accendini tarocchi', "Ti beccano con 300 accendini tarocchi sul Rettifilo. \"Erano per uso personale!\" Vai a Poggioreale.", { kind: 'jail' }, true),
+  c('malocchio', 'partenope', 'La sirena Partenope', "Ti sei incantato a guardare la statua della sirena Partenope e hai perso la fermata. Torna indietro di 2 caselle, babbà.", { kind: 'moveRel', steps: -2 }, true),
+  c('malocchio', 'entrate', "L'Agenzia delle Entrate", "L'Agenzia delle Entrate ti ha trovato. Paga 90 ₵, e ringrazia che non ha visto il basso abusivo e la Porsche di tuo padre.", { kind: 'money', amount: -90 }, true),
 ];
 
 export const ALL_CARDS: Record<string, Card> = Object.fromEntries(

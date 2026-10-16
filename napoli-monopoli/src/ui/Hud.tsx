@@ -225,7 +225,7 @@ function RulesPanel() {
     ['🎄 Presepe vivente', 'Chi possiede tutto l\'arancione può, una volta per giro, mettere un avversario nel presepe: salta un turno.'],
     ["🧔 'O cugino d'America", 'Si piazza in casa tua: per un giro quella proprietà non incassa.'],
     ['🚧 Sciopero ANM', 'Per un giro le funicolari non incassano.'],
-    ['🛵 Poteri', 'Ciro: una volta per giro tira 3 dadi e ne scarta uno (30% di multa). Totò: il pacco gli riesce meglio e paga il 10% in meno di affitto. Luigi Gigi: +25 ₵ al VIA. Gennaro San: il miracolo contro carte negative o eruzioni, l\'ampolla si ricarica ogni 3 giri.'],
+    ['🛵 Poteri', 'Ciro: una volta per giro tira 3 dadi e ne scarta uno (35% di multa). Totò: il pacco gli riesce meglio e paga il 10% in meno di affitto. Luigi Gigi: +30 ₵ al VIA. Gennaro San: il miracolo contro carte negative o eruzioni, l\'ampolla si ricarica ogni 3 giri.'],
   ];
   return (
     <div className="modal-back" onClick={() => open(null)}>

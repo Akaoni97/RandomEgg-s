@@ -20,7 +20,7 @@ export const PAWNS: Record<PawnId, PawnDef> = {
     emoji: '🛵',
     power: 'Senza casco',
     powerText:
-      'Una volta per giro tira 3 dadi e scarta quello che non gli piace. Ma c\'è il 30% che lo ferma la Municipale (50 ₵ di multa). +1 negli scippi.',
+      'Una volta per giro tira 3 dadi e scarta quello che non gli piace. Ma c\'è il 35% che lo ferma la Municipale (50 ₵ di multa). +1 negli scippi.',
     bio: "Spaccone, sempre di fretta, sul SH in tre senza casco. \"Fratm\" ogni due parole.",
   },
   toto: {
@@ -40,7 +40,7 @@ export const PAWNS: Record<PawnId, PawnDef> = {
     accent: '#2f9e4f',
     emoji: '🍕',
     power: 'Sfornata',
-    powerText: 'Ogni volta che passa dal VIA prende 25 ₵ in più, perché la pizza la mangiano tutti.',
+    powerText: 'Ogni volta che passa dal VIA prende 30 ₵ in più, perché la pizza la mangiano tutti.',
     bio: "Una margherita con le gambe e il cappello da pizzaiolo. Permaloso: guai a chi nomina l'ananas.",
   },
   gennaro: {

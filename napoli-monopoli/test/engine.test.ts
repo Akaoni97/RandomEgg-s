@@ -93,7 +93,7 @@ describe('regole base', () => {
     expect(rentFor(s, 12, 7)).toBe(70);
   });
 
-  it('passando dal VIA si ritirano 200 e Luigi Gigi ne prende 225', () => {
+  it('passando dal VIA si ritirano 200 e Luigi Gigi ne prende 230', () => {
     let s = game();
     s.players[0].pos = 38;
     s = rig(s, [1, 2]); // → 1 Scampia
@@ -107,7 +107,7 @@ describe('regole base', () => {
     s.players[g.id].pos = 38;
     s = rig(s, [1, 2]);
     s = act(s, { type: 'ROLL' });
-    expect(s.players[g.id].money).toBe(1725);
+    expect(s.players[g.id].money).toBe(1730);
   });
 
   it('tre doppi di fila portano a Poggioreale', () => {
@@ -260,7 +260,7 @@ describe('dadi della Smorfia', () => {
     s = rig(s, [5, 6]); // → 26 Vomero
     s = act(s, { type: 'ROLL' });
     expect(s.players[0].money).toBe(1497);
-    expect(s.pot).toBe(2);
+    expect(s.pot).toBe(1);
   });
 });
 
@@ -607,6 +607,61 @@ describe('dinamiche speciali', () => {
     s = act(s, { type: 'ROLL' }, { type: 'CARD_OK' });
     expect(s.players[0].pos).toBe(0);
     expect(s.players[0].money).toBe(1500);
+  });
+});
+
+describe('carte nuove', () => {
+  /** Ciro pesca la carta indicata dalla Smorfia (casella 17) o dal Malocchio (casella 22) */
+  function draw(cardId: string, setup?: (s: GameState) => void) {
+    let s = game();
+    const deck = cardId.startsWith('smorfia') ? 'smorfia' : 'malocchio';
+    s.players[0].pos = deck === 'smorfia' ? 15 : 20;
+    s.decks[deck].unshift(cardId);
+    setup?.(s);
+    s = rig(s, [1, 1]);
+    return act(s, { type: 'ROLL' }, { type: 'CARD_OK' });
+  }
+
+  it('la protezione: paga il più ricco', () => {
+    const s = draw('smorfia-protezione', (g) => (g.players[2].money = 3000));
+    expect(s.players[2].money).toBe(2900);
+    expect(s.players[0].money).toBe(1600);
+  });
+
+  it('la colletta: tutti nel Caffè Sospeso', () => {
+    const s = draw('malocchio-colletta');
+    expect(s.players.every((p) => p.money === 1475)).toBe(true);
+    expect(s.pot).toBe(48); // 4 × 12: metà al Comune, che si tiene pure gli spiccioli
+  });
+
+  it('il geometra cugino: basso abusivo gratis sulla proprietà più scarsa', () => {
+    const s = draw('smorfia-geometra', (g) => {
+      g.tiles[39].owner = 0;
+      g.tiles[3].owner = 0;
+    });
+    expect(s.tiles[3].houses).toBe(1);
+    expect(s.tiles[3].abusivo).toBe(true);
+    expect(s.tiles[39].houses).toBe(0);
+    expect(s.players[0].money).toBe(1500);
+  });
+
+  it('festa scudetto: il Napoli segna', () => {
+    const s = draw('smorfia-scudetto');
+    expect(s.players.every((p) => p.money === 1550)).toBe(true);
+  });
+
+  it('il vicino infame chiama la ruspa', () => {
+    const s = draw('malocchio-denuncia', (g) => {
+      g.tiles[37].owner = 2;
+      g.tiles[37].houses = 2;
+      g.tiles[37].abusivo = true;
+    });
+    expect(s.tiles[37].houses).toBe(0);
+  });
+
+  it('la processione calma il Vesuvio senza andare sotto zero', () => {
+    const s = draw('smorfia-processione', (g) => (g.vesuvio = 10));
+    expect(s.vesuvio).toBe(0);
   });
 });
 
