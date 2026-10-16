@@ -265,7 +265,7 @@ function PendingPanel({ g }: { g: GameState }) {
               </button>
             ))}
           </div>
-          <p className="muted">Attento: c'è il 20% che ti ferma la Municipale.</p>
+          <p className="muted">Attento: c'è il 30% che ti ferma la Municipale.</p>
         </div>
       );
     case 'malocchioTarget':
@@ -288,7 +288,7 @@ function PendingPanel({ g }: { g: GameState }) {
         <div className="panel-box">
           <h3>🙏 San Gennaro, fai il miracolo?</h3>
           <p>{p.reason}</p>
-          <p className="muted">Si tira un dado: con 1 l'ampolla non si scioglie ed è tragedia (succede tutto e paghi 100 ₵). Si fa una volta sola a partita.</p>
+          <p className="muted">Si tira un dado: con 1 l'ampolla non si scioglie ed è tragedia (succede tutto e paghi 100 ₵). Poi l'ampolla si ricarica ogni 3 passaggi dal VIA.</p>
           <div className="row">
             <button className="btn gold" onClick={() => act({ type: 'MIRACLE', use: true })}>
               ✨ Fai il miracolo

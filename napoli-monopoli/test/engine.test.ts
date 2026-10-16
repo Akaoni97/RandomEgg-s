@@ -65,9 +65,9 @@ describe('regole base', () => {
     expect(s.current).toBe(1);
     s = rig(s, [2, 1]);
     s = act(s, { type: 'ROLL' });
-    // Totò lands on Secondigliano; Ciro is there too → scippo option after rent
-    expect(s.players[1].money).toBe(1500 - 4);
-    expect(s.players[0].money).toBe(1440 + 4);
+    // Totò lands on Secondigliano (6 ₵, ma lui tratta: -10%); Ciro is there too → scippo option after rent
+    expect(s.players[1].money).toBe(1500 - 5);
+    expect(s.players[0].money).toBe(1440 + 5);
     expect(s.pending?.kind).toBe('scippo');
   });
 
@@ -75,11 +75,11 @@ describe('regole base', () => {
     const s = game();
     s.tiles[1].owner = 0;
     s.tiles[3].owner = 0;
-    expect(rentFor(s, 1)).toBe(4);
+    expect(rentFor(s, 1)).toBe(6);
     s.tiles[1].houses = 2;
-    expect(rentFor(s, 1)).toBe(30);
+    expect(rentFor(s, 1)).toBe(45);
     s.tiles[1].houses = 5;
-    expect(rentFor(s, 1)).toBe(250);
+    expect(rentFor(s, 1)).toBe(375);
   });
 
   it('funicolari e società', () => {
@@ -93,7 +93,7 @@ describe('regole base', () => {
     expect(rentFor(s, 12, 7)).toBe(70);
   });
 
-  it('passando dal VIA si ritirano 200 e Luigi Gigi ne prende 250', () => {
+  it('passando dal VIA si ritirano 200 e Luigi Gigi ne prende 225', () => {
     let s = game();
     s.players[0].pos = 38;
     s = rig(s, [1, 2]); // → 1 Scampia
@@ -107,7 +107,7 @@ describe('regole base', () => {
     s.players[g.id].pos = 38;
     s = rig(s, [1, 2]);
     s = act(s, { type: 'ROLL' });
-    expect(s.players[g.id].money).toBe(1750);
+    expect(s.players[g.id].money).toBe(1725);
   });
 
   it('tre doppi di fila portano a Poggioreale', () => {
@@ -136,7 +136,7 @@ describe('regole base', () => {
     s.players[0].pos = 10;
     s = act(s, { type: 'PAY_JAIL' });
     expect(s.players[0].inJail).toBe(false);
-    expect(s.pot).toBe(50);
+    expect(s.pot).toBe(25); // metà all'avvocato, metà nel Caffè Sospeso
 
     s = game();
     s.players[0].inJail = true;
@@ -221,7 +221,7 @@ describe('regole base', () => {
     s.players[0].pos = 2;
     s = rig(s, [1, 1]); // → 4 Il Pizzo
     s = act(s, { type: 'ROLL' });
-    expect(s.pot).toBe(200);
+    expect(s.pot).toBe(100); // metà del Pizzo nel piatto, l'altra metà al Comune
     s = game();
     s.pot = 333;
     s.players[0].pos = 17;
@@ -260,7 +260,7 @@ describe('dadi della Smorfia', () => {
     s = rig(s, [5, 6]); // → 26 Vomero
     s = act(s, { type: 'ROLL' });
     expect(s.players[0].money).toBe(1497);
-    expect(s.pot).toBe(3);
+    expect(s.pot).toBe(2);
   });
 });
 
@@ -271,7 +271,7 @@ describe('dinamiche speciali', () => {
     s.players[1].malocchio = true;
     s = rig(s, [1, 2]);
     s = act(s, { type: 'ROLL' });
-    expect(s.players[1].money).toBe(1502);
+    expect(s.players[1].money).toBe(1503);
     expect(s.players[1].malocchio).toBe(false);
 
     s = game();
@@ -374,7 +374,7 @@ describe('dinamiche speciali', () => {
     s = act(s, { type: 'BUILD_ABUSIVO', tile: 39 }, { type: 'BUILD_ABUSIVO', tile: 39 });
     expect(s.tiles[39].houses).toBe(2);
     expect(s.tiles[39].abusivo).toBe(true);
-    expect(s.players[0].money).toBe(1300);
+    expect(s.players[0].money).toBe(1350);
     // fine giro: niente Napoli segna, ruspa sì
     s.current = 3;
     s = rig(s, [], [0.99, 0.01, 0]);
@@ -391,7 +391,7 @@ describe('dinamiche speciali', () => {
     s = act(s, { type: 'BUILD', tile: 39 });
     expect(s.tiles[39].houses).toBe(1);
     expect(s.tiles[39].abusivo).toBe(false);
-    expect(s.players[0].money).toBe(1300);
+    expect(s.players[0].money).toBe(1350);
   });
 
   it("il Vesuvio erutta a 100 e distrugge il lato verso il vulcano", () => {
@@ -451,6 +451,38 @@ describe('dinamiche speciali', () => {
     s = rig(s, [2, 3, 6]);
     s = act(s, { type: 'ROLL' }, { type: 'CARD_OK' }, { type: 'MIRACLE', use: true });
     expect(s.players[g].money).toBe(1500);
+  });
+
+  it("l'ampolla di Gennaro si ricarica ogni 3 giri", () => {
+    let s = game();
+    const g = byPawn(s, 'gennaro').id;
+    s.current = g;
+    s.players[g].miracleUsed = true;
+    s.players[g].laps = 1;
+    s.players[g].pos = 38;
+    s = rig(s, [1, 2]);
+    s = act(s, { type: 'ROLL' }); // secondo giro: niente
+    expect(s.players[g].miracleUsed).toBe(true);
+    s.players[g].pos = 38;
+    s.phase = 'roll';
+    s.pending = null;
+    s.queue = [];
+    s = rig(s, [1, 2]);
+    s = act(s, { type: 'ROLL' }); // terzo giro: l'ampolla si scioglie
+    expect(s.players[g].laps).toBe(3);
+    expect(s.players[g].miracleUsed).toBe(false);
+  });
+
+  it('Totò si fa fare lo sconto sugli affitti', () => {
+    let s = game();
+    s.current = 1;
+    s.tiles[39].owner = 0;
+    s.tiles[39].houses = 1;
+    s.players[1].pos = 30;
+    s = rig(s, [4, 5]);
+    s = act(s, { type: 'ROLL' });
+    expect(s.players[1].money).toBe(1500 - 270);
+    expect(s.players[0].money).toBe(1500 + 270);
   });
 
   it('il Napoli segna: 50 a tutti e amnistia', () => {
@@ -528,7 +560,7 @@ describe('dinamiche speciali', () => {
     expect(s.tiles[1].cuginoUntil).toBeGreaterThan(s.turn);
     expect(rentFor(s, 1)).toBe(0);
     s.turn = s.tiles[1].cuginoUntil;
-    expect(rentFor(s, 1)).toBe(2);
+    expect(rentFor(s, 1)).toBe(3);
   });
 
   it('sciopero ANM: funicolari chiuse', () => {
@@ -551,7 +583,7 @@ describe('dinamiche speciali', () => {
     s = game();
     s = rig(s, [6, 1, 2], [0.1]);
     s = act(s, { type: 'ROLL', senzaCasco: true }, { type: 'CIRO_PICK', drop: 0 });
-    expect(s.pot).toBe(50);
+    expect(s.pot).toBe(25);
     // non si può riusare nello stesso giro
     s.phase = 'roll';
     s.pending = null;

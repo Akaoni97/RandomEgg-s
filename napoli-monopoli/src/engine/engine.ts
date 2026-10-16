@@ -32,12 +32,25 @@ import type {
 export const VESUVIO_PER_LAP = 7;
 export const RUSPA_CHANCE = 0.1;
 export const NAPOLI_SEGNA_CHANCE = 0.01;
-export const MUNICIPALE_CHANCE = 0.2;
 export const PACCO_DISCOVERY = 0.5;
-export const PACCO_DISCOVERY_TOTO = 0.35;
+export const PACCO_DISCOVERY_TOTO = 0.3;
 export const SCIPPO_AMOUNT = 50;
 export const PACCO_OFFESA = 50;
 export const MAX_CORNI = 3;
+
+/** tunables, adjusted with the bot simulations */
+export const BALANCE = {
+  gigiBonus: 25,
+  /** Gennaro's ampolla recharges every N laps (0 = once per game) */
+  miracleEvery: 3,
+  rentMult: 1,
+  /** share of taxes and fines that ends up in the Caffè Sospeso (the rest goes to the Comune) */
+  potShare: 0.5,
+  houseMult: 1,
+  /** Totò haggles every rent down: "siamo uomini o caporali?" */
+  totoDiscount: 0.1,
+  municipale: 0.3,
+};
 
 // ───────────────────────── randomness ─────────────────────────
 
@@ -217,8 +230,8 @@ export function rentFor(s: GameState, tile: number, diceSum = s.lastSum): number
   if (s.turn < t.cuginoUntil) return 0;
   if (def.kind === 'property') {
     const rent = def.rent!;
-    if (t.houses > 0) return rent[t.houses];
-    return ownsGroup(s, t.owner, tile) ? rent[0] * 2 : rent[0];
+    if (t.houses > 0) return Math.round(rent[t.houses] * BALANCE.rentMult);
+    return Math.round((ownsGroup(s, t.owner, tile) ? rent[0] * 2 : rent[0]) * BALANCE.rentMult);
   }
   if (def.kind === 'station') {
     if (scioperoActive(s)) return 0;
@@ -233,7 +246,7 @@ export function rentFor(s: GameState, tile: number, diceSum = s.lastSum): number
 }
 
 export function houseCost(tile: number, abusivo: boolean) {
-  const c = BOARD[tile].houseCost ?? 0;
+  const c = Math.round((BOARD[tile].houseCost ?? 0) * BALANCE.houseMult);
   return abusivo ? Math.ceil(c / 2) : c;
 }
 
@@ -288,7 +301,7 @@ export function pay(s: GameState, from: number, to: Creditor, amount: number): n
   p.money -= paid;
   emit(s, { type: 'money', player: from, delta: -paid });
   if (typeof to === 'number') gain(s, to, paid);
-  else if (to === 'pot') s.pot += paid;
+  else if (to === 'pot') s.pot += Math.round(paid * BALANCE.potShare);
   if (paid < amount) bankrupt(s, from, to);
   return paid;
 }
@@ -356,12 +369,16 @@ function passGo(s: GameState, pid: number) {
   p.laps += 1;
   p.cascoUsedLap = false;
   let salary = GO_SALARY;
-  if (p.pawn === 'gigi') salary += 50;
+  if (p.pawn === 'gigi') salary += BALANCE.gigiBonus;
+  if (p.pawn === 'gennaro' && p.miracleUsed && BALANCE.miracleEvery && p.laps % BALANCE.miracleEvery === 0) {
+    p.miracleUsed = false;
+    banner(s, 'miracolo', `✨ L'ampolla di ${p.name} si è sciolta di nuovo: il miracolo è pronto!`, { player: pid });
+  }
   gain(s, pid, salary);
   log(
     s,
     p.pawn === 'gigi'
-      ? `${p.name} passa dal VIA: ${salary} ₵ (50 in più, perché la pizza la mangiano tutti).`
+      ? `${p.name} passa dal VIA: ${salary} ₵ (${BALANCE.gigiBonus} in più, perché la pizza la mangiano tutti).`
       : `${p.name} passa dal VIA e ritira ${salary} ₵.`,
   );
   bumpVesuvio(s, VESUVIO_PER_LAP);
@@ -454,6 +471,11 @@ function payRent(s: GameState, pid: number, owner: number, tileIdx: number, amou
     due = Math.floor(amount / 2);
     o.malocchio = false;
     banner(s, 'malocchio', `🧿 ${o.name} ha il malocchio: incassa solo metà affitto (${due} ₵).`, { player: owner });
+  }
+  if (s.players[pid].pawn === 'toto' && BALANCE.totoDiscount > 0) {
+    const off = Math.round(due * BALANCE.totoDiscount);
+    due -= off;
+    if (off > 0) log(s, `🎩 Totò tratta: "Siamo uomini o caporali?" e si fa fare lo sconto di ${off} ₵.`);
   }
   log(s, `${nameOf(s, pid)} paga ${due} ₵ di affitto a ${o.name} per ${BOARD[tileIdx].name}.`);
   speech(s, pid, 'payRent');
@@ -965,7 +987,7 @@ function step(s: GameState, a: Action): boolean {
       s.pending = null;
       const kept = pend.dice.filter((_, i) => i !== a.drop);
       const dropped = pend.dice[a.drop];
-      if (rand(s) < MUNICIPALE_CHANCE) {
+      if (rand(s) < BALANCE.municipale) {
         banner(s, 'municipale', `👮 La Municipale ferma ${p.name} senza casco! Multa di 50 ₵ nel Caffè Sospeso.`, { player: p.id });
         pay(s, p.id, 'pot', 50);
         if (p.bankrupt) return true;

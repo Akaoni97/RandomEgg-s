@@ -88,7 +88,7 @@ function TopRight({ g }: { g: GameState }) {
         </div>
         <b>{v}</b>
       </div>
-      <div className="stat" title="Il Caffè Sospeso: tasse e multe. Chi arriva sulla casella si prende tutto.">
+      <div className="stat" title="Il Caffè Sospeso: metà di tasse e multe. Chi arriva sulla casella si prende tutto.">
         ☕ {g.pot} ₵
       </div>
       <div className="stat" title="Giro">
@@ -170,7 +170,7 @@ function SettingsPanel() {
       <div className="settings" onClick={(e) => e.stopPropagation()}>
         <h3>⚙️ Impostazioni</h3>
         {toggle('nonna', '👵 Modalità Nonna (bip sulle parolacce)')}
-        {toggle('music', '🪕 Mandolino')}
+        {toggle('music', '🪕 Mandolino (Funiculì, funiculà)')}
         {toggle('sfx', '🔊 Effetti sonori')}
         {toggle('tts', '🗣️ Voce sintetica del browser (al posto del borbottio)')}
         {toggle('cinematic', '🎥 Camera cinematica')}
@@ -215,17 +215,17 @@ function RulesPanel() {
     ['🎲 Si gioca', 'Come al Monopoli: tiri, ti muovi, compri, incassi gli affitti, costruisci bassi (case) e palazzi (alberghi). Chi fallisce se ne va a Milano. Vince l\'ultimo che resta, o il più ricco allo scadere del tempo.'],
     ["🔢 Dadi della Smorfia", "Ogni somma ha il suo significato. 8 'A Maronna: +20 ₵. 4 'O puorco: offri il caffè a tutti (10 ₵ a testa). 11 'E suricille: 1 ₵ per ogni basso. Tre doppi di fila: Poggioreale."],
     ['🧿 Malocchio e Corno', 'Chi lancia il malocchio dimezza il prossimo affitto della vittima. Il corno rosso (30 ₵) lo fa esplodere.'],
-    ["📦 'O Pacco", 'Negli scambi puoi consegnare una scatola chiusa. Dentro può esserci la roba promessa… o un mattone. Chi riceve può accettare alla cieca o aprire: se trova il mattone il truffatore va in galera, se era tutto vero paga 50 ₵ per l\'offesa. Un mattone accettato alla cieca viene scoperto il 50% delle volte (Totò solo il 35%).'],
+    ["📦 'O Pacco", 'Negli scambi puoi consegnare una scatola chiusa. Dentro può esserci la roba promessa… o un mattone. Chi riceve può accettare alla cieca o aprire: se trova il mattone il truffatore va in galera, se era tutto vero paga 50 ₵ per l\'offesa. Un mattone accettato alla cieca viene scoperto il 50% delle volte (Totò solo il 30%).'],
     ['🧱 Abusivismo', 'Costruisci anche senza il gruppo completo, a metà prezzo. A ogni giro c\'è il 10% che arriva la Ruspa del Comune e ti abbatte tutto.'],
     ['🌋 Il Vesuvio', 'Sale di 7 ogni volta che qualcuno passa dal VIA (e con certe carte). A 100 erutta: distrutti tutti i bassi sul lato di Piazza Garibaldi e del Vomero.'],
     ['⚽ Il Napoli segna!', 'Evento raro: 50 ₵ a tutti, malocchi tolti, amnistia per chi sta a Poggioreale.'],
     ['👜 Scippo', 'Se arrivi dove c\'è un altro, puoi tentare lo scippo: dado contro dado, chi vince prende 50 ₵.'],
-    ['☕ Caffè Sospeso', 'Tasse e multe finiscono nel piatto: chi arriva sulla casella si prende tutto.'],
+    ['☕ Caffè Sospeso', 'Metà di tasse e multe finisce nel piatto (l\'altra metà se la prende il Comune): chi arriva sulla casella si prende tutto.'],
     ['🤫 Conosco a uno', 'Carta jolly: esci da Poggioreale, eviti un affitto o blocchi un\'asta prendendo la proprietà a metà prezzo.'],
     ['🎄 Presepe vivente', 'Chi possiede tutto l\'arancione può, una volta per giro, mettere un avversario nel presepe: salta un turno.'],
     ["🧔 'O cugino d'America", 'Si piazza in casa tua: per un giro quella proprietà non incassa.'],
     ['🚧 Sciopero ANM', 'Per un giro le funicolari non incassano.'],
-    ['🛵 Poteri', 'Ciro: una volta per giro tira 3 dadi e ne scarta uno (20% multa). Totò: il pacco gli riesce meglio. Luigi Gigi: +50 ₵ al VIA. Gennaro San: un miracolo a partita contro carte negative o eruzioni.'],
+    ['🛵 Poteri', 'Ciro: una volta per giro tira 3 dadi e ne scarta uno (30% di multa). Totò: il pacco gli riesce meglio e paga il 10% in meno di affitto. Luigi Gigi: +25 ₵ al VIA. Gennaro San: il miracolo contro carte negative o eruzioni, l\'ampolla si ricarica ogni 3 giri.'],
   ];
   return (
     <div className="modal-back" onClick={() => open(null)}>

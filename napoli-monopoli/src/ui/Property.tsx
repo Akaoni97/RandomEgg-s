@@ -268,7 +268,7 @@ export function TradeDialog() {
               <input type="checkbox" checked={fake} onChange={(e) => setFake(e.target.checked)} />
               <span>
                 {censor(
-                  `🧱 Dentro ci metto un MATTONE (pacco finto). Se ti scoprono vai a Poggioreale: ${g.players[me].pawn === 'toto' ? 'Totò lo scoprono solo il 35% delle volte' : 'ti scoprono il 50% delle volte'}.`,
+                  `🧱 Dentro ci metto un MATTONE (pacco finto). Se ti scoprono vai a Poggioreale: ${g.players[me].pawn === 'toto' ? 'Totò lo scoprono solo il 30% delle volte' : 'ti scoprono il 50% delle volte'}.`,
                   nonna,
                 )}
               </span>

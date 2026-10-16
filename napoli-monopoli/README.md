@@ -20,10 +20,10 @@ npm run build    # build di produzione in dist/ (servibile da qualsiasi hosting 
 
 | Pedina | Modello 3D | Potere |
 |---|---|---|
-| 🛵 **Ciro Esposito** | In tre sull'SH, senza casco | *Senza casco*: una volta per giro tira 3 dadi e ne scarta uno (20% di multa della Municipale). +1 negli scippi |
-| 🎩 **Totò Tredita** | Bombetta, gilet, mano a tre dita con la moka | *'O Pacco*: quando rifila un mattone lo scoprono solo il 35% delle volte |
-| 🍕 **Luigi Gigi** | Una margherita con le gambe e il ventilatore | *Sfornata*: +50 ₵ ogni volta che passa dal VIA |
-| 🙏 **Gennaro San** | Statuina di San Gregorio Armeno con l'ampolla che brilla | *Il Miracolo*: una volta a partita annulla una carta negativa o un'eruzione (con 1 sul dado è tragedia) |
+| 🛵 **Ciro Esposito** | In tre sull'SH, senza casco | *Senza casco*: una volta per giro tira 3 dadi e ne scarta uno (30% di multa della Municipale). +1 negli scippi |
+| 🎩 **Totò Tredita** | Bombetta, gilet, mano a tre dita con la moka | *'O Pacco*: quando rifila un mattone lo scoprono solo il 30% delle volte, e su ogni affitto si fa fare il 10% di sconto |
+| 🍕 **Luigi Gigi** | Una margherita con le gambe e il ventilatore | *Sfornata*: +25 ₵ ogni volta che passa dal VIA |
+| 🙏 **Gennaro San** | Statuina di San Gregorio Armeno con l'ampolla che brilla | *Il Miracolo*: annulla una carta negativa o un'eruzione; l'ampolla si ricarica ogni 3 passaggi dal VIA (con 1 sul dado è tragedia) |
 
 ## Le dinamiche
 
@@ -38,6 +38,14 @@ npm run build    # build di produzione in dist/ (servibile da qualsiasi hosting 
 - Mazzi: 23 carte *'A Smorfia* e 22 carte *Malocchio*. Più di 30 frasi per pedina.
 
 Le regole complete sono anche nel gioco (📖).
+
+## Bilanciamento
+
+I prezzi sono tarati con partite simulate tra bot (`BALANCE` in `src/engine/engine.ts`): con i bot *Guaglione*
+e *Boss* una partita porta in media 2-2,6 fallimenti in circa 130 turni (≈ 45-60 minuti tra umani), e le
+quattro pedine vincono tra il 24% e il 27% delle volte con i posti a rotazione. Rispetto al Monopoli
+classico gli affitti delle proprietà sono ×1,5, bassi e palazzi costano il 25% in meno e nel Caffè Sospeso
+finisce solo metà di tasse e multe.
 
 ## Struttura
 

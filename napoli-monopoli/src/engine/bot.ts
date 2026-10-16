@@ -23,13 +23,16 @@ interface Profile {
   checkPacco: number;
   scippo: number;
   trades: boolean;
+  /** offer = price × markup when buying the missing tile of a group */
+  markup: number;
+  pacco: boolean;
   paccoFake: number;
 }
 
 const PROFILES: Record<BotLevel, Profile> = {
-  turista: { reserve: 50, buyChance: 0.6, auctionFactor: 0.6, build: false, abusivo: false, checkPacco: 0.1, scippo: 0.4, trades: false, paccoFake: 0 },
-  guaglione: { reserve: 150, buyChance: 0.9, auctionFactor: 1.0, build: true, abusivo: false, checkPacco: 0.4, scippo: 0.8, trades: false, paccoFake: 0 },
-  boss: { reserve: 120, buyChance: 1, auctionFactor: 1.25, build: true, abusivo: true, checkPacco: 0.6, scippo: 1, trades: true, paccoFake: 0.3 },
+  turista: { reserve: 50, buyChance: 0.6, auctionFactor: 0.6, build: false, abusivo: false, checkPacco: 0.1, scippo: 0.4, trades: false, markup: 0, pacco: false, paccoFake: 0 },
+  guaglione: { reserve: 150, buyChance: 0.9, auctionFactor: 1.0, build: true, abusivo: false, checkPacco: 0.4, scippo: 0.8, trades: true, markup: 1.4, pacco: false, paccoFake: 0 },
+  boss: { reserve: 120, buyChance: 1, auctionFactor: 1.25, build: true, abusivo: true, checkPacco: 0.6, scippo: 1, trades: true, markup: 1.6, pacco: true, paccoFake: 0.3 },
 };
 
 /** bot-side memory: one trade proposal per turn */
@@ -109,14 +112,14 @@ function manage(s: GameState, pid: number, prof: Profile, level: BotLevel): Acti
 
   if (prof.trades && proposedOnTurn.get(pid) !== s.turn) {
     proposedOnTurn.set(pid, s.turn);
-    const trade = bossTrade(s, pid, prof);
+    const trade = groupTrade(s, pid, prof);
     if (trade) return { type: 'PROPOSE_TRADE', trade };
   }
 
   return s.rollAgain ? { type: 'ROLL' } : { type: 'END_TURN' };
 }
 
-function bossTrade(s: GameState, pid: number, prof: Profile): Trade | null {
+function groupTrade(s: GameState, pid: number, prof: Profile): Trade | null {
   const p = s.players[pid];
   for (const tiles of Object.values(GROUP_TILES)) {
     const missing = tiles.filter((i) => s.tiles[i].owner !== pid);
@@ -124,9 +127,9 @@ function bossTrade(s: GameState, pid: number, prof: Profile): Trade | null {
     const tile = missing[0];
     const owner = s.tiles[tile].owner;
     if (owner === null || s.tiles[tile].houses > 0 || s.players[owner].bankrupt) continue;
-    const offer = Math.round(((BOARD[tile].price ?? 0) * 1.6) / 10) * 10;
+    const offer = Math.round(((BOARD[tile].price ?? 0) * prof.markup) / 10) * 10;
     if (p.money - offer < prof.reserve) continue;
-    const pacco = rnd() < 0.5;
+    const pacco = prof.pacco && rnd() < 0.5;
     const trade: Trade = {
       from: pid,
       to: owner,
