@@ -388,6 +388,48 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
 .app[data-skin="metro"] .pad { box-shadow: 0 3px 0 #070709, inset 0 0 0 1px rgba(255,95,174,.25); }
 .app[data-skin="metro"] .pad.sel::after { box-shadow: inset 0 0 0 2px #ffd23f; }
 
+
+/* ---------- personalizzazione ---------- */
+#custDrawer { grid-template-rows: auto minmax(0,1fr) auto; }
+.custlist { overflow-y: auto; display: grid; align-content: start; gap: 18px; margin: 0 -6px; padding: 2px 6px 8px; }
+.custlist h4 { margin: 0 0 8px; font-family: var(--f-label); font-weight: 400; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--led); }
+.custlist h5 { margin: 10px 0 6px; font-family: var(--f-label); font-weight: 400; font-size: 9px; text-transform: uppercase; color: var(--cream-3); }
+.opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.opt { border: 1px solid var(--line); background: var(--well); color: var(--well-text); border-radius: 6px; min-height: 32px; padding: 4px 10px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; }
+.opt[aria-pressed="true"] { border-color: var(--led); box-shadow: inset 0 0 0 1px var(--led); }
+.opt i { width: 16px; height: 16px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+.opt i.sq { border-radius: 3px; }
+.sws .opt { padding: 4px 8px 4px 5px; }
+.custlist input[type=range] { width: 100%; }
+.custlist .row2 { display: flex; justify-content: space-between; font-size: 12px; color: var(--cream-3); }
+.logo b { overflow-wrap: anywhere; }
+
+/* stili dei pad */
+.app[data-pad="avorio"] .pad { background: radial-gradient(120% 90% at 50% 0%, #f7f2e6, #d6cfbd 72%); color: #2a261d; box-shadow: 0 3px 0 #8e8778, 0 1px 0 rgba(255,255,255,.7) inset; }
+.app[data-pad="avorio"] .pad .idx, .app[data-pad="avorio"] .pad .ky, .app[data-pad="avorio"] .pad .sub { color: #7a7262; }
+.app[data-pad="carbone"] .pad { background: repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0 2px, transparent 2px 4px), radial-gradient(120% 90% at 50% 0%, #2c2c30, #131315 75%); color: #ecebe6; box-shadow: 0 3px 0 #050506, 0 1px 0 rgba(255,255,255,.07) inset; }
+.app[data-pad="carbone"] .pad .idx, .app[data-pad="carbone"] .pad .ky, .app[data-pad="carbone"] .pad .sub { color: #77757d; }
+.app[data-pad="neon"] .pad { background: #111113; color: #f4f2ee; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--hue) 75%, transparent), 0 0 14px -5px var(--hue), 0 3px 0 #050506; }
+.app[data-pad="neon"] .pad .idx, .app[data-pad="neon"] .pad .ky, .app[data-pad="neon"] .pad .sub { color: color-mix(in srgb, var(--hue) 70%, #888); }
+.app[data-pad="gruppo"] .pad { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 62%, #4c4840), color-mix(in srgb, var(--hue) 32%, #24221e) 78%); color: #fff; box-shadow: 0 3px 0 rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.2) inset; }
+.app[data-pad="gruppo"] .pad .idx, .app[data-pad="gruppo"] .pad .ky, .app[data-pad="gruppo"] .pad .sub { color: rgba(255,255,255,.7); }
+.app[data-pad="legno"] .pad { background: radial-gradient(120% 90% at 50% 0%, rgba(255,255,255,.12), transparent 70%), repeating-linear-gradient(97deg, #7a4a28 0 3px, #8a5530 3px 7px, #6b4022 7px 9px, #7f4e2a 9px 13px); color: #f6ead8; box-shadow: 0 3px 0 #2e1b0d, 0 1px 0 rgba(255,255,255,.18) inset; }
+.app[data-pad="legno"] .pad .idx, .app[data-pad="legno"] .pad .ky, .app[data-pad="legno"] .pad .sub { color: #d7b994; }
+.app[data-pad]:not([data-pad="skin"]) .pad.hit { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 70%, white), var(--hue) 78%); color: #15120c; box-shadow: 0 1px 0 rgba(0,0,0,.6), 0 0 24px -2px var(--hue); }
+.app[data-pad="neon"] .pad.hit { background: color-mix(in srgb, var(--hue) 40%, #111113); color: #fff; box-shadow: inset 0 0 0 2px var(--hue), 0 0 28px -2px var(--hue); }
+.app[data-pad]:not([data-pad="skin"]) .pads.notes .pad.root { box-shadow: inset 0 0 0 2px var(--hue), 0 3px 0 rgba(0,0,0,.5); }
+
+/* stanze */
+body[data-room="mattoni"] { background: radial-gradient(120% 80% at 50% 0%, transparent 30%, rgba(0,0,0,.72)), var(--bricks) 0 0 / 180px 90px, #4a2418; }
+body[data-room="cemento"] { background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.06), rgba(0,0,0,.66)), var(--grain) 0 0 / 160px 160px, #4f4c47; }
+body[data-room="legno"] { background: radial-gradient(120% 80% at 50% 0%, transparent 30%, rgba(0,0,0,.7)), repeating-linear-gradient(90deg, rgba(0,0,0,.4) 0 2px, transparent 2px 150px), repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 7px), linear-gradient(90deg, #5b3a22, #6e4729 30%, #563620 60%, #684327); }
+body[data-room="moquette"] { background: radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,.2) 20%, rgba(0,0,0,.75)), radial-gradient(circle at 25% 25%, #c8641e 0 17%, transparent 18%) 0 0 / 56px 56px, radial-gradient(circle at 75% 75%, #8a3f14 0 17%, transparent 18%) 0 0 / 56px 56px, radial-gradient(circle at 75% 25%, #e0a23a 0 7%, transparent 8%) 0 0 / 56px 56px, #4e2610; }
+body[data-room="piastrelle"] { background: radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,.35) 20%, rgba(0,0,0,.8)), conic-gradient(#1a1a1a 25%, #cfcabd 0 50%, #1a1a1a 0 75%, #cfcabd 0) 0 0 / 84px 84px; }
+
+/* usura */
+body::after { opacity: calc(.04 + var(--wear, .25) * .16); }
+body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 49; background-image: var(--scratches); background-size: 520px 520px; opacity: calc(var(--wear, .25) * .55); mix-blend-mode: screen; }
+
 @media (max-width: 1080px) {
   .rack { grid-template-columns: auto minmax(0,1fr); }
   .vus { justify-content: flex-start; }
@@ -438,6 +480,7 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
       <div class="stripes" aria-hidden="true"><i style="background:var(--stripe-1)"></i><i style="background:var(--stripe-2)"></i><i style="background:var(--stripe-3)"></i><i style="background:var(--stripe-4)"></i></div>
       <small id="skinTag">SP-88 · CAMPIONATORE DA CANTINA</small>
       <div class="skins" id="skins" role="group" aria-label="Scocca"></div>
+      <button class="key small" id="openCust" type="button">✎ Personalizza</button>
     </div>
     <div class="lcdwrap">
       <div class="lcdhead"><span class="lbl">Display OLED · 256×72</span><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button></div>
@@ -607,6 +650,21 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
   <div class="cats" id="cats"></div>
   <div class="list" id="list"></div>
   <div class="foot"><small>Tocca un nome per metterlo sul pad · ▶ per ascoltarlo.</small><label class="key small" for="file">Carica file</label></div>
+</aside>
+
+<aside class="drawer" id="custDrawer" hidden aria-label="Personalizza">
+  <div class="dh"><div><h3>Personalizza</h3><p>Come appare il tuo strumento. Si salva in questo browser.</p></div><button class="key on" id="closeCust" type="button">Fatto</button></div>
+  <div class="custlist">
+    <section><h4>Scocca</h4><div class="opts" id="cSkin"></div></section>
+    <section><h4>Nome sul logo</h4><input class="search" id="cLogo" maxlength="12" autocomplete="off" aria-label="Nome sul logo" placeholder="MAT·TONE"><div class="row2" style="margin-top:6px"><span>Il punto “·” diventa il puntino che si accende sulla cassa.</span></div></section>
+    <section><h4>Colore dello schermo</h4><div class="opts sws" id="cScreen"></div></section>
+    <section><h4>Luci LED</h4><div class="opts sws" id="cLed"></div></section>
+    <section><h4>Pad</h4><div class="opts" id="cPad"></div></section>
+    <section><h4>Disco</h4><div class="opts" id="cVinyl"></div><h5>Colore dell’etichetta</h5><div class="opts sws" id="cLabel"></div><h5>Scritta sull’etichetta</h5><input class="search" id="cLabelText" maxlength="14" autocomplete="off" aria-label="Scritta sull’etichetta" placeholder="MATTONE"></section>
+    <section><h4>Stanza</h4><div class="opts" id="cRoom"></div></section>
+    <section><h4>Usura</h4><input type="range" id="cWear" min="0" max="100" aria-label="Usura"><div class="row2"><span>Nuovo di fabbrica</span><span>Vissuto</span></div></section>
+  </div>
+  <div class="foot"><small>Le scelte valgono solo per l’aspetto, non per il suono.</small><button class="key small" id="cReset" type="button">Ripristina</button></div>
 </aside>
 
 <script>
@@ -903,10 +961,11 @@ function demoPatterns() {
   put(1, 1, 8, [[15]]);
   return P;
 }
+const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", label: "auto", labelText: "MATTONE", logo: "MAT·TONE", room: "buio", wear: 25 };
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
-  warmth: 0.35, volume: 0.85, dust: 0.25, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "cantina", ver: 4,
+  warmth: 0.35, volume: 0.85, dust: 0.25, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "cantina", ver: 4, custom: null,
 };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("mattone-groovebox-v2") || "null");
@@ -915,8 +974,10 @@ try {
     state.banks.forEach((b, bi) => b.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
     if ((saved.ver || 0) < 4) { state.deckTone = 0.62; state.deckDirt = 0.25; }
     state.ver = 4;
+    state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY, saved.custom || {});
   }
 } catch (e) { /* storage unavailable */ }
+if (!state.custom) state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY);
 let saveTimer = 0;
 function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }, 400); }
 
@@ -1583,7 +1644,7 @@ function makeGrain() {
   try { document.documentElement.style.setProperty("--grain", "url(" + c.toDataURL() + ")"); } catch (e) { /* no grain */ }
 }
 function build() {
-  makeGrain(); makeDrips();
+  makeGrain(); makeDrips(); makeBricks(); makeScratches();
   for (let i = 0; i < 16; i++) $("leds").appendChild(el("i"));
   for (let i = 0; i < NPAT; i++) { const b = el("button"); b.type = "button"; b.textContent = i + 1; b.setAttribute("aria-label", "Pattern " + (i + 1)); b.addEventListener("click", () => selectPattern(i)); $("pats").appendChild(b); }
   BANKS.forEach((bk, bi) => { const b = el("button", null, '<span class="dot" style="background:var(--h' + bk.id + ')"></span>' + bk.id + ' <span class="nmfull">' + bk.name + "</span>"); b.type = "button"; b.addEventListener("click", () => selectBank(bi)); $("banks").appendChild(b); });
@@ -1642,11 +1703,11 @@ function build() {
   $("clearTrack").addEventListener("click", () => { state.patterns[state.pattern][state.bank][state.pad] = new Array(NSTEP).fill(0); save(); renderPads(); renderEditor(); renderPatterns(); renderLeds(); msg("CANCELLATO " + padLabel(state.bank, state.pad)); });
   $("openLib").addEventListener("click", openLibrary);
   $("closeLib").addEventListener("click", closeLibrary);
-  $("scrim").addEventListener("click", closeLibrary);
+  $("scrim").addEventListener("click", () => { if (!$("custDrawer").hidden) closeCustom(); if (!$("drawer").hidden) closeLibrary(); });
   $("search").addEventListener("input", renderLibrary);
   $("file").addEventListener("change", e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ""; });
   SKINS.forEach(([id, name, , col]) => { const b = el("button", null, '<i style="background:' + col + '"></i>' + name); b.type = "button"; b.dataset.skin = id; b.addEventListener("click", () => { applySkin(id); save(); }); $("skins").appendChild(b); });
-  bindDeck(); renderDeckSrc();
+  bindDeck(); renderDeckSrc(); buildCustom();
   $("visBtn").addEventListener("click", () => cycleVis(1));
   $("spec").addEventListener("click", () => cycleVis(1));
   $("visBtn").textContent = "VIS · " + VIS[state.vis || 0][1];
@@ -1779,6 +1840,7 @@ function onKeyDown(e) {
   const t = e.target, tag = (t && t.tagName) || "";
   if ((tag === "INPUT" && t.type !== "range") || tag === "SELECT" || tag === "TEXTAREA") { if (e.key === "Escape") closeLibrary(); return; }
   const k = e.key.toLowerCase();
+  if (k === "escape" && !$("custDrawer").hidden) { closeCustom(); return; }
   if (k === "escape" && !$("drawer").hidden) { closeLibrary(); return; }
   if (tag === "INPUT" && k.startsWith("arrow")) return;
   if (k === " ") { if (tag === "BUTTON") return; e.preventDefault(); playing ? stop() : start(); return; }
@@ -1942,7 +2004,7 @@ function sizeCanvases() {
   const r = specCv.getBoundingClientRect(), k = Math.max(2, Math.round(r.width * DPR() / LCD_W));   // whole device pixels per dot
   specCv.width = LCD_W * k; specCv.height = LCD_H * k;
   const d = deckCv.getBoundingClientRect(), size = Math.max(1, Math.round(Math.min(d.width, d.height) * DPR()));
-  if (size !== deckSize) { deckSize = size; deckCv.width = deckCv.height = size; deckBase = null; }
+  if (size !== deckSize) { deckSize = size; deckCv.width = deckCv.height = size; deckBase = null; recordCv = null; }
   drawDeck(true); drawSpec(true); drawVU(true);
 }
 /* ---------- display a matrice di punti, stile OLED moderno (256 × 72) ---------- */
@@ -2134,10 +2196,8 @@ function buildDeckBase() {
   const c = cv.getContext("2d"), cx = S / 2, R = S * 0.47;
   const pg = c.createRadialGradient(cx, cx, R * 0.2, cx, cx, R * 1.02); pg.addColorStop(0, "#3a3832"); pg.addColorStop(1, "#1a1916");
   c.fillStyle = pg; c.beginPath(); c.arc(cx, cx, R, 0, Math.PI * 2); c.fill();
-  const rr = R * 0.93;
-  c.fillStyle = "#0c0c0c"; c.beginPath(); c.arc(cx, cx, rr, 0, Math.PI * 2); c.fill();
-  for (let r = rr * 0.38; r < rr * 0.985; r += Math.max(1, S / 260)) { c.strokeStyle = "rgba(255,255,255," + (0.02 + Math.random() * 0.035) + ")"; c.lineWidth = 0.6; c.beginPath(); c.arc(cx, cx, r, 0, Math.PI * 2); c.stroke(); }
-  [0.55, 0.72, 0.86].forEach(f => { c.strokeStyle = "rgba(0,0,0,.9)"; c.lineWidth = S / 180; c.beginPath(); c.arc(cx, cx, rr * f, 0, Math.PI * 2); c.stroke(); });
+  // rubber slipmat under the record
+  c.fillStyle = "#151412"; c.beginPath(); c.arc(cx, cx, R * 0.94, 0, Math.PI * 2); c.fill();
   return cv;
 }
 let lastDeckA = null;
@@ -2152,14 +2212,16 @@ function drawDeck(force) {
   c.drawImage(deckBase, 0, 0);
   // strobe dots on the platter rim
   c.save(); c.translate(cx, cx); c.rotate(a);
+  if (!recordCv) recordCv = buildRecord();
+  c.drawImage(recordCv, -cx, -cx);
   c.fillStyle = "#8b8577";
   for (let i = 0; i < 90; i++) { const r = i / 90 * Math.PI * 2; c.fillRect(Math.cos(r) * (R * 0.965) - S / 400, Math.sin(r) * (R * 0.965) - S / 400, S / 200, S / 200); }
   // label
-  const hue = hueColor;
-  c.fillStyle = hue; c.beginPath(); c.arc(0, 0, rr * 0.34, 0, Math.PI * 2); c.fill();
+  const hue = hueColor, lab = state.custom.label === "auto" ? hueColor : state.custom.label, txt = (state.custom.labelText || "").trim().toUpperCase() || "MATTONE";
+  c.fillStyle = lab; c.beginPath(); c.arc(0, 0, rr * 0.34, 0, Math.PI * 2); c.fill();
   c.fillStyle = "rgba(0,0,0,.18)"; c.beginPath(); c.arc(0, 0, rr * 0.34, 0, Math.PI); c.fill();
-  c.fillStyle = "#1a140a"; c.textAlign = "center";
-  c.font = Math.round(S * 0.05) + "px Bungee, Impact, sans-serif"; c.fillText("MATTONE", 0, -rr * 0.12);
+  c.fillStyle = labelInk(lab.startsWith("#") ? lab : "#f2a43a"); c.textAlign = "center";
+  c.font = Math.round(S * (txt.length > 9 ? 0.05 * 9 / txt.length : 0.05)) + "px Bungee, Impact, sans-serif"; c.fillText(txt, 0, -rr * 0.12);
   c.font = Math.round(S * 0.032) + "px Silkscreen, monospace"; c.fillText("LATO A · 33⅓", 0, rr * 0.2);
   c.fillStyle = "#ebe1c6"; c.beginPath(); c.arc(rr * 0.27, 0, S / 90, 0, Math.PI * 2); c.fill();
   c.fillStyle = "#cfc6ad"; c.beginPath(); c.arc(0, 0, S / 70, 0, Math.PI * 2); c.fill();
@@ -2178,6 +2240,108 @@ function drawDeck(force) {
   c.fillStyle = "#1d1c19"; c.save(); c.translate(S * 0.7, S * 0.7); c.rotate(0.8); c.fillRect(-S * 0.03, -S * 0.02, S * 0.07, S * 0.04); c.restore();
   c.restore();
 }
+/* ================= personalizzazione ================= */
+const CUSTOM_DEFAULT = CUSTOM_DEFAULT_EARLY;
+const SCREEN_COLORS = [["auto", "Della scocca", null], ["ambra", "Ambra", ["#ffb247", "#fff2d8"]], ["azzurro", "Azzurro", ["#79cfff", "#ffffff"]], ["lime", "Lime", ["#b6f266", "#f4ffd8"]], ["rosa", "Rosa", ["#ff6fb5", "#ffe066"]], ["ghiaccio", "Ghiaccio", ["#e6f0ff", "#7fd6ff"]], ["rosso", "Rosso", ["#ff4a3d", "#ffd2a8"]], ["viola", "Viola", ["#b18cff", "#ffe7ff"]]];
+const LED_COLORS = [["auto", "Della scocca", null], ["ambra", "Ambra", "#ff9f2e"], ["rosso", "Rosso", "#ff3b30"], ["verde", "Verde", "#49e07a"], ["blu", "Blu", "#3fa9ff"], ["rosa", "Rosa", "#ff5fae"], ["bianco", "Bianco", "#f4f1e8"]];
+const PAD_STYLES = [["skin", "Della scocca"], ["avorio", "Avorio"], ["carbone", "Carbonio"], ["neon", "Neon"], ["gruppo", "Colore del gruppo"], ["legno", "Legno"]];
+const VINYLS = [["nero", "Nero classico", "#0c0c0c"], ["rosso", "Rosso trasparente", "#b81d2c"], ["marmo", "Blu marmorizzato", "#2b56b0"], ["splatter", "Splatter", "#ff5fae"], ["oro", "Oro", "#d8a93e"], ["bianco", "Bianco", "#ece8dd"]];
+const LABEL_COLORS = [["auto", "Del gruppo", null], ["#f2a43a", "Arancio"], ["#e8483a", "Rosso"], ["#2f6fd6", "Blu"], ["#f4efe3", "Crema"], ["#1d1c19", "Nero"], ["#49b36a", "Verde"], ["#b48ddb", "Lilla"]];
+const ROOMS = [["buio", "Stanza buia", "#1a1815"], ["mattoni", "Muro di mattoni", "#7a3522"], ["cemento", "Cemento", "#6b6862"], ["legno", "Parquet", "#6e4729"], ["moquette", "Moquette ’70", "#c8641e"], ["piastrelle", "Piastrelle", "#cfcabd"]];
+function optButton(host, value, label, swatch, onPick, square) {
+  const b = el("button", "opt", (swatch ? '<i class="' + (square ? "sq" : "") + '" style="background:' + swatch + '"></i>' : "") + esc(label));
+  b.type = "button"; b.dataset.v = value; b.addEventListener("click", () => onPick(value)); host.appendChild(b); return b;
+}
+function setCustom(key, v) { state.custom[key] = v; save(); applyCustom(); renderCustom(); }
+function buildCustom() {
+  SKINS.forEach(([id, name, , col]) => optButton($("cSkin"), id, name, col, v => { applySkin(v); applyCustom(); save(); renderCustom(); }, true));
+  SCREEN_COLORS.forEach(([id, name, cols]) => optButton($("cScreen"), id, name, cols ? cols[0] : "conic-gradient(#ffb247 0 25%, #79cfff 0 50%, #b6f266 0 75%, #ff6fb5 0)", v => setCustom("screen", v)));
+  LED_COLORS.forEach(([id, name, col]) => optButton($("cLed"), id, name, col || "conic-gradient(#ff9f2e 0 33%, #ff4433 0 66%, #ffd23f 0)", v => setCustom("led", v)));
+  PAD_STYLES.forEach(([id, name]) => optButton($("cPad"), id, name, null, v => setCustom("pad", v)));
+  VINYLS.forEach(([id, name, col]) => optButton($("cVinyl"), id, name, col, v => setCustom("vinyl", v)));
+  LABEL_COLORS.forEach(([id, name]) => optButton($("cLabel"), id, name, id === "auto" ? "var(--hue)" : id, v => setCustom("label", v)));
+  ROOMS.forEach(([id, name, col]) => optButton($("cRoom"), id, name, col, v => setCustom("room", v), true));
+  $("cLogo").addEventListener("input", e => { state.custom.logo = e.target.value; save(); applyCustom(); });
+  $("cLabelText").addEventListener("input", e => { state.custom.labelText = e.target.value; save(); drawDeck(true); });
+  $("cWear").addEventListener("input", e => { state.custom.wear = +e.target.value; save(); applyCustom(); });
+  $("cReset").addEventListener("click", () => { state.custom = Object.assign({}, CUSTOM_DEFAULT); save(); applyCustom(); renderCustom(); msg("ASPETTO RIPRISTINATO"); });
+  $("openCust").addEventListener("click", () => { renderCustom(); $("custDrawer").hidden = false; $("scrim").hidden = false; });
+  $("closeCust").addEventListener("click", closeCustom);
+}
+function closeCustom() { $("custDrawer").hidden = true; if ($("drawer").hidden) $("scrim").hidden = true; $("openCust").focus({ preventScroll: true }); }
+function renderCustom() {
+  const C = state.custom;
+  const mark = (id, v) => [...$(id).children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
+  mark("cSkin", state.skin); mark("cScreen", C.screen); mark("cLed", C.led); mark("cPad", C.pad); mark("cVinyl", C.vinyl); mark("cLabel", C.label); mark("cRoom", C.room);
+  if (document.activeElement !== $("cLogo")) $("cLogo").value = C.logo;
+  if (document.activeElement !== $("cLabelText")) $("cLabelText").value = C.labelText;
+  $("cWear").value = C.wear;
+}
+function applyCustom() {
+  const C = state.custom, app = $("app").style;
+  const sc = SCREEN_COLORS.find(x => x[0] === C.screen);
+  if (sc && sc[2]) { app.setProperty("--scr-ink", sc[2][0]); app.setProperty("--scr-acc", sc[2][1]); } else { app.removeProperty("--scr-ink"); app.removeProperty("--scr-acc"); }
+  const lc = LED_COLORS.find(x => x[0] === C.led);
+  if (lc && lc[2]) app.setProperty("--led", lc[2]); else app.removeProperty("--led");
+  $("app").dataset.pad = C.pad;
+  document.body.dataset.room = C.room;
+  document.documentElement.style.setProperty("--wear", (C.wear / 100).toFixed(2));
+  // logo: the first "·" (or ".") becomes the dot that lights up on the kick
+  const t = (C.logo || "").trim() || "MAT·TONE", i = t.search(/[·.]/);
+  const logo = document.querySelector(".logo b");
+  logo.innerHTML = i >= 0 ? esc(t.slice(0, i)) + "<span>·</span>" + esc(t.slice(i + 1)) : esc(t);
+  logoDot = logo.querySelector("span");
+  readSkin(); recordCv = null; drawDeck(true); drawSpec(!ctx);
+}
+function makeBricks() {
+  const rows = [], W = 180, H = 90, bh = 30, bw = 60, m = 3;
+  const reds = ["#8a3a24", "#7a3220", "#94442a", "#6e2c1c", "#9a4a2e", "#83361f", "#733022"];
+  let k = 0;
+  for (let r = 0; r < 3; r++) for (let c = -1; c < 4; c++) {
+    const x = c * bw + (r % 2 ? bw / 2 : 0), y = r * bh;
+    rows.push('<rect x="' + (x + m / 2) + '" y="' + (y + m / 2) + '" width="' + (bw - m) + '" height="' + (bh - m) + '" rx="2" fill="' + reds[(k++ * 5 + r * 3) % reds.length] + '"/>');
+  }
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '"><rect width="' + W + '" height="' + H + '" fill="#3a2a22"/>' + rows.join("") + "</svg>";
+  document.documentElement.style.setProperty("--bricks", "url('data:image/svg+xml;utf8," + svg.replace(/#/g, "%23") + "')");
+}
+function makeScratches() {
+  const c = document.createElement("canvas"); c.width = c.height = 520;
+  const x = c.getContext("2d");
+  for (let i = 0; i < 70; i++) {
+    const sx = Math.random() * 520, sy = Math.random() * 520, len = 10 + Math.random() * 80, a = Math.random() * Math.PI;
+    x.strokeStyle = "rgba(255,255,255," + (0.05 + Math.random() * 0.18) + ")"; x.lineWidth = Math.random() < 0.8 ? 0.6 : 1.2;
+    x.beginPath(); x.moveTo(sx, sy); x.quadraticCurveTo(sx + Math.cos(a) * len / 2 + (Math.random() - 0.5) * 8, sy + Math.sin(a) * len / 2 + (Math.random() - 0.5) * 8, sx + Math.cos(a) * len, sy + Math.sin(a) * len); x.stroke();
+  }
+  for (let i = 0; i < 260; i++) { x.fillStyle = "rgba(255,255,255," + (0.05 + Math.random() * 0.2) + ")"; x.fillRect(Math.random() * 520, Math.random() * 520, 1, 1); }
+  try { document.documentElement.style.setProperty("--scratches", "url(" + c.toDataURL() + ")"); } catch (e) { /* no texture */ }
+}
+// the record itself, drawn once per style and rotated every frame
+let recordCv = null;
+function buildRecord() {
+  const S = deckSize, cv = document.createElement("canvas"); cv.width = cv.height = S;
+  const c = cv.getContext("2d"), cx = S / 2, rr = S * 0.47 * 0.93, v = state.custom.vinyl;
+  c.save(); c.beginPath(); c.arc(cx, cx, rr, 0, Math.PI * 2); c.clip();
+  const rnd01 = (() => { let z = 7; return () => (z = (z * 16807) % 2147483647) / 2147483647; })();
+  let light = false;
+  if (v === "rosso") { const g = c.createRadialGradient(cx, cx, rr * 0.2, cx, cx, rr); g.addColorStop(0, "rgba(230,50,60,.88)"); g.addColorStop(1, "rgba(120,10,22,.94)"); c.fillStyle = g; c.fillRect(0, 0, S, S); }
+  else if (v === "marmo") {
+    c.fillStyle = "#1f3d86"; c.fillRect(0, 0, S, S);
+    for (let i = 0; i < 46; i++) { c.strokeStyle = rnd01() < 0.6 ? "rgba(120,170,255," + (0.25 + rnd01() * 0.35) + ")" : "rgba(240,245,255," + (0.15 + rnd01() * 0.3) + ")"; c.lineWidth = S * (0.004 + rnd01() * 0.03); c.beginPath(); const r = rr * (0.3 + rnd01() * 0.7), a0 = rnd01() * Math.PI * 2; c.arc(cx + (rnd01() - 0.5) * rr * 0.4, cx + (rnd01() - 0.5) * rr * 0.4, r, a0, a0 + 0.5 + rnd01() * 2.5); c.stroke(); }
+  }
+  else if (v === "splatter") {
+    c.fillStyle = "#101010"; c.fillRect(0, 0, S, S);
+    const cols = ["#ff5fae", "#ffd23f", "#3ad6ff", "#f4f1e8"];
+    for (let i = 0; i < 70; i++) { const a = rnd01() * Math.PI * 2, d = Math.sqrt(rnd01()) * rr, x0 = cx + Math.cos(a) * d, y0 = cx + Math.sin(a) * d; c.fillStyle = cols[i % 4]; for (let k = 0; k < 6; k++) { c.beginPath(); c.arc(x0 + (rnd01() - 0.5) * S * 0.05, y0 + (rnd01() - 0.5) * S * 0.05, S * (0.002 + rnd01() * (k ? 0.006 : 0.016)), 0, Math.PI * 2); c.fill(); } }
+  }
+  else if (v === "oro") { const g = c.createRadialGradient(cx * 0.8, cx * 0.8, rr * 0.1, cx, cx, rr); g.addColorStop(0, "#fbe6a2"); g.addColorStop(0.6, "#d8a93e"); g.addColorStop(1, "#9c7019"); c.fillStyle = g; c.fillRect(0, 0, S, S); light = true; }
+  else if (v === "bianco") { c.fillStyle = "#ece8dd"; c.fillRect(0, 0, S, S); light = true; }
+  else { c.fillStyle = "#0c0c0c"; c.fillRect(0, 0, S, S); }
+  for (let r = rr * 0.38; r < rr * 0.985; r += Math.max(1, S / 260)) { c.strokeStyle = (light ? "rgba(0,0,0," : "rgba(255,255,255,") + (0.02 + rnd01() * (light ? 0.06 : 0.035)) + ")"; c.lineWidth = 0.6; c.beginPath(); c.arc(cx, cx, r, 0, Math.PI * 2); c.stroke(); }
+  [0.55, 0.72, 0.86].forEach(f => { c.strokeStyle = light ? "rgba(0,0,0,.25)" : "rgba(0,0,0,.75)"; c.lineWidth = S / 180; c.beginPath(); c.arc(cx, cx, rr * f, 0, Math.PI * 2); c.stroke(); });
+  c.restore();
+  return cv;
+}
+function labelInk(hex) { const [r, g, b] = hexRgb(hex); return (r * 0.3 + g * 0.59 + b * 0.11) > 140 ? "#1a140a" : "#f4efe3"; }
 let beatTimer = 0;
 function tick() {
   if (playing && ctx) {
@@ -2194,7 +2358,7 @@ function tick() {
     while (kickAt.length && kickAt[0] <= now) { kickAt.shift(); kickGlow = 1; }
   }
   kickGlow *= 0.86; beatPulse *= 0.9;
-  logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
+  if (logoDot) logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
   drawSpec(!ctx); drawVU(!ctx); drawDeck(false);
   requestAnimationFrame(tick);
 }
@@ -2230,6 +2394,7 @@ logoDot = document.querySelector(".logo b span");
 readSkin();
 build();
 applySkin(state.skin);
+applyCustom();
 renderAll();
 requestAnimationFrame(tick);
 })();
