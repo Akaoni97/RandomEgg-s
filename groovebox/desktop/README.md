@@ -17,6 +17,8 @@ All'avvio l'app cerca la Release `mattone-v…` più recente (le Release degli a
 - Installer Windows e AppImage Linux: scaricano l'aggiornamento da soli e chiedono se riavviare subito; altrimenti si installa alla chiusura.
 - Mac e Windows portatile: mostrano un avviso con il pulsante "Scarica" che apre la pagina della Release.
 
+Dalla 1.0.5 il download si vede in alto accanto allo schermo (percentuale, poi "pronta"). In Personalizza → App per PC ci sono la versione installata e il pulsante "Controlla aggiornamenti". Ogni passaggio viene scritto in `aggiornamenti.log`, nella cartella dei dati (Windows: `%APPDATA%\MatTone`).
+
 Pattern e impostazioni restano dopo l'aggiornamento.
 
 ## Pubblicare una nuova versione

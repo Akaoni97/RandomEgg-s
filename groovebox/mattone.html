@@ -107,6 +107,8 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .lcdwrap { display: grid; gap: 8px; min-width: 0; align-content: start; }
 .lcdhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.updpill { margin-left: auto; padding: 4px 10px; border: 0; border-radius: 999px; font-family: var(--f-label); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--cream); background: color-mix(in srgb, var(--led) 16%, var(--well)); box-shadow: inset 0 0 0 1px var(--led); }
+.updpill.ok { color: #160d02; background: var(--led); box-shadow: 0 0 12px -2px var(--led); }
 .lcd { position: relative; border-radius: 9px; padding: 7px; min-width: 0; background: linear-gradient(180deg, #050505, #161616); box-shadow: inset 0 2px 7px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px var(--edge); }
 .lcd canvas { display: block; width: 100%; max-width: 100%; aspect-ratio: 256 / 72; border-radius: 4px; cursor: pointer; }
 .lcd::after { content: ""; position: absolute; inset: 7px; border-radius: 4px; pointer-events: none; background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,0) 30%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
@@ -677,7 +679,7 @@ html.intro-on { overflow: hidden; }
       <button class="key small" id="openCust" type="button">✎ Personalizza</button>
     </div>
     <div class="lcdwrap">
-      <div class="lcdhead"><span class="lbl" id="lcdName">Schermo · OLED moderno</span><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button></div>
+      <div class="lcdhead"><span class="lbl" id="lcdName">Schermo · OLED moderno</span><button class="updpill" id="updPill" type="button" hidden></button><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button></div>
       <div class="lcd" id="vfd"><canvas id="spec" aria-label="Display: tocca per cambiare visualizzatore"></canvas></div>
       <div class="steps16" id="leds" aria-hidden="true"></div>
       <div class="sr-only" aria-live="polite"><span id="vPat">01</span> <span id="vBpm">088</span> <span id="vPos">1.1</span> <span id="msg">PREMI PLAY O TOCCA UN PAD</span></div>
@@ -874,6 +876,13 @@ html.intro-on { overflow: hidden; }
             <section class="cpane" data-cat="stanza" aria-label="Stanza" hidden>
               <h3>Stanza</h3><div class="opts" id="cRoom"></div>
               <h4>Usura</h4><input type="range" id="cWear" min="0" max="100" aria-label="Usura"><div class="row2"><span>Nuovo di fabbrica</span><span>Vissuto</span></div>
+            </section>
+            <section class="cpane" data-cat="app" aria-label="App per PC" hidden>
+              <h3>App per PC</h3>
+              <p class="cnote">Versione installata: <b id="appVer">—</b></p>
+              <p class="cnote" id="appUpd">Gli aggiornamenti arrivano da soli: all’avvio l’app li scarica in sottofondo, in alto vedi a che punto è, poi ti chiede di riavviare.</p>
+              <button class="key small" id="appCheck" type="button">Controlla aggiornamenti</button>
+              <p class="cnote small">Se qualcosa non va, ogni passaggio è scritto nel file aggiornamenti.log, nella cartella dei dati di Mat.Tone.</p>
             </section>
             <section class="cpane" data-cat="intro" aria-label="Intro" hidden>
               <h3>Intro</h3><div class="opts" id="cIntro"></div>
@@ -3062,7 +3071,7 @@ const ROOMS = [["buio", "Stanza buia", "#1a1815"], ["mattoni", "Muro di mattoni"
 const KNOB_STYLES = [["skin", "Della scocca", "Il cappuccio che va con la carrozzeria"], ["crema", "Crema vintage", "Bachelite chiara con la tacca scura"], ["alluminio", "Alluminio", "Metallo spazzolato e zigrinato"], ["becco", "Becco d’anatra", "Il puntatore nero degli amplificatori"], ["gomma", "Gomma colorata", "Prende il colore del gruppo"]];
 const FONTS = [["bungee", "Cantiere", "Bungee", 1], ["ops", "Militare", "Black Ops One", 1.04], ["marker", "Pennarello", "Permanent Marker", 1.08], ["righteous", "Anni 70", "Righteous", 1.12], ["vt", "Terminale", "VT323", 1.55], ["pixel", "Pixel", "Silkscreen", 0.92]];
 const STICKERS = [["boombap", "Boom bap"], ["tag", "Tag a spray"], ["giri", "33⅓ giri"], ["nastro", "Nastro adesivo"], ["corona", "Corona"], ["cassetta", "Cassetta"]];
-const CUST_CATS = [["scocca", "Scocca", "Colori e materiali"], ["schermo", "Schermo", "Tipo, colore, grafica"], ["indicatori", "Indicatori L/R", "Le due casse"], ["comandi", "Manopole e pad", "Cappucci, gomme, luci"], ["disco", "Disco", "Vinile ed etichetta"], ["logo", "Logo e adesivi", "Nome, carattere, adesivi"], ["stanza", "Stanza", "Dove sta lo strumento"], ["intro", "Intro", "All’avvio dell’app"]];
+const CUST_CATS = [["scocca", "Scocca", "Colori e materiali"], ["schermo", "Schermo", "Tipo, colore, grafica"], ["indicatori", "Indicatori L/R", "Le due casse"], ["comandi", "Manopole e pad", "Cappucci, gomme, luci"], ["disco", "Disco", "Vinile ed etichetta"], ["logo", "Logo e adesivi", "Nome, carattere, adesivi"], ["stanza", "Stanza", "Dove sta lo strumento"], ["intro", "Intro", "All’avvio dell’app"], ["app", "App per PC", "Versione e aggiornamenti"]];
 function optButton(host, value, label, swatch, onPick, square) {
   const b = el("button", "opt", (swatch ? '<i class="' + (square ? "sq" : "") + '" style="background:' + swatch + '"></i>' : "") + esc(label));
   b.type = "button"; b.dataset.v = value; b.addEventListener("click", () => onPick(value)); host.appendChild(b); return b;
@@ -3129,7 +3138,7 @@ function showCustCat(id) {
 function openCustom() { if (curPage !== "cust") pageBeforeCust = curPage; showPage("cust"); showCustCat(custCat); }
 function closeCustom() { showPage(pageBeforeCust); $("openCust").focus({ preventScroll: true }); }
 function buildCustom() {
-  CUST_CATS.forEach(([id, name, note]) => {
+  CUST_CATS.filter(c => c[0] !== "app" || window.matDesktop).forEach(([id, name, note]) => {
     const b = el("button", "", "<b>" + esc(name) + "</b><small>" + esc(note) + "</small>");
     b.type = "button"; b.dataset.cat = id; b.addEventListener("click", () => showCustCat(id));
     $("custNav").appendChild(b);
@@ -3311,6 +3320,25 @@ function applySkin(id) {
   const badge = $("badge"); if (badge) badge.textContent = sk[4];
 }
 
+// ---------- the PC app: version, update progress on the top bar, manual check ----------
+function initDesktop() {
+  const d = window.matDesktop;
+  if (!d) return;
+  d.version().then(v => { $("appVer").textContent = v; });
+  let manual = false;
+  d.onUpdate(st => {
+    const pill = $("updPill"), show = ["download", "ready", "manual", "error"].includes(st.state);
+    $("appUpd").textContent = st.text;
+    pill.hidden = !show; pill.classList.toggle("ok", st.state === "ready");
+    if (show) pill.textContent = st.state === "download" ? "⬇ " + st.version + " · " + (st.percent || 0) + "%" : st.state === "ready" ? "✓ " + st.version + " pronta" : st.state === "manual" ? "⬇ " + st.version + " disponibile" : "! aggiornamento";
+    const loud = ["ready", "manual", "error"].includes(st.state) || (st.state === "download" && !st.percent);   // at start, silence when there is nothing new
+    if (!(st.state === "download" && st.percent) && (loud || manual)) msg(st.text.toUpperCase());
+    if (st.state !== "checking") manual = false;
+  });
+  $("updPill").addEventListener("click", () => { openCustom(); showCustCat("app"); });
+  $("appCheck").addEventListener("click", () => { manual = true; d.checkUpdates(); });
+}
+
 // ---------- pages ----------
 const PAGES = [["suona", "Suona"], ["piatto", "Piatto"], ["seq", "Sequencer"], ["mix", "Mix · Registra"], ["guida", "Guida"]];
 function fitPages() { $("pages").style.setProperty("--pg-h", $("pages").clientHeight + "px"); }
@@ -3490,6 +3518,7 @@ logoDot = document.querySelector(".logo b span");
 readSkin();
 build();
 buildPages();
+initDesktop();
 applySkin(state.skin);
 applyCustom();
 renderAll();

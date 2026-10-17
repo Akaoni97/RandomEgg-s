@@ -1,6 +1,6 @@
 // Mat.Tone desktop: the same groovebox page, served from the app folder through an app:// scheme
 // (fetch() of the sample files does not work from file://, and a fixed origin keeps saved patterns).
-const { app, BrowserWindow, protocol, net, session, shell, Menu } = require("electron");
+const { app, BrowserWindow, protocol, net, session, shell, Menu, ipcMain } = require("electron");
 const path = require("path");
 const { pathToFileURL } = require("url");
 const { checkForUpdates } = require("./updater");
@@ -23,7 +23,7 @@ function createWindow() {
     backgroundColor: "#100f0d",
     icon: path.join(__dirname, "build", "icon.png"),
     autoHideMenuBar: true,
-    webPreferences: { contextIsolation: true, sandbox: true, autoplayPolicy: "no-user-gesture-required" },
+    webPreferences: { contextIsolation: true, sandbox: true, autoplayPolicy: "no-user-gesture-required", preload: path.join(__dirname, "preload.js") },
   });
   win.loadURL("app://mattone/index.html");
   // links to the sample libraries open in the normal browser
@@ -47,6 +47,9 @@ app.whenReady().then(() => {
     if (process.env.MATTONE_SAVE_DIR) item.setSavePath(path.join(process.env.MATTONE_SAVE_DIR, item.getFilename()));   // automated tests
     else item.setSaveDialogOptions({ title: "Salva il beat", defaultPath: path.join(app.getPath("music"), item.getFilename()) });
   });
+  // the page asks for the version and for an update check (Personalizza → App)
+  ipcMain.handle("app-version", () => app.getVersion());
+  ipcMain.handle("check-updates", e => checkForUpdates(BrowserWindow.fromWebContents(e.sender), true));
   if (process.platform !== "darwin") Menu.setApplicationMenu(null);
   createWindow();
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
