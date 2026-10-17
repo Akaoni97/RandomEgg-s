@@ -245,7 +245,11 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .key.rec2.on { background: linear-gradient(180deg, #ff7a6b, var(--red)); color: #fff; }
 #recPlayer { width: 100%; margin-top: 10px; height: 36px; }
 .rechint { margin: 8px 0 0; font-size: 12px; color: var(--cream-3); line-height: 1.45; }
-.master { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.master { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+#mPresets { flex-wrap: wrap; }
+.loud { margin-top: 14px; display: grid; gap: 8px; }
+#loudCv { width: 100%; height: auto; aspect-ratio: 640 / 150; border-radius: 8px; background: #070605; box-shadow: inset 0 2px 8px rgba(0,0,0,.8), 0 0 0 1px var(--edge); display: block; }
+.loudrow { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 /* ---------- sequencer ---------- */
 .scroller { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
@@ -264,6 +268,10 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .cell:hover { background: var(--cell-hover); }
 .cell.on { background: color-mix(in srgb, var(--hue) 55%, var(--cell)); }
 .cell.acc { background: var(--hue); box-shadow: 0 0 10px -3px var(--hue); }
+.humanl { display: flex; align-items: center; gap: 8px; }
+.humanl input { width: 110px; }
+.humanl output { min-width: 3.5ch; color: var(--led); }
+.cell.ghost { background: color-mix(in srgb, var(--hue) 22%, var(--cell)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hue) 55%, transparent); }
 .cell.pitched::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 5px; height: 2px; background: rgba(20,16,10,.6); border-radius: 1px; }
 .cell.now { box-shadow: inset 0 0 0 2px var(--cream); }
 .roll .cell, .roll .lab { height: 22px; }
@@ -888,7 +896,7 @@ html.intro-on { overflow: hidden; }
       </div>
       <div class="row"><span class="lbl">Swing</span><input type="range" id="swing" min="0" max="60" value="16" aria-label="Swing" style="width:110px"><span class="lbl" id="swingOut">16%</span></div>
       <div class="pats" id="pats" role="group" aria-label="Pattern"></div>
-      <div class="row"><button class="key small" id="copy" type="button">Duplica</button><button class="key small" id="clear" type="button">Svuota</button></div>
+      <div class="row"><button class="key small" id="copy" type="button">Duplica</button><button class="key small" id="clear" type="button">Svuota</button><button class="key small" id="undo" type="button" title="Annulla (Ctrl+Z)" aria-label="Annulla" disabled>↶</button><button class="key small" id="redo" type="button" title="Rifai (Ctrl+Y)" aria-label="Rifai" disabled>↷</button></div>
     </div>
   </header>
 
@@ -1000,6 +1008,7 @@ html.intro-on { overflow: hidden; }
             <span class="lbl" id="edCtx"></span>
           </div>
           <div class="acts">
+            <label class="lbl humanl" title="Sposta di pochi millesimi tempi e volumi, come un batterista vero">Mano umana <input type="range" id="human" min="0" max="100" value="0" aria-label="Mano umana"><output id="humanOut">0%</output></label>
             <button class="key small" id="muteBank" type="button">Silenzia gruppo</button>
             <button class="key small" id="clearTrack" type="button">Cancella pad</button>
           </div>
@@ -1014,8 +1023,13 @@ html.intro-on { overflow: hidden; }
       </section>
       <section class="unit mixer" aria-label="Master e registratore">
         <div>
-          <div class="hd"><h2>Master</h2></div>
+          <div class="hd"><h2>Master</h2><div class="seg" id="mPresets" role="group" aria-label="Suono del master"></div></div>
           <div class="master knobs" id="masterKnobs"></div>
+          <div class="loud">
+            <canvas id="loudCv" width="640" height="150" aria-label="Misuratore di volume del master"></canvas>
+            <div class="loudrow"><span class="lbl" id="loudInt">Media del pezzo: —</span><button class="key small" id="loudReset" type="button">Azzera misura</button></div>
+            <p class="cnote small">Per Spotify e YouTube si punta a −14 LUFS, per il club a −9. Il limiter non lascia mai passare picchi sopra −1 dB.</p>
+          </div>
         </div>
         <div>
           <div class="hd"><h2>Registratore · esporta WAV o MP3</h2><span class="lbl" id="recTime">Pronto</span></div>
@@ -1116,10 +1130,11 @@ html.intro-on { overflow: hidden; }
           <ol>
             <li>Premi Play: il pattern 1 è pronto, il 2 è una variazione.</li>
             <li>Tocca i pad. Il pad toccato si seleziona: a destra cambi suono e manopole (trascina in su o in giù).</li>
-            <li><b>Ritmo</b>: un tocco = colpo, due = accento, tre = spento. <b>Melodia</b>: righe = note della scala.</li>
+            <li><b>Ritmo</b>: un tocco = colpo, due = accento, tre = nota fantasma (piano, quella tra un colpo e l’altro), quattro = spento. <b>Mano umana</b> sposta di pochi millesimi tempi e volumi, come un batterista vero. <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla, <kbd>Ctrl</kbd>+<kbd>Y</kbd> rifà (anche coi tasti ↶ ↷). <b>Melodia</b>: righe = note della scala.</li>
             <li><b>Note</b> trasforma i pad in una tastiera sulla scala scelta, col suono selezionato.</li>
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
+            <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
             <li>Il tasto <b>3D</b> accanto alle pagine (o <kbd>T</kbd>) cambia visuale: frontale, sul banco, di tre quarti da destra o da sinistra. Si suona anche in 3D.</li>
             <li><b>Reparto tekno</b>: nella libreria la categoria <b>Tekno</b> (casse 909, dure e col rimbombo, acid 303, hoover, accordi dub techno, loop 909 a 140 BPM). Per la free party ci sono la cassa hardtek, lo stab “mentasm”, l’acid che urla, le rullate e l’allarme. I kit <b>Tekno 140</b>, <b>Acid 140</b>, <b>Loop 909 · 140</b>, <b>Free party 170</b> e <b>Hardtek 180</b> portano il tempo dove serve e, se il pattern è vuoto, ci mettono un groove da cui partire.</li>
             <li><b>Registra dal microfono</b> (sotto il pad selezionato): premi il tasto rosso, fai il tuo suono, ripremi. I silenzi vengono tagliati, il volume sistemato, e il suono resta salvato tra «I tuoi suoni» (✕ nella libreria per eliminarlo).</li>
@@ -1662,7 +1677,7 @@ const DERIVED_ROWS = [
 ];
 const PROC_NAMES = { sp12: "SP-12: 12 bit a 26 kHz", sp12low: "SP-12 rallentato di 5 semitoni", dusty: "polvere di vinile" };
 for (const [id, name, base, proc] of DERIVED_ROWS) SOUNDS.set(id, { id, name, cat: "Old school", root: null, kind: "derived", base, proc, src: SOUNDS.get(base).src + " · " + PROC_NAMES[proc] });
-for (const s of SOUNDS.values()) s.home = s.root == null ? null : Math.round(s.root / 12) * 12;
+for (const s of SOUNDS.values()) { s.home = s.root == null ? null : Math.round(s.root / 12) * 12; s.kick = /kick|cassa|_bd\b/i.test(s.id + " " + s.name) && !/loop|roll/i.test(s.id); }
 
 
 const BANKS = [
@@ -1918,7 +1933,7 @@ const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: 
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
-  warmth: 0.35, volume: 0.85, dust: 0.25, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "cantina", ver: 4, custom: null,
+  warmth: 0.35, volume: 0.85, dust: 0.25, wow: 0.25, glue: 0.35, pump: 0, push: 1.5, mpreset: "boombap", human: 0, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "cantina", ver: 4, custom: null,
 };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("mattone-groovebox-v2") || "null");
@@ -1936,7 +1951,36 @@ try {
 } catch (e) { /* storage unavailable */ }
 if (!state.custom) state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY);
 let saveTimer = 0;
-function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }, 400); }
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }, 400); histTouch(); }
+// undo / redo of the music (pads, patterns, tempo, swing, mutes): a burst of changes (a knob turned) is one step
+const HIST = { past: [], future: [], cur: null, burst: false, timer: 0, quiet: false };
+const histSnap = () => JSON.stringify([state.banks, state.patterns, state.bpm, state.swing, state.mutes, state.human]);
+function histTouch() {
+  if (HIST.quiet || HIST.cur === null) return;
+  if (!HIST.burst) { HIST.past.push(HIST.cur); HIST.future = []; HIST.burst = true; }
+  clearTimeout(HIST.timer); HIST.timer = setTimeout(histSettle, 600);
+}
+function histSettle() {
+  clearTimeout(HIST.timer); if (!HIST.burst) return;
+  HIST.burst = false; const now = histSnap();
+  if (now === HIST.past[HIST.past.length - 1]) HIST.past.pop();     // only looks or settings changed: nothing to undo
+  else { HIST.cur = now; if (HIST.past.length > 100) HIST.past.shift(); }
+  histButtons();
+}
+function histButtons() { const u = $("undo"), r = $("redo"); if (u) { u.disabled = !HIST.past.length; r.disabled = !HIST.future.length; } }
+function histGo(back) {
+  histSettle();
+  const from = back ? HIST.past : HIST.future, to = back ? HIST.future : HIST.past;
+  if (!from.length) { msg(back ? "NIENTE DA ANNULLARE" : "NIENTE DA RIFARE"); return; }
+  to.push(HIST.cur); HIST.cur = from.pop();
+  const [banks, patterns, bpm, swing, mutes, human] = JSON.parse(HIST.cur);
+  Object.assign(state, { banks, patterns, swing, mutes, human });
+  HIST.quiet = true; setBpm(bpm); save(); HIST.quiet = false;
+  $("swing").value = state.swing; $("swingOut").textContent = state.swing + "%";
+  $("human").value = Math.round(state.human * 100); $("humanOut").textContent = Math.round(state.human * 100) + "%";
+  renderAll(); if (ctx) state.banks.flat().forEach(pr => loadSound(pr.sound).catch(() => {})); histButtons();
+  msg(back ? "ANNULLATO" : "RIFATTO");
+}
 
 /* ================= synthesis ================= */
 let ctx = null, SR = 44100;
@@ -2193,6 +2237,35 @@ function crunch(b, o) {
   for (let i = 0; i < n; i++) d[i] = Math.max(-0.95, Math.min(0.95, d[i] * g)) * (i > n - fade ? (n - i) / fade : 1);
   return out;
 }
+// every sound comes out at a level that fits its family, measured on its loudest 30 ms (not on the peak):
+// a hi-hat no longer hits as hard as a kick, and changing kit keeps the balance. Only ever turned down.
+const LEVEL_TARGET = { kick: 0.4, snare: 0.3, perc: 0.25, hat: 0.13, ohat: 0.15, cym: 0.14, bass: 0.36, melodic: 0.26, fx: 0.26, voice: 0.3, loop: 0.36, other: 0.28 };
+function soundClass(s) {
+  const t = (s.id + " " + s.name + " " + s.cat).toLowerCase();
+  if (/loop/.test(t)) return "loop";
+  if (s.kick) return "kick";
+  if (/snare|rullant|clap|battiman|snap|schiocco/.test(t)) return "snare";
+  if (/hat|charleston|shaker|maraca|cabasa/.test(t)) return /open|apert|loose|lent/.test(t) ? "ohat" : "hat";
+  if (/ride|crash|cym|piatt|choke/.test(t)) return "cym";
+  if (/rim|tom|perc|conga|bongo|cowbell|campanacc|wood|clave|tamb|cross|stick|cajon|darbuka|agogo|triangol|guiro/.test(t)) return "perc";
+  if (s.cat === "Bassi" || /808|bass|basso|\bsub\b/.test(t)) return "bass";
+  if (s.cat === "Voci") return "voice";
+  if (/Effetti|FX/.test(s.cat)) return "fx";
+  return s.root != null ? "melodic" : "other";
+}
+function levelBuf(s, b) {
+  let peak = 0, best = 0;
+  const w = Math.max(1, Math.round(b.sampleRate * 0.03)), lim = Math.min(b.length, Math.round(b.sampleRate * 1.5));
+  for (let c = 0; c < b.numberOfChannels; c++) {
+    const d = b.getChannelData(c);
+    for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+    for (let i = 0; i + w <= lim; i += w >> 1) { let e = 0; for (let k = i; k < i + w; k++) e += d[k] * d[k]; best = Math.max(best, Math.sqrt(e / w)); }
+  }
+  if (!best || !peak) return b;
+  const g = Math.min(LEVEL_TARGET[soundClass(s)] / best, 1, 0.98 / peak);
+  if (g < 0.995) for (let c = 0; c < b.numberOfChannels; c++) { const d = b.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= g; }
+  return b;
+}
 const packs = new Map();
 function loadPack(name) {
   if (!packs.has(name)) packs.set(name, fetch("suoni/pack_" + name + ".mp3")
@@ -2228,12 +2301,13 @@ function loadSound(id) {
       .then(res => { if (!res.ok) throw new Error(res.status); return res.arrayBuffer(); })
       .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
       .then(trimLead)).then(b => ({ root: r, buf: b }))))
-      .then(zs => { zoneCache.set(id, zs); const mid = zs[Math.floor(zs.length / 2)].buf; cache.set(id, mid); return mid; });
+      .then(zs => { zs.forEach(z => levelBuf(s, z.buf)); zoneCache.set(id, zs); const mid = zs[Math.floor(zs.length / 2)].buf; cache.set(id, mid); return mid; });
   } else if (s.kind === "user") {
     p = userLoad(id).then(b => { cache.set(id, b); return b; });
   } else if (s.kind === "derived") {
     p = loadSound(s.base).then(b => { const t = PROC[s.proc](b); cache.set(id, t); return t; });
   } else p = Promise.reject(new Error("mancante"));
+  if (s && s.kind !== "multi" && s.kind !== "user") p = p.then(b => levelBuf(s, b));
   p = p.catch(err => { loading.delete(id); throw err; });
   loading.set(id, p);
   return p;
@@ -2254,6 +2328,109 @@ function satCurve(amount) {
   for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(k * x) / Math.tanh(k); }
   return c;
 }
+// Master limiter and loudness meter, run in an AudioWorklet (source kept as a function so it can be turned into a module).
+// Look-ahead peak limiter: the gain starts going down 4 ms before a peak arrives, so nothing is ever clipped.
+// Meter: K-weighted loudness (ITU-R BS.1770) as momentary, short-term and integrated LUFS, plus peak and gain reduction.
+function mattoneLimiterModule() {
+  // RBJ biquad, as pyloudnorm builds the K-weighting filters for any sample rate
+  function biquad(type, fc, q, gainDb, fs) {
+    const A = Math.pow(10, gainDb / 40), w = 2 * Math.PI * fc / fs, c = Math.cos(w), s = Math.sin(w), al = s / (2 * q);
+    let b0, b1, b2, a0, a1, a2;
+    if (type === "shelf") { const r = 2 * Math.sqrt(A) * al; b0 = A * ((A + 1) + (A - 1) * c + r); b1 = -2 * A * ((A - 1) + (A + 1) * c); b2 = A * ((A + 1) + (A - 1) * c - r); a0 = (A + 1) - (A - 1) * c + r; a1 = 2 * ((A - 1) - (A + 1) * c); a2 = (A + 1) - (A - 1) * c - r; }
+    else { b0 = (1 + c) / 2; b1 = -(1 + c); b2 = (1 + c) / 2; a0 = 1 + al; a1 = -2 * c; a2 = 1 - al; }
+    return [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0];
+  }
+  class MattoneLimiter extends AudioWorkletProcessor {
+    constructor() {
+      super();
+      const fs = sampleRate;
+      this.la = Math.max(1, Math.round(fs * 0.004)); this.n = this.la + 1;
+      this.del = [new Float32Array(this.la), new Float32Array(this.la)]; this.w = 0;   // the output is la samples late: the oldest sample of the window
+      this.tg = new Float32Array(this.n);                  // target gain of each sample in the window
+      this.qi = new Int32Array(this.n); this.qh = 0; this.qt = 0; this.qc = 0; this.idx = 0;   // monotonic queue for the window minimum
+      this.g = 1; this.ceil = Math.pow(10, -1 / 20);
+      this.att = Math.exp(-1 / (fs * 0.001)); this.rel = Math.exp(-1 / (fs * 0.15));
+      this.kf = [biquad("shelf", 1681.97, 0.7072, 4, fs), biquad("hp", 38.13, 0.5003, 0, fs)];
+      this.ks = [new Float64Array(8), new Float64Array(8)];
+      this.blk = Math.round(fs * 0.1); this.cnt = 0; this.acc = 0; this.pk = 0; this.minG = 1;
+      this.blocks = []; this.all = []; this.k = 0;
+      this.port.onmessage = e => { if (e.data.reset) this.all = []; if (e.data.ceil) this.ceil = e.data.ceil; };
+    }
+    kw(ch, x) {
+      const s = this.ks[ch];
+      for (let f = 0; f < 2; f++) {
+        const [b0, b1, b2, a1, a2] = this.kf[f], o = f * 4;
+        const y = b0 * x + b1 * s[o] + b2 * s[o + 1] - a1 * s[o + 2] - a2 * s[o + 3];
+        s[o + 1] = s[o]; s[o] = x; s[o + 3] = s[o + 2]; s[o + 2] = y; x = y;
+      }
+      return x;
+    }
+    process(inputs, outputs) {
+      const inp = inputs[0], out = outputs[0], nch = out.length, L = inp[0] || null, R = inp[1] || inp[0] || null;
+      const frames = out[0].length, n = this.n;
+      for (let i = 0; i < frames; i++) {
+        const xl = L ? L[i] : 0, xr = R ? R[i] : 0;
+        const a = Math.max(Math.abs(xl), Math.abs(xr)), t = a > this.ceil ? this.ceil / a : 1;
+        // the window holds the last n targets; drop the one leaving it, then push the new one keeping the queue increasing
+        while (this.qc > 0 && this.qi[this.qh] <= this.idx - n) { this.qh = (this.qh + 1) % n; this.qc--; }
+        this.tg[this.idx % n] = t;
+        while (this.qc > 0 && this.tg[this.qi[(this.qt - 1 + n) % n] % n] >= t) { this.qt = (this.qt - 1 + n) % n; this.qc--; }
+        this.qi[this.qt] = this.idx; this.qt = (this.qt + 1) % n; this.qc++;
+        const want = this.tg[this.qi[this.qh] % n]; this.idx++;
+        this.g = want < this.g ? want + (this.g - want) * this.att : want + (this.g - want) * this.rel;
+        // the delayed sample goes out with the gain that was prepared for it
+        const dl = this.del[0], dr = this.del[1], w = this.w;
+        const ol = dl[w] * this.g, orr = dr[w] * this.g;
+        dl[w] = xl; dr[w] = xr; this.w = (w + 1) % this.la;
+        const yl = Math.max(-0.999, Math.min(0.999, ol)), yr = Math.max(-0.999, Math.min(0.999, orr));
+        out[0][i] = yl; if (nch > 1) out[1][i] = yr;
+        // metering on what really goes out
+        const kl = this.kw(0, yl), kr = this.kw(1, yr);
+        this.acc += kl * kl + kr * kr; this.pk = Math.max(this.pk, Math.abs(yl), Math.abs(yr)); this.minG = Math.min(this.minG, this.g);
+        if (++this.cnt >= this.blk) {
+          this.blocks.push(this.acc / this.blk); if (this.blocks.length > 30) this.blocks.shift();
+          const lk = v => -0.691 + 10 * Math.log10(Math.max(1e-12, v));
+          const mean = k => { const b = this.blocks.slice(-k); return b.reduce((x, y) => x + y, 0) / b.length; };
+          const m = lk(mean(4)), st = lk(mean(30));
+          if (m > -70) this.all.push(mean(4));
+          let integ = -70;
+          if (this.all.length && (++this.k % 5 === 0 || this.all.length < 5)) {
+            const avg = this.all.reduce((x, y) => x + y, 0) / this.all.length, gate = lk(avg) - 10;
+            const kept = this.all.filter(v => lk(v) > gate); integ = lk(kept.reduce((x, y) => x + y, 0) / Math.max(1, kept.length));
+            this.lastI = integ;
+          }
+          this.port.postMessage({ m, s: st, i: this.lastI == null ? null : this.lastI, pk: 20 * Math.log10(Math.max(1e-6, this.pk)), gr: 20 * Math.log10(Math.max(1e-6, this.minG)) });
+          this.acc = 0; this.cnt = 0; this.pk = 0; this.minG = 1;
+        }
+      }
+      return true;
+    }
+  }
+  registerProcessor("mattone-limiter", MattoneLimiter);
+}
+
+// tape saturation with headroom: the shaper sees the signal 12 dB down, so nothing is clamped below +12 dBFS,
+// and small signals pass at unity gain (the old curve added up to 10 dB and clipped everything over 0 dB)
+function masterSatCurve(amount) {
+  const n = 4096, c = new Float32Array(n), a = 0.05 + amount * 1.5;
+  for (let i = 0; i < n; i++) { const u = (i / (n - 1) * 2 - 1) * 4; c[i] = Math.tanh(a * u) / a; }
+  return c;
+}
+// master sound presets: saturation, tape wow, glue compression, kick sidechain, push into the limiter (dB)
+const MASTER_PRESETS = [
+  ["pulito", "Pulito", { warmth: 0.08, wow: 0, glue: 0.2, pump: 0, push: 0 }],
+  ["boombap", "Boom bap", { warmth: 0.35, wow: 0.25, glue: 0.35, pump: 0, push: 1.5 }],
+  ["lofi", "Lo-fi", { warmth: 0.6, wow: 0.75, glue: 0.3, pump: 0.15, push: 0 }],
+  ["tekno", "Tekno club", { warmth: 0.25, wow: 0, glue: 0.5, pump: 0.45, push: 1.5 }],
+  ["freeparty", "Free party", { warmth: 0.6, wow: 0, glue: 0.65, pump: 0.3, push: 2.5 }],
+];
+function setMasterPreset(id, quiet) {
+  const p = MASTER_PRESETS.find(m => m[0] === id); if (!p) return;
+  Object.assign(state, p[2]); state.mpreset = id; save(); applyMaster();
+  if (typeof knobs !== "undefined") knobs.forEach(k => k.draw());
+  document.querySelectorAll("#mPresets button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === id));
+  if (!quiet) msg("MASTER: " + p[1].toUpperCase());
+}
 function limitCurve() {
   const n = 2048, c = new Float32Array(n);
   for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1, a = Math.abs(x); c[i] = Math.sign(x) * (a < 0.6 ? a : 0.6 + 0.4 * Math.tanh((a - 0.6) / 0.4)); }
@@ -2270,23 +2447,42 @@ function initAudio() {
   N.hp = ctx.createBiquadFilter(); N.hp.type = "highpass"; N.hp.frequency.value = 10;
   N.lp = ctx.createBiquadFilter(); N.lp.type = "lowpass"; N.lp.frequency.value = 20000;
   N.shaper = ctx.createWaveShaper(); N.busOut = ctx.createGain();
-  N.master = ctx.createGain(); N.master.gain.value = 0.8;
+  N.master = ctx.createGain(); N.master.gain.value = 0.65;   // headroom: the levelled kits sum to about −12 LUFS before the push
   N.bus.connect(N.hp).connect(N.lp).connect(N.shaper).connect(N.busOut).connect(N.master);
   N.wow = ctx.createDelay(0.1); N.wow.delayTime.value = 0.001;
   N.lfo = ctx.createOscillator(); N.lfo.frequency.value = 0.55; N.lfoAmt = ctx.createGain(); N.lfo.connect(N.lfoAmt).connect(N.wow.delayTime); N.lfo.start();
   N.flutter = ctx.createOscillator(); N.flutter.frequency.value = 7.3; N.flutAmt = ctx.createGain(); N.flutter.connect(N.flutAmt).connect(N.wow.delayTime); N.flutter.start();
-  N.sat = ctx.createWaveShaper(); N.sat.oversample = "2x";
+  // master: glue compressor -> tape (wow, saturation with headroom, tone) -> push -> look-ahead limiter -> volume
+  N.comp = ctx.createDynamicsCompressor(); N.comp.knee.value = 8; N.comp.attack.value = 0.012; N.comp.release.value = 0.18;
+  N.satIn = ctx.createGain(); N.satIn.gain.value = 0.25;
+  N.sat = ctx.createWaveShaper(); N.sat.oversample = "4x";
   N.tone = ctx.createBiquadFilter(); N.tone.type = "lowpass";
-  N.limit = ctx.createWaveShaper(); N.limit.curve = limitCurve();
+  N.clean = ctx.createBiquadFilter(); N.clean.type = "highpass"; N.clean.frequency.value = 22; N.clean.Q.value = 0.6;   // no sub rumble eating headroom
+  N.drive = ctx.createGain();
+  N.limit = ctx.createGain();                       // everything that wants to be limited goes in here (the deck and the dust too)
   N.out = ctx.createGain();
-  N.master.connect(N.wow).connect(N.sat).connect(N.tone).connect(N.limit).connect(N.out).connect(ctx.destination);
+  N.master.connect(N.comp).connect(N.wow).connect(N.satIn).connect(N.sat).connect(N.tone).connect(N.clean).connect(N.drive).connect(N.limit);
+  // until the look-ahead limiter is loaded (or if the browser cannot run it) a fast compressor and a clipper hold the peaks
+  N.limFB = ctx.createDynamicsCompressor(); N.limFB.threshold.value = -2; N.limFB.knee.value = 0; N.limFB.ratio.value = 20; N.limFB.attack.value = 0.001; N.limFB.release.value = 0.08;
+  N.limClip = ctx.createWaveShaper(); N.limClip.curve = limitCurve();
+  N.limit.connect(N.limFB).connect(N.limClip).connect(N.out); N.out.connect(ctx.destination);
+  if (ctx.audioWorklet && window.Blob && window.URL) {
+    const url = URL.createObjectURL(new Blob([mattoneLimiterModule.toString() + "\nmattoneLimiterModule();"], { type: "application/javascript" }));
+    ctx.audioWorklet.addModule(url).then(() => {
+      N.lim = new AudioWorkletNode(ctx, "mattone-limiter", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
+      N.lim.port.onmessage = e => { loud = e.data; };
+      N.limit.disconnect(); N.limit.connect(N.lim).connect(N.out);
+    }).catch(() => { /* the fallback stays */ });
+  }
+  // sidechain: everything but the kicks goes through these, and dips on every kick
+  N.duckV = ctx.createGain(); N.duckR = ctx.createGain();
   N.revIn = ctx.createGain(); N.conv = ctx.createConvolver(); N.conv.buffer = impulse(2.4);
   N.revOut = ctx.createGain(); N.revOut.gain.value = 0.8;
-  N.revIn.connect(N.conv).connect(N.revOut).connect(N.master);
+  N.revIn.connect(N.conv).connect(N.revOut).connect(N.duckR).connect(N.master);
   N.dSend = ctx.createGain(); N.dSend.gain.value = 0;
   N.delay = ctx.createDelay(2); N.dFb = ctx.createGain(); N.dFb.gain.value = 0.35;
   N.dLp = ctx.createBiquadFilter(); N.dLp.type = "lowpass"; N.dLp.frequency.value = 2600;
-  N.busOut.connect(N.dSend).connect(N.delay); N.delay.connect(N.dLp).connect(N.dFb).connect(N.delay); N.dLp.connect(N.master);
+  N.busOut.connect(N.dSend).connect(N.delay); N.delay.connect(N.dLp).connect(N.dFb).connect(N.delay); N.dLp.connect(N.duckR);
   // vinyl dust bed
   N.dust = ctx.createBufferSource(); N.dust.buffer = SYNTH.sy_vinyl(); N.dust.loop = true;
   N.dustGain = ctx.createGain(); N.dust.connect(N.dustGain).connect(N.limit); N.dust.start();
@@ -2295,6 +2491,7 @@ function initAudio() {
   N.anL = ctx.createAnalyser(); N.anR = ctx.createAnalyser(); N.anL.fftSize = N.anR.fftSize = 1024;
   N.split.connect(N.anL, 0); N.split.connect(N.anR, 1);
   N.spec = ctx.createAnalyser(); N.spec.fftSize = 2048; N.spec.smoothingTimeConstant = 0.75; N.out.connect(N.spec);
+  N.duckV.connect(N.bus);
   initDeck();
   applyMaster(); updateDelayTime();
   preloadBanks();
@@ -2302,12 +2499,15 @@ function initAudio() {
 }
 function applyMaster() {
   if (!ctx) return;
-  const t = ctx.currentTime, w = state.warmth;
-  N.sat.curve = satCurve(w);
-  N.tone.frequency.setTargetAtTime(20000 - w * 13500, t, 0.05);
-  N.wow.delayTime.setTargetAtTime(0.0003 + w * 0.0022, t, 0.05);
-  N.lfoAmt.gain.setTargetAtTime(w * 0.0016, t, 0.05);
-  N.flutAmt.gain.setTargetAtTime(w * 0.00018, t, 0.05);
+  const t = ctx.currentTime, w = state.warmth, wo = state.wow, gl = state.glue;
+  N.sat.curve = masterSatCurve(w);
+  N.tone.frequency.setTargetAtTime(20000 - w * 9000, t, 0.05);
+  // wow and flutter have their own amount now: at zero the pitch is rock steady (tekno, 808s)
+  N.wow.delayTime.setTargetAtTime(0.0003 + wo * 0.0022, t, 0.05);
+  N.lfoAmt.gain.setTargetAtTime(wo * 0.0016, t, 0.05);
+  N.flutAmt.gain.setTargetAtTime(wo * 0.00018, t, 0.05);
+  N.comp.threshold.setTargetAtTime(-4 - gl * 20, t, 0.05); N.comp.ratio.setTargetAtTime(1 + gl * 3, t, 0.05);
+  N.drive.gain.setTargetAtTime(Math.pow(10, (state.push + gl * 4) / 20), t, 0.05);
   N.out.gain.setTargetAtTime(state.volume, t, 0.03);
   N.dustGain.gain.setTargetAtTime(state.dust * 0.22, t, 0.05);
 }
@@ -2343,7 +2543,8 @@ function playBuffer(soundId, pr, t, vel, note, tag) {
   g.gain.setValueAtTime(level, t);
   if (len < full) { g.gain.setValueAtTime(level, t + Math.max(0.005, len - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.03); }
   src.connect(g);
-  if (ctx.createStereoPanner && pr.pan) { const pan = ctx.createStereoPanner(); pan.pan.value = pr.pan; g.connect(pan).connect(N.bus); } else g.connect(N.bus);
+  const dest = s.kick ? N.bus : N.duckV;   // kicks drive the sidechain, everything else is ducked by it
+  if (ctx.createStereoPanner && pr.pan) { const pan = ctx.createStereoPanner(); pan.pan.value = pr.pan; g.connect(pan).connect(dest); } else g.connect(dest);
   if (pr.rev > 0) { const rs = ctx.createGain(); rs.gain.value = pr.rev; g.connect(rs).connect(N.revIn); }
   src.start(t); src.stop(t + Math.min(full, len + 0.05) + 0.01);
   const v = { src, g, tag, sound: soundId };
@@ -2365,6 +2566,37 @@ function trigger(b, p, t, vel = 0.85, note = 0, live = false) {
   const wait = (t - ctx.currentTime) * 1000;
   if (live || wait < 8) flash(b, p, note); else setTimeout(() => flash(b, p, note), wait);
   if (b === 0 && /kick/.test(pr.sound)) kickAt.push(t);
+  if (s.kick && state.pump > 0.01) duckAt(t);
+}
+// the "pump": the rest of the mix dips on the kick and swells back up before the next beat
+const pumpAt = [];
+let loud = null;   // latest reading of the master meter (LUFS, peak, gain reduction)
+// the master meter on the Mix page: loudness with the streaming and club targets, peak, limiter, pump
+function drawLoud() {
+  const cv = $("loudCv"); if (!cv || !cv.offsetParent) return;
+  const c = cv.getContext("2d"), W = cv.width, H = cv.height, led = getComputedStyle(document.documentElement).getPropertyValue("--led").trim() || "#ff9f2e";
+  c.fillStyle = "#070605"; c.fillRect(0, 0, W, H);
+  const L = loud || {}, x0 = 150, x1 = W - 92, row = (i, label, val, lo, hi, txt, col, marks) => {
+    const y = 14 + i * 34, w = x1 - x0, f = v => x0 + w * Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
+    c.fillStyle = "#8a8272"; c.font = "16px Silkscreen, monospace"; c.textAlign = "left"; c.fillText(label, 10, y + 15);
+    c.fillStyle = "#1a1714"; c.fillRect(x0, y + 2, w, 16);
+    if (val != null && isFinite(val)) { c.fillStyle = col; c.fillRect(i >= 2 ? f(val) : x0, y + 2, i >= 2 ? x1 - f(val) : f(val) - x0, 16); }
+    (marks || []).forEach(([v, mc]) => { c.fillStyle = mc; c.fillRect(f(v) - 1, y - 1, 2, 22); });
+    c.fillStyle = "#f2e8d4"; c.font = "22px VT323, monospace"; c.textAlign = "right"; c.fillText(txt, W - 10, y + 16);
+  };
+  row(0, "VOLUME", L.s, -36, 0, L.s == null || L.s < -69 ? "— LUFS" : L.s.toFixed(1) + " LUFS", led, [[-14, "#5fd38a"], [-9, "#ff5a3a"]]);
+  row(1, "PICCO", L.pk, -30, 0, L.pk == null || L.pk < -99 ? "— dB" : L.pk.toFixed(1) + " dB", L.pk > -1.2 ? "#ff5a3a" : "#e8d7b0", [[-1, "#ff5a3a"]]);
+  row(2, "LIMITER", L.gr, -12, 0, L.gr == null ? "0 dB" : L.gr.toFixed(1) + " dB", "#ff9a3c");
+  // the pump is drawn from the kicks scheduled on the clock
+  let duck = 0;
+  if (ctx && state.pump > 0.01) { const now = ctx.currentTime, last = pumpAt.filter(t => t <= now).pop(); if (last != null) duck = state.pump * 0.72 * Math.exp(-(now - last - 0.012) / ((0.06 + state.pump * 0.17) / 3)); }
+  row(3, "POMPA", -duck * 12, -12, 0, duck > 0.01 ? "−" + (duck * 100).toFixed(0) + "%" : "—", "#7fb8ff");
+  if (L.i != null && L.i > -69) $("loudInt").textContent = "Media del pezzo: " + L.i.toFixed(1) + " LUFS";
+}
+function duckAt(t) {
+  const d = state.pump * 0.72, rel = 0.06 + state.pump * 0.17;
+  for (const g of [N.duckV.gain, N.duckR.gain]) { g.setTargetAtTime(1 - d, t, 0.002); g.setTargetAtTime(1, t + 0.012, rel / 3); }
+  pumpAt.push(t); if (pumpAt.length > 16) pumpAt.shift();
 }
 const kickAt = [];
 
@@ -2401,6 +2633,8 @@ let playing = false, recording = false, metronome = false;
 let nextTime = 0, step = 0, queued = null, repeatStep = null, timer = 0, shownStep = -1, gridOrigin = 0;
 const drawQ = [];
 const sixteenth = () => 60 / state.bpm / 4;
+// step levels: 1 normal, 2 accent, 3 ghost note (the soft hits between the beats)
+const STEP_VEL = [0, 0.72, 1, 0.36];
 function schedule() {
   while (nextTime < ctx.currentTime + 0.1) {
     let t = nextTime;
@@ -2409,7 +2643,12 @@ function schedule() {
     const pat = state.patterns[state.pattern];
     for (let b = 0; b < BANKS.length; b++) {
       if (state.mutes[b]) continue;
-      for (let p = 0; p < 12; p++) { const v = pat[b][p][s]; if (v) trigger(b, p, t, v[0] === 2 ? 1 : 0.72, v[1]); }
+      for (let p = 0; p < 12; p++) {
+        const v = pat[b][p][s]; if (!v) continue;
+        // "mano umana": a few milliseconds early or late and a little softer or harder, never the same twice
+        const h = state.human, tt = h ? t + (Math.random() * 2 - 1) * 0.011 * h * (s % 4 === 0 ? 0.4 : 1) : t;
+        trigger(b, p, Math.max(ctx.currentTime, tt), STEP_VEL[v[0]] * (h ? 1 + (Math.random() * 2 - 1) * 0.22 * h : 1), v[1]);
+      }
     }
     if (metronome && step % 4 === 0) click(t, step === 0);
     drawQ.push({ step: s, time: t });
@@ -2570,7 +2809,7 @@ function initDeck() {
   N.deckDrive = ctx.createWaveShaper(); N.deckDrive.oversample = "2x";
   N.deckTone = ctx.createBiquadFilter(); N.deckTone.type = "lowpass"; N.deckTone.Q.value = 1.1;
   N.deckBody = ctx.createBiquadFilter(); N.deckBody.type = "lowshelf"; N.deckBody.frequency.value = 160; N.deckBody.gain.value = 7;
-  N.deckOut = ctx.createGain(); N.deckOut.gain.value = 0.55;
+  N.deckOut = ctx.createGain(); N.deckOut.gain.value = 0.39;   // the scratch sits just under the beat
   N.deckDrive.connect(N.deckTone).connect(N.deckBody).connect(N.deckOut).connect(N.limit);
   applyDeckColor();
   const useSP = () => {
@@ -2959,8 +3198,15 @@ function build() {
   makeKnob($("knobs"), { label: "Riverbero", min: 0, max: 1, get: () => curPr().rev, set: (v, c) => { curPr().rev = v; save(); preview(c); }, fmt: v => Math.round(v * 100) });
   makeKnob($("deckKnobs"), { label: "Cupo ↔ chiaro", min: 0, max: 1, get: () => state.deckTone, set: v => { state.deckTone = v; applyDeckColor(); save(); }, fmt: v => Math.round(380 * Math.pow(2, v * 4.4) / 10) * 10 + " Hz" });
   makeKnob($("deckKnobs"), { label: "Sporco", min: 0, max: 1, get: () => state.deckDirt, set: v => { state.deckDirt = v; applyDeckColor(); save(); }, fmt: v => Math.round(v * 100) });
-  makeKnob($("masterKnobs"), { label: "Calore nastro", min: 0, max: 1, get: () => state.warmth, set: v => { state.warmth = v; applyMaster(); save(); }, fmt: v => Math.round(v * 100) });
+  const mset = (k, v) => { state[k] = v; state.mpreset = ""; document.querySelectorAll("#mPresets button").forEach(b => b.setAttribute("aria-pressed", "false")); applyMaster(); save(); };
+  makeKnob($("masterKnobs"), { label: "Saturazione", min: 0, max: 1, get: () => state.warmth, set: v => mset("warmth", v), fmt: v => Math.round(v * 100) });
+  makeKnob($("masterKnobs"), { label: "Wow nastro", min: 0, max: 1, get: () => state.wow, set: v => mset("wow", v), fmt: v => Math.round(v * 100) });
+  makeKnob($("masterKnobs"), { label: "Colla (comp.)", min: 0, max: 1, get: () => state.glue, set: v => mset("glue", v), fmt: v => Math.round(v * 100) });
+  makeKnob($("masterKnobs"), { label: "Pompa sulla cassa", min: 0, max: 1, get: () => state.pump, set: v => mset("pump", v), fmt: v => Math.round(v * 100) });
+  makeKnob($("masterKnobs"), { label: "Spinta (dB)", min: 0, max: 12, get: () => state.push, set: v => mset("push", v), fmt: v => "+" + v.toFixed(1) });
   makeKnob($("masterKnobs"), { label: "Polvere vinile", min: 0, max: 1, get: () => state.dust, set: v => { state.dust = v; applyMaster(); save(); }, fmt: v => Math.round(v * 100) });
+  MASTER_PRESETS.forEach(([id, name]) => { const b = el("button", "", esc(name)); b.type = "button"; b.dataset.v = id; b.setAttribute("aria-pressed", state.mpreset === id); b.addEventListener("click", () => { initAudio(); setMasterPreset(id); }); $("mPresets").appendChild(b); });
+  $("loudReset").addEventListener("click", () => { if (N.lim) N.lim.port.postMessage({ reset: true }); loud = null; $("loudInt").textContent = "Media del pezzo: —"; });
   makeKnob($("masterKnobs"), { label: "Volume", min: 0, max: 1, get: () => state.volume, set: v => { state.volume = v; applyMaster(); save(); }, fmt: v => Math.round(v * 100) });
 
   $("play").addEventListener("click", () => playing ? stop() : start());
@@ -2971,6 +3217,9 @@ function build() {
   $("bpmUp").addEventListener("click", () => setBpm(state.bpm + 1));
   $("swing").addEventListener("input", e => { state.swing = +e.target.value; $("swingOut").textContent = state.swing + "%"; save(); });
   $("copy").addEventListener("click", copyPattern);
+  $("undo").addEventListener("click", () => histGo(true)); $("redo").addEventListener("click", () => histGo(false));
+  $("human").value = Math.round(state.human * 100); $("humanOut").textContent = Math.round(state.human * 100) + "%";
+  $("human").addEventListener("input", e => { state.human = +e.target.value / 100; $("humanOut").textContent = e.target.value + "%"; save(); });
   $("clear").addEventListener("click", () => armed("clear", "Sicuro?", () => { state.patterns[state.pattern] = emptyPattern(); save(); renderAll(); msg("PATTERN " + (state.pattern + 1) + " SVUOTATO"); }));
   $("modePad").addEventListener("click", () => setMode("pad"));
   $("modeNote").addEventListener("click", () => setMode("note"));
@@ -3065,8 +3314,9 @@ function loadFile(file) {
 }
 function toggleCell(b, p, s) {
   const arr = state.patterns[state.pattern][b][p], v = arr[s];
-  arr[s] = !v ? [1, 0] : v[0] === 1 ? [2, v[1]] : 0;
-  if (arr[s] && !playing && initAudio()) trigger(b, p, ctx.currentTime, arr[s][0] === 2 ? 1 : 0.72, arr[s][1]);
+  // each tap: normal -> accent -> ghost -> off
+  arr[s] = !v ? [1, 0] : v[0] === 1 ? [2, v[1]] : v[0] === 2 ? [3, v[1]] : 0;
+  if (arr[s] && !playing && initAudio()) trigger(b, p, ctx.currentTime, STEP_VEL[arr[s][0]], arr[s][1]);
   save(); renderPads(); renderEditor(); renderPatterns(); renderLeds();
 }
 function setRollNote(s, off) {
@@ -3191,6 +3441,12 @@ function renderLibrary() {
 
 /* ================= keyboard ================= */
 function onKeyDown(e) {
+  const typing = e.target && (e.target.tagName === "TEXTAREA" || (e.target.tagName === "INPUT" && e.target.type !== "range" && e.target.type !== "checkbox"));
+  if ((e.metaKey || e.ctrlKey) && !e.altKey && !typing && $("micBox").hidden) {
+    const k = e.key.toLowerCase();
+    if (k === "z") { e.preventDefault(); histGo(!e.shiftKey); return; }
+    if (k === "y") { e.preventDefault(); histGo(false); return; }
+  }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const t = e.target, tag = (t && t.tagName) || "";
   if (!$("micBox").hidden) { if (e.key === "Escape") closeMic(); return; }   // the recorder takes the keyboard while open
@@ -3326,12 +3582,12 @@ function renderEditor() {
   if (key !== edKey) { edKey = key; buildEditor(); }
   const pat = state.patterns[state.pattern][state.bank];
   if (state.view === "grid") {
-    for (const c of edCells) { const v = pat[c.p][c.s]; c.el.className = "cell" + (v ? (v[0] === 2 ? " acc" : " on") + (v[1] ? " pitched" : "") : ""); }
+    for (const c of edCells) { const v = pat[c.p][c.s]; c.el.className = "cell" + (v ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") + (v[1] ? " pitched" : "") : ""); }
     for (const l of edLabs) l.el.classList.toggle("sel", l.p === state.pad);
   } else {
     const arr = pat[state.pad];
     const shown = arr.map(v => v ? edRows.reduce((a, r) => Math.abs(r - v[1]) < Math.abs(a - v[1]) ? r : a, edRows[0]) : null);
-    for (const c of edCells) { const v = arr[c.s]; c.el.className = "cell" + (v && shown[c.s] === c.off ? (v[0] === 2 ? " acc" : " on") : ""); }
+    for (const c of edCells) { const v = arr[c.s]; c.el.className = "cell" + (v && shown[c.s] === c.off ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") : ""); }
   }
   lastNow = -2; renderPlayhead();
 }
@@ -4300,6 +4556,7 @@ function makeScratches() {
 function labelInk(hex) { const [r, g, b] = hexRgb(hex); return (r * 0.3 + g * 0.59 + b * 0.11) > 140 ? "#1a140a" : "#f4efe3"; }
 let beatTimer = 0;
 function tick() {
+  if (curPage === "mix") drawLoud();
   if (playing && ctx) {
     const now = ctx.currentTime; let changed = false;
     while (drawQ.length && drawQ[0].time <= now) { shownStep = drawQ.shift().step; changed = true; }
@@ -4480,7 +4737,7 @@ function playIntro() {
   let out = null, T0 = 0;
   const audio = initAudio();
   if (audio) {
-    out = ctx.createGain(); out.connect(N.master); T0 = ctx.currentTime + LAG;
+    out = ctx.createGain(); out.gain.value = 1.5; out.connect(N.master); T0 = ctx.currentTime + LAG;   // the master has more headroom now: the intro still lands loud
     const play = (buf, t, g, lp, loop) => {
       const src = ctx.createBufferSource(), v = ctx.createGain(); src.buffer = buf; src.loop = !!loop; v.gain.value = g;
       let n = src; if (lp) { const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = lp; n.connect(f); n = f; }
@@ -4937,6 +5194,7 @@ buildPages();
 initDesktop();
 applySkin(state.skin);
 applyCustom();
+HIST.cur = histSnap();
 initView();
 bindMic();
 SCENE.ready = true; initScene();
