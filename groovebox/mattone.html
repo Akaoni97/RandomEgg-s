@@ -222,6 +222,10 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .fx small { font-family: var(--f-ui); text-transform: none; font-size: 10px; color: var(--cream-3); }
 .fx.on { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge), 0 0 18px -4px var(--led); background: linear-gradient(180deg, var(--on-1), var(--on-2)); color: var(--on-ink); }
 .fx.on small { color: var(--on-ink); }
+.recrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.key.rec2.on { background: linear-gradient(180deg, #ff7a6b, var(--red)); color: #fff; }
+#recPlayer { width: 100%; margin-top: 10px; height: 36px; }
+.rechint { margin: 8px 0 0; font-size: 12px; color: var(--cream-3); line-height: 1.45; }
 .master { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
 
 /* ---------- sequencer ---------- */
@@ -588,6 +592,18 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
         <div class="hd"><h2>Master</h2></div>
         <div class="master knobs" id="masterKnobs"></div>
       </div>
+      <div>
+        <div class="hd"><h2>Registratore · esporta in WAV</h2><span class="lbl" id="recTime">Pronto</span></div>
+        <div class="recrow">
+          <select id="recBars" aria-label="Quanto registrare">
+            <option value="0">Libera (fermi tu)</option><option value="1">1 battuta</option><option value="2">2 battute</option><option value="4" selected>4 battute</option><option value="8">8 battute</option><option value="16">16 battute</option>
+          </select>
+          <button class="key rec2" id="recBtn" type="button">● Registra WAV</button>
+          <button class="key small" id="recAgain" type="button" disabled>Salva di nuovo</button>
+        </div>
+        <audio id="recPlayer" controls hidden></audio>
+        <p class="rechint">Registra quello che esce dalle casse: sequencer, pad, scratch ed effetti. Con un numero di battute parte dall’inizio del pattern e si ferma da solo. Il file arriva come .zip con dentro il .wav.</p>
+      </div>
     </section>
   </div>
 
@@ -616,7 +632,8 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
         <li>Tocca i pad. Il pad toccato si seleziona: sotto cambi suono e manopole (trascina in su o in giù).</li>
         <li><b>Ritmo</b>: un tocco = colpo, due = accento, tre = spento. <b>Melodia</b>: righe = note della scala.</li>
         <li><b>Note</b> trasforma i pad in una tastiera sulla scala scelta, col suono selezionato.</li>
-        <li>Pallino rosso + Play: quello che suoni viene registrato.</li>
+        <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
+        <li><b>Registratore</b> (sotto il Master): registra il beat come file audio WAV, scratch ed effetti compresi.</li>
         <li>In alto a sinistra scegli la <b>scocca</b>: Cantina, Hi-Fi ’76, Surplus ’68 o Metro ’89.</li>
       </ol>
     </div>
@@ -1818,6 +1835,112 @@ function renderDeckSrc() {
   sel.value = deck.src;
 }
 
+/* ================= registratore: esporta il beat in WAV ================= */
+// The master output is captured as it plays (pads, sequencer, scratch and effects included),
+// written as a 16-bit stereo WAV and handed to the viewer inside a ZIP (the viewer accepts .zip, not .wav).
+const recorder = { on: false, chunksL: [], chunksR: [], frames: 0, start: 0, stopAt: 0, node: null, mute: null, last: null, timer: 0, bars: 0 };
+const MAX_REC_SEC = 300;
+function recStart(bars) {
+  if (!initAudio() || recorder.on) return;
+  recorder.chunksL = []; recorder.chunksR = []; recorder.frames = 0; recorder.bars = bars;
+  if (bars) { if (playing) stop(); start(); recorder.start = gridOrigin; recorder.stopAt = gridOrigin + bars * NSTEP * sixteenth() + 1.2; }
+  else { recorder.start = ctx.currentTime; recorder.stopAt = ctx.currentTime + MAX_REC_SEC; }
+  const node = ctx.createScriptProcessor(4096, 2, 2), mute = ctx.createGain(); mute.gain.value = 0;
+  node.onaudioprocess = e => {
+    if (!recorder.on) return;
+    const t0 = e.playbackTime || ctx.currentTime, n = e.inputBuffer.length;
+    let from = 0, to = n;
+    if (t0 < recorder.start) from = Math.min(n, Math.round((recorder.start - t0) * SR));
+    if (t0 + n / SR > recorder.stopAt) to = Math.max(from, Math.round((recorder.stopAt - t0) * SR));
+    if (to > from) {
+      recorder.chunksL.push(e.inputBuffer.getChannelData(0).slice(from, to));
+      recorder.chunksR.push(e.inputBuffer.getChannelData(e.inputBuffer.numberOfChannels > 1 ? 1 : 0).slice(from, to));
+      recorder.frames += to - from;
+    }
+    if (t0 + n / SR >= recorder.stopAt) setTimeout(recStop, 0);
+  };
+  N.out.connect(node); node.connect(mute).connect(ctx.destination);
+  recorder.node = node; recorder.mute = mute; recorder.on = true;
+  recorder.timer = setInterval(renderRec, 250); renderRec();
+  msg(bars ? "REGISTRO " + bars + " BATTUTE IN WAV…" : "REGISTRO IN WAV · PREMI DI NUOVO PER FERMARE");
+}
+function recStop() {
+  if (!recorder.on) return;
+  recorder.on = false; clearInterval(recorder.timer);
+  try { N.out.disconnect(recorder.node); recorder.node.disconnect(); } catch (e) { /* already gone */ }
+  if (recorder.bars && playing) stop();
+  if (recorder.frames < SR * 0.2) { msg("REGISTRAZIONE TROPPO CORTA"); renderRec(); return; }
+  const L = new Float32Array(recorder.frames), R = new Float32Array(recorder.frames);
+  let o = 0; recorder.chunksL.forEach((c, i) => { L.set(c, o); R.set(recorder.chunksR[i], o); o += c.length; });
+  recorder.chunksL = []; recorder.chunksR = [];
+  const stamp = new Date(), pad2 = n => String(n).padStart(2, "0");
+  const name = "mattone-beat-" + stamp.getFullYear() + pad2(stamp.getMonth() + 1) + pad2(stamp.getDate()) + "-" + pad2(stamp.getHours()) + pad2(stamp.getMinutes());
+  const wav = encodeWav(L, R, SR);
+  recorder.last = { name, wav, seconds: recorder.frames / SR };
+  const url = URL.createObjectURL(new Blob([wav], { type: "audio/wav" }));
+  const player = $("recPlayer"); if (player.src) URL.revokeObjectURL(player.src); player.src = url; player.hidden = false;
+  renderRec();
+  msg("REGISTRATO " + fmtTime(recorder.last.seconds) + " · SALVO IL WAV");
+  saveTake();
+}
+async function saveTake() {
+  const take = recorder.last; if (!take) return;
+  const zip = makeZip([{ name: take.name + ".wav", data: new Uint8Array(take.wav) }]);
+  const dl = await claude_use("downloads");
+  if (!dl) {
+    // outside the claude.ai viewer (e.g. the file opened locally) a plain link still works
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([take.wav], { type: "audio/wav" })); a.download = take.name + ".wav"; a.click();
+    msg("WAV PRONTO: " + take.name.toUpperCase()); return;
+  }
+  try { await dl.save({ filename: take.name + ".zip", data: new Blob([zip], { type: "application/zip" }) }); msg("SALVATO: " + take.name.toUpperCase() + ".ZIP (DENTRO C’È IL WAV)"); }
+  catch (err) {
+    const code = err && err.code;
+    msg(code === "declined" ? "SALVATAGGIO ANNULLATO · PUOI RIPROVARE CON “SALVA DI NUOVO”" : code === "rate_limited" ? "C’È GIÀ UNA RICHIESTA APERTA · RIPROVA TRA UN ATTIMO" : "QUI NON POSSO SALVARE FILE · ASCOLTA LA REGISTRAZIONE SOTTO IL REGISTRATORE");
+  }
+}
+function claude_use(name) { try { return window.claude && window.claude.use ? window.claude.use(name) : Promise.resolve(null); } catch (e) { return Promise.resolve(null); } }
+function fmtTime(s) { return Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0"); }
+function renderRec() {
+  const b = $("recBtn"), t = $("recTime");
+  b.classList.toggle("on", recorder.on); b.textContent = recorder.on ? "■ Ferma e salva" : "● Registra WAV";
+  t.textContent = recorder.on ? fmtTime(recorder.frames / SR) + (recorder.bars ? " / " + recorder.bars + " battute" : "") : recorder.last ? "Ultima: " + fmtTime(recorder.last.seconds) : "Pronto";
+  $("recAgain").disabled = !recorder.last || recorder.on;
+  if (recorder.on && !recorder.bars) msg("● REC WAV " + fmtTime(recorder.frames / SR));
+}
+function encodeWav(L, R, rate) {
+  const n = L.length, buf = new ArrayBuffer(44 + n * 4), v = new DataView(buf);
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, "RIFF"); v.setUint32(4, 36 + n * 4, true); str(8, "WAVE"); str(12, "fmt "); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 2, true); v.setUint32(24, rate, true); v.setUint32(28, rate * 4, true); v.setUint16(32, 4, true); v.setUint16(34, 16, true);
+  str(36, "data"); v.setUint32(40, n * 4, true);
+  let o = 44;
+  for (let i = 0; i < n; i++) { const l = Math.max(-1, Math.min(1, L[i])), r = Math.max(-1, Math.min(1, R[i])); v.setInt16(o, l < 0 ? l * 0x8000 : l * 0x7fff, true); v.setInt16(o + 2, r < 0 ? r * 0x8000 : r * 0x7fff, true); o += 4; }
+  return buf;
+}
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xffffffff; for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+function makeZip(files) {
+  // store-only ZIP (no compression): a WAV barely compresses anyway
+  const enc = new TextEncoder(), parts = [], central = []; let offset = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), crc = crc32(f.data), size = f.data.length;
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, 0, true); h.setUint16(12, 0x21, true); h.setUint32(14, crc, true); h.setUint32(18, size, true); h.setUint32(22, size, true);
+    h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), name, f.data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, 0, true); c.setUint16(14, 0x21, true); c.setUint32(16, crc, true); c.setUint32(20, size, true); c.setUint32(24, size, true);
+    c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+    central.push(new Uint8Array(c.buffer), name);
+    offset += 30 + name.length + size;
+  }
+  const cdSize = central.reduce((a, p) => a + p.length, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cdSize, true); e.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)]);
+}
+
 /* ================= helpers ================= */
 const $ = id => document.getElementById(id);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
@@ -1948,6 +2071,8 @@ function build() {
   $("file").addEventListener("change", e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ""; });
   SKINS.forEach(([id, name, , col]) => { const b = el("button", null, '<i style="background:' + col + '"></i>' + name); b.type = "button"; b.dataset.skin = id; b.addEventListener("click", () => { applySkin(id); save(); }); $("skins").appendChild(b); });
   bindDeck(); renderDeckSrc(); buildCustom();
+  $("recBtn").addEventListener("click", () => recorder.on ? recStop() : recStart(+$("recBars").value));
+  $("recAgain").addEventListener("click", saveTake);
   KITS.forEach(([id, name]) => { $("kitSel").appendChild(new Option(name, id)); optButton($("kits"), id, name, null, v => loadKit(v)); });
   $("kitSel").addEventListener("change", e => { if (e.target.value) loadKit(e.target.value); e.target.value = ""; });
   $("visBtn").addEventListener("click", () => cycleVis(1));
