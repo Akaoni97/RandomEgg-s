@@ -254,6 +254,8 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
   padding: calc(18px + env(safe-area-inset-top, 0px)) calc(18px + env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) 18px;
   box-shadow: -30px 0 60px -20px rgba(0,0,0,.9);
 }
+#drawer { grid-template-rows: auto auto auto auto minmax(0,1fr) auto; }
+.kitrow { display: grid; gap: 6px; }
 .drawer h3 { margin: 0; font-family: var(--f-logo); font-weight: 400; font-size: 18px; }
 .drawer .dh { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
 .drawer .dh p { margin: 4px 0 0; font-size: 13px; color: var(--cream-2); }
@@ -509,6 +511,7 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
     <section class="unit" aria-label="Pad">
       <div class="hd">
         <div class="seg banks" id="banks" role="group" aria-label="Gruppo"></div>
+        <select id="kitSel" aria-label="Carica un kit nel gruppo"><option value="">Carica un kit hip hop…</option></select>
         <div class="seg" role="group" aria-label="Modalità">
           <button type="button" id="modePad" aria-pressed="true">Suoni</button>
           <button type="button" id="modeNote" aria-pressed="false">Note</button>
@@ -638,7 +641,7 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
         <dt><kbd>B</kbd></dt><dd>cambia visualizzatore (o tocca il display)</dd>
         <dt><kbd>Spazio</kbd> <kbd>Invio</kbd></dt><dd>play/stop · registra</dd>
       </dl>
-      <p style="margin-top:10px">Oltre 230 suoni. Quelli elettronici sono sintetizzati dal vivo; gli strumenti veri vengono da <a href="https://github.com/sgossner/VCSL" target="_blank" rel="noopener">VCSL</a> (Versilian Studios, CC0), FluidR3 GM (Frank Wen, CC BY 3.0) via <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">midi-js-soundfonts</a>, <a href="https://archive.org/details/SalamanderGrandPianoV3" target="_blank" rel="noopener">Salamander Grand Piano</a> (Alexander Holm, CC BY 3.0) e i campioni di mridangam di Arthur Carabott, suonati da Harishankar V Menon (CC BY-SA 4.0).</p>
+      <p style="margin-top:10px">Oltre 320 suoni. Quelli elettronici sono sintetizzati dal vivo; gli strumenti veri vengono da <a href="https://github.com/sgossner/VCSL" target="_blank" rel="noopener">VCSL</a> (Versilian Studios, CC0), FluidR3 GM (Frank Wen, CC BY 3.0) via <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">midi-js-soundfonts</a>, <a href="https://archive.org/details/SalamanderGrandPianoV3" target="_blank" rel="noopener">Salamander Grand Piano</a> (Alexander Holm, CC BY 3.0) i campioni di mridangam di Arthur Carabott, suonati da Harishankar V Menon (CC BY-SA 4.0), e per l’hip hop il set <a href="https://github.com/tidalcycles/sounds-tr808-fischer" target="_blank" rel="noopener">TR-808 di Michael Fischer</a> (CC0), i kit di <a href="https://github.com/Boochi44/free-drum-samples" target="_blank" rel="noopener">Boochi44</a> (CC0), l’<a href="https://github.com/tidalcycles/uzu-drumkit" target="_blank" rel="noopener">uzu-drumkit</a> (pubblico dominio) e le voci di <a href="https://github.com/tidalcycles/sounds-repetition" target="_blank" rel="noopener">repetition</a> di Alex McLean (CC0).</p>
     </div>
   </section>
 </div>
@@ -648,6 +651,7 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
   <div class="dh"><div><h3>Casse di dischi</h3><p id="libFor">Scegli un suono per il pad A1</p></div><button class="key on" id="closeLib" type="button">Fatto</button></div>
   <input class="search" id="search" type="search" placeholder="Cerca: piano, conga, basso…" aria-label="Cerca un suono" autocomplete="off">
   <div class="cats" id="cats"></div>
+  <div class="kitrow"><span class="lbl">Kit pronti · caricano 12 suoni nel gruppo</span><div class="opts" id="kits"></div></div>
   <div class="list" id="list"></div>
   <div class="foot"><small>Tocca un nome per metterlo sul pad · ▶ per ascoltarlo.</small><label class="key small" for="file">Carica file</label></div>
 </aside>
@@ -672,7 +676,7 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
 "use strict";
 
 /* ================= catalogue ================= */
-const CATS = ["Batteria","Percussioni","Percussioni intonate","Tastiere","Corde","Archi","Fiati","Voci","Bassi","Synth","Accordi","Effetti","I tuoi suoni"];
+const CATS = ["808","Trap","Boom bap","Lo-fi","FX hip hop","Batteria","Percussioni","Percussioni intonate","Tastiere","Corde","Archi","Fiati","Voci","Bassi","Synth","Accordi","Effetti","I tuoi suoni"];
 // [id, name, category, root midi (null = not tuned), source 0=VCSL 1=FluidR3]
 const SAMPLE_ROWS = [
 ["vc_kick","Grancassa","Batteria",null,0],
@@ -875,7 +879,85 @@ const SAMPLE_ROWS = [
   ["mr_nam","Mridangam “nam”","Percussioni",null,3],
   ["mr_gumki","Mridangam “gumki”","Percussioni",null,3],
   ["mr_chaapu","Mridangam “chaapu”","Percussioni",null,3],
-  ["mr_dhum","Mridangam “dhum”","Percussioni",null,3]
+  ["mr_dhum","Mridangam “dhum”","Percussioni",null,3],
+  ["f8_boom","808 boom lunga","808",32,4],
+  ["f8_boom2","808 boom scura","808",32,4],
+  ["f8_kick","Cassa 808 media","808",null,4],
+  ["f8_punch","Cassa 808 corta","808",null,4],
+  ["f8_click","Cassa 808 brillante","808",null,4],
+  ["f8_snare","Rullante 808","808",null,4],
+  ["f8_snare2","Rullante 808 grave","808",null,4],
+  ["f8_snare3","Rullante 808 schiocco","808",null,4],
+  ["f8_clap","Clap 808","808",null,4],
+  ["f8_hat","Charleston 808","808",null,4],
+  ["f8_open","Charleston aperto 808","808",null,4],
+  ["f8_open2","Charleston aperto 808 lungo","808",null,4],
+  ["f8_cowbell","Campanaccio 808","808",null,4],
+  ["f8_cym","Piatto 808","808",null,4],
+  ["f8_lt","Tom basso 808","808",null,4],
+  ["f8_mt","Tom medio 808","808",null,4],
+  ["f8_ht","Tom alto 808","808",null,4],
+  ["f8_conga","Conga 808 bassa","808",null,4],
+  ["f8_conga2","Conga 808 alta","808",null,4],
+  ["f8_rim","Rimshot 808","808",null,4],
+  ["f8_clave","Claves 808","808",null,4],
+  ["f8_maraca","Maracas 808","808",null,4],
+  ["bh_trapkick","Cassa trap dura","Trap",null,5],
+  ["bh_trapkick2","Cassa trap dura 2","Trap",null,5],
+  ["bh_trapkick3","Cassa trap dura 3","Trap",null,5],
+  ["bh_808dist","808 distorto lungo","Trap",31,5],
+  ["bh_808sub","808 sub","Trap",33,5],
+  ["bh_808grit","808 sporco","Trap",31,5],
+  ["bh_trapsnare","Rullante trap","Trap",null,5],
+  ["bh_trapsnare2","Rullante trap 2","Trap",null,5],
+  ["bh_trapsnare3","Rullante trap 3","Trap",null,5],
+  ["bh_trapclap","Clap trap","Trap",null,5],
+  ["bh_traphat","Charleston trap","Trap",null,5],
+  ["bh_trapopen","Charleston aperto trap","Trap",null,5],
+  ["bh_trapfx","Piatto trap","Trap",null,5],
+  ["bh_bkick","Cassa bounce","Trap",null,5],
+  ["bh_bkick2","Cassa bounce 2","Trap",null,5],
+  ["bh_808round","808 rotondo","Trap",31,5],
+  ["bh_808punch","808 punch","Trap",33,5],
+  ["bh_bsnare","Rullante bounce","Trap",null,5],
+  ["bh_bsnare2","Rullante bounce 2","Trap",null,5],
+  ["bh_bclap","Clap bounce","Trap",null,5],
+  ["bh_vkick","Cassa boom bap","Boom bap",null,5],
+  ["bh_vkick2","Cassa boom bap 2","Boom bap",null,5],
+  ["bh_vkick3","Cassa boom bap 3","Boom bap",null,5],
+  ["bh_vsnare","Rullante boom bap","Boom bap",null,5],
+  ["bh_vsnare2","Rullante boom bap 2","Boom bap",null,5],
+  ["bh_vsnare3","Rullante boom bap 3","Boom bap",null,5],
+  ["bh_vclap","Clap boom bap","Boom bap",null,5],
+  ["bh_vclap2","Clap sporco","Boom bap",null,5],
+  ["bh_vhat","Charleston sporco","Boom bap",null,5],
+  ["bh_vhat2","Charleston boom bap","Boom bap",null,5],
+  ["bh_vopen","Charleston aperto sporco","Boom bap",null,5],
+  ["bh_808lofi","808 lo-fi","Boom bap",32,5],
+  ["bh_vtom","Tom sporco","Boom bap",null,5],
+  ["bh_vmaraca","Maracas sporche","Boom bap",null,5],
+  ["bh_vcym","Piatto sporco","Boom bap",null,5],
+  ["uz_kick","Cassa analogica","Lo-fi",null,6],
+  ["uz_kick2","Cassa compressa","Lo-fi",null,6],
+  ["uz_kick3","Cassa analogica 2","Lo-fi",null,6],
+  ["uz_snare","Rullante lo-fi","Lo-fi",null,6],
+  ["uz_snare2","Rullante lo-fi 2","Lo-fi",null,6],
+  ["uz_clap","Clap analogico","Lo-fi",null,6],
+  ["uz_hat","Charleston analogico","Lo-fi",null,6],
+  ["uz_hat2","Charleston lo-fi","Lo-fi",null,6],
+  ["uz_open","Charleston aperto lo-fi","Lo-fi",null,6],
+  ["uz_ride","Ride lo-fi","Lo-fi",null,6],
+  ["uz_crash","Crash analogico","Lo-fi",null,6],
+  ["uz_rim","Rim lo-fi","Lo-fi",null,6],
+  ["uz_shaker","Shaker lo-fi","Lo-fi",null,6],
+  ["uz_tom","Tom analogico","Lo-fi",null,6],
+  ["uz_perc","Percussione lo-fi","Lo-fi",null,6],
+  ["uz_misc","Modulare 1","FX hip hop",null,6],
+  ["uz_misc2","Modulare 2","FX hip hop",null,6],
+  ["uz_misc3","Modulare 3","FX hip hop",null,6],
+  ["rp_male","Voce “repetition”","FX hip hop",null,7],
+  ["rp_female","Voce “repetition” 2","FX hip hop",null,7],
+  ["rp_robot","Voce robot","FX hip hop",null,7]
 ];
 // synthesized: [id, name, category, root]
 const SYNTH_ROWS = [
@@ -895,11 +977,12 @@ const SYNTH_ROWS = [
   ["sy_drop","Caduta","Effetti",null], ["sy_whoosh","Soffio","Effetti",null], ["sy_glitch","Glitch","Effetti",null],
   ["sy_vinyl","Fruscio vinile","Effetti",null], ["sy_laser","Laser","Effetti",null], ["sy_ping","Ping","Effetti",84],
   ["sy_noise","Botta di rumore","Effetti",null], ["sy_vox","Voce “ah”","Voci",48],
+  ["sy_airhorn","Tromba da stadio (air horn)","FX hip hop",null], ["sy_rewind","Riavvolgimento","FX hip hop",null], ["sy_brake","Frenata del vinile","FX hip hop",null], ["sy_808slide","808 con glissato","808",36],
   ["sy_ahh","Voce “aaah” da scratch","Voci",null], ["sy_yeah","Voce “yeah”","Voci",null], ["sy_hey","Voce “hey”","Voci",null], ["sy_ooh","Voce “uuoh”","Voci",null],
 ];
 const SOUNDS = new Map();
 for (const [id, name, cat, root] of SYNTH_ROWS) SOUNDS.set(id, { id, name, cat, root, kind: "synth", src: "Sintetizzato" });
-const SOURCES = ["VCSL · CC0", "FluidR3 GM · CC BY 3.0", "Salamander · CC BY 3.0", "Mridangam · CC BY-SA 4.0"];
+const SOURCES = ["VCSL · CC0", "FluidR3 GM · CC BY 3.0", "Salamander · CC BY 3.0", "Mridangam · CC BY-SA 4.0", "TR-808 Fischer · CC0", "Boochi44 · CC0", "uzu-drumkit · pubblico dominio", "repetition · CC0"];
 for (const [id, name, cat, root, s] of SAMPLE_ROWS) SOUNDS.set(id, { id, name, cat, root, kind: "file", src: SOURCES[s] });
 for (const s of SOUNDS.values()) s.home = s.root == null ? null : Math.round(s.root / 12) * 12;
 
@@ -1097,6 +1180,39 @@ const SYNTH = {
   sy_laser: () => mk(0.4, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (500 + 700 * Math.exp(-t * 6) + 120 * Math.sin(TAU * 32 * t)) / SR; d[i] = sq(ph) * 0.5 * Math.exp(-t * 6); } }),
   sy_ping: () => mk(1.2, (d, n) => { const f = mtof(84); for (let i = 0; i < n; i++) { const t = i / SR; d[i] = (Math.sin(TAU * f * t) + 0.3 * Math.sin(TAU * f * 1.5 * t)) * Math.exp(-t * 5); } }),
   sy_noise: () => mk(0.45, (d, n) => { const lp = new BQ("lp", 2800, 0.8); let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (60 + 60 * Math.exp(-t * 20)) / SR; d[i] = Math.tanh(2 * (lp.p(rnd()) + 0.8 * Math.sin(ph))) * Math.exp(-t * 9); } }),
+  sy_airhorn: () => mk(1.0, (d, n) => {
+    const on = [[0, 0.12], [0.18, 0.3], [0.36, 0.95]], bp = new BQ("bp", 1300, 0.8), lp = new BQ("lp", 3400, 0.7);
+    const fr = [415, 419, 622, 830]; const ph = [0, 0, 0, 0];
+    for (let i = 0; i < n; i++) {
+      const t = i / SR; let e = 0;
+      for (const [a, b] of on) if (t >= a && t < b) e = Math.min(1, (t - a) / 0.01, (b - t) / 0.02);
+      const bend = 1 + 0.05 * Math.min(1, (t % 0.3) / 0.05);
+      let x = 0; for (let k = 0; k < 4; k++) { ph[k] += fr[k] * bend / SR; x += (2 * (ph[k] % 1) - 1) * (k === 3 ? 0.4 : 1); }
+      d[i] = Math.tanh(2.2 * lp.p(bp.p(x))) * e;
+    }
+  }),
+  sy_rewind: () => mk(1.2, (d, n) => {
+    let ph = 0; const bp = new BQ("bp", 800, 1.5);
+    for (let i = 0; i < n; i++) {
+      const t = i / SR, u = t / 1.2, f = 120 + 2400 * Math.pow(u, 1.6) + 300 * Math.sin(TAU * 11 * t);
+      if (i % 32 === 0) bp.set(400 + 3000 * u, 1.5);
+      ph += f / SR;
+      d[i] = (0.6 * (2 * (ph % 1) - 1) + 0.5 * bp.p(rnd())) * Math.min(1, u * 3) * (u > 0.92 ? (1 - u) / 0.08 : 1);
+    }
+  }),
+  sy_brake: () => mk(1.4, (d, n) => {
+    const notes = [48, 55, 60, 63].map(mtof), ph = [0, 0, 0, 0]; const lp = new BQ("lp", 3000, 0.9);
+    for (let i = 0; i < n; i++) {
+      const t = i / SR, r = Math.exp(-t * 2.6);
+      if (i % 32 === 0) lp.set(200 + 3000 * r, 0.9);
+      let x = 0; for (let k = 0; k < 4; k++) { ph[k] += notes[k] * r / SR; x += 2 * (ph[k] % 1) - 1; }
+      d[i] = lp.p(x / 4) * (t < 1.25 ? 1 : (1.4 - t) / 0.15);
+    }
+  }),
+  sy_808slide: () => mk(2.0, (d, n) => {
+    let ph = 0; const f1 = mtof(36);
+    for (let i = 0; i < n; i++) { const t = i / SR, f = f1 * Math.pow(2, -7 / 12 * Math.exp(-t * 28)); ph += f / SR; d[i] = Math.tanh(1.8 * Math.sin(TAU * ph)) * Math.min(1, t / 0.003) * Math.exp(-t * 1.3); }
+  }),
   sy_ahh: () => vocal([[0, "a"], [1, "a"]], 0.75, 142, 0.05, [1.08, 1, 0.9]),
   sy_yeah: () => vocal([[0, "i"], [0.14, "e"], [0.32, "a"], [1, "a"]], 0.62, 160, 0.01, [1.0, 1.12, 0.92]),
   sy_hey: () => vocal([[0, "e"], [0.55, "e"], [1, "i"]], 0.5, 185, 0.07, [1.0, 1.06, 1.18]),
@@ -1708,6 +1824,8 @@ function build() {
   $("file").addEventListener("change", e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ""; });
   SKINS.forEach(([id, name, , col]) => { const b = el("button", null, '<i style="background:' + col + '"></i>' + name); b.type = "button"; b.dataset.skin = id; b.addEventListener("click", () => { applySkin(id); save(); }); $("skins").appendChild(b); });
   bindDeck(); renderDeckSrc(); buildCustom();
+  KITS.forEach(([id, name]) => { $("kitSel").appendChild(new Option(name, id)); optButton($("kits"), id, name, null, v => loadKit(v)); });
+  $("kitSel").addEventListener("change", e => { if (e.target.value) loadKit(e.target.value); e.target.value = ""; });
   $("visBtn").addEventListener("click", () => cycleVis(1));
   $("spec").addEventListener("click", () => cycleVis(1));
   $("visBtn").textContent = "VIS · " + VIS[state.vis || 0][1];
@@ -1789,6 +1907,29 @@ function setRollNote(s, off) {
   const b = state.bank, p = state.pad, arr = state.patterns[state.pattern][b][p], v = arr[s];
   if (v && v[1] === off) arr[s] = 0; else { arr[s] = [v ? v[0] : 1, off]; if (initAudio()) trigger(b, p, ctx.currentTime, 0.85, off); }
   save(); renderPads(); renderEditor(); renderPatterns(); renderLeds();
+}
+
+
+/* ================= kit pronti ================= */
+const KITS = [
+  ["boombap", "Boom bap ’94", ["bh_vkick", "bh_vsnare", "bh_vclap", "bh_vhat", "bh_vopen", "bh_808lofi", "bh_vkick2", "bh_vsnare3", "f8_rim", "bh_vmaraca", "bh_vcym", "sy_vinyl"]],
+  ["trap", "Trap", ["bh_trapkick", "bh_808dist", "bh_trapsnare", "bh_trapclap", "bh_traphat", "bh_trapopen", "bh_808sub", "bh_trapsnare2", "f8_rim", "f8_cowbell", "bh_trapfx", "sy_airhorn"]],
+  ["808", "808 classico", ["f8_kick", "f8_snare", "f8_clap", "f8_hat", "f8_open", "f8_boom", "f8_lt", "f8_mt", "f8_ht", "f8_cowbell", "f8_clave", "f8_cym"]],
+  ["bounce", "West Coast bounce", ["bh_bkick", "bh_bsnare", "bh_bclap", "f8_hat", "f8_open2", "bh_808round", "bh_bkick2", "bh_bsnare2", "f8_conga", "f8_conga2", "f8_maraca", "gm_square"]],
+  ["lofi", "Lo-fi", ["uz_kick", "uz_snare", "uz_clap", "uz_hat", "uz_open", "bh_808lofi", "uz_kick3", "uz_snare2", "uz_rim", "uz_shaker", "uz_ride", "sy_vinyl"]],
+  ["fx", "Scratch & FX", ["sy_ahh", "sy_yeah", "sy_hey", "rp_male", "rp_robot", "sy_airhorn", "sy_rewind", "sy_brake", "gm_orchhit", "sy_riser", "gm_revcym", "sy_vinyl"]],
+];
+function loadKit(id) {
+  const kit = KITS.find(k => k[0] === id);
+  if (!kit) return;
+  initAudio();
+  state.banks[state.bank] = kit[2].map(sound => {
+    const s = SOUNDS.get(sound), bass = s && s.root != null && /808|Trap|Boom bap|Bassi/.test(s.cat);
+    return { sound, pitch: 0, vol: sound === "sy_vinyl" ? 0.4 : 0.82, pan: 0, rev: /cym|crash|ride|fx/.test(sound) ? 0.18 : 0.05, gate: bass ? 4 : 0 };
+  });
+  save(); renderAll(); if (!$("drawer").hidden) renderLibrary();
+  if (ctx) Promise.all(kit[2].map(x => loadSound(x).catch(() => null))).then(() => msg("KIT " + kit[1].toUpperCase() + " NEL GRUPPO " + BANKS[state.bank].id));
+  else msg("KIT " + kit[1].toUpperCase() + " NEL GRUPPO " + BANKS[state.bank].id);
 }
 
 /* ================= library ================= */
