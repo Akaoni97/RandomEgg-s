@@ -3,6 +3,7 @@
 const { app, BrowserWindow, protocol, net, session, shell, Menu } = require("electron");
 const path = require("path");
 const { pathToFileURL } = require("url");
+const { checkForUpdates } = require("./updater");
 
 protocol.registerSchemesAsPrivileged([
   { scheme: "app", privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
@@ -28,6 +29,9 @@ function createWindow() {
     if (/^https?:\/\//.test(url)) shell.openExternal(url);
     return { action: "deny" };
   });
+  // look for a new version once the groovebox is on screen
+  win.webContents.once("did-finish-load", () => setTimeout(() => checkForUpdates(win), 3000));
+  return win;
 }
 
 app.whenReady().then(() => {

@@ -1,5 +1,8 @@
 name: Mat·Tone desktop
 
+# Builds the desktop app on every change. When groovebox/desktop/package.json carries a version that has
+# no "mattone-v<version>" release yet, it also publishes that release: installed apps update from it.
+
 on:
   workflow_dispatch:
   push:
@@ -41,4 +44,50 @@ jobs:
             groovebox/desktop/dist/*.exe
             groovebox/desktop/dist/*.dmg
             groovebox/desktop/dist/*.AppImage
+            groovebox/desktop/dist/*.blockmap
+            groovebox/desktop/dist/latest*.yml
           if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: mattone-release
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: groovebox/desktop/package.json
+          sparse-checkout-cone-mode: false
+      - name: Pubblica la Release se la versione è nuova
+        run: |
+          VERSION=$(node -p "require('./groovebox/desktop/package.json').version")
+          TAG="mattone-v$VERSION"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "La versione $VERSION è già pubblicata: per un aggiornamento aumenta la versione in package.json."
+            exit 0
+          fi
+          echo "PUBLISH_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "PUBLISH_VERSION=$VERSION" >> "$GITHUB_ENV"
+      - if: env.PUBLISH_TAG
+        uses: actions/download-artifact@v4
+        with:
+          path: files
+          merge-multiple: true
+      - if: env.PUBLISH_TAG
+        run: |
+          cat > notes.md <<NOTES
+          **Mat·Tone $PUBLISH_VERSION**
+
+          - Windows: \`MatTone-Setup-$PUBLISH_VERSION.exe\` (installer, si aggiorna da solo) oppure \`MatTone-Portatile-$PUBLISH_VERSION.exe\` (nessuna installazione)
+          - Mac: \`.dmg\` (al primo avvio: clic destro sull'app → Apri)
+          - Linux: \`.AppImage\` (si aggiorna da solo)
+
+          Se Mat·Tone è già installata non serve scaricare niente: all'avvio l'app trova questa versione da sola.
+          Windows SmartScreen può dire "PC protetto da Windows" perché l'app non è firmata: **Ulteriori informazioni → Esegui comunque**.
+          NOTES
+          ls -la files
+          gh release create "$PUBLISH_TAG" files/* --target "$GITHUB_SHA" --title "Mat·Tone $PUBLISH_VERSION" --notes-file notes.md

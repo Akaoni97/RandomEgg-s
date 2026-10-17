@@ -21,6 +21,7 @@
     "dist:linux": "npm run prepare-app && electron-builder --linux --publish never"
   },
   "dependencies": {
+    "electron-updater": "6.8.9",
     "lamejs": "1.2.1"
   },
   "devDependencies": {
@@ -37,6 +38,7 @@
     },
     "files": [
       "main.js",
+      "updater.js",
       "app/**/*",
       "build/icon.png",
       "package.json"
@@ -73,6 +75,9 @@
       "icon": "build/icon.png",
       "artifactName": "MatTone-${version}.${ext}"
     },
-    "publish": null
+    "publish": {
+      "provider": "generic",
+      "url": "https://github.com/Akaoni97/RandomEgg-s/releases"
+    }
   }
 }
