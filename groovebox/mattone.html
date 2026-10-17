@@ -716,6 +716,22 @@ html[data-vt="cat"]::view-transition-new(vt-cat) { animation: .34s cubic-bezier(
 /* "Animazioni: ridotte" */
 .lowmotion .cpane .card, .lowmotion .cpane .opt, .lowmotion .pad .ripple { animation: none; }
 .lowmotion .tabglow, .lowmotion .card { transition: none; }
+/* microphone recorder */
+.micbtn .micdot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 6px var(--red); }
+.micwrap { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.6); animation: fadeIn .2s; }
+.micwrap[hidden] { display: none; }
+.micbox { width: min(760px, 100%); display: grid; gap: 12px; animation: cardIn .35s cubic-bezier(.34, 1.4, .64, 1); }
+.micbox .hd { margin: 0; }
+#micScope { width: 100%; height: auto; aspect-ratio: 720 / 170; border-radius: 8px; box-shadow: inset 0 2px 8px rgba(0,0,0,.8), 0 0 0 1px var(--edge); display: block; }
+.microw { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.mictime { font-family: var(--f-vfd); font-size: 28px; color: var(--led); min-width: 4.5ch; }
+.micstate { flex: 1; min-width: 200px; color: var(--cream-2); font-size: 13px; line-height: 1.4; }
+.micstate.bad { color: #ff8a7a; }
+.micname { display: flex; gap: 6px; align-items: center; flex: 1; min-width: 160px; }
+.micname input { flex: 1; min-width: 0; }
+.micopt { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 12px; }
+.item .del { border: 0; background: transparent; color: var(--cream-3); font-size: 11px; padding: 4px 6px; border-radius: 5px; cursor: pointer; }
+.item .del:hover, .item .del.sure { color: #fff; background: var(--red); }
 /* ---------- visuale 3D: la plancia come un oggetto sul tavolo ---------- */
 .motes { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0; }
 .app { transform-origin: 50% 50%; }
@@ -910,6 +926,7 @@ html.intro-on { overflow: hidden; }
           <div class="acts">
             <button class="key on" id="openLib" type="button">Cambia suono</button>
             <label class="key" for="file">Carica un file</label>
+            <button class="key micbtn" id="micBtn" type="button"><span class="micdot"></span>Registra dal microfono</button>
             <input type="file" id="file" accept="audio/*" hidden>
             <button class="key" id="toDeck" type="button">Metti sul piatto</button>
           </div>
@@ -962,6 +979,7 @@ html.intro-on { overflow: hidden; }
             <h3>Come si scratcha</h3>
             <ol>
               <li>Trascina il disco avanti e indietro: la velocità della mano è la velocità del suono. Fermo = silenzio.</li>
+              <li>Vuoi scratchare la tua voce? Registrala sul pad con <b>Registra dal microfono</b>, poi <b>Metti sul piatto</b>.</li>
               <li><b>Taglio</b> (tasto <kbd>G</kbd>) apre e chiude il fader al volo, come un crossfader.</li>
               <li><b>Campiona il beat</b> mette sul disco una battuta di quello che sta suonando.</li>
               <li>Baby, Chirp, Flare, Tear, Transformer, Scribble, Crab, Orbit e Stab: il piatto le esegue da solo, a tempo. Tocca il disco per riprendere il controllo.</li>
@@ -1103,6 +1121,7 @@ html.intro-on { overflow: hidden; }
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li>Il tasto <b>3D</b> accanto alle pagine (o <kbd>T</kbd>) cambia visuale: frontale, sul banco, di tre quarti da destra o da sinistra. Si suona anche in 3D.</li>
+            <li><b>Registra dal microfono</b> (sotto il pad selezionato): premi il tasto rosso, fai il tuo suono, ripremi. I silenzi vengono tagliati, il volume sistemato, e il suono resta salvato tra «I tuoi suoni» (✕ nella libreria per eliminarlo).</li>
             <li>In alto a sinistra scegli la <b>scocca</b>: Cantina, Hi-Fi ’76, Surplus ’68 o Metro ’89.</li>
           </ol>
         </div>
@@ -1138,6 +1157,21 @@ html.intro-on { overflow: hidden; }
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
+<div class="micwrap" id="micBox" hidden role="dialog" aria-modal="true" aria-label="Registra dal microfono">
+  <div class="unit micbox">
+    <div class="hd"><h2>Registra dal microfono</h2><button class="key small" id="micClose" type="button">✕ Chiudi</button></div>
+    <canvas id="micScope" width="720" height="170" aria-hidden="true"></canvas>
+    <div class="microw"><span class="mictime" id="micTime">0,0 s</span><span class="micstate" id="micState" aria-live="polite"></span></div>
+    <div class="microw">
+      <button class="bigkey rec" id="micRec" type="button" aria-label="Registra"><span class="dot"></span></button>
+      <button class="key" id="micPlay" type="button" disabled>▶ Ascolta</button>
+      <label class="lbl micname">Nome <input class="search" id="micName" maxlength="24" autocomplete="off"></label>
+      <button class="key on" id="micUse" type="button" disabled>Metti sul pad</button>
+    </div>
+    <label class="lbl micopt"><input type="checkbox" id="micTrim" checked> Taglia i silenzi all’inizio e alla fine</label>
+    <p class="cnote small">Massimo 15 secondi. Il suono viene portato al volume giusto e resta salvato tra «I tuoi suoni» nella libreria, anche quando riapri Mat.Tone.</p>
+  </div>
+</div>
 <aside class="drawer" id="drawer" hidden aria-label="Libreria suoni">
   <div class="dh"><div><h3>Casse di dischi</h3><p id="libFor">Scegli un suono per il pad A1</p></div><button class="key on" id="closeLib" type="button">Fatto</button></div>
   <input class="search" id="search" type="search" placeholder="Cerca: piano, conga, basso…" aria-label="Cerca un suono" autocomplete="off">
@@ -1676,6 +1710,197 @@ function demoPatterns() {
   put(1, 1, 8, [[15]]);
   return P;
 }
+/* ================= i tuoi suoni: registrati dal microfono o caricati, salvati sul dispositivo ================= */
+// the sound itself goes in IndexedDB (mono samples); the list of names in localStorage, so the pads know them at once
+const USER_META_KEY = "mattone-suoni-tuoi", USER_MAX_SEC = 60;
+let userDbP = null;
+function userDb() {
+  if (!userDbP) userDbP = new Promise((res, rej) => {
+    try { const r = indexedDB.open("mattone-suoni", 1); r.onupgradeneeded = () => r.result.createObjectStore("s", { keyPath: "id" }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }
+    catch (e) { rej(e); }
+  });
+  return userDbP;
+}
+function userTx(mode, fn) { return userDb().then(db => new Promise((res, rej) => { const t = db.transaction("s", mode), q = fn(t.objectStore("s")); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); })); }
+function userMeta() { try { return JSON.parse(localStorage.getItem(USER_META_KEY) || "[]"); } catch (e) { return []; } }
+// keep a sound for next time; a sound that cannot be kept still plays in this session
+function userSave(id, buf) {
+  const s = SOUNDS.get(id);
+  if (buf.duration > USER_MAX_SEC) return Promise.resolve(false);
+  const data = new Float32Array(buf.getChannelData(0));
+  return userTx("readwrite", st => st.put({ id, name: s.name, src: s.src, sr: buf.sampleRate, data })).then(() => {
+    const list = userMeta().filter(m => m.id !== id); list.push({ id, name: s.name, src: s.src });
+    try { localStorage.setItem(USER_META_KEY, JSON.stringify(list)); } catch (e) { /* storage full */ }
+    return true;
+  }).catch(() => false);
+}
+function userLoad(id) {
+  return userTx("readonly", st => st.get(id)).then(r => {
+    if (!r) throw new Error("perso");
+    const b = ctx.createBuffer(1, r.data.length, r.sr); b.getChannelData(0).set(r.data); return b;
+  });
+}
+function addUserSound(name, src, buf) {
+  const id = "user_" + Date.now().toString(36) + Math.floor(Math.random() * 1e3);
+  SOUNDS.set(id, { id, name: name.slice(0, 28), cat: "I tuoi suoni", root: null, home: null, kind: "user", src });
+  cache.set(id, buf);
+  return id;
+}
+// the sounds saved last time are known before the pads are restored
+for (const m of userMeta()) if (m && m.id) SOUNDS.set(m.id, { id: m.id, name: m.name, cat: "I tuoi suoni", root: null, home: null, kind: "user", src: m.src || "Suono tuo", stored: true });
+let micNum = userMeta().filter(m => m.src === "Microfono").length;
+
+/* ---------- registratore dal microfono ---------- */
+const MIC_MAX = 15;
+const mic = { stream: null, src: null, proc: null, an: null, chunks: [], len: 0, sr: 44100, on: false, buf: null, t0: 0, raf: 0, peak: 0, preview: null };
+function openMic() {
+  initAudio();
+  const p = padLabel(state.bank, state.pad);
+  $("micUse").textContent = "Metti sul pad " + p;
+  if (!$("micName").value) $("micName").value = "Voce " + (micNum + 1);
+  $("micBox").hidden = false; micDraw();
+  micStatus(mic.buf ? "Ascolta, rifai o mettilo sul pad" : "Premi il tasto rosso, poi fai il tuo suono: voce, mani, oggetti…");
+  $("micRec").focus();
+}
+function closeMic() {
+  if (mic.on) micStop(true);
+  micRelease();
+  if (mic.preview) { try { mic.preview.stop(); } catch (e) { /* ended */ } mic.preview = null; }
+  $("micBox").hidden = true;
+}
+function micStatus(t, bad) { const e = $("micState"); e.textContent = t; e.classList.toggle("bad", !!bad); }
+function micRelease() {
+  if (mic.stream) mic.stream.getTracks().forEach(t => t.stop());
+  try { if (mic.src) mic.src.disconnect(); if (mic.proc) { mic.proc.onaudioprocess = null; mic.proc.disconnect(); } } catch (e) { /* gone */ }
+  mic.stream = mic.src = mic.proc = mic.an = null;
+}
+function micStart() {
+  if (!initAudio()) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micStatus("Questo browser non può usare il microfono. Registra col telefono e usa «Carica un file».", true); return; }
+  micStatus("Chiedo il permesso del microfono…");
+  navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }).then(stream => {
+    if ($("micBox").hidden) { stream.getTracks().forEach(t => t.stop()); return; }
+    mic.stream = stream; mic.chunks = []; mic.len = 0; mic.sr = ctx.sampleRate; mic.peak = 0; mic.buf = null;
+    mic.src = ctx.createMediaStreamSource(stream);
+    mic.an = ctx.createAnalyser(); mic.an.fftSize = 2048;
+    mic.proc = ctx.createScriptProcessor(4096, 1, 1);
+    const mute = ctx.createGain(); mute.gain.value = 0;
+    mic.src.connect(mic.an); mic.src.connect(mic.proc); mic.proc.connect(mute).connect(ctx.destination);
+    mic.proc.onaudioprocess = e => {
+      if (!mic.on) return;
+      const d = e.inputBuffer.getChannelData(0), c = new Float32Array(d);
+      for (let i = 0; i < c.length; i++) mic.peak = Math.max(mic.peak, Math.abs(c[i]));
+      mic.chunks.push(c); mic.len += c.length;
+      if (mic.len >= MIC_MAX * mic.sr) micStop();
+    };
+    mic.on = true; mic.t0 = performance.now();
+    $("micRec").classList.add("on"); $("micRec").setAttribute("aria-label", "Ferma la registrazione");
+    $("micPlay").disabled = $("micUse").disabled = true;
+    micStatus("REGISTRO… premi di nuovo il tasto rosso per fermare (massimo " + MIC_MAX + " secondi)");
+    const live = () => { if (!mic.on) return; micDraw(); mic.raf = requestAnimationFrame(live); };
+    live();
+  }).catch(err => {
+    const name = err && err.name;
+    if (name === "NotFoundError" || name === "OverconstrainedError") micStatus("Non trovo nessun microfono collegato.", true);
+    else if (location.protocol === "app:") micStatus("Il microfono è bloccato: consenti a Mat.Tone di usarlo nelle impostazioni di privacy del computer, poi riprova.", true);
+    else micStatus("Qui il microfono non è permesso (la pagina su claude.ai può bloccarlo). Usa l’app per PC, oppure registra col telefono e usa «Carica un file».", true);
+  });
+}
+// cut the silence before and after, remove the offset, fade the edges, bring it to full level
+function micShape(data, sr, trim) {
+  let mean = 0; for (let i = 0; i < data.length; i++) mean += data[i]; mean /= data.length || 1;
+  let peak = 0; for (let i = 0; i < data.length; i++) { data[i] -= mean; peak = Math.max(peak, Math.abs(data[i])); }
+  let a = 0, b = data.length;
+  if (trim && peak > 0) {
+    const thr = Math.max(0.006, peak * 0.07);
+    while (a < b && Math.abs(data[a]) < thr) a++;
+    while (b > a && Math.abs(data[b - 1]) < thr) b--;
+    a = Math.max(0, a - Math.floor(sr * 0.012)); b = Math.min(data.length, b + Math.floor(sr * 0.09));
+  }
+  const out = data.slice(a, b), n = out.length, fi = Math.min(n, Math.floor(sr * 0.003)), fo = Math.min(n, Math.floor(sr * 0.025));
+  for (let i = 0; i < fi; i++) out[i] *= i / fi;
+  for (let i = 0; i < fo; i++) out[n - 1 - i] *= i / fo;
+  if (peak > 0) for (let i = 0; i < n; i++) out[i] *= 0.89 / peak;
+  return out;
+}
+function micStop(quiet) {
+  if (!mic.on) return;
+  mic.on = false; cancelAnimationFrame(mic.raf);
+  $("micRec").classList.remove("on"); $("micRec").setAttribute("aria-label", "Registra");
+  micRelease();
+  if (quiet) return;
+  if (mic.len < mic.sr * 0.05 || mic.peak < 0.004) { micStatus("Non ho sentito niente: avvicinati al microfono e riprova.", true); mic.buf = null; micDraw(); return; }
+  const all = new Float32Array(mic.len); let o = 0; for (const c of mic.chunks) { all.set(c, o); o += c.length; }
+  mic.chunks = [];
+  const shaped = micShape(all, mic.sr, $("micTrim").checked);
+  mic.buf = ctx.createBuffer(1, shaped.length, mic.sr); mic.buf.getChannelData(0).set(shaped);
+  $("micPlay").disabled = $("micUse").disabled = false;
+  micStatus("Fatto: " + mic.buf.duration.toFixed(1).replace(".", ",") + " secondi. Ascolta, rifai o mettilo sul pad." + (mic.peak > 0.98 ? " (Era un po’ troppo forte: se gracchia, allontanati e rifai.)" : ""));
+  micDraw(); micPlay();
+}
+function micPlay() {
+  if (!mic.buf || !initAudio()) return;
+  if (mic.preview) { try { mic.preview.stop(); } catch (e) { /* ended */ } }
+  const buf = mic.buf, s = ctx.createBufferSource(); s.buffer = buf; s.connect(N.master); s.start(); mic.preview = s;
+  const t0 = ctx.currentTime, run = () => { if (mic.preview !== s || $("micBox").hidden || mic.buf !== buf) return; micDraw((ctx.currentTime - t0) / buf.duration); if (ctx.currentTime - t0 < buf.duration) requestAnimationFrame(run); else micDraw(); };
+  s.onended = () => { if (mic.preview === s) mic.preview = null; };
+  run();
+}
+function micUse() {
+  if (!mic.buf) return;
+  const name = ($("micName").value || "").trim() || "Voce " + (micNum + 1), b = state.bank, p = state.pad;
+  const id = addUserSound(name, "Microfono", mic.buf);
+  micNum++;
+  state.banks[b][p].sound = id; state.banks[b][p].gate = 0; state.banks[b][p].pitch = 0; save();
+  renderAll(); if (!$("drawer").hidden) renderLibrary();
+  userSave(id, mic.buf).then(ok => msg("PAD " + padLabel(b, p) + ": " + name.toUpperCase() + (ok ? " · SALVATO" : " · SOLO PER ORA")));
+  mic.buf = null; $("micName").value = "";
+  closeMic();
+  trigger(b, p, ctx.currentTime);
+}
+// the scope: live input while recording, the take with a playhead afterwards
+function micDraw(play) {
+  const cv = $("micScope"), c = cv.getContext("2d"), W = cv.width, H = cv.height, led = getComputedStyle(document.documentElement).getPropertyValue("--led").trim() || "#ff9f2e";
+  c.fillStyle = "#070605"; c.fillRect(0, 0, W, H);
+  c.strokeStyle = "rgba(255,255,255,.06)"; c.lineWidth = 1;
+  for (let x = 0; x < W; x += W / 15) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+  c.beginPath(); c.moveTo(0, H / 2); c.lineTo(W, H / 2); c.stroke();
+  c.fillStyle = led; c.strokeStyle = led;
+  if (mic.on && mic.an) {
+    // everything recorded so far, squeezed into the 15 seconds of the window
+    const per = MIC_MAX * mic.sr / W; let x = 0, acc = 0, mx = 0;
+    for (const ch of mic.chunks) for (let i = 0; i < ch.length; i++) { mx = Math.max(mx, Math.abs(ch[i])); if (++acc >= per) { const h = Math.max(1, mx * H * 0.48); c.fillRect(x, H / 2 - h, 1, h * 2); x++; acc = 0; mx = 0; } }
+    c.fillStyle = "#ff3b30"; c.fillRect(x, 0, 2, H);
+    const sec = mic.len / mic.sr; $("micTime").textContent = sec.toFixed(1).replace(".", ",") + " s";
+    // the level of the moment, as a bar on the right
+    const d = new Float32Array(mic.an.fftSize); mic.an.getFloatTimeDomainData(d); let pk = 0; for (const v of d) pk = Math.max(pk, Math.abs(v));
+    c.fillStyle = pk > 0.95 ? "#ff3b30" : led; c.fillRect(W - 10, H - pk * H, 8, pk * H);
+  } else if (mic.buf) {
+    const d = mic.buf.getChannelData(0), per = Math.max(1, d.length / W);
+    for (let x = 0; x < W; x++) { let mx = 0; const a = Math.floor(x * per), b = Math.min(d.length, Math.floor((x + 1) * per)); for (let i = a; i < b; i++) mx = Math.max(mx, Math.abs(d[i])); const h = Math.max(1, mx * H * 0.48); c.fillRect(x, H / 2 - h, 1, h * 2); }
+    if (play != null && play < 1) { c.fillStyle = "#fff4e0"; c.fillRect(play * W, 0, 2, H); }
+    $("micTime").textContent = mic.buf.duration.toFixed(1).replace(".", ",") + " s";
+  } else {
+    c.font = "26px VT323, monospace"; c.textAlign = "center"; c.fillStyle = "rgba(255,255,255,.25)"; c.fillText("PRONTO A REGISTRARE", W / 2, H / 2 + 8);
+    $("micTime").textContent = "0,0 s";
+  }
+}
+function bindMic() {
+  $("micBtn").addEventListener("click", openMic);
+  $("micClose").addEventListener("click", closeMic);
+  $("micBox").addEventListener("click", e => { if (e.target === $("micBox")) closeMic(); });
+  $("micRec").addEventListener("click", () => { if (mic.on) micStop(); else micStart(); });
+  $("micPlay").addEventListener("click", micPlay);
+  $("micUse").addEventListener("click", micUse);
+}
+// remove one of your sounds for good; the pads that used it go back to the group's sound
+function userDelete(id) {
+  SOUNDS.delete(id); cache.delete(id);
+  state.banks.forEach((b, bi) => b.forEach((pr, pi) => { if (pr.sound === id) pr.sound = BANKS[bi].sounds[pi]; }));
+  try { localStorage.setItem(USER_META_KEY, JSON.stringify(userMeta().filter(m => m.id !== id))); } catch (e) { /* storage unavailable */ }
+  userTx("readwrite", st => st.delete(id)).catch(() => {});
+  save(); renderAll(); renderLibrary();
+}
 const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", disc: "lp", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "studio", wear: 25, intro: "si", lcd: "oled", meter: "ago", knob: "skin", font: "bungee", stickers: [],
   shape: "rettangolo", rack: "classica", padside: "sinistra", tabs: "alto", padshape: "arrotondati", pulse: "no", motion: "piene", ripple: "si", view: "piatta" };
 let state = {
@@ -1952,6 +2177,8 @@ function loadSound(id) {
       .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
       .then(trimLead)).then(b => ({ root: r, buf: b }))))
       .then(zs => { zoneCache.set(id, zs); const mid = zs[Math.floor(zs.length / 2)].buf; cache.set(id, mid); return mid; });
+  } else if (s.kind === "user") {
+    p = userLoad(id).then(b => { cache.set(id, b); return b; });
   } else if (s.kind === "derived") {
     p = loadSound(s.base).then(b => { const t = PROC[s.proc](b); cache.set(id, t); return t; });
   } else p = Promise.reject(new Error("mancante"));
@@ -2770,19 +2997,18 @@ function tapTempo() {
   const now = performance.now(); taps = taps.filter(t => now - t < 2500); taps.push(now);
   if (taps.length >= 2) { setBpm(60000 / ((taps[taps.length - 1] - taps[0]) / (taps.length - 1))); msg("TEMPO BATTUTO: " + state.bpm + " BPM"); } else msg("CONTINUA A BATTERE…");
 }
-let userCount = 0;
 function loadFile(file) {
   if (!initAudio()) return;
   const b = state.bank, p = state.pad;
   msg("CARICO " + file.name.toUpperCase() + "…");
   file.arrayBuffer().then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej))).then(buf => {
-    const id = "user_" + (++userCount);
-    SOUNDS.set(id, { id, name: file.name.replace(/\.[^.]+$/, "").slice(0, 28), cat: "I tuoi suoni", root: null, home: null, kind: "user", src: "File tuo" });
-    cache.set(id, trimLead(buf));
+    const t = trimLead(buf), id = addUserSound(file.name.replace(/\.[^.]+$/, ""), "File tuo", t);
     state.banks[b][p].sound = id; state.banks[b][p].gate = 0; save();
     renderAll(); if (!$("drawer").hidden) renderLibrary();
     trigger(b, p, ctx.currentTime);
-    msg("PAD " + padLabel(b, p) + ": " + SOUNDS.get(id).name.toUpperCase());
+    const nm = SOUNDS.get(id).name.toUpperCase();
+    msg("PAD " + padLabel(b, p) + ": " + nm);
+    userSave(id, t).then(ok => { if (!ok) msg("PAD " + padLabel(b, p) + ": " + nm + (t.duration > USER_MAX_SEC ? " · TROPPO LUNGO PER SALVARLO" : " · NON SALVATO")); });
   }).catch(() => msg("FILE NON LEGGIBILE: PROVA WAV, MP3 O OGG"));
 }
 function toggleCell(b, p, s) {
@@ -2870,7 +3096,14 @@ function renderLibrary() {
       const pv = el("button", "pv", PV_ICON); pv.type = "button"; pv.setAttribute("aria-label", "Ascolta " + s.name); pv.addEventListener("click", () => preview(s.id));
       const tx = el("button", "tx", "<b>" + esc(s.name) + "</b><small>" + (s.root != null ? "intonato · " : "") + esc(s.src) + "</small>"); tx.type = "button"; tx.addEventListener("click", () => assign(s.id));
       const tag = el("span", "chip" + (s.id === cur ? " tuned" : ""), s.id === cur ? "sul pad" : "usa"); tag.style.cursor = "pointer"; tag.addEventListener("click", () => assign(s.id));
-      row.append(pv, tx, tag); list.appendChild(row);
+      row.append(pv, tx, tag);
+      if (s.kind === "user") {
+        // two taps to delete, so a slip does not lose a recording
+        const del = el("button", "del", "✕"); del.type = "button"; del.title = "Elimina questo suono"; del.setAttribute("aria-label", "Elimina " + s.name);
+        del.addEventListener("click", () => { if (del.classList.contains("sure")) userDelete(s.id); else { del.classList.add("sure"); del.textContent = "Elimina?"; setTimeout(() => { del.classList.remove("sure"); del.textContent = "✕"; }, 2500); } });
+        row.appendChild(del);
+      }
+      list.appendChild(row);
     }
   }
   if (!count) list.appendChild(el("p", "lbl", "Nessun suono per “" + esc(q) + "”."));
@@ -2880,6 +3113,7 @@ function renderLibrary() {
 function onKeyDown(e) {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const t = e.target, tag = (t && t.tagName) || "";
+  if (!$("micBox").hidden) { if (e.key === "Escape") closeMic(); return; }   // the recorder takes the keyboard while open
   if ((tag === "INPUT" && t.type !== "range") || tag === "SELECT" || tag === "TEXTAREA") { if (e.key === "Escape") closeLibrary(); return; }
   const k = e.key.toLowerCase();
   if (k === "escape" && curPage === "cust") { closeCustom(); return; }
@@ -4624,6 +4858,7 @@ initDesktop();
 applySkin(state.skin);
 applyCustom();
 initView();
+bindMic();
 SCENE.ready = true; initScene();
 renderAll();
 requestAnimationFrame(tick);
