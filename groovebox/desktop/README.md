@@ -1,4 +1,4 @@
-# Mat·Tone per PC
+# Mat.Tone per PC
 
 App desktop (Electron) con la stessa groovebox di `../mattone.html`, funziona offline: suoni, font ed encoder MP3 sono inclusi.
 
@@ -6,9 +6,9 @@ App desktop (Electron) con la stessa groovebox di `../mattone.html`, funziona of
 
 Dalla pagina [Releases](https://github.com/Akaoni97/RandomEgg-s/releases), le versioni `mattone-v…`:
 
-- Windows: `MatTone-Setup-<versione>.exe` (installer) oppure `MatTone-Portatile-<versione>.exe`
-- Mac: `MatTone-<versione>-<arch>.dmg`
-- Linux: `MatTone-<versione>.AppImage`
+- Windows: `Mat.Tone-Setup-<versione>.exe` (installer) oppure `Mat.Tone-Portatile-<versione>.exe`
+- Mac: `Mat.Tone-<versione>-<arch>.dmg`
+- Linux: `Mat.Tone-<versione>.AppImage`
 
 ## Aggiornamenti
 

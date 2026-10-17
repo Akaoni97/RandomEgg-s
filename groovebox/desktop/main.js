@@ -1,4 +1,4 @@
-// Mat·Tone desktop: the same groovebox page, served from the app folder through an app:// scheme
+// Mat.Tone desktop: the same groovebox page, served from the app folder through an app:// scheme
 // (fetch() of the sample files does not work from file://, and a fixed origin keeps saved patterns).
 const { app, BrowserWindow, protocol, net, session, shell, Menu } = require("electron");
 const path = require("path");
@@ -10,6 +10,8 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 const ROOT = path.join(__dirname, "app");
+// 1.0.0 was named "MatTone": keep its settings folder so saved patterns survive the rename to "Mat.Tone"
+app.setPath("userData", path.join(app.getPath("appData"), "MatTone"));
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -17,7 +19,7 @@ function createWindow() {
     height: 920,
     minWidth: 420,
     minHeight: 600,
-    title: "Mat·Tone",
+    title: "Mat.Tone",
     backgroundColor: "#100f0d",
     icon: path.join(__dirname, "build", "icon.png"),
     autoHideMenuBar: true,

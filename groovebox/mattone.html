@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Mattone Groovebox</title>
+<title>Mat.Tone</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -482,7 +482,7 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
   <header class="unit rack">
     <div class="badge" id="badge" aria-hidden="true"></div>
     <div class="logo">
-      <b>MAT<span>·</span>TONE</b>
+      <b>MAT<span>.</span>TONE</b>
       <div class="stripes" aria-hidden="true"><i style="background:var(--stripe-1)"></i><i style="background:var(--stripe-2)"></i><i style="background:var(--stripe-3)"></i><i style="background:var(--stripe-4)"></i></div>
       <small id="skinTag">SP-88 · CAMPIONATORE DA CANTINA</small>
       <div class="skins" id="skins" role="group" aria-label="Scocca"></div>
@@ -680,11 +680,11 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
   <div class="dh"><div><h3>Personalizza</h3><p>Come appare il tuo strumento. Si salva in questo browser.</p></div><button class="key on" id="closeCust" type="button">Fatto</button></div>
   <div class="custlist">
     <section><h4>Scocca</h4><div class="opts" id="cSkin"></div></section>
-    <section><h4>Nome sul logo</h4><input class="search" id="cLogo" maxlength="12" autocomplete="off" aria-label="Nome sul logo" placeholder="MAT·TONE"><div class="row2" style="margin-top:6px"><span>Il punto “·” diventa il puntino che si accende sulla cassa.</span></div></section>
+    <section><h4>Nome sul logo</h4><input class="search" id="cLogo" maxlength="12" autocomplete="off" aria-label="Nome sul logo" placeholder="MAT.TONE"><div class="row2" style="margin-top:6px"><span>Il punto “.” diventa il puntino che si accende sulla cassa.</span></div></section>
     <section><h4>Colore dello schermo</h4><div class="opts sws" id="cScreen"></div></section>
     <section><h4>Luci LED</h4><div class="opts sws" id="cLed"></div></section>
     <section><h4>Pad</h4><div class="opts" id="cPad"></div></section>
-    <section><h4>Disco</h4><div class="opts" id="cVinyl"></div><h5>Colore dell’etichetta</h5><div class="opts sws" id="cLabel"></div><h5>Scritta sull’etichetta</h5><input class="search" id="cLabelText" maxlength="14" autocomplete="off" aria-label="Scritta sull’etichetta" placeholder="MATTONE"></section>
+    <section><h4>Disco</h4><div class="opts" id="cVinyl"></div><h5>Colore dell’etichetta</h5><div class="opts sws" id="cLabel"></div><h5>Scritta sull’etichetta</h5><input class="search" id="cLabelText" maxlength="14" autocomplete="off" aria-label="Scritta sull’etichetta" placeholder="MAT.TONE"></section>
     <section><h4>Stanza</h4><div class="opts" id="cRoom"></div></section>
     <section><h4>Usura</h4><input type="range" id="cWear" min="0" max="100" aria-label="Usura"><div class="row2"><span>Nuovo di fabbrica</span><span>Vissuto</span></div></section>
   </div>
@@ -1156,7 +1156,7 @@ function demoPatterns() {
   put(1, 1, 8, [[15]]);
   return P;
 }
-const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", label: "auto", labelText: "MATTONE", logo: "MAT·TONE", room: "buio", wear: 25 };
+const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "buio", wear: 25 };
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
@@ -1170,6 +1170,8 @@ try {
     if ((saved.ver || 0) < 4) { state.deckTone = 0.62; state.deckDirt = 0.25; }
     state.ver = 4;
     state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY, saved.custom || {});
+    if (state.custom.logo === "MAT·TONE") state.custom.logo = "MAT.TONE";   // old default names
+    if (state.custom.labelText === "MATTONE") state.custom.labelText = "MAT.TONE";
   }
 } catch (e) { /* storage unavailable */ }
 if (!state.custom) state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY);
@@ -1877,7 +1879,7 @@ function recStop() {
   let o = 0; recorder.chunksL.forEach((c, i) => { L.set(c, o); R.set(recorder.chunksR[i], o); o += c.length; });
   recorder.chunksL = []; recorder.chunksR = [];
   const stamp = new Date(), pad2 = n => String(n).padStart(2, "0");
-  const name = "mattone-beat-" + stamp.getFullYear() + pad2(stamp.getMonth() + 1) + pad2(stamp.getDate()) + "-" + pad2(stamp.getHours()) + pad2(stamp.getMinutes());
+  const name = "mat.tone-beat-" + stamp.getFullYear() + pad2(stamp.getMonth() + 1) + pad2(stamp.getDate()) + "-" + pad2(stamp.getHours()) + pad2(stamp.getMinutes());
   const wav = encodeWav(L, R, SR);
   recorder.last = { name, wav, L, R, rate: SR, seconds: recorder.frames / SR, mp3: null };
   const url = URL.createObjectURL(new Blob([wav], { type: "audio/wav" }));
@@ -2647,7 +2649,7 @@ function drawDeck(force) {
   c.fillStyle = "#8b8577";
   for (let i = 0; i < 90; i++) { const r = i / 90 * Math.PI * 2; c.fillRect(Math.cos(r) * (R * 0.965) - S / 400, Math.sin(r) * (R * 0.965) - S / 400, S / 200, S / 200); }
   // label
-  const hue = hueColor, lab = state.custom.label === "auto" ? hueColor : state.custom.label, txt = (state.custom.labelText || "").trim().toUpperCase() || "MATTONE";
+  const hue = hueColor, lab = state.custom.label === "auto" ? hueColor : state.custom.label, txt = (state.custom.labelText || "").trim().toUpperCase() || "MAT.TONE";
   c.fillStyle = lab; c.beginPath(); c.arc(0, 0, rr * 0.34, 0, Math.PI * 2); c.fill();
   c.fillStyle = "rgba(0,0,0,.18)"; c.beginPath(); c.arc(0, 0, rr * 0.34, 0, Math.PI); c.fill();
   c.fillStyle = labelInk(lab.startsWith("#") ? lab : "#f2a43a"); c.textAlign = "center";
@@ -2717,9 +2719,9 @@ function applyCustom() {
   document.body.dataset.room = C.room;
   document.documentElement.style.setProperty("--wear", (C.wear / 100).toFixed(2));
   // logo: the first "·" (or ".") becomes the dot that lights up on the kick
-  const t = (C.logo || "").trim() || "MAT·TONE", i = t.search(/[·.]/);
+  const t = (C.logo || "").trim() || "MAT.TONE", i = t.search(/[·.]/);
   const logo = document.querySelector(".logo b");
-  logo.innerHTML = i >= 0 ? esc(t.slice(0, i)) + "<span>·</span>" + esc(t.slice(i + 1)) : esc(t);
+  logo.innerHTML = i >= 0 ? esc(t.slice(0, i)) + "<span>" + t[i] + "</span>" + esc(t.slice(i + 1)) : esc(t);
   logoDot = logo.querySelector("span");
   readSkin(); recordCv = null; drawDeck(true); drawSpec(!ctx);
 }

@@ -1,11 +1,11 @@
 {
   "name": "mattone",
-  "productName": "MatTone",
-  "version": "1.0.0",
-  "description": "Mat·Tone, groovebox hip hop con pad, sequencer, scratch ed esportazione WAV/MP3",
+  "productName": "Mat.Tone",
+  "version": "1.0.1",
+  "description": "Mat.Tone, groovebox hip hop con pad, sequencer, scratch ed esportazione WAV/MP3",
   "main": "main.js",
   "license": "MIT",
-  "author": "Mat·Tone",
+  "author": "Mat.Tone",
   "repository": {
     "type": "git",
     "url": "https://github.com/Akaoni97/RandomEgg-s.git",
@@ -30,8 +30,8 @@
   },
   "build": {
     "appId": "it.mattone.groovebox",
-    "productName": "MatTone",
-    "copyright": "Mat·Tone",
+    "productName": "Mat.Tone",
+    "copyright": "Mat.Tone",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -53,11 +53,11 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "Mat·Tone",
-      "artifactName": "MatTone-Setup-${version}.${ext}"
+      "shortcutName": "Mat.Tone",
+      "artifactName": "Mat.Tone-Setup-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "MatTone-Portatile-${version}.${ext}"
+      "artifactName": "Mat.Tone-Portatile-${version}.${ext}"
     },
     "mac": {
       "target": [
@@ -65,7 +65,7 @@
       ],
       "category": "public.app-category.music",
       "icon": "build/icon.png",
-      "artifactName": "MatTone-${version}-${arch}.${ext}"
+      "artifactName": "Mat.Tone-${version}-${arch}.${ext}"
     },
     "linux": {
       "target": [
@@ -73,7 +73,7 @@
       ],
       "category": "Audio",
       "icon": "build/icon.png",
-      "artifactName": "MatTone-${version}.${ext}"
+      "artifactName": "Mat.Tone-${version}.${ext}"
     },
     "publish": {
       "provider": "generic",

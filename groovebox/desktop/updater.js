@@ -19,7 +19,7 @@ function newer(a, b) {
 }
 
 async function latestRelease() {
-  const res = await net.fetch(API, { headers: { Accept: "application/vnd.github+json", "User-Agent": "MatTone" } });
+  const res = await net.fetch(API, { headers: { Accept: "application/vnd.github+json", "User-Agent": "Mat.Tone" } });
   if (!res.ok) throw new Error("GitHub ha risposto " + res.status);
   let best = null;
   for (const r of await res.json()) {
@@ -35,8 +35,8 @@ async function latestRelease() {
 async function notify(win, rel) {
   const { response } = await dialog.showMessageBox(win, {
     type: "info",
-    title: "Aggiornamento Mat·Tone",
-    message: `È uscita Mat·Tone ${rel.version}`,
+    title: "Aggiornamento Mat.Tone",
+    message: `È uscita Mat.Tone ${rel.version}`,
     detail: `Hai la versione ${app.getVersion()}. Scarica la nuova versione e installala sopra questa: pattern e impostazioni restano.`,
     buttons: ["Scarica", "Più tardi"],
     defaultId: 0,
@@ -54,8 +54,8 @@ function selfUpdate(win, rel) {
     log("scaricata", info.version);
     const { response } = await dialog.showMessageBox(win, {
       type: "info",
-      title: "Aggiornamento Mat·Tone",
-      message: `Mat·Tone ${info.version} è pronta`,
+      title: "Aggiornamento Mat.Tone",
+      message: `Mat.Tone ${info.version} è pronta`,
       detail: "Riavvia ora per usarla, oppure verrà installata quando chiudi l'app. Pattern e impostazioni restano.",
       buttons: ["Riavvia ora", "Più tardi"],
       defaultId: 0,

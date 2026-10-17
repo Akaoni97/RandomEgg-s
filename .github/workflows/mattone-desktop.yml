@@ -1,4 +1,4 @@
-name: Mat·Tone desktop
+name: Mat.Tone desktop
 
 # Builds the desktop app on every change. When groovebox/desktop/package.json carries a version that has
 # no "mattone-v<version>" release yet, it also publishes that release: installed apps update from it.
@@ -39,7 +39,7 @@ jobs:
       - run: npm run dist:${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
-          name: MatTone-${{ matrix.target }}
+          name: Mat.Tone-${{ matrix.target }}
           path: |
             groovebox/desktop/dist/*.exe
             groovebox/desktop/dist/*.dmg
@@ -80,14 +80,14 @@ jobs:
       - if: env.PUBLISH_TAG
         run: |
           cat > notes.md <<NOTES
-          **Mat·Tone $PUBLISH_VERSION**
+          **Mat.Tone $PUBLISH_VERSION**
 
-          - Windows: \`MatTone-Setup-$PUBLISH_VERSION.exe\` (installer, si aggiorna da solo) oppure \`MatTone-Portatile-$PUBLISH_VERSION.exe\` (nessuna installazione)
+          - Windows: \`Mat.Tone-Setup-$PUBLISH_VERSION.exe\` (installer, si aggiorna da solo) oppure \`Mat.Tone-Portatile-$PUBLISH_VERSION.exe\` (nessuna installazione)
           - Mac: \`.dmg\` (al primo avvio: clic destro sull'app → Apri)
           - Linux: \`.AppImage\` (si aggiorna da solo)
 
-          Se Mat·Tone è già installata non serve scaricare niente: all'avvio l'app trova questa versione da sola.
+          Se Mat.Tone è già installata non serve scaricare niente: all'avvio l'app trova questa versione da sola.
           Windows SmartScreen può dire "PC protetto da Windows" perché l'app non è firmata: **Ulteriori informazioni → Esegui comunque**.
           NOTES
           ls -la files
-          gh release create "$PUBLISH_TAG" files/* --target "$GITHUB_SHA" --title "Mat·Tone $PUBLISH_VERSION" --notes-file notes.md
+          gh release create "$PUBLISH_TAG" files/* --target "$GITHUB_SHA" --title "Mat.Tone $PUBLISH_VERSION" --notes-file notes.md
