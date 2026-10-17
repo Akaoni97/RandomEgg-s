@@ -641,7 +641,7 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
         <dt><kbd>B</kbd></dt><dd>cambia visualizzatore (o tocca il display)</dd>
         <dt><kbd>Spazio</kbd> <kbd>Invio</kbd></dt><dd>play/stop · registra</dd>
       </dl>
-      <p style="margin-top:10px">Oltre 360 suoni. Quelli elettronici sono sintetizzati dal vivo; gli strumenti veri vengono da <a href="https://github.com/sgossner/VCSL" target="_blank" rel="noopener">VCSL</a> (Versilian Studios, CC0), FluidR3 GM (Frank Wen, CC BY 3.0) via <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">midi-js-soundfonts</a>, <a href="https://archive.org/details/SalamanderGrandPianoV3" target="_blank" rel="noopener">Salamander Grand Piano</a> (Alexander Holm, CC BY 3.0) i campioni di mridangam di Arthur Carabott, suonati da Harishankar V Menon (CC BY-SA 4.0), e per l’hip hop il set <a href="https://github.com/tidalcycles/sounds-tr808-fischer" target="_blank" rel="noopener">TR-808 di Michael Fischer</a> (CC0), i kit di <a href="https://github.com/Boochi44/free-drum-samples" target="_blank" rel="noopener">Boochi44</a> (CC0), l’<a href="https://github.com/tidalcycles/uzu-drumkit" target="_blank" rel="noopener">uzu-drumkit</a> (pubblico dominio) le voci di <a href="https://github.com/tidalcycles/sounds-repetition" target="_blank" rel="noopener">repetition</a> di Alex McLean (CC0) e, per le melodie, il soundfont Musyng Kite (CC BY-SA 3.0) nella conversione midi-js-soundfonts; le versioni “lo-fi” sono rielaborazioni di quei campioni e restano sotto la stessa licenza.</p>
+      <p style="margin-top:10px">Oltre 410 suoni, tra cui 55 strumenti singoli campionati su tre ottave per suonare melodie naturali. Quelli elettronici sono sintetizzati dal vivo; gli strumenti veri vengono da <a href="https://github.com/sgossner/VCSL" target="_blank" rel="noopener">VCSL</a> (Versilian Studios, CC0), FluidR3 GM (Frank Wen, CC BY 3.0) via <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">midi-js-soundfonts</a>, <a href="https://archive.org/details/SalamanderGrandPianoV3" target="_blank" rel="noopener">Salamander Grand Piano</a> (Alexander Holm, CC BY 3.0) i campioni di mridangam di Arthur Carabott, suonati da Harishankar V Menon (CC BY-SA 4.0), e per l’hip hop il set <a href="https://github.com/tidalcycles/sounds-tr808-fischer" target="_blank" rel="noopener">TR-808 di Michael Fischer</a> (CC0), i kit di <a href="https://github.com/Boochi44/free-drum-samples" target="_blank" rel="noopener">Boochi44</a> (CC0), l’<a href="https://github.com/tidalcycles/uzu-drumkit" target="_blank" rel="noopener">uzu-drumkit</a> (pubblico dominio) le voci di <a href="https://github.com/tidalcycles/sounds-repetition" target="_blank" rel="noopener">repetition</a> di Alex McLean (CC0) e, per le melodie, il soundfont Musyng Kite (CC BY-SA 3.0) nella conversione midi-js-soundfonts; le versioni “lo-fi” sono rielaborazioni di quei campioni e restano sotto la stessa licenza.</p>
     </div>
   </section>
 </div>
@@ -676,7 +676,7 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
 "use strict";
 
 /* ================= catalogue ================= */
-const CATS = ["808","Trap","Boom bap","Lo-fi","FX hip hop","Melodie","Batteria","Percussioni","Percussioni intonate","Tastiere","Corde","Archi","Fiati","Voci","Bassi","Synth","Accordi","Effetti","I tuoi suoni"];
+const CATS = ["808","Trap","Boom bap","Lo-fi","FX hip hop","Strumenti singoli","Melodie","Batteria","Percussioni","Percussioni intonate","Tastiere","Corde","Archi","Fiati","Voci","Bassi","Synth","Accordi","Effetti","I tuoi suoni"];
 // [id, name, category, root midi (null = not tuned), source 0=VCSL 1=FluidR3]
 const SAMPLE_ROWS = [
 ["vc_kick","Grancassa","Batteria",null,0],
@@ -1013,10 +1013,69 @@ const SYNTH_ROWS = [
   ["sy_airhorn","Tromba da stadio (air horn)","FX hip hop",null], ["sy_rewind","Riavvolgimento","FX hip hop",null], ["sy_brake","Frenata del vinile","FX hip hop",null], ["sy_808slide","808 con glissato","808",36],
   ["sy_ahh","Voce “aaah” da scratch","Voci",null], ["sy_yeah","Voce “yeah”","Voci",null], ["sy_hey","Voce “hey”","Voci",null], ["sy_ooh","Voce “uuoh”","Voci",null],
 ];
+// single instruments sampled on three octaves: [id, name, home note, zone roots]; files are suoni/<id>_<root>.mp3
+const INSTRUMENT_ROWS = [
+  ["in_violin","Violino",72,[60,72,84]],
+  ["in_viola","Viola",60,[48,60,72]],
+  ["in_cello","Violoncello",48,[36,48,60]],
+  ["in_contrabass","Contrabbasso con arco",36,[36,48,60]],
+  ["in_strings","Sezione d’archi",60,[48,60,72]],
+  ["in_pizz","Archi pizzicato",60,[48,60,72]],
+  ["in_harp","Arpa",60,[48,60,72]],
+  ["in_flute","Flauto traverso",72,[60,72,84]],
+  ["in_piccolo","Ottavino",72,[72,84,96]],
+  ["in_oboe","Oboe",60,[60,72,84]],
+  ["in_clarinet","Clarinetto",60,[48,60,72]],
+  ["in_bassoon","Fagotto",48,[36,48,60]],
+  ["in_recorder","Flauto dolce",72,[60,72,84]],
+  ["in_panflute","Flauto di Pan",72,[60,72,84]],
+  ["in_ocarina","Ocarina",72,[60,72,84]],
+  ["in_horn","Corno",60,[48,60,72]],
+  ["in_trumpet","Tromba",60,[60,72,84]],
+  ["in_trombone","Trombone",48,[36,48,60]],
+  ["in_tuba","Tuba",36,[24,36,48]],
+  ["in_sopsax","Sax soprano",60,[60,72,84]],
+  ["in_altosax","Sax contralto",60,[48,60,72]],
+  ["in_tenorsax","Sax tenore",60,[48,60,72]],
+  ["in_barisax","Sax baritono",48,[36,48,60]],
+  ["in_piano","Pianoforte a coda",60,[36,60,84]],
+  ["in_rhodes","Piano elettrico Rhodes",60,[48,60,72]],
+  ["in_harpsi","Clavicembalo",60,[48,60,72]],
+  ["in_clav","Clavinet",60,[48,60,72]],
+  ["in_celesta","Celesta",72,[60,72,84]],
+  ["in_hammond","Organo Hammond",60,[48,60,72]],
+  ["in_church","Organo a canne",48,[36,48,60]],
+  ["in_accordion","Fisarmonica",60,[48,60,72]],
+  ["in_harmonica","Armonica a bocca",60,[60,72,84]],
+  ["in_glock","Glockenspiel",72,[72,84,96]],
+  ["in_musicbox","Carillon",72,[72,84,96]],
+  ["in_vibes","Vibrafono",60,[48,60,72]],
+  ["in_marimba","Marimba",60,[48,60,72]],
+  ["in_xylo","Xilofono",72,[60,72,84]],
+  ["in_bells","Campane tubolari",60,[60,72,84]],
+  ["in_kalimba","Kalimba",60,[60,72,84]],
+  ["in_steel","Steel drum",60,[60,72,84]],
+  ["in_timpani","Timpani",48,[36,48,60]],
+  ["in_nylon","Chitarra classica",60,[48,60,72]],
+  ["in_steelgtr","Chitarra acustica",60,[48,60,72]],
+  ["in_jazzgtr","Chitarra jazz",60,[48,60,72]],
+  ["in_cleangtr","Chitarra elettrica pulita",60,[48,60,72]],
+  ["in_mutedgtr","Chitarra stoppata",48,[36,48,60]],
+  ["in_drive","Chitarra overdrive",60,[48,60,72]],
+  ["in_dist","Chitarra distorta",48,[36,48,60]],
+  ["in_sitar","Sitar",60,[48,60,72]],
+  ["in_banjo","Banjo",60,[48,60,72]],
+  ["in_bass","Basso elettrico",36,[24,36,48]],
+  ["in_pickbass","Basso col plettro",36,[24,36,48]],
+  ["in_fretless","Basso fretless",36,[24,36,48]],
+  ["in_upright","Contrabbasso jazz",36,[24,36,48]],
+  ["in_choir","Coro",60,[48,60,72]]
+];
 const SOUNDS = new Map();
 for (const [id, name, cat, root] of SYNTH_ROWS) SOUNDS.set(id, { id, name, cat, root, kind: "synth", src: "Sintetizzato" });
 const SOURCES = ["VCSL · CC0", "FluidR3 GM · CC BY 3.0", "Salamander · CC BY 3.0", "Mridangam · CC BY-SA 4.0", "TR-808 Fischer · CC0", "Boochi44 · CC0", "uzu-drumkit · pubblico dominio", "repetition · CC0", "MusyngKite · CC BY-SA 3.0"];
 for (const [id, name, cat, root, s] of SAMPLE_ROWS) SOUNDS.set(id, { id, name, cat, root, kind: "file", src: SOURCES[s] });
+for (const [id, name, home, zones] of INSTRUMENT_ROWS) SOUNDS.set(id, { id, name, cat: "Strumenti singoli", root: home, kind: "multi", zones, src: "MusyngKite · CC BY-SA 3.0 · 3 ottave" });
 for (const s of SOUNDS.values()) s.home = s.root == null ? null : Math.round(s.root / 12) * 12;
 
 
@@ -1100,7 +1159,7 @@ function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { 
 /* ================= synthesis ================= */
 let ctx = null, SR = 44100;
 const N = {};
-const cache = new Map(), loading = new Map();
+const cache = new Map(), loading = new Map(), zoneCache = new Map();
 class BQ {
   constructor(type, f, q) { this.type = type; this.x1 = this.x2 = this.y1 = this.y2 = 0; this.set(f, q); }
   set(f, q) {
@@ -1293,6 +1352,12 @@ function loadSound(id) {
       .then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
       .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
       .then(b => { const t = trimLead(b); cache.set(id, t); return t; });
+  } else if (s.kind === "multi") {
+    p = Promise.all(s.zones.map(r => fetch("suoni/" + id + "_" + r + ".mp3")
+      .then(res => { if (!res.ok) throw new Error(res.status); return res.arrayBuffer(); })
+      .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
+      .then(b => ({ root: r, buf: trimLead(b) }))))
+      .then(zs => { zoneCache.set(id, zs); const mid = zs[Math.floor(zs.length / 2)].buf; cache.set(id, mid); return mid; });
   } else p = Promise.reject(new Error("mancante"));
   p = p.catch(err => { loading.delete(id); throw err; });
   loading.set(id, p);
@@ -1387,10 +1452,16 @@ function updateDelayTime() { if (ctx) N.delay.delayTime.setTargetAtTime(60 / sta
 const voices = [];
 function stopVoice(v, t) { try { v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(0, t, 0.01); v.src.stop(t + 0.08); } catch (e) { /* stopped */ } }
 function playBuffer(soundId, pr, t, vel, note, tag) {
-  const buf = cache.get(soundId);
+  let buf = cache.get(soundId);
   if (!buf) { loadSound(soundId).catch(() => {}); return null; }
   const s = SOUNDS.get(soundId), semis = pr.pitch + note;
-  const rate = Math.pow(2, (s.root == null ? semis : s.home + semis - s.root) / 12) * (fxActive.has("lofi") ? 0.94 : 1);
+  let root = s.root;
+  if (s.kind === "multi" && zoneCache.has(soundId)) {             // use the recorded note closest to the one played
+    const target = s.home + semis;
+    let z = null; for (const q of zoneCache.get(soundId)) if (!z || Math.abs(q.root - target) < Math.abs(z.root - target)) z = q;
+    buf = z.buf; root = z.root;
+  }
+  const rate = Math.pow(2, (root == null ? semis : s.home + semis - root) / 12) * (fxActive.has("lofi") ? 0.94 : 1);
   const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
   const g = ctx.createGain(), level = pr.vol * vel, full = buf.duration / rate;
   const len = pr.gate > 0 ? Math.min(full, pr.gate * sixteenth()) : full;
@@ -1970,6 +2041,8 @@ const KITS = [
   ["808", "808 classico", ["f8_kick", "f8_snare", "f8_clap", "f8_hat", "f8_open", "f8_boom", "f8_lt", "f8_mt", "f8_ht", "f8_cowbell", "f8_clave", "f8_cym"]],
   ["bounce", "West Coast bounce", ["bh_bkick", "bh_bsnare", "bh_bclap", "f8_hat", "f8_open2", "bh_808round", "bh_bkick2", "bh_bsnare2", "f8_conga", "f8_conga2", "f8_maraca", "gm_square"]],
   ["lofi", "Lo-fi", ["uz_kick", "uz_snare", "uz_clap", "uz_hat", "uz_open", "bh_808lofi", "uz_kick3", "uz_snare2", "uz_rim", "uz_shaker", "uz_ride", "sy_vinyl"]],
+  ["orchestra", "Orchestra", ["in_violin", "in_viola", "in_cello", "in_contrabass", "in_harp", "in_flute", "in_oboe", "in_clarinet", "in_bassoon", "in_horn", "in_trumpet", "in_timpani"]],
+  ["band", "Band soul", ["in_piano", "in_rhodes", "in_hammond", "in_jazzgtr", "in_cleangtr", "in_bass", "in_tenorsax", "in_trumpet", "in_trombone", "in_vibes", "in_choir", "in_strings"]],
   ["melolofi", "Melodie lo-fi", ["mk_rhodes_lofi", "mk_piano_dust", "mk_vibes_lofi", "mk_jazzgtr", "mk_choir_lofi", "sy_lofipad", "mk_kalimba", "mk_rhodes", "vc_sax", "mk_flute", "mk_strings", "mk_synthbass"]],
   ["melotrap", "Melodie trap", ["sy_trapbell", "mk_musicbox", "mk_piano_dark", "mk_flute", "mk_choir", "mk_strings_dark", "sy_pluck2", "mk_glock", "mk_harp", "mk_crystal", "mk_tremolo", "bh_808sub"]],
   ["fx", "Scratch & FX", ["sy_ahh", "sy_yeah", "sy_hey", "rp_male", "rp_robot", "sy_airhorn", "sy_rewind", "sy_brake", "gm_orchhit", "sy_riser", "gm_revcym", "sy_vinyl"]],
@@ -1985,7 +2058,7 @@ function loadKit(id) {
   save(); renderAll(); if (!$("drawer").hidden) renderLibrary();
   if (ctx) Promise.all(kit[2].map(x => loadSound(x).catch(() => null))).then(() => msg("KIT " + kit[1].toUpperCase() + " NEL GRUPPO " + BANKS[state.bank].id));
   else msg("KIT " + kit[1].toUpperCase() + " NEL GRUPPO " + BANKS[state.bank].id);
-  if (/^melo/.test(id)) setTimeout(() => msg("MELODIE: SCEGLI UN PAD E PREMI NOTE PER SUONARLO SULLA SCALA"), 1600);
+  if (/^melo|orchestra|band/.test(id)) setTimeout(() => msg("MELODIE: SCEGLI UN PAD E PREMI NOTE PER SUONARLO SULLA SCALA"), 1600);
 }
 
 /* ================= library ================= */
