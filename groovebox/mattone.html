@@ -171,6 +171,13 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 .key, .bigkey, .tabs button { transition: transform .22s cubic-bezier(.34, 1.7, .5, 1), box-shadow .2s, background-color .2s; }
 .key:active, .bigkey:active { transition-duration: .03s; }
 .lowmotion .pad, .lowmotion .key, .lowmotion .bigkey, .lowmotion .tabs button { transition: none; }
+.pad .spark { position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px; border-radius: 50%; pointer-events: none; background: color-mix(in srgb, var(--hue) 60%, white); box-shadow: 0 0 8px var(--hue); animation: spark .45s cubic-bezier(.15, .7, .3, 1) forwards; }
+@keyframes spark { from { transform: rotate(var(--a)) translateX(4px) scale(1.2); opacity: 1; } to { transform: rotate(var(--a)) translateX(var(--d)) scale(.2); opacity: 0; } }
+.pad.deal { animation: padDeal .55s cubic-bezier(.34, 1.56, .64, 1) both; animation-delay: calc(var(--i) * 40ms); }
+@keyframes padDeal { from { opacity: 0; transform: translateY(-18px) rotateX(75deg) scale(.88); } }
+.cell.on.now { animation: cellPop .26s cubic-bezier(.2, .9, .3, 1); }
+@keyframes cellPop { 0% { transform: scale(1.22); box-shadow: inset 0 0 0 2px var(--cream), 0 0 16px var(--hue); } 100% { transform: scale(1); } }
+.lowmotion .pad .spark, .lowmotion .pad.deal, .lowmotion .cell.on.now { animation: none; }
 .pads.notes .pad { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 22%, var(--rubber-hi)), var(--rubber) 75%); }
 .pads.notes .pad.root { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 50%, var(--rubber-hi)), color-mix(in srgb, var(--hue) 18%, var(--rubber)) 80%); }
 .pads.notes .pad .nm { font-family: var(--f-vfd); font-weight: 400; font-size: 26px; }
@@ -493,10 +500,12 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
 
 /* stanze */
 body[data-room="mattoni"] { background: radial-gradient(120% 80% at 50% 0%, transparent 30%, rgba(0,0,0,.72)), var(--bricks) 0 0 / 180px 90px, #4a2418; }
-body[data-room="cemento"] { background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.06), rgba(0,0,0,.66)), var(--grain) 0 0 / 160px 160px, #4f4c47; }
-body[data-room="legno"] { background: radial-gradient(120% 80% at 50% 0%, transparent 30%, rgba(0,0,0,.7)), repeating-linear-gradient(90deg, rgba(0,0,0,.4) 0 2px, transparent 2px 150px), repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 7px), linear-gradient(90deg, #5b3a22, #6e4729 30%, #563620 60%, #684327); }
-body[data-room="moquette"] { background: radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,.2) 20%, rgba(0,0,0,.75)), radial-gradient(circle at 25% 25%, #c8641e 0 17%, transparent 18%) 0 0 / 56px 56px, radial-gradient(circle at 75% 75%, #8a3f14 0 17%, transparent 18%) 0 0 / 56px 56px, radial-gradient(circle at 75% 25%, #e0a23a 0 7%, transparent 8%) 0 0 / 56px 56px, #4e2610; }
-body[data-room="piastrelle"] { background: radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,.35) 20%, rgba(0,0,0,.8)), conic-gradient(#1a1a1a 25%, #cfcabd 0 50%, #1a1a1a 0 75%, #cfcabd 0) 0 0 / 84px 84px; }
+body[data-room="studio"] { background: #110e0c; }
+body[data-room="graffiti"] { background: #4a4743; }
+body[data-room="dischi"] { background: #2a1a10; }
+body[data-room="neon"] { background: #0b0910; }
+body[data-room="citta"] { background: #120e2a; }
+.scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 
 /* usura */
 body::after { opacity: calc(.04 + var(--wear, .25) * .16); }
@@ -829,6 +838,7 @@ html.intro-on { overflow: hidden; }
 })();
 </script>
 
+<canvas class="scene" id="scene" aria-hidden="true" hidden></canvas>
 <div class="beatlight" id="beatLight" aria-hidden="true"></div>
 <canvas class="motes" id="motes" aria-hidden="true"></canvas>
 <div class="app" id="app" data-bank="A">
@@ -937,6 +947,7 @@ html.intro-on { overflow: hidden; }
           <div class="row">
             <button class="key" id="motor" type="button"><span class="ledi"></span>Start / Stop</button>
             <label class="lbl" style="display:flex;gap:6px;align-items:center">Sul disco <select id="deckSrc"></select></label>
+            <label class="lbl" style="display:flex;gap:6px;align-items:center">Disco <select id="discSel" aria-label="Tipo di disco"></select></label>
             <button class="key" id="grab" type="button">Campiona il beat</button>
             <button class="key" id="rpm45" type="button"><span class="ledi"></span>45 giri</button>
             <button class="key" id="spinback" type="button">Spinback</button>
@@ -1043,7 +1054,8 @@ html.intro-on { overflow: hidden; }
               <h4>Luci LED</h4><div class="opts sws" id="cLed"></div>
             </section>
             <section class="cpane" data-cat="disco" aria-label="Disco" hidden>
-              <h3>Disco</h3><div class="opts" id="cVinyl"></div>
+              <h3>Tipo di disco</h3><p class="cnote">Ognuno ha la sua faccia e il suo carattere: il 78 gracchia, il picture disc frigge un po’.</p><div class="cards" id="cDisc"></div>
+              <h4>Colore del vinile (LP e 45 giri)</h4><div class="opts" id="cVinyl"></div>
               <h4>Colore dell’etichetta</h4><div class="opts sws" id="cLabel"></div>
               <h4>Scritta sull’etichetta</h4><input class="search" id="cLabelText" maxlength="14" autocomplete="off" aria-label="Scritta sull’etichetta" placeholder="MAT.TONE">
             </section>
@@ -1102,6 +1114,7 @@ html.intro-on { overflow: hidden; }
             <li><b>Campiona il beat</b> registra una battuta di quello che sta suonando e la mette sul disco.</li>
             <li><b>Baby</b>, <b>Chirp</b>, <b>Flare</b>, <b>Tear</b>, <b>Transformer</b>, <b>Scribble</b>, <b>Crab</b>, <b>Orbit</b> e <b>Stab</b> sono le tecniche classiche: il piatto le esegue da solo, a tempo. Tocca il disco per riprendere il controllo.</li>
             <li>Il suono è disegnato sul disco come un solco a spirale: il braccio segue la puntina e l’adesivo rosso segna dove comincia. <b>45 giri</b> lo fa girare più veloce, <b>Spinback</b> lo lancia all’indietro.</li>
+            <li><b>Disco</b> cambia il tipo di disco sul piatto: LP, 45 giri 7″ con l’adattatore, dubplate, picture disc, gommalacca 78 (gracchia, come quelli del nonno) e fosforescente (pulsa con la cassa).</li>
             <li>Il disco gira esattamente sotto il dito; tenerlo fermo fa silenzio, come su un vinile vero.</li>
             <li><b>Cupo ↔ chiaro</b> e <b>Sporco</b> cambiano il colore dello scratch: tutto a sinistra è scuro, tutto a destra è sporco come un campionatore a 12 bit.</li>
             <li><b>Start / Stop</b> fa girare il disco; il pitch lo accelera o lo rallenta.</li>
@@ -1663,7 +1676,7 @@ function demoPatterns() {
   put(1, 1, 8, [[15]]);
   return P;
 }
-const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "buio", wear: 25, intro: "si", lcd: "oled", meter: "ago", knob: "skin", font: "bungee", stickers: [],
+const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", disc: "lp", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "studio", wear: 25, intro: "si", lcd: "oled", meter: "ago", knob: "skin", font: "bungee", stickers: [],
   shape: "rettangolo", rack: "classica", padside: "sinistra", tabs: "alto", padshape: "arrotondati", pulse: "no", motion: "piene", ripple: "si", view: "piatta" };
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
@@ -1679,6 +1692,8 @@ try {
     state.ver = 4;
     state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY, saved.custom || {});
     if (state.custom.logo === "MAT·TONE") state.custom.logo = "MAT.TONE";   // old default names
+    const oldRoom = { buio: "studio", cemento: "graffiti", legno: "dischi", moquette: "neon", piastrelle: "citta" }[state.custom.room];
+    if (oldRoom) state.custom.room = oldRoom;                                 // the rooms that were redone
     if (state.custom.labelText === "MATTONE") state.custom.labelText = "MAT.TONE";
   }
 } catch (e) { /* storage unavailable */ }
@@ -2166,7 +2181,7 @@ class DeckCore {
     this.sr = sr; this.buf = null; this.L = 0; this.bsr = sr; this.pos = 0; this.target = 0; this.touch = false;
     this.motor = false; this.rate = 0; this.auto = ""; this.anchor = 0; this.origin = 0; this.six = 0.17;
     this.xf = 1; this.cut = false; this.pitch = 0; this.g = 0; this.amp = 0; this.prev = 0;
-    this.dirt = 0.25; this.held = 0; this.hc = 0; this.lp = 0; this.hpX = 0; this.hpY = 0; this.speed = 1; this.slow = false;
+    this.dirt = 0.25; this.held = 0; this.hc = 0; this.lp = 0; this.hpX = 0; this.hpY = 0; this.speed = 1; this.slow = false; this.crackle = 0; this.pop = 0;
   }
   msg(m) {
     if (m.buf) { this.buf = m.buf; this.L = m.buf.length; this.bsr = m.sr; this.pos = this.target = this.anchor = this.prev = 0; this.rate = 0; }
@@ -2221,6 +2236,11 @@ class DeckCore {
       const c1 = 0.5 * (y2 - y0), c2 = y0 - 2.5 * y1 + 2 * y2 - 0.5 * y3, c3 = 0.5 * (y3 - y0) + 1.5 * (y1 - y2);
       let s = ((c3 * f + c2) * f + c1) * f + y1;
       s += (Math.random() * 2 - 1) * 0.012 * Math.min(1, sp);       // stylus noise only while moving
+      if (this.crackle) {                                               // old formats: pops and hiss from the surface
+        const mv = Math.min(1, sp);
+        if (Math.random() < this.crackle * 0.0007 * mv) this.pop = (Math.random() < 0.5 ? -1 : 1) * (0.25 + Math.random() * 0.5);
+        s += this.pop + (Math.random() * 2 - 1) * 0.02 * this.crackle * mv; this.pop *= 0.55;
+      }
       if (++hc >= hold) { hc = 0; held = Math.round(s * q) / q; }
       lp += (held - lp) * lpk;
       hx += (lp - hx) * hpk;                                            // remove rumble and clicks below 35 Hz
@@ -2282,7 +2302,7 @@ function initDeck() {
     deck.send = m => core.msg(m);
   };
   const ready = () => {
-    deck.send({ set: { six: sixteenth(), xf: state.xf, pitch: state.deckPitch, dirt: state.deckDirt, motor: deck.motor, speed: deck.speed } });
+    deck.send({ set: { six: sixteenth(), xf: state.xf, pitch: state.deckPitch, dirt: state.deckDirt, motor: deck.motor, speed: deck.speed, crackle: discGeom().crackle } });
     Promise.all(["gm_orchhit"].map(id => loadSound(id).catch(() => null))).then(() => {
       if (deck.src === "phrase") setDeckBuffer(buildPhrase());
     });
@@ -2302,7 +2322,8 @@ function initDeck() {
 }
 function applyDeckColor() {
   if (!ctx || !N.deckTone) return;
-  N.deckTone.frequency.setTargetAtTime(380 * Math.pow(2, state.deckTone * 4.4), ctx.currentTime, 0.03);
+  // a 78 never had the highs: the tone control works under a lower ceiling
+  N.deckTone.frequency.setTargetAtTime(380 * Math.pow(2, state.deckTone * 4.4) * (discId() === "shellac" ? 0.45 : 1), ctx.currentTime, 0.03);
   N.deckDrive.curve = satCurve(0.35 + state.deckDirt * 1.2);
   deck.send({ set: { dirt: state.deckDirt } });
 }
@@ -2805,6 +2826,8 @@ function loadKit(id) {
     return { sound, pitch: 0, vol: sound === "sy_vinyl" ? 0.4 : 0.82, pan: 0, rev: /cym|crash|ride|fx/.test(sound) ? 0.18 : 0.05, gate: bass ? 4 : 0 };
   });
   save(); renderAll(); if (!$("drawer").hidden) renderLibrary();
+  // the new pads are dealt one after the other like cards
+  if (state.custom.motion !== "ridotte") [...$("pads").children].forEach((p, i) => { p.style.setProperty("--i", i); p.classList.remove("deal"); void p.offsetWidth; p.classList.add("deal"); p.addEventListener("animationend", () => p.classList.remove("deal"), { once: true }); });
   if (ctx) Promise.all(kit[2].map(x => loadSound(x).catch(() => null))).then(() => msg("KIT " + kit[1].toUpperCase() + " NEL GRUPPO " + BANKS[state.bank].id));
   else msg("KIT " + kit[1].toUpperCase() + " NEL GRUPPO " + BANKS[state.bank].id);
   if (/^melo|orchestra|band/.test(id)) setTimeout(() => msg("MELODIE: SCEGLI UN PAD E PREMI NOTE PER SUONARLO SULLA SCALA"), 1600);
@@ -2882,7 +2905,14 @@ function flash(b, p, note) {
   else target = pads[p];
   if (!target) return;
   target.classList.remove("hit"); void target.offsetWidth; target.classList.add("hit");
-  if (state.custom.ripple !== "no" && state.custom.motion !== "ridotte" && target.childElementCount < 8) { const r = el("span", "ripple"); target.appendChild(r); r.addEventListener("animationend", () => r.remove()); }
+  if (state.custom.ripple !== "no" && state.custom.motion !== "ridotte" && target.childElementCount < 8) {
+    const r = el("span", "ripple"); target.appendChild(r); r.addEventListener("animationend", () => r.remove());
+    // a few sparks fly out of the middle of the pad
+    if (target.classList.contains("pad")) for (let k = 0; k < 6; k++) {
+      const sp = el("i", "spark"); sp.style.setProperty("--a", (k * 60 + Math.random() * 40) + "deg"); sp.style.setProperty("--d", (28 + Math.random() * 30) + "px");
+      target.appendChild(sp); sp.addEventListener("animationend", () => sp.remove());
+    }
+  }
   clearTimeout(target._t); target._t = setTimeout(() => target.classList.remove("hit"), 90);
 }
 function renderPads() {
@@ -3362,14 +3392,6 @@ function stylusAt(S, r) {
   const p1 = [mx - h * uy, my + h * ux], p2 = [mx + h * uy, my - h * ux];
   return p1[1] > p2[1] ? p1 : p2;
 }
-// radius of the groove at time t of the sound on the record (one turn = deck.rev seconds)
-function grooveR(t, rr) {
-  const w = deck.wave; if (!w) return rr * 0.78;
-  const turns = w.dur / w.rev;
-  if (turns <= 1.001) return rr * 0.7;
-  const pitch = Math.min(rr * 0.1, rr * 0.5 / turns);
-  return rr * 0.92 - pitch * 0.5 - (t / w.rev) * pitch;
-}
 function buildDeckBase() {
   const S = deckSize, cv = document.createElement("canvas"); cv.width = cv.height = S;
   const c = cv.getContext("2d"), cx = S / 2, R = S * 0.47;
@@ -3406,15 +3428,36 @@ function buildDeckBase() {
   });
   return cv;
 }
+// record formats: [id, name, note, geometry]; radii are fractions of the full 12" record area
+const DISCS = [
+  ["lp", "LP 12″", "Il classico 33 giri", { r: 1, out: 0.92, inn: 0.42, lab: 0.34, crackle: 0 }],
+  ["s45", "45 giri 7″", "Il singolo piccolo, col centro largo e l’adattatore giallo", { r: 0.63, out: 0.59, inn: 0.37, lab: 0.32, hole: 0.12, crackle: 0.08 }],
+  ["dub", "Dubplate", "Lacca su alluminio, etichetta scritta a mano", { r: 0.97, out: 0.88, inn: 0.47, lab: 0.27, crackle: 0 }],
+  ["pic", "Picture disc", "Un disegno sotto il vinile trasparente", { r: 1, out: 0.92, inn: 0.4, lab: 0.16, crackle: 0.3 }],
+  ["shellac", "Gommalacca 78", "Il disco del nonno: pesante, solchi larghi, fruscio", { r: 0.84, out: 0.79, inn: 0.45, lab: 0.33, crackle: 1 }],
+  ["glow", "Fosforescente", "Si illumina al buio e pulsa con la cassa", { r: 1, out: 0.92, inn: 0.42, lab: 0.34, crackle: 0.05 }],
+];
+function discId() { return DISCS.some(d => d[0] === state.custom.disc) ? state.custom.disc : "lp"; }
+function discGeom() { return DISCS.find(d => d[0] === discId())[3]; }
+// radius of the groove at time t of the sound on the record (one turn = deck.rev seconds)
+function grooveR(t, rr) {
+  const w = deck.wave, g = discGeom(), out = rr * g.out, inn = rr * g.inn;
+  if (!w) return (out + inn) / 2 + (out - inn) * 0.2;
+  const turns = w.dur / w.rev;
+  if (turns <= 1.001) return (out + inn) / 2;
+  const pitch = Math.min(rr * 0.1, (out - inn) / turns);
+  return out - pitch * 0.5 - (t / w.rev) * pitch;
+}
 // fixed reflections: the two bright wedges a lamp makes on a record, and the lamp's pool of light on the rim
 let sheenCv = null;
 function buildSheen() {
   const S = deckSize, cv = document.createElement("canvas"); cv.width = cv.height = S;
-  const c = cv.getContext("2d"), cx = S / 2, R = S * 0.47, rr = R * 0.93;
-  c.save(); c.beginPath(); c.arc(cx, cx, rr, 0, Math.PI * 2); c.arc(cx, cx, rr * 0.35, 0, Math.PI * 2, true); c.clip();
+  const c = cv.getContext("2d"), cx = S / 2, R = S * 0.47, rr = R * 0.93, g0 = discGeom();
+  c.save(); c.beginPath(); c.arc(cx, cx, rr * g0.r, 0, Math.PI * 2); c.arc(cx, cx, rr * g0.lab * 1.02, 0, Math.PI * 2, true); c.clip();
+  const strong = discId() === "shellac" ? 1.6 : discId() === "dub" ? 1.3 : 1;
   if (c.createConicGradient) {
     const g = c.createConicGradient(Math.atan2(LAMP[1] - 0.5, LAMP[0] - 0.5), cx, cx);
-    [[0, .13], [.035, .03], [.08, 0], [.42, 0], [.465, .03], [.5, .09], [.535, .03], [.58, 0], [.92, 0], [.965, .03], [1, .13]].forEach(([o, a]) => g.addColorStop(o, "rgba(255,248,235," + a + ")"));
+    [[0, .13], [.035, .03], [.08, 0], [.42, 0], [.465, .03], [.5, .09], [.535, .03], [.58, 0], [.92, 0], [.965, .03], [1, .13]].forEach(([o, a]) => g.addColorStop(o, "rgba(255,248,235," + (a * strong).toFixed(3) + ")"));
     c.fillStyle = g; c.fillRect(0, 0, S, S);
   } else {
     const g = c.createLinearGradient(0, S, S, 0); g.addColorStop(0.3, "rgba(255,255,255,0)"); g.addColorStop(0.5, "rgba(255,255,255,.07)"); g.addColorStop(0.7, "rgba(255,255,255,0)");
@@ -3426,37 +3469,82 @@ function buildSheen() {
   c.globalCompositeOperation = "lighter"; c.fillStyle = lp; c.fillRect(0, 0, S, S);
   return cv;
 }
-// the record, drawn once: vinyl, fine grooves, the sound itself as a glowing spiral, the cue sticker
+// the picture of the picture disc: a sunset over the city, the name across the sky
+function paintPicture(c, cx, rr) {
+  const sky = c.createLinearGradient(0, cx - rr, 0, cx + rr);
+  sky.addColorStop(0, "#2a1660"); sky.addColorStop(0.45, "#e2477a"); sky.addColorStop(0.7, "#ff9a3c"); sky.addColorStop(1, "#ffd36a");
+  c.fillStyle = sky; c.fillRect(cx - rr, cx - rr, rr * 2, rr * 2);
+  c.save(); c.translate(cx, cx);
+  for (let i = 0; i < 24; i++) { c.fillStyle = i % 2 ? "rgba(255,255,255,.07)" : "rgba(255,255,255,0)"; c.beginPath(); c.moveTo(0, rr * 0.2); c.arc(0, rr * 0.2, rr * 1.6, Math.PI + i / 24 * Math.PI, Math.PI + (i + 1) / 24 * Math.PI); c.fill(); }
+  const sun = c.createLinearGradient(0, -rr * 0.25, 0, rr * 0.45); sun.addColorStop(0, "#fff3a0"); sun.addColorStop(1, "#ff5a6a");
+  c.fillStyle = sun; c.beginPath(); c.arc(0, rr * 0.2, rr * 0.42, Math.PI, 0); c.fill();
+  c.fillStyle = "#e2477a"; for (let k = 0; k < 6; k++) c.fillRect(-rr * 0.45, rr * (0.02 + k * 0.035), rr * 0.9, rr * 0.012 * (k + 1) * 0.6);
+  // skyline
+  c.fillStyle = "#1a0f2e"; let x = -rr; const rng = sceneRng(3);
+  while (x < rr) { const w = rr * (0.06 + rng() * 0.1), h = rr * (0.1 + rng() * 0.32); c.fillRect(x, rr * 0.2 - h, w, rr * 0.9); x += w; }
+  c.fillStyle = "#ffcf6a"; for (let i = 0; i < 70; i++) c.fillRect(-rr + rng() * rr * 2, rr * (0.0 + rng() * 0.18), rr * 0.012, rr * 0.016);
+  c.fillStyle = "#1a0f2e"; c.fillRect(-rr, rr * 0.2, rr * 2, rr);
+  c.font = Math.round(rr * 0.2) + "px Bungee, Impact, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+  c.fillStyle = "#1a0f2e"; c.fillText("MAT.TONE", rr * 0.012, -rr * 0.56 + rr * 0.012); c.fillStyle = "#fff6e0"; c.fillText("MAT.TONE", 0, -rr * 0.56);
+  c.font = Math.round(rr * 0.06) + "px Silkscreen, monospace"; c.fillStyle = "#ffd36a"; c.fillText("PICTURE DISC · EDIZIONE LIMITATA", 0, rr * 0.55);
+  c.restore();
+}
+// the record, drawn once: vinyl (or lacquer, or shellac), grooves, the sound itself as a glowing spiral, the cue sticker
 let recordCv = null, recordKey = "";
 function buildRecord() {
   const S = deckSize, cv = document.createElement("canvas"); cv.width = cv.height = S;
-  const c = cv.getContext("2d"), cx = S / 2, rr = S * 0.47 * 0.93, v = state.custom.vinyl;
-  c.save(); c.beginPath(); c.arc(cx, cx, rr, 0, Math.PI * 2); c.clip();
+  const c = cv.getContext("2d"), cx = S / 2, rr = S * 0.47 * 0.93, v = state.custom.vinyl, type = discId(), G = discGeom(), dr = rr * G.r;
+  // a small record leaves the slipmat showing: it gets a shadow on the mat
+  if (G.r < 0.99) { c.fillStyle = "rgba(0,0,0,.45)"; c.beginPath(); c.arc(cx + S * 0.006, cx + S * 0.01, dr * 1.01, 0, Math.PI * 2); c.fill(); }
+  c.save(); c.beginPath(); c.arc(cx, cx, dr, 0, Math.PI * 2); c.clip();
   const rnd01 = (() => { let z = 7; return () => (z = (z * 16807) % 2147483647) / 2147483647; })();
-  let light = false;
-  if (v === "rosso") { const g = c.createRadialGradient(cx, cx, rr * 0.2, cx, cx, rr); g.addColorStop(0, "rgba(230,50,60,.88)"); g.addColorStop(1, "rgba(120,10,22,.94)"); c.fillStyle = g; c.fillRect(0, 0, S, S); }
+  let light = false, ringA = 1, step = Math.max(1, S / 300);
+  if (type === "dub") {
+    // aluminium blank under black lacquer: metal shows at the edge and in the middle
+    const al = c.createRadialGradient(cx - dr * 0.3, cx - dr * 0.3, 0, cx, cx, dr); al.addColorStop(0, "#e9e9e6"); al.addColorStop(1, "#8d8f90");
+    c.fillStyle = al; c.fillRect(0, 0, S, S);
+    c.fillStyle = "#121315"; c.beginPath(); c.arc(cx, cx, dr * 0.975, 0, Math.PI * 2); c.arc(cx, cx, rr * 0.4, 0, Math.PI * 2, true); c.fill("evenodd");
+    if (c.createConicGradient) { const brush = c.createConicGradient(0, cx, cx); for (let i = 0; i <= 12; i++) brush.addColorStop(i / 12, i % 2 ? "rgba(255,255,255,.12)" : "rgba(0,0,0,.08)"); c.fillStyle = brush; c.beginPath(); c.arc(cx, cx, rr * 0.4, 0, Math.PI * 2); c.fill(); }
+    step = Math.max(1, S / 420);
+  } else if (type === "pic") {
+    paintPicture(c, cx, dr);
+    light = true; ringA = 0.5;
+  } else if (type === "shellac") {
+    const g = c.createRadialGradient(cx - dr * 0.2, cx - dr * 0.2, dr * 0.1, cx, cx, dr); g.addColorStop(0, "#1c1a18"); g.addColorStop(1, "#050505");
+    c.fillStyle = g; c.fillRect(0, 0, S, S); step = Math.max(2, S / 150);
+  } else if (type === "glow") {
+    const g = c.createRadialGradient(cx, cx, rr * 0.2, cx, cx, dr); g.addColorStop(0, "#d9ff9c"); g.addColorStop(1, "#8ee05a");
+    c.fillStyle = g; c.fillRect(0, 0, S, S); light = true;
+  } else if (v === "rosso") { const g = c.createRadialGradient(cx, cx, dr * 0.2, cx, cx, dr); g.addColorStop(0, "rgba(230,50,60,.88)"); g.addColorStop(1, "rgba(120,10,22,.94)"); c.fillStyle = g; c.fillRect(0, 0, S, S); }
   else if (v === "marmo") {
     c.fillStyle = "#1f3d86"; c.fillRect(0, 0, S, S);
-    for (let i = 0; i < 46; i++) { c.strokeStyle = rnd01() < 0.6 ? "rgba(120,170,255," + (0.25 + rnd01() * 0.35) + ")" : "rgba(240,245,255," + (0.15 + rnd01() * 0.3) + ")"; c.lineWidth = S * (0.004 + rnd01() * 0.03); c.beginPath(); const r = rr * (0.3 + rnd01() * 0.7), a0 = rnd01() * Math.PI * 2; c.arc(cx + (rnd01() - 0.5) * rr * 0.4, cx + (rnd01() - 0.5) * rr * 0.4, r, a0, a0 + 0.5 + rnd01() * 2.5); c.stroke(); }
+    for (let i = 0; i < 46; i++) { c.strokeStyle = rnd01() < 0.6 ? "rgba(120,170,255," + (0.25 + rnd01() * 0.35) + ")" : "rgba(240,245,255," + (0.15 + rnd01() * 0.3) + ")"; c.lineWidth = S * (0.004 + rnd01() * 0.03); c.beginPath(); const r = dr * (0.3 + rnd01() * 0.7), a0 = rnd01() * Math.PI * 2; c.arc(cx + (rnd01() - 0.5) * dr * 0.4, cx + (rnd01() - 0.5) * dr * 0.4, r, a0, a0 + 0.5 + rnd01() * 2.5); c.stroke(); }
   }
   else if (v === "splatter") {
     c.fillStyle = "#101010"; c.fillRect(0, 0, S, S);
     const cols = ["#ff5fae", "#ffd23f", "#3ad6ff", "#f4f1e8"];
-    for (let i = 0; i < 70; i++) { const a = rnd01() * Math.PI * 2, d = Math.sqrt(rnd01()) * rr, x0 = cx + Math.cos(a) * d, y0 = cx + Math.sin(a) * d; c.fillStyle = cols[i % 4]; for (let k = 0; k < 6; k++) { c.beginPath(); c.arc(x0 + (rnd01() - 0.5) * S * 0.05, y0 + (rnd01() - 0.5) * S * 0.05, S * (0.002 + rnd01() * (k ? 0.006 : 0.016)), 0, Math.PI * 2); c.fill(); } }
+    for (let i = 0; i < 70; i++) { const a = rnd01() * Math.PI * 2, d = Math.sqrt(rnd01()) * dr, x0 = cx + Math.cos(a) * d, y0 = cx + Math.sin(a) * d; c.fillStyle = cols[i % 4]; for (let k = 0; k < 6; k++) { c.beginPath(); c.arc(x0 + (rnd01() - 0.5) * S * 0.05, y0 + (rnd01() - 0.5) * S * 0.05, S * (0.002 + rnd01() * (k ? 0.006 : 0.016)), 0, Math.PI * 2); c.fill(); } }
   }
-  else if (v === "oro") { const g = c.createRadialGradient(cx * 0.8, cx * 0.8, rr * 0.1, cx, cx, rr); g.addColorStop(0, "#fbe6a2"); g.addColorStop(0.6, "#d8a93e"); g.addColorStop(1, "#9c7019"); c.fillStyle = g; c.fillRect(0, 0, S, S); light = true; }
+  else if (v === "oro") { const g = c.createRadialGradient(cx * 0.8, cx * 0.8, dr * 0.1, cx, cx, dr); g.addColorStop(0, "#fbe6a2"); g.addColorStop(0.6, "#d8a93e"); g.addColorStop(1, "#9c7019"); c.fillStyle = g; c.fillRect(0, 0, S, S); light = true; }
   else if (v === "bianco") { c.fillStyle = "#ece8dd"; c.fillRect(0, 0, S, S); light = true; }
   else { c.fillStyle = "#0c0c0c"; c.fillRect(0, 0, S, S); }
-  // lead-in, fine grooves and the polished run-out near the label
-  for (let r = rr * 0.38; r < rr * 0.985; r += Math.max(1, S / 300)) { c.strokeStyle = (light ? "rgba(0,0,0," : "rgba(255,255,255,") + (0.018 + rnd01() * (light ? 0.06 : 0.035)) + ")"; c.lineWidth = 0.6; c.beginPath(); c.arc(cx, cx, r, 0, Math.PI * 2); c.stroke(); }
-  c.strokeStyle = light ? "rgba(0,0,0,.18)" : "rgba(255,255,255,.07)"; c.lineWidth = S / 160; c.beginPath(); c.arc(cx, cx, rr * 0.975, 0, Math.PI * 2); c.stroke();
+  // grooves: fine on vinyl and lacquer, wide and few on shellac
+  const g0 = type === "dub" ? rr * 0.4 : rr * Math.max(G.lab * 1.05, G.inn - 0.04);
+  for (let r = g0; r < dr * 0.985; r += step) { c.strokeStyle = (light ? "rgba(0,0,0," : "rgba(255,255,255,") + ((0.018 + rnd01() * (light ? 0.06 : 0.035)) * ringA * (type === "shellac" ? 2.2 : 1)) + ")"; c.lineWidth = type === "shellac" ? 1 : 0.6; c.beginPath(); c.arc(cx, cx, r, 0, Math.PI * 2); c.stroke(); }
+  c.strokeStyle = light ? "rgba(0,0,0,.18)" : "rgba(255,255,255,.07)"; c.lineWidth = S / 160; c.beginPath(); c.arc(cx, cx, dr * 0.975, 0, Math.PI * 2); c.stroke();
+  if (type === "shellac") {
+    // an old record: a couple of chips out of the edge
+    c.globalCompositeOperation = "destination-out";
+    [[0.7, 0.03], [2.9, 0.022], [4.6, 0.016]].forEach(([a, s]) => { c.beginPath(); c.arc(cx + Math.cos(a) * dr, cx + Math.sin(a) * dr, S * s, 0, Math.PI * 2); c.fill(); });
+    c.globalCompositeOperation = "source-over";
+  }
   const w = deck.wave;
   if (w && w.peaks.length) {
     // the sound on the record: where each moment sits is where the needle will read it
     const n = w.peaks.length, turns = w.dur / w.rev, copies = turns < 1 ? Math.max(1, Math.round(1 / turns)) : 1;
-    const pitch = turns <= 1.001 ? rr * 0.17 : Math.min(rr * 0.1, rr * 0.5 / turns);
-    const ink = light ? "rgba(40,24,8,.6)" : hueColor;
-    c.lineCap = "butt"; c.strokeStyle = ink; c.globalAlpha = light ? 0.8 : 0.5;
+    const span = rr * (G.out - G.inn), pitch = turns <= 1.001 ? span * 0.34 : Math.min(rr * 0.1, span / turns);
+    const ink = type === "pic" ? "rgba(255,255,255,.75)" : light ? "rgba(40,24,8,.6)" : hueColor;
+    c.lineCap = "butt"; c.strokeStyle = ink; c.globalAlpha = type === "pic" ? 0.55 : light ? 0.8 : 0.5;
     if (!light) { c.shadowColor = hueColor; c.shadowBlur = S / 220; }
     c.beginPath();
     for (let k = 0; k < copies; k++) for (let i = 0; i < n; i++) {
@@ -3465,95 +3553,173 @@ function buildRecord() {
       const co = Math.cos(th), si = Math.sin(th);
       c.moveTo(cx + co * (r - amp), cx + si * (r - amp)); c.lineTo(cx + co * (r + amp), cx + si * (r + amp));
     }
-    c.lineWidth = Math.max(1, rr * 0.7 * Math.PI * 2 * turns / n * 1.05); c.stroke();
+    c.lineWidth = Math.max(1, rr * (G.out + G.inn) / 2 * Math.PI * 2 * turns / n * 1.05); c.stroke();
     c.shadowBlur = 0; c.globalAlpha = 1;
     // a paper sticker on the record marks where the sound starts, like DJs do
-    const r0 = grooveR(0, rr), s0 = stylusAt(S, r0), a0 = Math.atan2(s0[1] - cx, s0[0] - cx);
+    const r0 = grooveR(0, rr), s0 = stylusAt(S, r0), a0 = Math.atan2(s0[1] - cx, s0[0] - cx), l0 = rr * (G.lab + 0.025), sl = rr * Math.min(0.2, (G.out - G.lab) * 0.45);
     c.save(); c.translate(cx, cx); c.rotate(a0);
-    c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(rr * 0.37, -S * 0.009, rr * 0.2 + S * 0.004, S * 0.022);
-    c.fillStyle = "#f2ead6"; c.fillRect(rr * 0.365, -S * 0.012, rr * 0.2, S * 0.022);
-    c.fillStyle = "#d8483a"; c.fillRect(rr * 0.365 + rr * 0.13, -S * 0.012, rr * 0.07, S * 0.022);
+    c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(l0 + rr * 0.005, -S * 0.009, sl + S * 0.004, S * 0.022);
+    c.fillStyle = "#f2ead6"; c.fillRect(l0, -S * 0.012, sl, S * 0.022);
+    c.fillStyle = "#d8483a"; c.fillRect(l0 + sl * 0.65, -S * 0.012, sl * 0.35, S * 0.022);
     c.restore();
   }
   c.restore();
   return cv;
 }
+// the label of each format: printed paper, a handwritten sticker, the gold on maroon of a 78, none on a picture disc
 let labelCv = null, labelKey = "";
 function buildLabel() {
   const S = deckSize, cv = document.createElement("canvas"); cv.width = cv.height = S;
-  const c = cv.getContext("2d"), cx = S / 2, rr = S * 0.47 * 0.93;
+  const c = cv.getContext("2d"), cx = S / 2, rr = S * 0.47 * 0.93, type = discId(), G = discGeom(), L = rr * G.lab;
   const lab = state.custom.label === "auto" ? hueColor : state.custom.label, txt = (state.custom.labelText || "").trim().toUpperCase() || "MAT.TONE";
-  c.translate(cx, cx);
-  const g = c.createRadialGradient(-rr * 0.1, -rr * 0.1, rr * 0.02, 0, 0, rr * 0.34); g.addColorStop(0, "rgba(255,255,255,.18)"); g.addColorStop(1, "rgba(255,255,255,0)");
-  c.fillStyle = lab; c.beginPath(); c.arc(0, 0, rr * 0.34, 0, Math.PI * 2); c.fill();
-  c.fillStyle = g; c.fill();
-  c.fillStyle = "rgba(0,0,0,.16)"; c.beginPath(); c.arc(0, 0, rr * 0.34, 0, Math.PI); c.fill();
-  c.strokeStyle = "rgba(0,0,0,.25)"; c.lineWidth = Math.max(1, S / 400); c.beginPath(); c.arc(0, 0, rr * 0.3, 0, Math.PI * 2); c.stroke();
-  const ink = labelInk(lab.startsWith("#") ? lab : "#f2a43a");
-  c.fillStyle = ink; c.textAlign = "center";
-  c.font = Math.round(S * (txt.length > 8 ? 0.04 * 8 / txt.length : 0.04)) + "px '" + (FONTS.find(f => f[0] === state.custom.font) || FONTS[0])[2] + "', Bungee, Impact, sans-serif"; c.fillText(txt, 0, -rr * 0.09);
-  c.font = Math.round(S * 0.022) + "px Silkscreen, monospace"; c.fillText((deck.speed || 1) > 1.1 ? "45 GIRI" : "LATO A · 33⅓", 0, rr * 0.16);
-  // the words around the edge of the label, as on a pressing
-  c.font = Math.round(S * 0.012) + "px Silkscreen, monospace"; c.globalAlpha = 0.6;
-  const ring = "MAT.TONE RECORDS · STEREO · BOOM BAP · MADE IN CANTINA · ", rad = rr * 0.305;
-  for (let i = 0; i < ring.length; i++) { c.save(); c.rotate(i / ring.length * Math.PI * 2); c.fillText(ring[i], 0, -rad); c.restore(); }
-  c.globalAlpha = 1;
-  c.fillStyle = "#ebe1c6"; c.beginPath(); c.arc(rr * 0.27, 0, S / 110, 0, Math.PI * 2); c.fill();
+  const brand = (FONTS.find(f => f[0] === state.custom.font) || FONTS[0])[2];
+  c.translate(cx, cx); c.textAlign = "center"; c.textBaseline = "alphabetic";
+  const ringText = (str, rad, size, col) => { c.font = Math.round(size) + "px Silkscreen, monospace"; c.fillStyle = col; for (let i = 0; i < str.length; i++) { c.save(); c.rotate(i / str.length * Math.PI * 2); c.fillText(str[i], 0, -rad); c.restore(); } };
+  if (type === "dub") {
+    // a white sticker, a bit crooked, written with a marker
+    c.save(); c.rotate(-0.18);
+    c.fillStyle = "#f4f1ea"; c.beginPath(); c.arc(0, 0, L, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = "rgba(40,60,140,.25)"; c.lineWidth = 1; for (let y = -L * 0.6; y < L * 0.7; y += L * 0.22) { const hw = Math.sqrt(Math.max(0, L * L - y * y)) * 0.9; c.beginPath(); c.moveTo(-hw, y); c.lineTo(hw, y); c.stroke(); }
+    c.fillStyle = "#1d2a7a"; c.font = Math.round(L * (txt.length > 8 ? 0.36 * 8 / txt.length : 0.36)) + "px 'Permanent Marker', sans-serif"; c.fillText(txt, 0, -L * 0.08);
+    c.font = Math.round(L * 0.2) + "px 'Permanent Marker', sans-serif"; c.fillText("DUB · NON TOCCARE!", 0, L * 0.34);
+    c.restore();
+  } else if (type === "pic") {
+    // clear vinyl in the middle: just a thin ring
+    c.strokeStyle = "rgba(255,255,255,.35)"; c.lineWidth = Math.max(1, S / 400); c.beginPath(); c.arc(0, 0, L, 0, Math.PI * 2); c.stroke();
+  } else if (type === "shellac") {
+    const g = c.createRadialGradient(-L * 0.3, -L * 0.3, 0, 0, 0, L); g.addColorStop(0, "#7a2424"); g.addColorStop(1, "#3e0f10");
+    c.fillStyle = g; c.beginPath(); c.arc(0, 0, L, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = "#d8b25a"; c.lineWidth = Math.max(1, S / 300); c.beginPath(); c.arc(0, 0, L * 0.92, 0, Math.PI * 2); c.stroke();
+    ringText("· MAT.TONE RECORDS · DISCO FONOGRAFICO ", L * 0.8, S * 0.013, "#d8b25a");
+    c.fillStyle = "#e9c873"; c.font = Math.round(L * (txt.length > 8 ? 0.26 * 8 / txt.length : 0.26)) + "px '" + brand + "', serif"; c.fillText(txt, 0, -L * 0.12);
+    c.font = Math.round(L * 0.13) + "px Silkscreen, monospace"; c.fillText("78 GIRI", 0, L * 0.4);
+  } else {
+    const fill = type === "glow" ? "#1a2a12" : lab;
+    const g = c.createRadialGradient(-L * 0.3, -L * 0.3, L * 0.06, 0, 0, L); g.addColorStop(0, "rgba(255,255,255,.18)"); g.addColorStop(1, "rgba(255,255,255,0)");
+    c.fillStyle = fill; c.beginPath(); c.arc(0, 0, L, 0, Math.PI * 2); c.fill();
+    c.fillStyle = g; c.fill();
+    c.fillStyle = "rgba(0,0,0,.16)"; c.beginPath(); c.arc(0, 0, L, 0, Math.PI); c.fill();
+    c.strokeStyle = "rgba(0,0,0,.25)"; c.lineWidth = Math.max(1, S / 400); c.beginPath(); c.arc(0, 0, L * 0.88, 0, Math.PI * 2); c.stroke();
+    const ink = type === "glow" ? "#b8ff6a" : labelInk(fill.startsWith("#") ? fill : "#f2a43a");
+    c.fillStyle = ink;
+    const big = type === "s45";
+    // on a 7" the big hole takes the middle: the words go above and below it
+    c.font = Math.round(L * (txt.length > 8 ? 0.27 * 8 / txt.length : 0.27) * (big ? 0.95 : 1)) + "px '" + brand + "', Bungee, Impact, sans-serif"; c.fillText(txt, 0, big ? -L * 0.5 : -L * 0.26);
+    c.font = Math.round(L * (big ? 0.12 : 0.19)) + "px Silkscreen, monospace"; c.fillText(big || (deck.speed || 1) > 1.1 ? "45 GIRI" : type === "glow" ? "GLOW · 33⅓" : "LATO A · 33⅓", 0, big ? L * 0.68 : L * 0.47);
+    ringText("MAT.TONE RECORDS · STEREO · BOOM BAP · MADE IN CANTINA · ", L * 0.9, S * 0.012 * Math.min(1, L / (rr * 0.34)) , ink);
+    if (big) {
+      // the big hole and the yellow three-armed adapter
+      c.globalCompositeOperation = "destination-out"; c.beginPath(); c.arc(0, 0, rr * G.hole, 0, Math.PI * 2); c.fill(); c.globalCompositeOperation = "source-over";
+      const H0 = rr * G.hole;
+      c.fillStyle = "#f2c230"; c.strokeStyle = "#a07a10"; c.lineWidth = Math.max(1, S / 500);
+      c.beginPath(); c.arc(0, 0, H0, 0, Math.PI * 2); c.arc(0, 0, H0 * 0.82, 0, Math.PI * 2, true); c.fill("evenodd");
+      for (let k = 0; k < 3; k++) { c.save(); c.rotate(k / 3 * Math.PI * 2); c.fillRect(-H0 * 0.12, -H0 * 0.86, H0 * 0.24, H0 * 0.72); c.restore(); }
+      c.beginPath(); c.arc(0, 0, H0 * 0.26, 0, Math.PI * 2); c.fill(); c.stroke();
+    } else if (type !== "glow") { c.fillStyle = "#ebe1c6"; c.beginPath(); c.arc(L * 0.8, 0, S / 110, 0, Math.PI * 2); c.fill(); }
+  }
   // spindle
   const sp = c.createRadialGradient(-S / 300, -S / 300, 0, 0, 0, S / 60); sp.addColorStop(0, "#fffaf0"); sp.addColorStop(1, "#8b8577");
   c.fillStyle = sp; c.beginPath(); c.arc(0, 0, S / 70, 0, Math.PI * 2); c.fill();
   return cv;
 }
-let lastDeckA = null, lastDeckT = 0, armR = 0, deckSpin = 0;
+let lastDeckA = null, lastDeckT = 0, armR = 0, deckSpin = 0, armLift = 0;
+// changing the record: the old one lifts off, the new one drops onto the platter
+const deckSwap = { key: "", t0: 0, rec: null, lab: null };
 function drawDeck(force) {
   if (!deckCv || !deckSize) return;
-  const a = deckAngle(), S = deckSize, cx = S / 2, R = S * 0.47, rr = R * 0.93;
+  const a = deckAngle(), S = deckSize, cx = S / 2, R = S * 0.47, rr = R * 0.93, G = discGeom();
   // where the needle should be: on the groove of the moment being played
   const w = deck.wave, t = w ? (((deck.pos / deck.sr) % w.dur) + w.dur) % w.dur : 0, goalR = grooveR(t, rr);
+  const now = performance.now(), swapP = deckSwap.t0 ? Math.min(1, (now - deckSwap.t0) / 750) : 1;
   if (!armR) armR = goalR;
-  const armMoving = Math.abs(goalR - armR) > S / 2000;
-  if (!force && lastDeckA !== null && Math.abs(a - lastDeckA) < 0.002 && !deck.touching && !armMoving && deckSpin < 0.001) return;
-  const now = performance.now(), dA = lastDeckA === null ? 0 : a - lastDeckA;
+  const liftGoal = swapP < 1 ? 1 : 0;
+  const armMoving = Math.abs(goalR - armR) > S / 2000 || Math.abs(liftGoal - armLift) > 0.01;
+  const glow = discId() === "glow";
+  if (!force && lastDeckA !== null && Math.abs(a - lastDeckA) < 0.002 && !deck.touching && !armMoving && deckSpin < 0.001 && swapP >= 1 && !(glow && kickGlow > 0.02)) return;
+  const dA = lastDeckA === null ? 0 : a - lastDeckA;
   deckSpin += (Math.min(0.6, Math.abs(dA)) - deckSpin) * 0.35;
   lastDeckA = a; lastDeckT = now;
-  armR += (goalR - armR) * (Math.abs(goalR - armR) > rr * 0.2 ? 0.12 : 0.35);
+  armLift += (liftGoal - armLift) * 0.25;
+  // while the arm is up it waits off the groove, then drops back on the right one
+  const armGoal = armLift > 0.5 ? rr * (G.out + 0.06) : goalR;
+  armR += (armGoal - armR) * (Math.abs(armGoal - armR) > rr * 0.2 ? 0.12 : 0.35);
   if (!deckBase) deckBase = buildDeckBase();
+  const sk = discId() + (w ? w.id : "") + state.custom.vinyl;
+  if (sk !== deckSwap.key) {
+    if (deckSwap.key && recordCv && labelCv && !lowMotion()) { deckSwap.rec = recordCv; deckSwap.lab = labelCv; deckSwap.t0 = now; }
+    deckSwap.key = sk; sheenCv = null;
+  }
   if (!sheenCv) sheenCv = buildSheen();
-  const rk = state.custom.vinyl + hueColor + (w ? w.id : "");
+  const rk = sk + hueColor;
   if (!recordCv || recordKey !== rk) { recordCv = buildRecord(); recordKey = rk; }
-  const lk = state.custom.label + hueColor + state.custom.labelText + state.custom.font + (deck.speed || 1);
+  const lk = discId() + state.custom.label + hueColor + state.custom.labelText + state.custom.font + (deck.speed || 1);
   if (!labelCv || labelKey !== lk) { labelCv = buildLabel(); labelKey = lk; }
   const c = deckCv.getContext("2d");
   c.clearRect(0, 0, S, S);
   c.drawImage(deckBase, 0, 0);
-  // rotating parts; when the record flies, a little motion blur trails behind it
-  const blur = deckSpin > 0.06 ? Math.min(3, Math.round(deckSpin / 0.06)) : 0, dir = Math.sign(dA) || 1;
-  for (let k = blur; k >= 0; k--) {
-    c.save(); c.globalAlpha = k ? 0.28 / k : 1; c.translate(cx, cx); c.rotate(a - dir * k * deckSpin * 0.35);
-    if (!k) {
-      // strobe dots on the rim: four rows, each one stands still at a different speed
-      [[0.987, 90], [0.972, 92], [0.957, 94], [0.942, 96]].forEach(([f, n]) => {
-        c.fillStyle = "#8f897b";
-        const d = S / 260;
-        for (let i = 0; i < n; i++) { const q = i / n * Math.PI * 2; c.fillRect(Math.cos(q) * R * f - d / 2, Math.sin(q) * R * f - d / 2, d, d); }
-      });
-    }
-    c.drawImage(recordCv, -cx, -cx);
-    c.drawImage(labelCv, -cx, -cx);
-    c.restore();
+  // the platter: strobe dots on the rim, four rows, each one stands still at a different speed
+  c.save(); c.translate(cx, cx); c.rotate(a);
+  c.fillStyle = "#8f897b";
+  const d = S / 260;
+  [[0.987, 90], [0.972, 92], [0.957, 94], [0.942, 96]].forEach(([f, n]) => { for (let i = 0; i < n; i++) { const q = i / n * Math.PI * 2; c.fillRect(Math.cos(q) * R * f - d / 2, Math.sin(q) * R * f - d / 2, d, d); } });
+  c.restore();
+  const drawRecord = (rec, lab, ang, scale, alpha, dy) => {
+    c.save(); c.globalAlpha = alpha; c.translate(cx, cx + dy); c.scale(scale, scale); c.rotate(ang);
+    c.drawImage(rec, -cx, -cx); c.drawImage(lab, -cx, -cx); c.restore();
+  };
+  if (glow) {
+    // the phosphor glows around the edge and brightens with the kick
+    c.save(); c.shadowColor = "rgba(160,255,110," + (0.55 + kickGlow * 0.45).toFixed(2) + ")"; c.shadowBlur = S * (0.03 + kickGlow * 0.05);
+    c.fillStyle = "#8ee05a"; c.beginPath(); c.arc(cx, cx, rr * G.r * 0.995, 0, Math.PI * 2); c.fill(); c.restore();
+  }
+  if (swapP < 1 && deckSwap.rec) {
+    // the old record goes up and away, the new one comes down with a small bounce
+    const p1 = Math.min(1, swapP / 0.45), e1 = p1 * p1;
+    if (p1 < 1) drawRecord(deckSwap.rec, deckSwap.lab, a, 1 + e1 * 0.12, 1 - e1, -e1 * S * 0.08);
+    const p2 = Math.max(0, (swapP - 0.3) / 0.7), back = 1 + 2.2 * Math.pow(p2 - 1, 3) + 1.2 * Math.pow(p2 - 1, 2);
+    if (p2 > 0) drawRecord(recordCv, labelCv, a, 1 + (1 - back) * 0.15, Math.min(1, p2 * 2.5), 0);
+  } else {
+    // rotating parts; when the record flies, a little motion blur trails behind it
+    const blur = deckSpin > 0.06 ? Math.min(3, Math.round(deckSpin / 0.06)) : 0, dir = Math.sign(dA) || 1;
+    for (let k = blur; k >= 0; k--) drawRecord(recordCv, labelCv, a - dir * k * deckSpin * 0.35, 1, k ? 0.28 / k : 1, 0);
+  }
+  if (glow && kickGlow > 0.02) {
+    c.save(); c.globalCompositeOperation = "lighter"; c.fillStyle = "rgba(170,255,120," + (kickGlow * 0.22).toFixed(3) + ")";
+    c.beginPath(); c.arc(cx, cx, rr * G.r, 0, Math.PI * 2); c.fill(); c.restore();
   }
   c.drawImage(sheenCv, 0, 0);
   if (deck.touching) {
-    c.strokeStyle = hueColor; c.lineWidth = S / 120; c.globalAlpha = 0.9; c.beginPath(); c.arc(cx, cx, rr + S / 100, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1;
+    c.strokeStyle = hueColor; c.lineWidth = S / 120; c.globalAlpha = 0.9; c.beginPath(); c.arc(cx, cx, rr * G.r + S / 100, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1;
     if (deck.finger) {
       const fx = deck.finger[0] * S, fy = deck.finger[1] * S, fg = c.createRadialGradient(fx, fy, 0, fx, fy, S * 0.08);
       fg.addColorStop(0, "rgba(255,230,190,.22)"); fg.addColorStop(1, "rgba(255,230,190,0)");
       c.fillStyle = fg; c.beginPath(); c.arc(fx, fy, S * 0.08, 0, Math.PI * 2); c.fill();
     }
   }
-  drawArm(c, S, stylusAt(S, armR));
+  drawArm(c, S, stylusAt(S, armR), armLift);
 }
-function drawArm(c, S, st) {
+function setDisc(id) {
+  state.custom.disc = DISCS.some(d => d[0] === id) ? id : "lp"; save();
+  deck.send({ set: { crackle: discGeom().crackle } }); applyDeckColor();
+  document.querySelectorAll("#cDisc .card").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === discId()));
+  $("discSel").value = discId();
+  msg("DISCO: " + DISCS.find(d => d[0] === discId())[1].toUpperCase());
+  drawDeck(true);
+}
+// a small picture of each format for Personalizza, drawn with the same code as the deck
+function discPreview(id) {
+  const cv = mkCanvas(240, 150), c = cv.getContext("2d"), keep = [state.custom.disc, deckSize, deck.wave];
+  state.custom.disc = id; deckSize = 280; deck.wave = null;
+  const rec = buildRecord(), lab = buildLabel();
+  [state.custom.disc, deckSize, deck.wave] = keep;
+  c.fillStyle = "#1a1916"; c.fillRect(0, 0, 240, 150);
+  c.fillStyle = "#3a3832"; c.beginPath(); c.arc(120, 75, 66, 0, Math.PI * 2); c.fill();
+  c.fillStyle = "#121110"; c.beginPath(); c.arc(120, 75, 62, 0, Math.PI * 2); c.fill();
+  c.drawImage(rec, 120 - 75, 0, 150, 150); c.drawImage(lab, 120 - 75, 0, 150, 150);
+  cv.style.cssText = "width:100%;height:100%;object-fit:contain;display:block";
+  return cv;
+}
+function drawArm(c, S, st, lift = 0) {
   const px = ARM.px * S, py = ARM.py * S, ux = (px - st[0]) / Math.hypot(px - st[0], py - st[1]), uy = (py - st[1]) / Math.hypot(px - st[0], py - st[1]);
   // the headshell sits at an angle to the tube, as on the real thing
   const off = 0.42, hx = -(ux * Math.cos(off) - uy * Math.sin(off)), hy = -(ux * Math.sin(off) + uy * Math.cos(off));
@@ -3568,7 +3734,9 @@ function drawArm(c, S, st) {
   };
   // soft shadow on the record first, then the metal
   c.save(); c.strokeStyle = c.fillStyle = "rgba(0,0,0,.4)"; if ("filter" in c) c.filter = "blur(" + Math.max(1, Math.round(S / 220)) + "px)";
-  path(S * 0.016, S * 0.024); c.restore();
+  // lifted, the arm is higher above the record: its shadow falls further away and it looks a touch bigger
+  path(S * 0.016 * (1 + lift * 2.4), S * 0.024 * (1 + lift * 2.4)); c.restore();
+  c.save(); if (lift > 0.01) { c.translate(px, py); c.scale(1 + lift * 0.035, 1 + lift * 0.035); c.translate(-px, -py); }
   // counterweight
   const cw = c.createLinearGradient(px + uy * S * 0.02, py - ux * S * 0.02, px - uy * S * 0.02, py + ux * S * 0.02); cw.addColorStop(0, "#9a9486"); cw.addColorStop(0.5, "#3a3832"); cw.addColorStop(1, "#1a1916");
   c.lineCap = "round"; c.strokeStyle = cw; c.lineWidth = S / 26; c.beginPath(); c.moveTo(px + ux * S * 0.045, py + uy * S * 0.045); c.lineTo(px + ux * S * 0.105, py + uy * S * 0.105); c.stroke();
@@ -3588,6 +3756,7 @@ function drawArm(c, S, st) {
   const gb = c.createRadialGradient(px - S * 0.008, py - S * 0.008, 0, px, py, S * 0.03); gb.addColorStop(0, "#d8d0bc"); gb.addColorStop(1, "#4a4740");
   c.fillStyle = gb; c.beginPath(); c.arc(px, py, S * 0.028, 0, Math.PI * 2); c.fill();
   c.fillStyle = "#1b1a17"; c.beginPath(); c.arc(px, py, S * 0.009, 0, Math.PI * 2); c.fill();
+  c.restore();
 }
 /* ================= personalizzazione ================= */
 const CUSTOM_DEFAULT = CUSTOM_DEFAULT_EARLY;
@@ -3596,7 +3765,7 @@ const LED_COLORS = [["auto", "Della scocca", null], ["ambra", "Ambra", "#ff9f2e"
 const PAD_STYLES = [["skin", "Della scocca"], ["avorio", "Avorio"], ["carbone", "Carbonio"], ["neon", "Neon"], ["gruppo", "Colore del gruppo"], ["legno", "Legno"]];
 const VINYLS = [["nero", "Nero classico", "#0c0c0c"], ["rosso", "Rosso trasparente", "#b81d2c"], ["marmo", "Blu marmorizzato", "#2b56b0"], ["splatter", "Splatter", "#ff5fae"], ["oro", "Oro", "#d8a93e"], ["bianco", "Bianco", "#ece8dd"]];
 const LABEL_COLORS = [["auto", "Del gruppo", null], ["#f2a43a", "Arancio"], ["#e8483a", "Rosso"], ["#2f6fd6", "Blu"], ["#f4efe3", "Crema"], ["#1d1c19", "Nero"], ["#49b36a", "Verde"], ["#b48ddb", "Lilla"]];
-const ROOMS = [["buio", "Stanza buia", "#1a1815"], ["mattoni", "Muro di mattoni", "#7a3522"], ["cemento", "Cemento", "#6b6862"], ["legno", "Parquet", "#6e4729"], ["moquette", "Moquette ’70", "#c8641e"], ["piastrelle", "Piastrelle", "#cfcabd"]];
+const ROOMS = [["studio", "Studio insonorizzato", "#3a3029"], ["mattoni", "Muro di mattoni", "#7a3522"], ["graffiti", "Metro coi graffiti", "#ff7a2e"], ["dischi", "Negozio di dischi", "#b8352a"], ["neon", "Club al neon", "#ff3fa4"], ["citta", "Tetto in città, di notte", "#2b2a6a"]];
 const KNOB_STYLES = [["skin", "Della scocca", "Il cappuccio che va con la carrozzeria"], ["crema", "Crema vintage", "Bachelite chiara con la tacca scura"], ["alluminio", "Alluminio", "Metallo spazzolato e zigrinato"], ["becco", "Becco d’anatra", "Il puntatore nero degli amplificatori"], ["gomma", "Gomma colorata", "Prende il colore del gruppo"]];
 const FONTS = [["bungee", "Cantiere", "Bungee", 1], ["ops", "Militare", "Black Ops One", 1.04], ["marker", "Pennarello", "Permanent Marker", 1.08], ["righteous", "Anni 70", "Righteous", 1.12], ["vt", "Terminale", "VT323", 1.55], ["pixel", "Pixel", "Silkscreen", 0.92]];
 const STICKERS = [["boombap", "Boom bap"], ["tag", "Tag a spray"], ["giri", "33⅓ giri"], ["nastro", "Nastro adesivo"], ["corona", "Corona"], ["cassetta", "Cassetta"]];
@@ -3715,6 +3884,9 @@ function buildCustom() {
   LED_COLORS.forEach(([id, name, col]) => optButton($("cLed"), id, name, col || "conic-gradient(#ff9f2e 0 33%, #ff4433 0 66%, #ffd23f 0)", v => setCustom("led", v)));
   PAD_STYLES.forEach(([id, name]) => optButton($("cPad"), id, name, null, v => setCustom("pad", v)));
   VINYLS.forEach(([id, name, col]) => optButton($("cVinyl"), id, name, col, v => setCustom("vinyl", v)));
+  DISCS.forEach(([id, name, note]) => cardButton($("cDisc"), id, name, note, discPreview(id), v => setDisc(v)));
+  DISCS.forEach(([id, name]) => $("discSel").appendChild(new Option(name, id)));
+  $("discSel").addEventListener("change", e => setDisc(e.target.value));
   LABEL_COLORS.forEach(([id, name]) => optButton($("cLabel"), id, name, id === "auto" ? "var(--hue)" : id, v => setCustom("label", v)));
   FONTS.forEach(([id, name, fam, sc]) => {
     const p = el("span", "fontprev", "MAT<span>.</span>TONE"); p.style.fontFamily = '"' + fam + '", sans-serif'; p.style.fontSize = (26 * sc).toFixed(1) + "px";
@@ -3736,7 +3908,7 @@ function renderCustom() {
   const C = state.custom, stk = new Set(C.stickers || []);
   const mark = (id, v) => [...$(id).children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
   mark("cSkin", state.skin); mark("cLcd", C.lcd); mark("cScreen", C.screen); mark("cVis", String(state.vis || 0)); mark("cMeter", C.meter); mark("cKnob", C.knob);
-  mark("cView", C.view || "piatta"); mark("cShape", C.shape); mark("cRack", C.rack); mark("cPadSide", C.padside); mark("cTabs", C.tabs); mark("cPadShape", C.padshape); mark("cPulse", C.pulse); mark("cMotion", C.motion); mark("cRipple", C.ripple);
+  mark("cView", C.view || "piatta"); mark("cDisc", discId()); if ($("discSel")) $("discSel").value = discId(); mark("cShape", C.shape); mark("cRack", C.rack); mark("cPadSide", C.padside); mark("cTabs", C.tabs); mark("cPadShape", C.padshape); mark("cPulse", C.pulse); mark("cMotion", C.motion); mark("cRipple", C.ripple);
   mark("cLed", C.led); mark("cPad", C.pad); mark("cVinyl", C.vinyl); mark("cLabel", C.label); mark("cFont", C.font); mark("cRoom", C.room); mark("cIntro", C.intro);
   [...$("cStickers").children].forEach(b => b.setAttribute("aria-pressed", stk.has(b.dataset.v)));
   if (document.activeElement !== $("cLogo")) $("cLogo").value = C.logo;
@@ -3776,7 +3948,7 @@ function applyCustom() {
   $("lcdName").textContent = "Schermo · " + lt[1];
   const f = FONTS.find(x => x[0] === C.font) || FONTS[0];
   app.setProperty("--f-brand", '"' + f[2] + '", "Arial Black", Impact, sans-serif'); app.setProperty("--brand-scale", f[3]);
-  document.body.dataset.room = C.room;
+  document.body.dataset.room = C.room; if (typeof paintScene === "function" && SCENE.ready) paintScene();
   document.documentElement.style.setProperty("--wear", (C.wear / 100).toFixed(2));
   // logo: the first "·" (or ".") becomes the dot that lights up on the kick
   const t = (C.logo || "").trim() || "MAT.TONE", i = t.search(/[·.]/);
@@ -4177,6 +4349,273 @@ function initMotes() {
   requestAnimationFrame(frame);
 }
 
+/* ================= stanze: lo sfondo dietro lo strumento, disegnato e animato ================= */
+// the brick wall stays the CSS texture it always was; the others are painted on a canvas behind everything
+const SCENE = { base: null, room: "", w: 0, h: 0, raf: 0, last: 0, t0: performance.now(), extra: null };
+function sceneRng(seed) { let z = seed % 2147483647 || 7; return () => (z = (z * 16807) % 2147483647) / 2147483647; }
+function sceneVignette(c, W, H, k) {
+  const v = c.createRadialGradient(W / 2, H * 0.42, Math.min(W, H) * 0.25, W / 2, H * 0.5, Math.max(W, H) * 0.75);
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0," + k + ")"); c.fillStyle = v; c.fillRect(0, 0, W, H);
+}
+// a layer drawn once with its glow, so the animation only has to fade it in and out
+function glowLayer(W, H, draw) { const d = SCENE.dpr, cv = document.createElement("canvas"); cv.width = Math.round(W * d); cv.height = Math.round(H * d); const g = cv.getContext("2d"); g.scale(d, d); draw(g); return cv; }
+const ROOM_PAINT = {
+  // acoustic foam on the walls, a warm lamp, the ON AIR light that comes on when the beat plays
+  studio(c, W, H, ex) {
+    c.fillStyle = "#110e0c"; c.fillRect(0, 0, W, H);
+    const T = Math.max(56, Math.round(Math.min(W, H) / 11)), n = 6;
+    for (let y = 0; y < H + T; y += T) for (let x = 0; x < W + T; x += T) {
+      const vert = ((x / T) + (y / T)) % 2 === 0;
+      for (let k = 0; k < n; k++) {
+        const g = vert ? c.createLinearGradient(x + k * T / n, 0, x + (k + 1) * T / n, 0) : c.createLinearGradient(0, y + k * T / n, 0, y + (k + 1) * T / n);
+        g.addColorStop(0, "#3a3029"); g.addColorStop(0.45, "#272019"); g.addColorStop(1, "#130f0c");
+        c.fillStyle = g;
+        if (vert) c.fillRect(x + k * T / n, y, T / n, T); else c.fillRect(x, y + k * T / n, T, T / n);
+      }
+      c.fillStyle = "rgba(0,0,0,.55)"; c.fillRect(x, y, T, 2); c.fillRect(x, y, 2, T);
+    }
+    const lamp = c.createRadialGradient(W * 0.5, -H * 0.1, 0, W * 0.5, -H * 0.1, H * 1.05);
+    lamp.addColorStop(0, "rgba(255,190,120,.30)"); lamp.addColorStop(0.5, "rgba(255,160,90,.08)"); lamp.addColorStop(1, "rgba(255,160,90,0)");
+    c.globalCompositeOperation = "lighter"; c.fillStyle = lamp; c.fillRect(0, 0, W, H); c.globalCompositeOperation = "source-over";
+    sceneVignette(c, W, H, 0.82);
+    // the ON AIR box, top left
+    const bw = Math.max(90, W * 0.075), bh = bw * 0.36, bx = W * 0.035, by = H * 0.045;
+    c.fillStyle = "#1c1612"; c.fillRect(bx - 4, by - 4, bw + 8, bh + 8);
+    c.fillStyle = "#3a1210"; c.fillRect(bx, by, bw, bh);
+    c.fillStyle = "#6a2a24"; c.font = Math.round(bh * 0.55) + "px Bungee, Impact, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("ON AIR", bx + bw / 2, by + bh / 2 + 1);
+    ex.onair = glowLayer(W, H, g => {
+      g.shadowColor = "#ff3a2a"; g.shadowBlur = bh * 0.9; g.fillStyle = "#e8231a"; g.fillRect(bx, by, bw, bh);
+      g.shadowBlur = 0; g.fillStyle = "#fff1e0"; g.font = c.font; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("ON AIR", bx + bw / 2, by + bh / 2 + 1);
+    });
+  },
+  // a subway wall: concrete, a big piece in fat letters, tags, drips, the platform edge; the tube light buzzes
+  graffiti(c, W, H, ex) {
+    const r = sceneRng(11);
+    const wall = c.createLinearGradient(0, 0, 0, H); wall.addColorStop(0, "#5c5954"); wall.addColorStop(1, "#3f3c38");
+    c.fillStyle = wall; c.fillRect(0, 0, W, H);
+    for (let i = 0; i < W * H / 260; i++) { c.fillStyle = r() < 0.5 ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.05)"; c.fillRect(r() * W, r() * H, 1 + r() * 2, 1 + r() * 2); }
+    c.strokeStyle = "rgba(0,0,0,.25)"; c.lineWidth = 2; for (let y = H * 0.3; y < H; y += H * 0.3) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+    // tags in the background
+    const tagCols = ["#151515", "#d9d9d9", "#2a6cff", "#151515", "#e33"];
+    for (let i = 0; i < 26; i++) {
+      const x = r() * W, y = H * 0.08 + r() * H * 0.78, s = 14 + r() * 26;
+      c.strokeStyle = tagCols[i % tagCols.length]; c.globalAlpha = 0.35 + r() * 0.35; c.lineWidth = 2 + r() * 2; c.lineCap = "round"; c.beginPath(); c.moveTo(x, y);
+      for (let k = 0; k < 6; k++) c.quadraticCurveTo(x + (k + 0.5) * s * 0.6 + (r() - 0.5) * s, y - s * (r() - 0.3), x + (k + 1) * s * 0.6, y + (r() - 0.5) * s * 0.5);
+      c.stroke();
+    }
+    c.globalAlpha = 1;
+    // the piece: fat letters, 3D block, double outline, a gradient fill with shine and drips
+    const fs = Math.min(W * 0.16, H * 0.3), cx = W * 0.5, cy = H * 0.47;
+    c.save(); c.translate(cx, cy); c.rotate(-0.07);
+    c.font = fs + "px Bungee, Impact, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.lineJoin = "round";
+    const word = "MAT.TONE";
+    for (let k = 14; k > 0; k--) { c.fillStyle = k > 12 ? "#0e0e0e" : "#3b1450"; c.fillText(word, k * fs * 0.012, k * fs * 0.012); }
+    c.strokeStyle = "#0e0e0e"; c.lineWidth = fs * 0.16; c.strokeText(word, 0, 0);
+    c.strokeStyle = "#fafafa"; c.lineWidth = fs * 0.07; c.strokeText(word, 0, 0);
+    const fill = c.createLinearGradient(0, -fs * 0.5, 0, fs * 0.5); fill.addColorStop(0, "#ffe14a"); fill.addColorStop(0.45, "#ff7a2e"); fill.addColorStop(1, "#ff2f8e");
+    c.fillStyle = fill; c.fillText(word, 0, 0);
+    c.globalCompositeOperation = "source-atop";
+    c.fillStyle = "rgba(255,255,255,.55)"; for (let i = 0; i < 18; i++) { c.beginPath(); c.ellipse((r() - 0.5) * fs * 4.4, -fs * 0.18 + (r() - 0.5) * fs * 0.2, fs * 0.05, fs * 0.022, -0.5, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = "rgba(60,0,90,.35)"; c.fillRect(-fs * 3, fs * 0.12, fs * 6, fs * 0.5);
+    c.globalCompositeOperation = "source-over";
+    c.fillStyle = "#ff2f8e"; for (let i = 0; i < 16; i++) { const x = (r() - 0.5) * fs * 4.6, l = fs * (0.15 + r() * 0.5), w = fs * (0.02 + r() * 0.03); c.fillRect(x, fs * 0.3, w, l); c.beginPath(); c.arc(x + w / 2, fs * 0.3 + l, w * 0.8, 0, Math.PI * 2); c.fill(); }
+    // stars and an arrow around the piece
+    c.fillStyle = "#3ad6ff"; c.strokeStyle = "#0e0e0e"; c.lineWidth = fs * 0.03;
+    [[-fs * 2.6, -fs * 0.7, fs * 0.22], [fs * 2.55, fs * 0.55, fs * 0.17], [fs * 2.2, -fs * 0.75, fs * 0.12]].forEach(([x, y, s]) => {
+      c.beginPath(); for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2 - Math.PI / 2, rr = k % 2 ? s * 0.45 : s; c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } c.closePath(); c.fill(); c.stroke();
+    });
+    c.restore();
+    // the platform edge
+    const py = H * 0.9;
+    c.fillStyle = "#26231f"; c.fillRect(0, py, W, H - py);
+    for (let x = -40; x < W + 40; x += 40) { c.fillStyle = "#e0b81c"; c.beginPath(); c.moveTo(x, py); c.lineTo(x + 20, py); c.lineTo(x + 34, py + 14); c.lineTo(x + 14, py + 14); c.closePath(); c.fill(); }
+    c.fillStyle = "#151310"; c.fillRect(0, py + 14, W, 3);
+    sceneVignette(c, W, H, 0.7);
+  },
+  // a record shop: shelves full of spines, a few covers facing out, a hand-painted sign
+  dischi(c, W, H) {
+    const r = sceneRng(23);
+    const wall = c.createLinearGradient(0, 0, 0, H); wall.addColorStop(0, "#3a2416"); wall.addColorStop(1, "#24160e");
+    c.fillStyle = wall; c.fillRect(0, 0, W, H);
+    const cols = ["#efe6d2", "#151313", "#b8352a", "#d9a43a", "#2f7f7a", "#6b3f22", "#2b4f8f", "#e9e1cc", "#1c1a18", "#8a2f4f", "#c7c0a8", "#3d6b3a"];
+    const sign = H * 0.14, shelfH = (H - sign) / 4;
+    for (let s = 0; s < 4; s++) {
+      const top = sign + s * shelfH, base = top + shelfH - 12;
+      c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(0, top, W, shelfH - 12);
+      let x = 4;
+      while (x < W) {
+        if (r() < 0.035) {
+          // a cover facing out
+          const cw = shelfH * 0.78, y = base - cw;
+          const bg = cols[(r() * cols.length) | 0]; c.fillStyle = bg; c.fillRect(x, y, cw, cw);
+          const ink = cols[(r() * cols.length) | 0], kind = (r() * 4) | 0;
+          c.fillStyle = ink; c.strokeStyle = ink;
+          if (kind === 0) { c.beginPath(); c.arc(x + cw / 2, y + cw / 2, cw * 0.32, 0, Math.PI * 2); c.fill(); c.fillStyle = bg; c.beginPath(); c.arc(x + cw / 2, y + cw / 2, cw * 0.08, 0, Math.PI * 2); c.fill(); }
+          else if (kind === 1) { for (let k = 0; k < 5; k++) c.fillRect(x, y + cw * (0.15 + k * 0.17), cw, cw * 0.07); }
+          else if (kind === 2) { c.font = Math.round(cw * 0.28) + "px Bungee, Impact, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(["DOPE", "88", "FUNK", "SOUL", "JAZZ"][(r() * 5) | 0], x + cw / 2, y + cw / 2); }
+          else { c.beginPath(); c.moveTo(x, y + cw); c.lineTo(x + cw / 2, y + cw * 0.2); c.lineTo(x + cw, y + cw); c.fill(); }
+          c.fillStyle = "rgba(255,255,255,.08)"; c.fillRect(x, y, cw, cw * 0.4);
+          x += cw + 3;
+        } else {
+          const w = 3 + r() * 6, h = shelfH * (0.66 + r() * 0.2);
+          c.fillStyle = cols[(r() * cols.length) | 0]; c.fillRect(x, base - h, w, h);
+          c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(x, base - h, 1, h);
+          if (r() < 0.15) { c.fillStyle = "#f4efe3"; c.fillRect(x, base - h * 0.85, w, 3); }
+          x += w + (r() < 0.1 ? 2 : 0.5);
+        }
+      }
+      // the plank
+      const pl = c.createLinearGradient(0, base, 0, base + 14); pl.addColorStop(0, "#8a5a32"); pl.addColorStop(1, "#4a2c16");
+      c.fillStyle = pl; c.fillRect(0, base, W, 14);
+      c.fillStyle = "rgba(0,0,0,.5)"; c.fillRect(0, base + 14, W, 6);
+    }
+    // the sign board
+    c.fillStyle = "#1d130c"; c.fillRect(0, 0, W, sign);
+    c.fillStyle = "#e9d9b0"; c.font = Math.round(sign * 0.42) + "px 'Permanent Marker', 'Bungee', sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+    c.fillText("VINILI · USATO · RARITÀ · CRATE DIGGING", W / 2, sign * 0.52);
+    const lamp = c.createRadialGradient(W * 0.5, H * 0.1, 0, W * 0.5, H * 0.1, H);
+    lamp.addColorStop(0, "rgba(255,200,130,.18)"); lamp.addColorStop(1, "rgba(255,200,130,0)");
+    c.globalCompositeOperation = "lighter"; c.fillStyle = lamp; c.fillRect(0, 0, W, H); c.globalCompositeOperation = "source-over";
+    sceneVignette(c, W, H, 0.78);
+  },
+  // a club wall at night: dark bricks and neon tubes that buzz and flicker
+  neon(c, W, H, ex) {
+    c.fillStyle = "#0b0910"; c.fillRect(0, 0, W, H);
+    const bw = 64, bh = 26;
+    for (let y = 0; y < H; y += bh) for (let x = -bw; x < W; x += bw) { const o = (y / bh) % 2 ? bw / 2 : 0; c.fillStyle = "rgba(60,40,80," + (0.18 + ((x * 7 + y * 3) % 5) * 0.025) + ")"; c.fillRect(x + o + 2, y + 2, bw - 4, bh - 4); }
+    sceneVignette(c, W, H, 0.85);
+    const fs = Math.min(W * 0.12, H * 0.2);
+    const tube = (col, path) => glowLayer(W, H, g => { g.lineCap = "round"; g.lineJoin = "round"; g.shadowColor = col; g.shadowBlur = fs * 0.35; g.strokeStyle = col; g.lineWidth = fs * 0.06; path(g); g.shadowBlur = fs * 0.12; g.strokeStyle = "#fff6fb"; g.lineWidth = fs * 0.022; path(g); });
+    ex.tubes = [
+      { cv: tube("#ff3fa4", g => { g.font = fs + "px 'Permanent Marker', sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.strokeText("Boom bap", W * 0.5, H * 0.2); }), flick: 0.002 },
+      { cv: tube("#35e8ff", g => { const x = W * 0.14, y = H * 0.62, R = Math.min(W, H) * 0.14; g.beginPath(); g.arc(x, y, R, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(x, y, R * 0.35, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(x, y, R * 0.68, -0.6, 0.9); g.stroke(); }), flick: 0.001 },
+      { cv: tube("#ffe14a", g => { const x = W * 0.86, y = H * 0.6, s = Math.min(W, H) * 0.12; g.beginPath(); g.moveTo(x - s * 0.2, y - s); g.lineTo(x - s * 0.6, y + s * 0.1); g.lineTo(x, y + s * 0.1); g.lineTo(x - s * 0.3, y + s); g.stroke(); }), flick: 0.006 },
+      { cv: tube("#9b6bff", g => { g.beginPath(); g.moveTo(W * 0.3, H * 0.33); g.lineTo(W * 0.7, H * 0.33); g.stroke(); }), flick: 0.003 },
+    ];
+    ex.tubes.forEach(tb => { tb.v = 1; tb.off = 0; });
+  },
+  // a rooftop at night: stars, the moon, three layers of skyline with lit windows, blinking aerials
+  citta(c, W, H, ex) {
+    const r = sceneRng(5);
+    const sky = c.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, "#060a1f"); sky.addColorStop(0.55, "#1d1640"); sky.addColorStop(0.82, "#4a2450"); sky.addColorStop(1, "#7a3a3a");
+    c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    ex.stars = [];
+    for (let i = 0; i < W * H / 2600; i++) { const s = { x: r() * W, y: r() * H * 0.6, a: 0.25 + r() * 0.6, p: r() * 6.28, z: r() < 0.1 ? 1.6 : 0.9 }; ex.stars.push(s); c.fillStyle = "rgba(255,255,240," + s.a * 0.6 + ")"; c.fillRect(s.x, s.y, s.z, s.z); }
+    const mx = W * 0.8, my = H * 0.17, mr = Math.min(W, H) * 0.06;
+    const mg = c.createRadialGradient(mx, my, mr, mx, my, mr * 5); mg.addColorStop(0, "rgba(255,240,210,.25)"); mg.addColorStop(1, "rgba(255,240,210,0)");
+    c.fillStyle = mg; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#f3ead2"; c.beginPath(); c.arc(mx, my, mr, 0, Math.PI * 2); c.fill();
+    c.fillStyle = "rgba(160,150,130,.35)"; [[-0.3, -0.2, 0.22], [0.25, 0.1, 0.16], [-0.05, 0.35, 0.12]].forEach(([a, b, s]) => { c.beginPath(); c.arc(mx + a * mr, my + b * mr, s * mr, 0, Math.PI * 2); c.fill(); });
+    ex.blink = []; ex.wins = [];
+    const layer = (y0, hmin, hmax, wmin, wmax, col, winA, keep) => {
+      let x = -20;
+      while (x < W + 20) {
+        const w = wmin + r() * (wmax - wmin), h = hmin + r() * (hmax - hmin), top = y0 - h;
+        c.fillStyle = col; c.fillRect(x, top, w, H - top);
+        if (r() < 0.25) { c.fillRect(x + w * 0.2, top - h * 0.08, w * 0.6, h * 0.08); }
+        if (r() < 0.18) { c.fillRect(x + w * 0.5 - 1, top - h * 0.25, 2, h * 0.25); if (keep) ex.blink.push([x + w * 0.5, top - h * 0.25, r() * 6]); }
+        if (keep && r() < 0.2) {   // a water tower
+          const tx = x + w * 0.3, tw = w * 0.3; c.fillRect(tx, top - tw * 1.2, tw, tw * 0.9); c.beginPath(); c.moveTo(tx - 2, top - tw * 1.2); c.lineTo(tx + tw / 2, top - tw * 1.55); c.lineTo(tx + tw + 2, top - tw * 1.2); c.fill();
+          c.fillRect(tx + 2, top - tw * 0.3, 2, tw * 0.3); c.fillRect(tx + tw - 4, top - tw * 0.3, 2, tw * 0.3);
+        }
+        if (winA) for (let wy = top + 8; wy < y0 + H * 0.2; wy += 9) for (let wx = x + 5; wx < x + w - 6; wx += 8) {
+          if (r() < 0.32) { c.fillStyle = "rgba(255," + (190 + ((r() * 50) | 0)) + ",110," + winA + ")"; c.fillRect(wx, wy, 4, 5); if (keep && r() < 0.06) ex.wins.push([wx, wy, r() * 20]); c.fillStyle = col; }
+        }
+        x += w + (r() < 0.3 ? 4 + r() * 10 : 0);
+      }
+    };
+    layer(H * 0.78, H * 0.12, H * 0.32, 30, 70, "#241c3c", 0.22, false);
+    layer(H * 0.84, H * 0.1, H * 0.38, 40, 100, "#17122a", 0.5, true);
+    layer(H * 0.92, H * 0.05, H * 0.22, 60, 140, "#0c0918", 0.75, true);
+    // the roof we stand on: a ledge in the foreground
+    c.fillStyle = "#08060c"; c.fillRect(0, H * 0.93, W, H * 0.07); c.fillStyle = "rgba(255,180,120,.08)"; c.fillRect(0, H * 0.93, W, 2);
+    sceneVignette(c, W, H, 0.55);
+  },
+};
+// what moves in each room; drawn over the still picture about 20 times a second
+const ROOM_ANIM = {
+  studio(c, W, H, t, ex) {
+    const on = playing ? 0.85 + 0.15 * Math.sin(t * 9) : 0.12;
+    c.globalAlpha = on; c.drawImage(ex.onair, 0, 0); c.globalAlpha = 1;
+    const k = kickGlow * 0.22; if (k > 0.01) { c.fillStyle = "rgba(255,170,100," + k.toFixed(3) + ")"; c.globalCompositeOperation = "lighter"; c.fillRect(0, 0, W, H * 0.6); c.globalCompositeOperation = "source-over"; }
+  },
+  graffiti(c, W, H, t, ex) {
+    // the tube light: steady, with a stutter now and then
+    ex.f = ex.f || { v: 0, next: t + 3 };
+    if (t > ex.f.next) { ex.f.v = 1; ex.f.next = t + 4 + Math.random() * 7; }
+    ex.f.v *= 0.82;
+    const d = ex.f.v > 0.05 ? (Math.sin(t * 80) > 0 ? 0.45 : 0.1) * ex.f.v : 0;
+    if (d) { c.fillStyle = "rgba(0,0,0," + d.toFixed(3) + ")"; c.fillRect(0, 0, W, H); }
+    const g = c.createLinearGradient(0, 0, 0, H * 0.35); g.addColorStop(0, "rgba(220,240,255," + (0.1 - d * 0.1).toFixed(3) + ")"); g.addColorStop(1, "rgba(220,240,255,0)");
+    c.fillStyle = g; c.fillRect(0, 0, W, H * 0.35);
+  },
+  dischi(c, W, H) {
+    const k = kickGlow * 0.12; if (k > 0.01) { c.fillStyle = "rgba(255,200,130," + k.toFixed(3) + ")"; c.globalCompositeOperation = "lighter"; c.fillRect(0, 0, W, H); c.globalCompositeOperation = "source-over"; }
+  },
+  neon(c, W, H, t, ex) {
+    c.globalCompositeOperation = "lighter";
+    for (const tb of ex.tubes) {
+      if (tb.off > 0) tb.off--; else if (Math.random() < tb.flick) tb.off = 2 + ((Math.random() * 6) | 0);
+      const buzz = 0.88 + 0.06 * Math.sin(t * 50 + tb.flick * 1e3) + kickGlow * 0.25;
+      c.globalAlpha = Math.min(1, tb.off ? (tb.off % 2 ? 0.08 : 0.4) : buzz); c.drawImage(tb.cv, 0, 0);
+    }
+    c.globalAlpha = 1; c.globalCompositeOperation = "source-over";
+  },
+  citta(c, W, H, t, ex) {
+    for (const s of ex.stars) { const a = s.a * (0.55 + 0.45 * Math.sin(t * (1.2 + s.p * 0.3) + s.p)); if (a > 0.45) { c.fillStyle = "rgba(255,255,240," + a.toFixed(2) + ")"; c.fillRect(s.x, s.y, s.z, s.z); } }
+    for (const w of ex.wins) { if (Math.sin(t * 0.25 + w[2]) > 0.2) { c.fillStyle = "rgba(255,225,140,.85)"; c.fillRect(w[0], w[1], 4, 5); } else { c.fillStyle = "#0c0918"; c.fillRect(w[0], w[1], 4, 5); } }
+    for (const b of ex.blink) { const on = (t + b[2]) % 1.6 < 0.25; if (on) { c.fillStyle = "#ff3a2a"; c.shadowColor = "#ff3a2a"; c.shadowBlur = 8; c.beginPath(); c.arc(b[0], b[1], 2, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0; } }
+    // a plane crossing now and then
+    const cyc = (t % 40) / 40, px = (cyc * 1.4 - 0.2) * W, py = H * 0.22 - cyc * H * 0.06;
+    if (cyc < 0.85 && (t * 2) % 1 < 0.15) { c.fillStyle = "#ffffff"; c.fillRect(px, py, 2, 2); }
+    if (cyc < 0.85) { c.fillStyle = (t * 2 + 0.5) % 1 < 0.15 ? "#ff3a2a" : "rgba(255,60,40,.3)"; c.fillRect(px - 6, py + 1, 2, 2); }
+  },
+};
+function sceneRoom() { const r = state.custom.room; return ROOM_PAINT[r] ? r : ""; }
+function paintScene() {
+  const cv = $("scene"), room = sceneRoom();
+  if (!room) { cv.hidden = true; return; }
+  cv.hidden = false;
+  const dpr = Math.min(1.5, DPR()), W = innerWidth, H = innerHeight;
+  if (SCENE.room === room && SCENE.w === W && SCENE.h === H && SCENE.base) return;
+  SCENE.room = room; SCENE.w = W; SCENE.h = H; SCENE.extra = {}; SCENE.dpr = dpr;
+  const base = document.createElement("canvas"); base.width = Math.round(W * dpr); base.height = Math.round(H * dpr);
+  const c = base.getContext("2d"); c.scale(dpr, dpr);
+  // the extra layers are drawn in CSS pixels too, then scaled with the base
+  const ex = SCENE.extra;
+  ROOM_PAINT[room](c, W, H, ex);
+  SCENE.base = base;
+  cv.width = base.width; cv.height = base.height;
+  drawScene(performance.now());
+}
+function drawScene(now) {
+  const cv = $("scene"), room = sceneRoom();
+  if (!room || !SCENE.base) return;
+  const c = cv.getContext("2d");
+  c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(SCENE.base, 0, 0);
+  if (ROOM_ANIM[room] && !lowMotion()) {
+    const W = SCENE.w, H = SCENE.h;
+    c.save();
+    // full-size layers (ON AIR, neon) are already at canvas resolution; the rest is drawn in CSS pixels
+    const anim = ROOM_ANIM[room];
+    if (room === "neon" || room === "studio") { c.setTransform(1, 0, 0, 1, 0, 0); anim(c, cv.width, cv.height, (now - SCENE.t0) / 1000, SCENE.extra); }
+    else { c.setTransform(SCENE.dpr, 0, 0, SCENE.dpr, 0, 0); anim(c, W, H, (now - SCENE.t0) / 1000, SCENE.extra); }
+    c.restore();
+  }
+}
+function sceneLoop(now) {
+  requestAnimationFrame(sceneLoop);
+  if (document.hidden || !sceneRoom() || lowMotion()) return;
+  if (now - SCENE.last < 50) return;
+  SCENE.last = now; drawScene(now);
+}
+function initScene() {
+  let tm = 0;
+  addEventListener("resize", () => { clearTimeout(tm); tm = setTimeout(paintScene, 150); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { SCENE.base = null; paintScene(); });
+  paintScene(); requestAnimationFrame(sceneLoop);
+}
+
 logoDot = document.querySelector(".logo b span");
 readSkin();
 build();
@@ -4185,6 +4624,7 @@ initDesktop();
 applySkin(state.skin);
 applyCustom();
 initView();
+SCENE.ready = true; initScene();
 renderAll();
 requestAnimationFrame(tick);
 if (!$("intro").hidden) playIntro();
