@@ -99,7 +99,7 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 /* ---------- rack header ---------- */
 .rack { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 18px; align-items: stretch; padding-top: 22px; }
 .logo { display: grid; align-content: space-between; gap: 8px; padding: 2px 4px; }
-.logo b { font-family: var(--f-logo); font-weight: 400; font-size: 30px; line-height: .9; letter-spacing: .01em; color: var(--cream); }
+.logo b { font-family: var(--f-brand, var(--f-logo)); font-weight: 400; font-size: calc(30px * var(--brand-scale, 1)); line-height: .9; letter-spacing: .01em; color: var(--cream); }
 .logo b span { color: var(--led); }
 .stripes { display: grid; gap: 3px; width: 120px; }
 .stripes i { display: block; height: 4px; border-radius: 1px; }
@@ -322,6 +322,7 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
   .pg-piatto .platter { width: clamp(240px, calc(var(--pg-h, 640px) - 118px), 620px); }
   .pg-seq > .unit { min-height: 100%; }
   .pg-mix { height: 100%; grid-template-rows: minmax(0, 1fr) auto; }
+  .pg-cust > .unit { height: 100%; }
   .pg-piatto .pitchf input { height: clamp(140px, calc(var(--pg-h, 640px) - 190px), 560px); }
 }
 /* short screens (laptops): slimmer top bar, pads always whole, the side column scrolls on its own */
@@ -458,18 +459,12 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
 
 
 /* ---------- personalizzazione ---------- */
-#custDrawer { grid-template-rows: auto minmax(0,1fr) auto; }
-.custlist { overflow-y: auto; display: grid; align-content: start; gap: 18px; margin: 0 -6px; padding: 2px 6px 8px; }
-.custlist h4 { margin: 0 0 8px; font-family: var(--f-label); font-weight: 400; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--led); }
-.custlist h5 { margin: 10px 0 6px; font-family: var(--f-label); font-weight: 400; font-size: 9px; text-transform: uppercase; color: var(--cream-3); }
 .opts { display: flex; flex-wrap: wrap; gap: 6px; }
 .opt { border: 1px solid var(--line); background: var(--well); color: var(--well-text); border-radius: 6px; min-height: 32px; padding: 4px 10px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; }
 .opt[aria-pressed="true"] { border-color: var(--led); box-shadow: inset 0 0 0 1px var(--led); }
 .opt i { width: 16px; height: 16px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
 .opt i.sq { border-radius: 3px; }
 .sws .opt { padding: 4px 8px 4px 5px; }
-.custlist input[type=range] { width: 100%; }
-.custlist .row2 { display: flex; justify-content: space-between; font-size: 12px; color: var(--cream-3); }
 .logo b { overflow-wrap: anywhere; }
 
 /* stili dei pad */
@@ -512,7 +507,7 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
   .unit { padding: 16px 12px 14px; }
   .rack { grid-template-columns: minmax(0,1fr); gap: 12px; }
   .logo { grid-auto-flow: column; align-items: center; justify-content: space-between; }
-  .logo b { font-size: 24px; }
+  .logo b { font-size: calc(24px * var(--brand-scale, 1)); }
   .logo .stripes { display: none; }
   .logo small { text-align: right; min-width: 0; }
   .transport { grid-column: auto; }
@@ -538,6 +533,73 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
 @media (prefers-reduced-motion: reduce) {
   .bigkey.rec.on .dot, .pats button.queued { animation: none; }
 }
+/* Personalizza: a page of its own, so the top bar stays in sight while you change things */
+.pg-cust > .unit { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; }
+.custhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.custhead h2 { margin: 0; font-family: var(--f-logo); font-weight: 400; font-size: 20px; letter-spacing: .02em; color: var(--cream); }
+.custhead p { margin: 3px 0 0; font-size: 13px; color: var(--cream-2); }
+.custhead .acts { display: flex; gap: 8px; }
+.custbody { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px; min-height: 0; }
+.custnav { display: grid; align-content: start; gap: 6px; }
+.custnav button { display: grid; gap: 2px; padding: 9px 12px; border: 0; border-radius: 8px; text-align: left; background: var(--well); color: var(--well-text); box-shadow: inset 0 1px 3px rgba(0,0,0,.5); }
+.custnav button b { font-family: var(--f-label); font-weight: 400; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.custnav button small { font-size: 11px; color: var(--cream-3); }
+.custnav button[aria-current="page"] { color: var(--cream); box-shadow: inset 3px 0 0 var(--led), inset 0 1px 3px rgba(0,0,0,.5); background: color-mix(in srgb, var(--led) 10%, var(--well)); }
+.custpanes { min-height: 0; overflow: auto; padding: 2px 6px 8px 2px; scrollbar-width: thin; }
+.cpane h3 { margin: 0 0 6px; font-family: var(--f-label); font-weight: 400; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--led); }
+.cpane h4 { margin: 20px 0 8px; font-family: var(--f-label); font-weight: 400; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cream-3); }
+.cnote { margin: 0 0 12px; font-size: 13px; color: var(--cream-2); }
+.cnote.small { margin: 8px 0 0; font-size: 12px; color: var(--cream-3); }
+.cnote:empty { display: none; }
+.cpane input.search { width: min(100%, 360px); }
+.cpane input[type=range] { width: min(100%, 420px); }
+.cpane .row2 { display: flex; justify-content: space-between; width: min(100%, 420px); font-size: 12px; color: var(--cream-3); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.cards.wide { grid-template-columns: repeat(auto-fill, minmax(214px, 1fr)); }
+.card { display: grid; gap: 3px; align-content: start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; text-align: left; background: var(--well); color: var(--well-text); transition: border-color .12s, box-shadow .12s; }
+.card:hover { border-color: color-mix(in srgb, var(--led) 45%, var(--line)); }
+.card[aria-pressed="true"] { border-color: var(--led); box-shadow: inset 0 0 0 1px var(--led), 0 0 22px -10px var(--led); }
+.card .cprev { display: grid; place-items: center; height: 72px; margin-bottom: 6px; border-radius: 6px; background: rgba(0,0,0,.35); overflow: hidden; }
+.cards.wide .card .cprev { height: 100px; }
+.card b { font-size: 13px; }
+.card small { font-size: 11px; line-height: 1.35; color: var(--cream-3); }
+.card canvas { display: block; height: auto; }
+#cLcd canvas { width: 192px; max-width: 100%; border-radius: 4px; }
+#cMeter canvas { width: 150px; border-radius: 4px; box-shadow: 0 0 0 2px var(--edge); }
+#cKnob canvas { width: 62px; }
+.skinprev { position: relative; display: grid; place-items: center; width: 100%; height: 100%; }
+.skinprev i { position: absolute; inset: 10px 14px; border-radius: 6px; box-shadow: inset 0 2px 0 rgba(255,255,255,.18), 0 3px 8px rgba(0,0,0,.5); }
+.skinprev em { position: relative; padding: 2px 6px; border-radius: 2px; background: #ddd8cc; color: #222; font-family: var(--f-label); font-size: 8px; font-style: normal; }
+.fontprev { white-space: nowrap; color: var(--cream); line-height: 1; }
+.fontprev span { color: var(--led); }
+@media (max-width: 900px) {
+  .custbody { grid-template-columns: minmax(0, 1fr); }
+  .custnav { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; }
+  .custnav small { display: none; }
+}
+/* screen frames, one per type of display */
+.app[data-lcd="amoled"] .lcd { border-radius: 12px; background: #000; box-shadow: 0 0 0 2px #26231f, inset 0 0 0 1px #000, 0 1px 0 rgba(255,255,255,.08); }
+.app[data-lcd="stn"] .lcd { background: linear-gradient(180deg, #1c2233, #0b0f19); }
+.app[data-lcd="lcd"] .lcd { background: linear-gradient(180deg, #67695e, #45473f); box-shadow: inset 0 2px 5px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.1), 0 0 0 1px var(--edge); }
+.app[data-lcd="lcd"] .lcd::after { background: linear-gradient(160deg, rgba(255,255,255,.2), rgba(255,255,255,0) 42%); }
+.app[data-lcd="vfd"] .lcd { background: linear-gradient(180deg, #081816, #020807); }
+.app[data-lcd="plasma"] .lcd { background: linear-gradient(180deg, #1a0905, #070302); }
+.app[data-lcd="crt"] .lcd { padding: 10px; border-radius: 18px; background: radial-gradient(#22241f, #0b0c0a); }
+.app[data-lcd="crt"] .lcd canvas { border-radius: 14px / 24px; }
+.app[data-lcd="crt"] .lcd::after { inset: 10px; border-radius: 14px / 24px; background: linear-gradient(172deg, rgba(255,255,255,.12), rgba(255,255,255,0) 32%); box-shadow: inset 0 0 18px rgba(0,0,0,.8); }
+/* stickers on the case */
+.stickers { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.stk { position: absolute; display: inline-grid; place-items: center; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,.55)); opacity: calc(1 - var(--wear, .25) * .3); }
+.s-boombap { left: 22px; bottom: -9px; padding: 3px 9px 4px; border-radius: 3px; background: #f2d23a; color: #16130a; font-family: var(--f-logo); font-size: 12px; letter-spacing: .05em; transform: rotate(-5deg); }
+.s-tag { left: 41%; top: -12px; font-family: "Permanent Marker", cursive; font-size: 24px; color: #ff5fae; text-shadow: 2px 2px 0 #1a0812, -1px -1px 0 #1a0812; transform: rotate(-8deg); filter: none; }
+.s-giri { right: 18px; bottom: -14px; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle, #f24a3a 0 58%, #c4302a 60%); color: #fff; align-content: center; gap: 2px; transform: rotate(12deg); }
+.s-giri b { font-family: var(--f-logo); font-weight: 400; font-size: 13px; }
+.s-giri small { font-family: var(--f-label); font-size: 7px; }
+.s-nastro { right: -20px; top: 10px; width: 118px; height: 24px; color: #26231d; font-family: "Permanent Marker", cursive; font-size: 13px; background: repeating-linear-gradient(90deg, rgba(228,222,206,.96) 0 6px, rgba(212,206,190,.96) 6px 7px); clip-path: polygon(3% 0, 97% 8%, 100% 50%, 96% 100%, 2% 92%, 0 45%); transform: rotate(34deg); }
+.s-corona { left: 196px; top: 2px; width: 40px; transform: rotate(12deg); }
+.s-cassetta { left: 62%; bottom: -12px; width: 58px; transform: rotate(-7deg); }
+.s-corona svg, .s-cassetta svg { display: block; width: 100%; }
+
 /* intro: when the desktop app opens, or from Personalizza */
 #intro { position: fixed; inset: 0; z-index: 100; overflow: hidden; display: grid; place-items: center; background: #0b0806; cursor: pointer; transition: opacity .5s ease; }
 #intro[hidden] { display: none; }
@@ -605,6 +667,7 @@ html.intro-on { overflow: hidden; }
 
 <div class="app" id="app" data-bank="A">
   <header class="unit rack">
+    <div class="stickers" id="stickers" aria-hidden="true"></div>
     <div class="badge" id="badge" aria-hidden="true"></div>
     <div class="logo">
       <b>MAT<span>.</span>TONE</b>
@@ -614,7 +677,7 @@ html.intro-on { overflow: hidden; }
       <button class="key small" id="openCust" type="button">✎ Personalizza</button>
     </div>
     <div class="lcdwrap">
-      <div class="lcdhead"><span class="lbl">Display OLED · 256×72</span><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button></div>
+      <div class="lcdhead"><span class="lbl" id="lcdName">Schermo · OLED moderno</span><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button></div>
       <div class="lcd" id="vfd"><canvas id="spec" aria-label="Display: tocca per cambiare visualizzatore"></canvas></div>
       <div class="steps16" id="leds" aria-hidden="true"></div>
       <div class="sr-only" aria-live="polite"><span id="vPat">01</span> <span id="vBpm">088</span> <span id="vPos">1.1</span> <span id="msg">PREMI PLAY O TOCCA UN PAD</span></div>
@@ -769,6 +832,58 @@ html.intro-on { overflow: hidden; }
         </div>
       </section>
     </div>
+    <div class="page pg-cust" data-page="cust" role="tabpanel" aria-label="Personalizza" hidden>
+      <section class="unit cust">
+        <header class="custhead">
+          <div><h2>Personalizza</h2><p>Ogni scelta si vede subito sullo strumento e si salva da sola.</p></div>
+          <div class="acts"><button class="key small" id="cReset" type="button">Ripristina tutto</button><button class="key on" id="closeCust" type="button">Fatto</button></div>
+        </header>
+        <div class="custbody">
+          <nav class="custnav" id="custNav" aria-label="Categorie"></nav>
+          <div class="custpanes">
+            <section class="cpane" data-cat="scocca" aria-label="Scocca">
+              <h3>Scocca</h3><p class="cnote">La carrozzeria dello strumento: colori, targhette e materiali.</p>
+              <div class="cards" id="cSkin"></div>
+            </section>
+            <section class="cpane" data-cat="schermo" aria-label="Schermo" hidden>
+              <h3>Tipo di schermo</h3><p class="cnote">Dallo schermo di oggi al monitor a fosfori: cambia come si accendono i puntini.</p>
+              <div class="cards wide" id="cLcd"></div>
+              <h4>Colore della luce</h4><div class="opts sws" id="cScreen"></div><p class="cnote small" id="cScreenNote"></p>
+              <h4>Grafica a tempo</h4><div class="opts" id="cVis"></div>
+            </section>
+            <section class="cpane" data-cat="indicatori" aria-label="Indicatori" hidden>
+              <h3>Indicatori L e R</h3><p class="cnote">I due indicatori accanto allo schermo, uno per cassa: sinistra e destra.</p>
+              <div class="cards wide" id="cMeter"></div>
+            </section>
+            <section class="cpane" data-cat="comandi" aria-label="Manopole e pad" hidden>
+              <h3>Manopole</h3><div class="cards" id="cKnob"></div>
+              <h4>Pad</h4><div class="opts" id="cPad"></div>
+              <h4>Luci LED</h4><div class="opts sws" id="cLed"></div>
+            </section>
+            <section class="cpane" data-cat="disco" aria-label="Disco" hidden>
+              <h3>Disco</h3><div class="opts" id="cVinyl"></div>
+              <h4>Colore dell’etichetta</h4><div class="opts sws" id="cLabel"></div>
+              <h4>Scritta sull’etichetta</h4><input class="search" id="cLabelText" maxlength="14" autocomplete="off" aria-label="Scritta sull’etichetta" placeholder="MAT.TONE">
+            </section>
+            <section class="cpane" data-cat="logo" aria-label="Logo e adesivi" hidden>
+              <h3>Nome sul logo</h3><input class="search" id="cLogo" maxlength="12" autocomplete="off" aria-label="Nome sul logo" placeholder="MAT.TONE">
+              <p class="cnote small">Il punto “.” diventa il puntino che si accende sulla cassa.</p>
+              <h4>Carattere</h4><div class="cards" id="cFont"></div>
+              <h4>Adesivi</h4><p class="cnote small">Attaccane quanti vuoi sulla scocca, tocca di nuovo per staccarli.</p><div class="opts" id="cStickers"></div>
+            </section>
+            <section class="cpane" data-cat="stanza" aria-label="Stanza" hidden>
+              <h3>Stanza</h3><div class="opts" id="cRoom"></div>
+              <h4>Usura</h4><input type="range" id="cWear" min="0" max="100" aria-label="Usura"><div class="row2"><span>Nuovo di fabbrica</span><span>Vissuto</span></div>
+            </section>
+            <section class="cpane" data-cat="intro" aria-label="Intro" hidden>
+              <h3>Intro</h3><div class="opts" id="cIntro"></div>
+              <p class="cnote small" style="margin-top:10px">Quando apri l’app per PC: il mattone cade, il disco scratcha, parte il beat.</p>
+              <button class="key small" id="cIntroPlay" type="button">▶ Guarda l’intro</button>
+            </section>
+          </div>
+        </div>
+      </section>
+    </div>
     <div class="page pg-guida" data-page="guida" role="tabpanel" aria-label="Guida" hidden>
       <section class="unit help">
         <div>
@@ -820,23 +935,6 @@ html.intro-on { overflow: hidden; }
   <div class="list" id="list"></div>
   <div class="foot"><small>Tocca un nome per metterlo sul pad · ▶ per ascoltarlo.</small><label class="key small" for="file">Carica file</label></div>
 </aside>
-
-<aside class="drawer" id="custDrawer" hidden aria-label="Personalizza">
-  <div class="dh"><div><h3>Personalizza</h3><p>Come appare il tuo strumento. Si salva in questo browser.</p></div><button class="key on" id="closeCust" type="button">Fatto</button></div>
-  <div class="custlist">
-    <section><h4>Scocca</h4><div class="opts" id="cSkin"></div></section>
-    <section><h4>Nome sul logo</h4><input class="search" id="cLogo" maxlength="12" autocomplete="off" aria-label="Nome sul logo" placeholder="MAT.TONE"><div class="row2" style="margin-top:6px"><span>Il punto “.” diventa il puntino che si accende sulla cassa.</span></div></section>
-    <section><h4>Colore dello schermo</h4><div class="opts sws" id="cScreen"></div></section>
-    <section><h4>Luci LED</h4><div class="opts sws" id="cLed"></div></section>
-    <section><h4>Pad</h4><div class="opts" id="cPad"></div></section>
-    <section><h4>Disco</h4><div class="opts" id="cVinyl"></div><h5>Colore dell’etichetta</h5><div class="opts sws" id="cLabel"></div><h5>Scritta sull’etichetta</h5><input class="search" id="cLabelText" maxlength="14" autocomplete="off" aria-label="Scritta sull’etichetta" placeholder="MAT.TONE"></section>
-    <section><h4>Stanza</h4><div class="opts" id="cRoom"></div></section>
-    <section><h4>Usura</h4><input type="range" id="cWear" min="0" max="100" aria-label="Usura"><div class="row2"><span>Nuovo di fabbrica</span><span>Vissuto</span></div></section>
-    <section><h4>Intro</h4><div class="opts" id="cIntro"></div><div class="row2" style="margin-top:6px"><span>Quando apri l’app per PC: il mattone cade, il disco scratcha, parte il beat.</span></div><button class="key small" id="cIntroPlay" type="button" style="margin-top:8px">▶ Guarda l’intro</button></section>
-  </div>
-  <div class="foot"><small>Le scelte valgono solo per l’aspetto, non per il suono.</small><button class="key small" id="cReset" type="button">Ripristina</button></div>
-</aside>
-
 <script>
 (() => {
 "use strict";
@@ -1302,7 +1400,7 @@ function demoPatterns() {
   put(1, 1, 8, [[15]]);
   return P;
 }
-const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "buio", wear: 25, intro: "si" };
+const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "buio", wear: 25, intro: "si", lcd: "oled", meter: "ago", knob: "skin", font: "bungee", stickers: [] };
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
@@ -2154,11 +2252,7 @@ function makeKnob(host, { label, min, max, get, set, fmt, center }) {
     const from = center ? a0 + (a1 - a0) * ((0 - min) / (max - min)) : a0;
     c.strokeStyle = hueColor;
     c.beginPath(); c.arc(58, 58, 50, Math.min(from, a), Math.max(from, a)); c.stroke();
-    const g = c.createRadialGradient(50, 46, 4, 58, 58, 38); g.addColorStop(0, SK.knob1); g.addColorStop(1, SK.knob2);
-    c.fillStyle = g; c.beginPath(); c.arc(58, 58, 38, 0, Math.PI * 2); c.fill();
-    c.strokeStyle = "rgba(0,0,0,.6)"; c.lineWidth = 2; c.stroke();
-    for (let i = 0; i < 24; i++) { const r = i / 24 * Math.PI * 2; c.strokeStyle = "rgba(255,255,255,.05)"; c.lineWidth = 1; c.beginPath(); c.moveTo(58 + Math.cos(r) * 30, 58 + Math.sin(r) * 30); c.lineTo(58 + Math.cos(r) * 37, 58 + Math.sin(r) * 37); c.stroke(); }
-    c.strokeStyle = SK.knobInk; c.lineWidth = 4; c.beginPath(); c.moveTo(58 + Math.cos(a) * 12, 58 + Math.sin(a) * 12); c.lineTo(58 + Math.cos(a) * 32, 58 + Math.sin(a) * 32); c.stroke();
+    drawKnobCap(c, state.custom.knob || "skin", a);
     out.textContent = fmt(v); cv.setAttribute("aria-valuetext", fmt(v));
   } };
   let startY = 0, startV = 0, drag = false;
@@ -2250,7 +2344,7 @@ function build() {
   $("clearTrack").addEventListener("click", () => { state.patterns[state.pattern][state.bank][state.pad] = new Array(NSTEP).fill(0); save(); renderPads(); renderEditor(); renderPatterns(); renderLeds(); msg("CANCELLATO " + padLabel(state.bank, state.pad)); });
   $("openLib").addEventListener("click", openLibrary);
   $("closeLib").addEventListener("click", closeLibrary);
-  $("scrim").addEventListener("click", () => { if (!$("custDrawer").hidden) closeCustom(); if (!$("drawer").hidden) closeLibrary(); });
+  $("scrim").addEventListener("click", () => { if (!$("drawer").hidden) closeLibrary(); });
   $("search").addEventListener("input", renderLibrary);
   $("file").addEventListener("change", e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ""; });
   SKINS.forEach(([id, name, , col]) => { const b = el("button", null, '<i style="background:' + col + '"></i>' + name); b.type = "button"; b.dataset.skin = id; b.addEventListener("click", () => { applySkin(id); save(); }); $("skins").appendChild(b); });
@@ -2419,7 +2513,7 @@ function onKeyDown(e) {
   const t = e.target, tag = (t && t.tagName) || "";
   if ((tag === "INPUT" && t.type !== "range") || tag === "SELECT" || tag === "TEXTAREA") { if (e.key === "Escape") closeLibrary(); return; }
   const k = e.key.toLowerCase();
-  if (k === "escape" && !$("custDrawer").hidden) { closeCustom(); return; }
+  if (k === "escape" && curPage === "cust") { closeCustom(); return; }
   if (k === "escape" && !$("drawer").hidden) { closeLibrary(); return; }
   if (tag === "INPUT" && k.startsWith("arrow")) return;
   if (k === " ") { if (tag === "BUTTON") return; e.preventDefault(); playing ? stop() : start(); return; }
@@ -2606,46 +2700,113 @@ function lcdText(s, x, y, sc = 1, v = 1) {
 function lcdLine(x0, y0, x1, y1, v = 1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let i = 0; i <= n; i++) px(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), v); }
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const fallBuf = new Float32Array(VW * VH);
-let lcdBg = null, lcdBgKey = "";
-function lcdBackground(W, H, pitch) {
-  const key = W + "x" + H + SK.scrBg + SK.scrInk;
-  if (lcdBg && lcdBgKey === key) return lcdBg;
-  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
-  const c = cv.getContext("2d");
-  c.fillStyle = SK.scrBg; c.fillRect(0, 0, W, H);
-  c.fillStyle = withAlpha(SK.scrInk, 0.045);                         // pixel grid, barely visible
-  const d = pitch * 0.86, o = (pitch - d) / 2;
-  for (let y = 0; y < LCD_H; y++) for (let x = 0; x < LCD_W; x++) c.fillRect(x * pitch + o, y * pitch + o, d, d);
-  lcdBg = cv; lcdBgKey = key; return cv;
+// screen types: the same matrix of dots, lit in different ways
+const LCD_TYPES = [
+  ["oled", "OLED moderno", "Punti nitidi con un filo di bagliore", null, { shape: "square", glow: 1, off: 0.045 }],
+  ["amoled", "Colore pieno", "Schermo a colori di oggi, sfumato come un arcobaleno", { bg: "#04050a", ink: "#ff9f2e", acc: "#ffffff" }, { shape: "full", glow: 0.5, off: 0.02, rainbow: true }],
+  ["stn", "LCD blu", "Retroilluminato, come i campionatori anni 2000", { bg: "#1d44cf", ink: "#eef4ff", acc: "#ffffff" }, { shape: "square", glow: 0.25, off: 0.12 }],
+  ["lcd", "Cristalli liquidi", "Grigio-verde con i pixel scuri e la loro ombra: anni 90", { bg: "#a7b287", ink: "#1d2812", acc: "#0b1306" }, { shape: "square", glow: 0, off: 0.075, reflect: true }],
+  ["vfd", "Fluorescente VFD", "Verde acqua dietro la retina, anni 80", { bg: "#030b0a", ink: "#5af5d5", acc: "#dafff7" }, { shape: "dot", glow: 1.4, off: 0.07, mesh: true }],
+  ["plasma", "Plasma", "Puntini arancioni dei portatili anni 80", { bg: "#0c0302", ink: "#ff5a1c", acc: "#ffbf8f" }, { shape: "dot", glow: 1.6, off: 0.06 }],
+  ["crt", "Monitor a fosfori", "Righe di scansione, bagliore e vetro curvo", { bg: "#020802", ink: "#4dff6e", acc: "#d6ffd9" }, { shape: "scan", glow: 1.8, off: 0.02, crt: true }],
+];
+function lcdPalette(id) {
+  const C = state.custom, t = LCD_TYPES.find(x => x[0] === (id || C.lcd)) || LCD_TYPES[0], look = t[4], sc = SCREEN_COLORS.find(x => x[0] === C.screen);
+  let bg = SK.scrBg, ink = SK.scrInk, acc = SK.scrAcc, rainbow = !!look.rainbow;
+  if (t[3]) {
+    bg = t[3].bg; ink = t[3].ink; acc = t[3].acc;
+    if (sc && sc[2] && !look.reflect) { ink = sc[2][0]; acc = sc[2][1]; rainbow = false; }   // the chosen light colour, on screens that light up
+  }
+  return Object.assign({}, look, { id: t[0], bg, ink, acc, rainbow, key: t[0] + bg + ink + acc + rainbow });
 }
-function lcdRender() {
-  const c = specCv.getContext("2d"), W = specCv.width, H = specCv.height, k = W / LCD_W;
-  c.drawImage(lcdBackground(W, H, k), 0, 0);
-  if (!glowCv) { glowCv = document.createElement("canvas"); glowCv.width = LCD_W; glowCv.height = LCD_H; glowImg = glowCv.getContext("2d").createImageData(LCD_W, LCD_H); }
-  const gd = glowImg.data, ci = SK.rgbInk, ca = SK.rgbAcc;
-  for (let i = 0; i < lcdBuf.length; i++) { const v = lcdBuf[i], q = i * 4; if (v) { const col = v === 2 ? ca : ci; gd[q] = col[0]; gd[q + 1] = col[1]; gd[q + 2] = col[2]; gd[q + 3] = 255; } else gd[q + 3] = 0; }
-  glowCv.getContext("2d").putImageData(glowImg, 0, 0);
+const lcdCache = new WeakMap();   // per canvas: backing, pixel mask, overlays
+function lcdBuild(cv, cols, rows, pal) {
+  const W = cv.width, H = cv.height, k = W / cols, st = { key: pal.key + W + "x" + H };
+  st.small = document.createElement("canvas"); st.small.width = cols; st.small.height = rows;
+  st.img = st.small.getContext("2d").createImageData(cols, rows);
+  const ink = hexRgb(pal.ink);
+  st.acc = hexRgb(pal.acc);
+  st.cols = [];
+  for (let x = 0; x < cols; x++) {
+    if (!pal.rainbow) { st.cols.push(ink); continue; }
+    const h = (28 + x / cols * 300) / 360, f = n => { const kk = (n + h * 12) % 12, a = 0.9 * Math.min(0.62, 1 - 0.62); return Math.round(255 * (0.62 - a * Math.max(-1, Math.min(kk - 3, 9 - kk, 1)))); };
+    st.cols.push([f(0), f(8), f(4)]);
+  }
+  const mk = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
+  // backing with the unlit pixels just visible
+  st.bg = mk(); let c = st.bg.getContext("2d");
+  c.fillStyle = pal.bg; c.fillRect(0, 0, W, H);
+  if (pal.reflect) { const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "rgba(255,255,255,.12)"); g.addColorStop(1, "rgba(0,0,0,.12)"); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+  c.fillStyle = withAlpha(pal.ink, pal.off);
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    if (pal.shape === "dot") { c.beginPath(); c.arc(x * k + k / 2, y * k + k / 2, k * 0.4, 0, Math.PI * 2); c.fill(); }
+    else if (pal.shape === "scan") c.fillRect(x * k, y * k, k, k * 0.62);
+    else { const d = k * (pal.shape === "full" ? 0.96 : 0.86), o = (k - d) / 2; c.fillRect(x * k + o, y * k + o, d, d); }
+  }
+  // the shape of every pixel: what is left of the backing between them
+  if (pal.shape !== "full") {
+    st.mask = mk(); c = st.mask.getContext("2d");
+    if (pal.shape === "square") {
+      const g = Math.max(1, Math.round(k * 0.16)); c.fillStyle = withAlpha(pal.bg, 0.9);
+      for (let x = 0; x < cols; x++) c.fillRect(Math.round(x * k + k - g), 0, g, H);
+      for (let y = 0; y < rows; y++) c.fillRect(0, Math.round(y * k + k - g), W, g);
+    } else if (pal.shape === "dot") {
+      c.fillStyle = pal.bg; c.fillRect(0, 0, W, H); c.globalCompositeOperation = "destination-out";
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) { c.beginPath(); c.arc(x * k + k / 2, y * k + k / 2, k * 0.42, 0, Math.PI * 2); c.fill(); }
+    } else if (pal.shape === "scan") {
+      c.fillStyle = withAlpha(pal.bg, 0.8);
+      for (let y = 0; y < rows; y++) c.fillRect(0, y * k + k * 0.64, W, k * 0.36);
+    }
+  }
+  // glass: the VFD retina, the CRT vignette
+  if (pal.mesh || pal.crt) {
+    st.over = mk(); c = st.over.getContext("2d");
+    if (pal.mesh) {
+      c.strokeStyle = "rgba(0,0,0,.32)"; c.lineWidth = Math.max(1, k * 0.14); const sp = Math.max(3, k * 0.75);
+      for (let x = -H; x < W; x += sp) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x + H, H); c.stroke(); c.beginPath(); c.moveTo(x + H, 0); c.lineTo(x, H); c.stroke(); }
+    }
+    const v = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.62);
+    v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, pal.crt ? "rgba(0,0,0,.6)" : "rgba(0,0,0,.25)"); c.fillStyle = v; c.fillRect(0, 0, W, H);
+  }
+  return st;
+}
+function renderMatrix(cv, buf, cols, rows, pal) {
+  let st = lcdCache.get(cv);
+  if (!st || st.key !== pal.key + cv.width + "x" + cv.height) { st = lcdBuild(cv, cols, rows, pal); lcdCache.set(cv, st); }
+  const c = cv.getContext("2d"), W = cv.width, H = cv.height, k = W / cols, gd = st.img.data;
+  for (let i = 0; i < buf.length; i++) {
+    const v = buf[i], q = i * 4;
+    if (v) { const col = v === 2 ? st.acc : st.cols[i % cols]; gd[q] = col[0]; gd[q + 1] = col[1]; gd[q + 2] = col[2]; gd[q + 3] = 255; } else gd[q + 3] = 0;
+  }
+  st.small.getContext("2d").putImageData(st.img, 0, 0);
+  c.drawImage(st.bg, 0, 0);
   c.save();
-  // soft bloom: the same image stretched with smoothing
-  c.imageSmoothingEnabled = true; c.globalAlpha = 0.32; c.drawImage(glowCv, -k, -k, W + k * 2, H + k * 2);
-  c.globalAlpha = 0.2; c.drawImage(glowCv, -k * 3, -k * 2, W + k * 6, H + k * 4);
-  // crisp pixels, then the dark gaps between them
-  c.globalAlpha = 1; c.imageSmoothingEnabled = false; c.drawImage(glowCv, 0, 0, W, H);
+  if (pal.reflect) { c.globalAlpha = 0.24; c.imageSmoothingEnabled = false; c.drawImage(st.small, k * 0.45, k * 0.55, W, H); }   // liquid crystals cast a shadow on the backing
+  if (pal.glow) {
+    c.imageSmoothingEnabled = true;
+    c.globalAlpha = Math.min(1, 0.32 * pal.glow); c.drawImage(st.small, -k, -k, W + k * 2, H + k * 2);
+    c.globalAlpha = Math.min(1, 0.2 * pal.glow); c.drawImage(st.small, -k * 3, -k * 2, W + k * 6, H + k * 4);
+  }
+  c.globalAlpha = 1; c.imageSmoothingEnabled = false; c.drawImage(st.small, 0, 0, W, H);
   c.restore();
-  c.drawImage(lcdGrid(W, H, k), 0, 0);
+  if (st.mask) c.drawImage(st.mask, 0, 0);
+  if (st.over) c.drawImage(st.over, 0, 0);
+  if (pal.crt) { c.fillStyle = "rgba(0,0,0," + (Math.random() * 0.05).toFixed(3) + ")"; c.fillRect(0, 0, W, H); }   // phosphor flicker
 }
-let lcdGridCv = null, lcdGridKey = "";
-function lcdGrid(W, H, k) {
-  const key = W + "x" + H + SK.scrBg;
-  if (lcdGridCv && lcdGridKey === key) return lcdGridCv;
-  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
-  const c = cv.getContext("2d"), g = Math.max(1, Math.round(k * 0.16));
-  c.fillStyle = withAlpha(SK.scrBg, 0.9);
-  for (let x = 0; x < LCD_W; x++) c.fillRect(Math.round(x * k + k - g), 0, g, H);
-  for (let y = 0; y < LCD_H; y++) c.fillRect(0, Math.round(y * k + k - g), W, g);
-  lcdGridCv = cv; lcdGridKey = key; return cv;
+let LCDPAL = null;
+function lcdRender() { renderMatrix(specCv, lcdBuf, LCD_W, LCD_H, LCDPAL || (LCDPAL = lcdPalette())); }
+// small matrices for the previews in Personalizza
+function matText(buf, cols, s, x, y, sc = 1, v = 1) {
+  const rows = buf.length / cols;
+  for (const ch of s) { const g = FONT[ch]; if (g) for (let cc = 0; cc < 5; cc++) for (let r = 0; r < 7; r++) if (g[cc] >> r & 1) for (let a = 0; a < sc; a++) for (let b = 0; b < sc; b++) { const X = x + cc * sc + a, Y = y + r * sc + b; if (X >= 0 && X < cols && Y >= 0 && Y < rows) buf[Y * cols + X] = v; } x += 6 * sc; }
 }
-let glowCv = null, glowImg = null;
+function lcdPreview(cv, id) {
+  const cols = 48, rows = 15, buf = new Uint8Array(cols * rows);
+  matText(buf, cols, "88", 0, 0, 2, 2);
+  const hs = [5, 9, 12, 8, 13, 10, 6, 11, 7, 4];
+  hs.forEach((h, i) => { for (let y = 0; y < h; y++) for (let x = 0; x < 2; x++) buf[(14 - y) * cols + 25 + i * 2 + x] = y === h - 1 ? 2 : 1; });
+  renderMatrix(cv, buf, cols, rows, lcdPalette(id));
+}
 const specBins = new Float32Array(32), specPeak = new Float32Array(32);
 let fbuf = null, sbuf = null;
 function readBins(idle) {
@@ -2743,7 +2904,14 @@ function cycleVis(dir = 1) {
   $("visBtn").textContent = "VIS · " + VIS[state.vis][1];
   fallBuf.fill(0); drawSpec(!ctx);
 }
-const vuState = { L: 0, R: 0 };
+const METERS = [
+  ["ago", "Lancetta classica", "Quadrante crema con l’ago, come un registratore a bobine"],
+  ["notte", "Quadrante notturno", "Nero, scala bianca e luce ambra da dietro"],
+  ["led", "Barre a LED", "Verde, giallo e rosso, con il picco che resta acceso"],
+  ["vfd", "Barre fluorescenti", "Segmenti azzurri e decibel in cifre"],
+  ["occhio", "Occhio magico", "La valvola verde delle radio d’epoca: si chiude col volume"],
+];
+const vuState = { L: 0, R: 0 }, vuPeak = { L: 0, R: 0 }, vuDb = { L: -60, R: -60 };
 let tbuf = null;
 function level(an) {
   if (!tbuf || tbuf.length !== an.fftSize) tbuf = new Float32Array(an.fftSize);
@@ -2751,24 +2919,88 @@ function level(an) {
   return Math.sqrt(s / tbuf.length);
 }
 function drawVU(idle) {
+  const style = state.custom.meter || "ago";
   [["vuL", "L"], ["vuR", "R"]].forEach(([id, ch]) => {
-    let target = 0;
-    if (ctx && N.anL && !idle) { const rms = level(ch === "L" ? N.anL : N.anR), db = 20 * Math.log10(rms + 1e-6) + 12; target = Math.max(0, Math.min(1, (db + 20) / 23)); }
+    let target = 0, db = -60;
+    if (ctx && N.anL && !idle) { const rms = level(ch === "L" ? N.anL : N.anR); db = 20 * Math.log10(rms + 1e-6) + 8; target = Math.max(0, Math.min(1, (db + 20) / 23)); }
     vuState[ch] += (target - vuState[ch]) * (target > vuState[ch] ? 0.35 : 0.12);
-    const c = $(id).getContext("2d"), W = 264, H = 168;
-    c.clearRect(0, 0, W, H);
-    const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, SK.vu1); g.addColorStop(1, SK.vu2); c.fillStyle = g; c.fillRect(0, 0, W, H);
-    const cx = W / 2, cy = H + 40, R = 150, a0 = -Math.PI / 2 - 0.72, a1 = -Math.PI / 2 + 0.72;
-    c.lineWidth = 2; c.strokeStyle = SK.vuInk; c.beginPath(); c.arc(cx, cy, R, a0, a0 + (a1 - a0) * 0.72); c.stroke();
-    c.strokeStyle = SK.vuRed; c.lineWidth = 6; c.beginPath(); c.arc(cx, cy, R - 2, a0 + (a1 - a0) * 0.74, a1); c.stroke();
-    const marks = [-20, -10, -7, -5, -3, -1, 0, 1, 2, 3];
-    c.fillStyle = SK.vuInk; c.font = "16px VT323, monospace"; c.textAlign = "center";
-    marks.forEach(m => { const u = (m + 20) / 23, a = a0 + (a1 - a0) * u; c.strokeStyle = m >= 0 ? SK.vuRed : SK.vuInk; c.lineWidth = 2; c.beginPath(); c.moveTo(cx + Math.cos(a) * (R + 4), cy + Math.sin(a) * (R + 4)); c.lineTo(cx + Math.cos(a) * (R + 14), cy + Math.sin(a) * (R + 14)); c.stroke(); if ([-20, -10, -5, 0, 3].includes(m)) { c.fillStyle = m >= 0 ? SK.vuRed : SK.vuInk; c.fillText(String(m), cx + Math.cos(a) * (R + 26), cy + Math.sin(a) * (R + 26) + 5); } });
-    c.fillStyle = SK.vuInk; c.font = "22px VT323, monospace"; c.fillText("VU " + ch, cx, H - 16);
-    const a = a0 + (a1 - a0) * vuState[ch];
-    c.strokeStyle = SK.vuInk; c.lineWidth = 2.5; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * (R + 12), cy + Math.sin(a) * (R + 12)); c.stroke();
-    const sh = c.createLinearGradient(0, 0, 0, H); sh.addColorStop(0, "rgba(255,255,255,.35)"); sh.addColorStop(.45, "rgba(255,255,255,0)"); sh.addColorStop(1, "rgba(0,0,0,.18)"); c.fillStyle = sh; c.fillRect(0, 0, W, H);
+    vuPeak[ch] = Math.max(vuState[ch], vuPeak[ch] - 0.006);
+    vuDb[ch] += (Math.max(-60, db) - vuDb[ch]) * 0.25;
+    drawMeter($(id).getContext("2d"), style, ch, vuState[ch], vuPeak[ch], vuDb[ch]);
   });
+}
+// one meter, 264 × 168: the needle styles share the scale, the others are bars or the tube
+function drawMeter(c, style, ch, lv, pk, db) {
+  const W = 264, H = 168;
+  c.clearRect(0, 0, W, H);
+  if (style === "ago" || style === "notte") {
+    const night = style === "notte", ink = night ? "#ece4cf" : SK.vuInk, red = night ? "#ff5a3a" : SK.vuRed;
+    if (night) {
+      c.fillStyle = "#080706"; c.fillRect(0, 0, W, H);
+      const glow = c.createRadialGradient(W / 2, H * 1.05, 10, W / 2, H * 1.05, H * 1.1); glow.addColorStop(0, "rgba(255,168,64,.55)"); glow.addColorStop(0.6, "rgba(255,140,40,.12)"); glow.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = glow; c.fillRect(0, 0, W, H);
+    } else { const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, SK.vu1); g.addColorStop(1, SK.vu2); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+    const cx = W / 2, cy = H + 40, R = 150, a0 = -Math.PI / 2 - 0.72, a1 = -Math.PI / 2 + 0.72;
+    c.lineWidth = 2; c.strokeStyle = ink; c.beginPath(); c.arc(cx, cy, R, a0, a0 + (a1 - a0) * 0.72); c.stroke();
+    c.strokeStyle = red; c.lineWidth = 6; c.beginPath(); c.arc(cx, cy, R - 2, a0 + (a1 - a0) * 0.74, a1); c.stroke();
+    c.font = "16px VT323, monospace"; c.textAlign = "center";
+    [-20, -10, -7, -5, -3, -1, 0, 1, 2, 3].forEach(m => {
+      const u = (m + 20) / 23, a = a0 + (a1 - a0) * u;
+      c.strokeStyle = m >= 0 ? red : ink; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(cx + Math.cos(a) * (R + 4), cy + Math.sin(a) * (R + 4)); c.lineTo(cx + Math.cos(a) * (R + 14), cy + Math.sin(a) * (R + 14)); c.stroke();
+      if ([-20, -10, -5, 0, 3].includes(m)) { c.fillStyle = m >= 0 ? red : ink; c.fillText(String(m), cx + Math.cos(a) * (R + 26), cy + Math.sin(a) * (R + 26) + 5); }
+    });
+    c.fillStyle = ink; c.font = "22px VT323, monospace"; c.fillText("VU " + ch, cx, H - 16);
+    const a = a0 + (a1 - a0) * lv;
+    c.strokeStyle = night ? "#ff7a2e" : SK.vuInk; c.lineWidth = 2.5;
+    if (night) { c.shadowColor = "#ff7a2e"; c.shadowBlur = 8; }
+    c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * (R + 12), cy + Math.sin(a) * (R + 12)); c.stroke();
+    c.shadowBlur = 0;
+    const sh = c.createLinearGradient(0, 0, 0, H); sh.addColorStop(0, night ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.35)"); sh.addColorStop(0.45, "rgba(255,255,255,0)"); sh.addColorStop(1, "rgba(0,0,0,.18)");
+    c.fillStyle = sh; c.fillRect(0, 0, W, H);
+  } else if (style === "led") {
+    c.fillStyle = "#0b0b0a"; c.fillRect(0, 0, W, H);
+    const n = 22, x0 = 46, w = 206, sw = w / n, top = 46, hh = 58;
+    c.fillStyle = "#8a8578"; c.font = "34px VT323, monospace"; c.textAlign = "center"; c.fillText(ch, 22, top + hh / 2 + 11);
+    for (let i = 0; i < n; i++) {
+      const u = (i + 0.5) / n, col = i < 14 ? "#39d65a" : i < 18 ? "#f3cf35" : "#ff3d30", on = u <= lv, peak = Math.abs(u - pk) < 0.5 / n && pk > 0.03;
+      c.globalAlpha = on || peak ? 1 : 0.13; c.fillStyle = col;
+      if (on || peak) { c.shadowColor = col; c.shadowBlur = 10; }
+      c.fillRect(x0 + i * sw + 1, top, sw - 3, hh); c.shadowBlur = 0;
+    }
+    c.globalAlpha = 1; c.fillStyle = "#6e695e"; c.font = "16px VT323, monospace";
+    [[-20, 0], [-10, 10 / 23], [-5, 15 / 23], [0, 20 / 23], [3, 1]].forEach(([m, u]) => c.fillText(String(m), x0 + u * w - (u === 1 ? 8 : 0), top + hh + 26));
+    c.fillText("dB", x0 + w - 6, top - 14);
+  } else if (style === "vfd") {
+    c.fillStyle = "#020909"; c.fillRect(0, 0, W, H);
+    const n = 32, x0 = 18, w = 228, sw = w / n, top = 74, hh = 46, cyan = "#5af5d5";
+    for (let i = 0; i < n; i++) {
+      const u = (i + 0.5) / n, on = u <= lv || (Math.abs(u - pk) < 0.5 / n && pk > 0.03), hot = u > 0.87;
+      c.fillStyle = hot ? "#ff8a6a" : cyan; c.globalAlpha = on ? 1 : 0.09;
+      c.fillRect(x0 + i * sw + 1, top + (on ? 0 : 2), sw - 2.5, hh - (on ? 0 : 4));
+      if (on) { c.globalAlpha = 0.25; c.fillRect(x0 + i * sw - 1, top - 3, sw + 1.5, hh + 6); }
+    }
+    c.globalAlpha = 1; c.fillStyle = cyan; c.textAlign = "right"; c.font = "46px VT323, monospace";
+    c.shadowColor = cyan; c.shadowBlur = 10;
+    c.fillText((db <= -59 ? "-∞" : (db > 0 ? "+" : "") + db.toFixed(1)), W - 46, 54); c.shadowBlur = 0;
+    c.font = "20px VT323, monospace"; c.textAlign = "left"; c.fillText("dB", W - 40, 54); c.fillText(ch, 18, 54);
+    c.globalAlpha = 0.35; c.fillRect(x0, top + hh + 10, w, 1); c.globalAlpha = 1;
+  } else if (style === "occhio") {
+    c.fillStyle = "#050505"; c.fillRect(0, 0, W, H);
+    const cx = W / 2, cy = H / 2, R = 66;
+    c.fillStyle = "#151512"; c.beginPath(); c.arc(cx, cy, R + 10, 0, Math.PI * 2); c.fill();
+    const g = c.createRadialGradient(cx, cy, R * 0.25, cx, cy, R); g.addColorStop(0, "#c6ff9a"); g.addColorStop(0.55, "#4fe05a"); g.addColorStop(1, "#13702a");
+    c.fillStyle = g; c.shadowColor = "#4fe05a"; c.shadowBlur = 18; c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.fill(); c.shadowBlur = 0;
+    // the dark wedge closes as the sound gets louder
+    const half = (1 - Math.min(1, lv)) * 1.2 + 0.03;
+    c.fillStyle = "#0a1a0c"; c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, R + 1, -Math.PI / 2 - half, -Math.PI / 2 + half); c.closePath(); c.fill();
+    c.fillStyle = "#050505"; c.beginPath(); c.arc(cx, cy, R * 0.3, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = "rgba(255,255,255,.06)"; c.lineWidth = 1;
+    for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2; c.beginPath(); c.moveTo(cx + Math.cos(a) * R * 0.32, cy + Math.sin(a) * R * 0.32); c.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); c.stroke(); }
+    const gl = c.createLinearGradient(0, cy - R, 0, cy + R); gl.addColorStop(0, "rgba(255,255,255,.22)"); gl.addColorStop(0.4, "rgba(255,255,255,0)");
+    c.fillStyle = gl; c.beginPath(); c.arc(cx, cy, R + 10, 0, Math.PI * 2); c.fill();
+    c.fillStyle = "#6e695e"; c.font = "22px VT323, monospace"; c.textAlign = "left"; c.fillText(ch, 14, H - 14);
+  }
 }
 function buildDeckBase() {
   const S = deckSize, cv = document.createElement("canvas"); cv.width = cv.height = S;
@@ -2800,7 +3032,7 @@ function drawDeck(force) {
   c.fillStyle = lab; c.beginPath(); c.arc(0, 0, rr * 0.34, 0, Math.PI * 2); c.fill();
   c.fillStyle = "rgba(0,0,0,.18)"; c.beginPath(); c.arc(0, 0, rr * 0.34, 0, Math.PI); c.fill();
   c.fillStyle = labelInk(lab.startsWith("#") ? lab : "#f2a43a"); c.textAlign = "center";
-  c.font = Math.round(S * (txt.length > 9 ? 0.05 * 9 / txt.length : 0.05)) + "px Bungee, Impact, sans-serif"; c.fillText(txt, 0, -rr * 0.12);
+  c.font = Math.round(S * (txt.length > 9 ? 0.05 * 9 / txt.length : 0.05)) + "px '" + (FONTS.find(f => f[0] === state.custom.font) || FONTS[0])[2] + "', Bungee, Impact, sans-serif"; c.fillText(txt, 0, -rr * 0.12);
   c.font = Math.round(S * 0.032) + "px Silkscreen, monospace"; c.fillText("LATO A · 33⅓", 0, rr * 0.2);
   c.fillStyle = "#ebe1c6"; c.beginPath(); c.arc(rr * 0.27, 0, S / 90, 0, Math.PI * 2); c.fill();
   c.fillStyle = "#cfc6ad"; c.beginPath(); c.arc(0, 0, S / 70, 0, Math.PI * 2); c.fill();
@@ -2827,36 +3059,137 @@ const PAD_STYLES = [["skin", "Della scocca"], ["avorio", "Avorio"], ["carbone", 
 const VINYLS = [["nero", "Nero classico", "#0c0c0c"], ["rosso", "Rosso trasparente", "#b81d2c"], ["marmo", "Blu marmorizzato", "#2b56b0"], ["splatter", "Splatter", "#ff5fae"], ["oro", "Oro", "#d8a93e"], ["bianco", "Bianco", "#ece8dd"]];
 const LABEL_COLORS = [["auto", "Del gruppo", null], ["#f2a43a", "Arancio"], ["#e8483a", "Rosso"], ["#2f6fd6", "Blu"], ["#f4efe3", "Crema"], ["#1d1c19", "Nero"], ["#49b36a", "Verde"], ["#b48ddb", "Lilla"]];
 const ROOMS = [["buio", "Stanza buia", "#1a1815"], ["mattoni", "Muro di mattoni", "#7a3522"], ["cemento", "Cemento", "#6b6862"], ["legno", "Parquet", "#6e4729"], ["moquette", "Moquette ’70", "#c8641e"], ["piastrelle", "Piastrelle", "#cfcabd"]];
+const KNOB_STYLES = [["skin", "Della scocca", "Il cappuccio che va con la carrozzeria"], ["crema", "Crema vintage", "Bachelite chiara con la tacca scura"], ["alluminio", "Alluminio", "Metallo spazzolato e zigrinato"], ["becco", "Becco d’anatra", "Il puntatore nero degli amplificatori"], ["gomma", "Gomma colorata", "Prende il colore del gruppo"]];
+const FONTS = [["bungee", "Cantiere", "Bungee", 1], ["ops", "Militare", "Black Ops One", 1.04], ["marker", "Pennarello", "Permanent Marker", 1.08], ["righteous", "Anni 70", "Righteous", 1.12], ["vt", "Terminale", "VT323", 1.55], ["pixel", "Pixel", "Silkscreen", 0.92]];
+const STICKERS = [["boombap", "Boom bap"], ["tag", "Tag a spray"], ["giri", "33⅓ giri"], ["nastro", "Nastro adesivo"], ["corona", "Corona"], ["cassetta", "Cassetta"]];
+const CUST_CATS = [["scocca", "Scocca", "Colori e materiali"], ["schermo", "Schermo", "Tipo, colore, grafica"], ["indicatori", "Indicatori L/R", "Le due casse"], ["comandi", "Manopole e pad", "Cappucci, gomme, luci"], ["disco", "Disco", "Vinile ed etichetta"], ["logo", "Logo e adesivi", "Nome, carattere, adesivi"], ["stanza", "Stanza", "Dove sta lo strumento"], ["intro", "Intro", "All’avvio dell’app"]];
 function optButton(host, value, label, swatch, onPick, square) {
   const b = el("button", "opt", (swatch ? '<i class="' + (square ? "sq" : "") + '" style="background:' + swatch + '"></i>' : "") + esc(label));
   b.type = "button"; b.dataset.v = value; b.addEventListener("click", () => onPick(value)); host.appendChild(b); return b;
 }
+// a big option with a preview on top
+function cardButton(host, value, name, note, preview, onPick) {
+  const b = el("button", "card", '<span class="cprev"></span><b>' + esc(name) + '</b>' + (note ? '<small>' + esc(note) + '</small>' : ""));
+  b.type = "button"; b.dataset.v = value; b.addEventListener("click", () => onPick(value));
+  if (preview) b.querySelector(".cprev").appendChild(preview);
+  host.appendChild(b); return b;
+}
+const mkCanvas = (w, h) => { const c = el("canvas"); c.width = w; c.height = h; return c; };
+// knob caps, shared by the real knobs and the previews (116 × 116, value angle a)
+function drawKnobCap(c, style, a) {
+  const cx = 58, cy = 58, line = (r0, r1, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); c.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); c.stroke(); };
+  c.lineCap = "round";
+  if (style === "becco") {
+    c.fillStyle = "#1a1917"; c.beginPath(); c.arc(cx, cy, 30, 0, Math.PI * 2); c.fill();
+    const g = c.createLinearGradient(cx - 30, cy - 30, cx + 30, cy + 30); g.addColorStop(0, "#3b3834"); g.addColorStop(1, "#0b0a09");
+    c.fillStyle = g; c.beginPath();
+    c.moveTo(cx + Math.cos(a) * 40, cy + Math.sin(a) * 40);
+    c.arc(cx, cy, 19, a + 1.25, a - 1.25 + Math.PI * 2);
+    c.closePath(); c.fill(); c.strokeStyle = "rgba(0,0,0,.7)"; c.lineWidth = 2; c.stroke();
+    line(6, 36, "#efe8d6", 3.5);
+    return;
+  }
+  let g;
+  if (style === "crema") { g = c.createRadialGradient(50, 46, 4, cx, cy, 38); g.addColorStop(0, "#fbf3df"); g.addColorStop(1, "#bba987"); }
+  else if (style === "gomma") { g = c.createRadialGradient(50, 46, 4, cx, cy, 38); g.addColorStop(0, hueColor); g.addColorStop(1, "#2a2520"); }
+  else if (style === "alluminio") { g = c.createConicGradient(0.6, cx, cy); [0, 0.12, 0.25, 0.37, 0.5, 0.62, 0.75, 0.87, 1].forEach((s, i) => g.addColorStop(s, i % 2 ? "#8f9296" : "#e6e8ea")); }
+  else { g = c.createRadialGradient(50, 46, 4, cx, cy, 38); g.addColorStop(0, SK.knob1); g.addColorStop(1, SK.knob2); }
+  c.fillStyle = g; c.beginPath(); c.arc(cx, cy, 38, 0, Math.PI * 2); c.fill();
+  c.strokeStyle = "rgba(0,0,0,.6)"; c.lineWidth = 2; c.stroke();
+  if (style === "alluminio") {
+    c.strokeStyle = "rgba(0,0,0,.35)"; c.lineWidth = 1.5;
+    for (let i = 0; i < 48; i++) { const r = i / 48 * Math.PI * 2; c.beginPath(); c.moveTo(cx + Math.cos(r) * 34, cy + Math.sin(r) * 34); c.lineTo(cx + Math.cos(r) * 38, cy + Math.sin(r) * 38); c.stroke(); }
+    c.fillStyle = "rgba(0,0,0,.12)"; c.beginPath(); c.arc(cx, cy, 22, 0, Math.PI * 2); c.fill();
+    line(10, 31, "#1b1b1b", 3.5);
+    return;
+  }
+  for (let i = 0; i < 24; i++) { const r = i / 24 * Math.PI * 2; c.strokeStyle = "rgba(255,255,255,.05)"; c.lineWidth = 1; c.beginPath(); c.moveTo(cx + Math.cos(r) * 30, cy + Math.sin(r) * 30); c.lineTo(cx + Math.cos(r) * 36, cy + Math.sin(r) * 36); c.stroke(); }
+  line(12, 32, style === "crema" ? "#3a2a16" : style === "gomma" ? "#fff8ea" : SK.knobInk, 4);
+}
+function knobPreview(style) {
+  const cv = mkCanvas(116, 116), c = cv.getContext("2d"), a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, a = a0 + (a1 - a0) * 0.66;
+  c.lineWidth = 6; c.lineCap = "round"; c.strokeStyle = SK.well; c.beginPath(); c.arc(58, 58, 50, a0, a1); c.stroke();
+  c.strokeStyle = hueColor; c.beginPath(); c.arc(58, 58, 50, a0, a); c.stroke();
+  drawKnobCap(c, style, a); return cv;
+}
+function setVis(i) { state.vis = i; save(); $("visBtn").textContent = "VIS · " + VIS[i][1]; fallBuf.fill(0); drawSpec(!ctx); renderCustom(); }
 function setCustom(key, v) { state.custom[key] = v; save(); applyCustom(); renderCustom(); }
+function toggleSticker(id) {
+  const s = new Set(state.custom.stickers || []);
+  if (s.has(id)) s.delete(id); else s.add(id);
+  setCustom("stickers", [...s]);
+}
+let custCat = "scocca", pageBeforeCust = "suona";
+function showCustCat(id) {
+  custCat = id;
+  [...$("custNav").children].forEach(b => b.setAttribute("aria-current", b.dataset.cat === id ? "page" : "false"));
+  document.querySelectorAll(".cpane").forEach(p => { p.hidden = p.dataset.cat !== id; });
+  renderCustom();
+}
+function openCustom() { if (curPage !== "cust") pageBeforeCust = curPage; showPage("cust"); showCustCat(custCat); }
+function closeCustom() { showPage(pageBeforeCust); $("openCust").focus({ preventScroll: true }); }
 function buildCustom() {
-  SKINS.forEach(([id, name, , col]) => optButton($("cSkin"), id, name, col, v => { applySkin(v); applyCustom(); save(); renderCustom(); }, true));
+  CUST_CATS.forEach(([id, name, note]) => {
+    const b = el("button", "", "<b>" + esc(name) + "</b><small>" + esc(note) + "</small>");
+    b.type = "button"; b.dataset.cat = id; b.addEventListener("click", () => showCustCat(id));
+    $("custNav").appendChild(b);
+  });
+  SKINS.forEach(([id, name, tag, col, badge]) => {
+    const p = el("span", "skinprev", '<i style="background:' + col + '"></i><em>' + esc(badge) + '</em>');
+    cardButton($("cSkin"), id, name, tag, p, v => { applySkin(v); applyCustom(); save(); renderCustom(); });
+  });
+  LCD_TYPES.forEach(([id, name, note]) => cardButton($("cLcd"), id, name, note, mkCanvas(192, 60), v => setCustom("lcd", v)));
   SCREEN_COLORS.forEach(([id, name, cols]) => optButton($("cScreen"), id, name, cols ? cols[0] : "conic-gradient(#ffb247 0 25%, #79cfff 0 50%, #b6f266 0 75%, #ff6fb5 0)", v => setCustom("screen", v)));
+  VIS.forEach(([, name], i) => optButton($("cVis"), String(i), name, null, () => setVis(i)));
+  METERS.forEach(([id, name, note]) => cardButton($("cMeter"), id, name, note, mkCanvas(264, 168), v => setCustom("meter", v)));
+  KNOB_STYLES.forEach(([id, name, note]) => cardButton($("cKnob"), id, name, note, mkCanvas(116, 116), v => setCustom("knob", v)));
   LED_COLORS.forEach(([id, name, col]) => optButton($("cLed"), id, name, col || "conic-gradient(#ff9f2e 0 33%, #ff4433 0 66%, #ffd23f 0)", v => setCustom("led", v)));
   PAD_STYLES.forEach(([id, name]) => optButton($("cPad"), id, name, null, v => setCustom("pad", v)));
   VINYLS.forEach(([id, name, col]) => optButton($("cVinyl"), id, name, col, v => setCustom("vinyl", v)));
   LABEL_COLORS.forEach(([id, name]) => optButton($("cLabel"), id, name, id === "auto" ? "var(--hue)" : id, v => setCustom("label", v)));
+  FONTS.forEach(([id, name, fam, sc]) => {
+    const p = el("span", "fontprev", "MAT<span>.</span>TONE"); p.style.fontFamily = '"' + fam + '", sans-serif'; p.style.fontSize = (26 * sc).toFixed(1) + "px";
+    cardButton($("cFont"), id, name, fam, p, v => setCustom("font", v));
+  });
+  STICKERS.forEach(([id, name]) => optButton($("cStickers"), id, name, null, toggleSticker));
   ROOMS.forEach(([id, name, col]) => optButton($("cRoom"), id, name, col, v => setCustom("room", v), true));
   [["si", "All’avvio dell’app"], ["no", "Mai"]].forEach(([id, name]) => optButton($("cIntro"), id, name, null, v => setCustom("intro", v)));
-  $("cIntroPlay").addEventListener("click", () => { closeCustom(); playIntro(); });
+  $("cIntroPlay").addEventListener("click", () => playIntro());
   $("cLogo").addEventListener("input", e => { state.custom.logo = e.target.value; save(); applyCustom(); });
   $("cLabelText").addEventListener("input", e => { state.custom.labelText = e.target.value; save(); drawDeck(true); });
   $("cWear").addEventListener("input", e => { state.custom.wear = +e.target.value; save(); applyCustom(); });
-  $("cReset").addEventListener("click", () => { state.custom = Object.assign({}, CUSTOM_DEFAULT); save(); applyCustom(); renderCustom(); msg("ASPETTO RIPRISTINATO"); });
-  $("openCust").addEventListener("click", () => { renderCustom(); $("custDrawer").hidden = false; $("scrim").hidden = false; });
+  $("cReset").addEventListener("click", () => { state.custom = Object.assign({}, CUSTOM_DEFAULT, { stickers: [] }); save(); applyCustom(); renderCustom(); msg("ASPETTO RIPRISTINATO"); });
+  $("openCust").addEventListener("click", () => { if (curPage === "cust") closeCustom(); else openCustom(); });
   $("closeCust").addEventListener("click", closeCustom);
 }
-function closeCustom() { $("custDrawer").hidden = true; if ($("drawer").hidden) $("scrim").hidden = true; $("openCust").focus({ preventScroll: true }); }
 function renderCustom() {
-  const C = state.custom;
+  if (!$("custNav").offsetParent) return;
+  const C = state.custom, stk = new Set(C.stickers || []);
   const mark = (id, v) => [...$(id).children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
-  mark("cSkin", state.skin); mark("cScreen", C.screen); mark("cLed", C.led); mark("cPad", C.pad); mark("cVinyl", C.vinyl); mark("cLabel", C.label); mark("cRoom", C.room); mark("cIntro", C.intro);
+  mark("cSkin", state.skin); mark("cLcd", C.lcd); mark("cScreen", C.screen); mark("cVis", String(state.vis || 0)); mark("cMeter", C.meter); mark("cKnob", C.knob);
+  mark("cLed", C.led); mark("cPad", C.pad); mark("cVinyl", C.vinyl); mark("cLabel", C.label); mark("cFont", C.font); mark("cRoom", C.room); mark("cIntro", C.intro);
+  [...$("cStickers").children].forEach(b => b.setAttribute("aria-pressed", stk.has(b.dataset.v)));
   if (document.activeElement !== $("cLogo")) $("cLogo").value = C.logo;
   if (document.activeElement !== $("cLabelText")) $("cLabelText").value = C.labelText;
   $("cWear").value = C.wear;
+  $("cScreenNote").textContent = (LCD_TYPES.find(t => t[0] === C.lcd) || LCD_TYPES[0])[4].reflect ? "I cristalli liquidi non si illuminano: il colore vale per gli altri schermi." : "";
+  // previews, drawn with the same code as the real parts
+  if (custCat === "schermo") [...$("cLcd").children].forEach(b => lcdPreview(b.querySelector("canvas"), b.dataset.v));
+  if (custCat === "indicatori") [...$("cMeter").children].forEach(b => drawMeter(b.querySelector("canvas").getContext("2d"), b.dataset.v, "L", 0.64, 0.8, -4.6));
+  if (custCat === "comandi") [...$("cKnob").children].forEach(b => { const cv = b.querySelector("canvas"); cv.replaceWith(knobPreview(b.dataset.v)); });
+}
+function renderStickers() {
+  const on = new Set(state.custom.stickers || []), host = $("stickers");
+  host.innerHTML = "";
+  const art = {
+    boombap: '<span class="stk s-boombap">BOOM BAP</span>',
+    tag: '<span class="stk s-tag">crew</span>',
+    giri: '<span class="stk s-giri"><b>33⅓</b><small>GIRI</small></span>',
+    nastro: '<span class="stk s-nastro">beat n°1</span>',
+    corona: '<span class="stk s-corona"><svg viewBox="0 0 48 32" aria-hidden="true"><path d="M3 28 L6 8 L16 18 L24 3 L32 18 L42 8 L45 28 Z" fill="#f2c23a" stroke="#1a1408" stroke-width="2.5" stroke-linejoin="round"/><circle cx="6" cy="8" r="2.6" fill="#f2c23a" stroke="#1a1408" stroke-width="1.5"/><circle cx="24" cy="3.5" r="2.6" fill="#f2c23a" stroke="#1a1408" stroke-width="1.5"/><circle cx="42" cy="8" r="2.6" fill="#f2c23a" stroke="#1a1408" stroke-width="1.5"/></svg></span>',
+    cassetta: '<span class="stk s-cassetta"><svg viewBox="0 0 64 40" aria-hidden="true"><rect x="2" y="2" width="60" height="36" rx="4" fill="#2b2a28" stroke="#0d0c0b" stroke-width="2"/><rect x="8" y="7" width="48" height="14" rx="2" fill="#e9dfc6"/><rect x="10" y="10" width="30" height="2" fill="#e8483a"/><circle cx="21" cy="27" r="5" fill="#e9dfc6"/><circle cx="43" cy="27" r="5" fill="#e9dfc6"/><circle cx="21" cy="27" r="2" fill="#2b2a28"/><circle cx="43" cy="27" r="2" fill="#2b2a28"/></svg></span>',
+  };
+  STICKERS.forEach(([id]) => { if (on.has(id)) host.insertAdjacentHTML("beforeend", art[id]); });
 }
 function applyCustom() {
   const C = state.custom, app = $("app").style;
@@ -2865,6 +3198,11 @@ function applyCustom() {
   const lc = LED_COLORS.find(x => x[0] === C.led);
   if (lc && lc[2]) app.setProperty("--led", lc[2]); else app.removeProperty("--led");
   $("app").dataset.pad = C.pad;
+  $("app").dataset.lcd = C.lcd;
+  const lt = LCD_TYPES.find(t => t[0] === C.lcd) || LCD_TYPES[0];
+  $("lcdName").textContent = "Schermo · " + lt[1];
+  const f = FONTS.find(x => x[0] === C.font) || FONTS[0];
+  app.setProperty("--f-brand", '"' + f[2] + '", "Arial Black", Impact, sans-serif'); app.setProperty("--brand-scale", f[3]);
   document.body.dataset.room = C.room;
   document.documentElement.style.setProperty("--wear", (C.wear / 100).toFixed(2));
   // logo: the first "·" (or ".") becomes the dot that lights up on the kick
@@ -2872,7 +3210,8 @@ function applyCustom() {
   const logo = document.querySelector(".logo b");
   logo.innerHTML = i >= 0 ? esc(t.slice(0, i)) + "<span>" + t[i] + "</span>" + esc(t.slice(i + 1)) : esc(t);
   logoDot = logo.querySelector("span");
-  readSkin(); recordCv = null; drawDeck(true); drawSpec(!ctx);
+  renderStickers();
+  readSkin(); recordCv = null; knobs.forEach(k => k.draw()); drawDeck(true); drawSpec(!ctx); drawVU(!ctx);
 }
 function makeBricks() {
   const rows = [], W = 180, H = 90, bh = 30, bw = 60, m = 3;
@@ -2960,12 +3299,13 @@ function readSkin() {
   SK.vfdA25 = withAlpha(SK.vfd, 0.25); SK.vfdA18 = withAlpha(SK.vfd, 0.18);
   SK.rgbInk = hexRgb(SK.scrInk); SK.rgbAcc = hexRgb(SK.scrAcc);
   SK.rgb = { bg: hexRgb(SK.vfdBg), mid: hexRgb(SK.vfdMid), vfd: hexRgb(SK.vfd), led: hexRgb(SK.led) };
+  LCDPAL = null;
 }
 function applySkin(id) {
   const sk = SKINS.find(x => x[0] === id) || SKINS[0];
   state.skin = sk[0]; $("app").dataset.skin = sk[0]; $("skinTag").textContent = sk[2];
   [...$("skins").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.skin === sk[0]));
-  readSkin(); lcdBg = null; deckBase = null;
+  readSkin(); deckBase = null;
   hueColor = getComputedStyle($("app")).getPropertyValue("--hue").trim() || hueColor;
   knobs.forEach(k => k.draw()); drawDeck(true); drawSpec(!ctx); drawVU(!ctx);
   const badge = $("badge"); if (badge) badge.textContent = sk[4];
@@ -2974,11 +3314,13 @@ function applySkin(id) {
 // ---------- pages ----------
 const PAGES = [["suona", "Suona"], ["piatto", "Piatto"], ["seq", "Sequencer"], ["mix", "Mix · Registra"], ["guida", "Guida"]];
 function fitPages() { $("pages").style.setProperty("--pg-h", $("pages").clientHeight + "px"); }
+let curPage = "suona";
 function showPage(id) {
-  if (!PAGES.some(p => p[0] === id)) id = "suona";
+  if (id !== "cust" && !PAGES.some(p => p[0] === id)) id = "suona";
+  curPage = id; $("openCust").classList.toggle("on", id === "cust");
   document.querySelectorAll(".page").forEach(pg => { pg.hidden = pg.dataset.page !== id; });
   [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.page === id));
-  if (state.page !== id) { state.page = id; save(); }
+  if (id !== "cust" && state.page !== id) { state.page = id; save(); }
   fitPages(); sizeCanvases();
 }
 // the four groups on the Mix page: mute buttons and a meter that jumps on every hit
