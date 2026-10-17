@@ -1047,7 +1047,7 @@ html.intro-on { overflow: hidden; }
             <dt><kbd>B</kbd></dt><dd>cambia visualizzatore (o tocca il display)</dd>
             <dt><kbd>Spazio</kbd> <kbd>Invio</kbd></dt><dd>play/stop · registra</dd>
           </dl>
-          <p style="margin-top:10px">Oltre 410 suoni, tra cui 55 strumenti singoli campionati su tre ottave per suonare melodie naturali. Quelli elettronici sono sintetizzati dal vivo; gli strumenti veri vengono da <a href="https://github.com/sgossner/VCSL" target="_blank" rel="noopener">VCSL</a> (Versilian Studios, CC0), FluidR3 GM (Frank Wen, CC BY 3.0) via <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">midi-js-soundfonts</a>, <a href="https://archive.org/details/SalamanderGrandPianoV3" target="_blank" rel="noopener">Salamander Grand Piano</a> (Alexander Holm, CC BY 3.0) i campioni di mridangam di Arthur Carabott, suonati da Harishankar V Menon (CC BY-SA 4.0), e per l’hip hop il set <a href="https://github.com/tidalcycles/sounds-tr808-fischer" target="_blank" rel="noopener">TR-808 di Michael Fischer</a> (CC0), i kit di <a href="https://github.com/Boochi44/free-drum-samples" target="_blank" rel="noopener">Boochi44</a> (CC0), l’<a href="https://github.com/tidalcycles/uzu-drumkit" target="_blank" rel="noopener">uzu-drumkit</a> (pubblico dominio) le voci di <a href="https://github.com/tidalcycles/sounds-repetition" target="_blank" rel="noopener">repetition</a> di Alex McLean (CC0) e, per le melodie, il soundfont Musyng Kite (CC BY-SA 3.0) nella conversione midi-js-soundfonts; le versioni “lo-fi” sono rielaborazioni di quei campioni e restano sotto la stessa licenza. L’esportazione MP3 usa <a href="https://github.com/zhuker/lamejs" target="_blank" rel="noopener">lamejs</a> (LGPL-3.0).</p>
+          <p style="margin-top:10px">Oltre 470 suoni, tra cui 56 strumenti singoli campionati su tre ottave per suonare melodie naturali. Quelli elettronici sono sintetizzati dal vivo; gli strumenti veri vengono da <a href="https://github.com/sgossner/VCSL" target="_blank" rel="noopener">VCSL</a> (Versilian Studios, CC0), FluidR3 GM (Frank Wen, CC BY 3.0) via <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">midi-js-soundfonts</a>, <a href="https://archive.org/details/SalamanderGrandPianoV3" target="_blank" rel="noopener">Salamander Grand Piano</a> (Alexander Holm, CC BY 3.0) i campioni di mridangam di Arthur Carabott, suonati da Harishankar V Menon (CC BY-SA 4.0), e per l’hip hop il set <a href="https://github.com/tidalcycles/sounds-tr808-fischer" target="_blank" rel="noopener">TR-808 di Michael Fischer</a> (CC0), i kit di <a href="https://github.com/Boochi44/free-drum-samples" target="_blank" rel="noopener">Boochi44</a> (CC0), l’<a href="https://github.com/tidalcycles/uzu-drumkit" target="_blank" rel="noopener">uzu-drumkit</a> (pubblico dominio) le voci di <a href="https://github.com/tidalcycles/sounds-repetition" target="_blank" rel="noopener">repetition</a> di Alex McLean (CC0); per l’old school il kit jazz di <a href="https://github.com/sfzinstruments/virtuosity_drums" target="_blank" rel="noopener">Virtuosity Drums</a> (CC0), i kit <a href="https://github.com/sfzinstruments/karoryfer.big-rusty-drums" target="_blank" rel="noopener">Big Rusty</a> e <a href="https://github.com/sfzinstruments/karoryfer.swirly-drums" target="_blank" rel="noopener">Swirly</a> di Karoryfer (CC0) e il <a href="https://github.com/sfzinstruments/dsmolken.double-bass" target="_blank" rel="noopener">contrabbasso di D. Smolken</a> (CC0), con le versioni SP-12 e polvere ricavate nell’app; per le melodie il soundfont Musyng Kite (CC BY-SA 3.0) nella conversione midi-js-soundfonts; le versioni “lo-fi” sono rielaborazioni di quei campioni e restano sotto la stessa licenza. L’esportazione MP3 usa <a href="https://github.com/zhuker/lamejs" target="_blank" rel="noopener">lamejs</a> (LGPL-3.0).</p>
         </div>
       </section>
     </div>
@@ -1068,9 +1068,20 @@ html.intro-on { overflow: hidden; }
 "use strict";
 
 /* ================= catalogue ================= */
-const CATS = ["808","Trap","Boom bap","Lo-fi","FX hip hop","Strumenti singoli","Melodie","Batteria","Percussioni","Percussioni intonate","Tastiere","Corde","Archi","Fiati","Voci","Bassi","Synth","Accordi","Effetti","I tuoi suoni"];
+const CATS = ["808","Trap","Boom bap","Old school","Lo-fi","FX hip hop","Strumenti singoli","Melodie","Batteria","Percussioni","Percussioni intonate","Tastiere","Corde","Archi","Fiati","Voci","Bassi","Synth","Accordi","Effetti","I tuoi suoni"];
 // [id, name, category, root midi (null = not tuned), source 0=VCSL 1=FluidR3]
 const SAMPLE_ROWS = [
+  // old school: a jazz club kit (Virtuosity Drums) and two vintage kits (Karoryfer), close mic + lo-fi mic + room mixed into one hit
+  ["os_kick","Cassa jazz club","Old school",null,9], ["os_kick2","Cassa jazz club 2","Old school",null,9],
+  ["os_snare","Rullante jazz club","Old school",null,9], ["os_snare2","Rullante jazz fuori centro","Old school",null,9],
+  ["os_rimshot","Rimshot jazz","Old school",null,9], ["os_muted","Rullante smorzato","Old school",null,9],
+  ["os_cross","Cross-stick jazz","Old school",null,9], ["os_flam","Flam jazz","Old school",null,9],
+  ["os_hat","Charleston jazz chiuso","Old school",null,9], ["os_hat_half","Charleston jazz mezzo aperto","Old school",null,9],
+  ["os_hat_open","Charleston jazz aperto","Old school",null,9], ["os_hat_pedal","Charleston a pedale","Old school",null,9],
+  ["os_ride","Ride jazz","Old school",null,9], ["os_ride_bell","Campana del ride","Old school",null,9],
+  ["os_crash","Crash jazz","Old school",null,9], ["os_tom_lo","Tom basso jazz","Old school",null,9], ["os_tom_hi","Tom alto jazz","Old school",null,9],
+  ["ru_kick","Cassa arrugginita","Old school",null,10], ["ru_snare","Rullante arrugginito","Old school",null,10], ["ru_brush","Spazzola sul rullante","Old school",null,10],
+  ["sw_boom","Grancassa da banda","Old school",null,10], ["sw_snare","Rullante profondo","Old school",null,10],
 ["vc_kick","Grancassa","Batteria",null,0],
   ["vc_snare","Rullante vero","Batteria",null,0],
   ["vc_rim","Bordo rullante","Batteria",null,0],
@@ -1385,6 +1396,7 @@ const SAMPLE_ROWS = [
 ];
 // synthesized: [id, name, category, root]
 const SYNTH_ROWS = [
+  ["sy_siren","Sirena","Old school",null], ["sy_dubsiren","Sirena dub","Old school",null], ["sy_whistle","Fischietto","Old school",null],
   ["sy_kick","Cassa elettronica","Batteria",null], ["sy_kick808","Cassa 808 lunga","Batteria",null],
   ["sy_snare","Rullante elettronico","Batteria",null], ["sy_clap","Clap elettronico","Batteria",null],
   ["sy_hat","Charleston elettronico","Batteria",null], ["sy_hat_open","Charleston aperto elettronico","Batteria",null],
@@ -1461,13 +1473,27 @@ const INSTRUMENT_ROWS = [
   ["in_pickbass","Basso col plettro",36,[24,36,48]],
   ["in_fretless","Basso fretless",36,[24,36,48]],
   ["in_upright","Contrabbasso jazz",36,[24,36,48]],
+  ["in_dbass","Contrabbasso pizzicato ’58",36,[24,31,38,45,52,57],"D. Smolken · CC0 · contrabbasso Rubner 1958"],
   ["in_choir","Coro",60,[48,60,72]]
 ];
 const SOUNDS = new Map();
 for (const [id, name, cat, root] of SYNTH_ROWS) SOUNDS.set(id, { id, name, cat, root, kind: "synth", src: "Sintetizzato" });
-const SOURCES = ["VCSL · CC0", "FluidR3 GM · CC BY 3.0", "Salamander · CC BY 3.0", "Mridangam · CC BY-SA 4.0", "TR-808 Fischer · CC0", "Boochi44 · CC0", "uzu-drumkit · pubblico dominio", "repetition · CC0", "MusyngKite · CC BY-SA 3.0"];
+const SOURCES = ["VCSL · CC0", "FluidR3 GM · CC BY 3.0", "Salamander · CC BY 3.0", "Mridangam · CC BY-SA 4.0", "TR-808 Fischer · CC0", "Boochi44 · CC0", "uzu-drumkit · pubblico dominio", "repetition · CC0", "MusyngKite · CC BY-SA 3.0", "Virtuosity Drums · CC0", "Karoryfer · CC0"];
 for (const [id, name, cat, root, s] of SAMPLE_ROWS) SOUNDS.set(id, { id, name, cat, root, kind: "file", src: SOURCES[s] });
-for (const [id, name, home, zones] of INSTRUMENT_ROWS) SOUNDS.set(id, { id, name, cat: "Strumenti singoli", root: home, kind: "multi", zones, src: "MusyngKite · CC BY-SA 3.0 · 3 ottave" });
+for (const [id, name, home, zones, src] of INSTRUMENT_ROWS) SOUNDS.set(id, { id, name, cat: "Strumenti singoli", root: home, kind: "multi", zones, src: src || "MusyngKite · CC BY-SA 3.0 · 3 ottave" });
+// the samplers of the golden age, emulated on the recordings above at load time: no extra files
+const DERIVED_ROWS = [
+  ["sp_kick","Cassa jazz · SP-12","os_kick","sp12"], ["sp_kick2","Cassa jazz 2 · SP-12","os_kick2","sp12"], ["sp_kick_low","Cassa jazz · SP-12 rallentata","os_kick","sp12low"],
+  ["sp_snare","Rullante jazz · SP-12","os_snare","sp12"], ["sp_snare_low","Rullante jazz · SP-12 rallentato","os_snare","sp12low"], ["sp_rimshot","Rimshot · SP-12","os_rimshot","sp12"],
+  ["sp_muted","Rullante smorzato · SP-12","os_muted","sp12"], ["sp_cross","Cross-stick · SP-12","os_cross","sp12"], ["sp_hat","Charleston · SP-12","os_hat","sp12"],
+  ["sp_hat_open","Charleston aperto · SP-12","os_hat_open","sp12"], ["sp_ride","Ride · SP-12","os_ride","sp12"], ["sp_tom","Tom basso · SP-12","os_tom_lo","sp12"],
+  ["sp_rkick","Cassa arrugginita · SP-12","ru_kick","sp12"], ["sp_rsnare","Rullante arrugginito · SP-12","ru_snare","sp12"], ["sp_boom","Grancassa da banda · SP-12 rallentata","sw_boom","sp12low"],
+  ["du_kick","Cassa jazz · polvere","os_kick","dusty"], ["du_snare","Rullante jazz · polvere","os_snare","dusty"], ["du_snare2","Rullante profondo · polvere","sw_snare","dusty"],
+  ["du_cross","Cross-stick · polvere","os_cross","dusty"], ["du_hat","Charleston · polvere","os_hat","dusty"], ["du_hat_open","Charleston aperto · polvere","os_hat_open","dusty"],
+  ["du_ride","Ride · polvere","os_ride","dusty"], ["du_brush","Spazzola · polvere","ru_brush","dusty"], ["du_tom","Tom alto · polvere","os_tom_hi","dusty"],
+];
+const PROC_NAMES = { sp12: "SP-12: 12 bit a 26 kHz", sp12low: "SP-12 rallentato di 5 semitoni", dusty: "polvere di vinile" };
+for (const [id, name, base, proc] of DERIVED_ROWS) SOUNDS.set(id, { id, name, cat: "Old school", root: null, kind: "derived", base, proc, src: SOUNDS.get(base).src + " · " + PROC_NAMES[proc] });
 for (const s of SOUNDS.values()) s.home = s.root == null ? null : Math.round(s.root / 12) * 12;
 
 
@@ -1634,6 +1660,10 @@ function vocal(frames, dur, f0, breathLead = 0.04, pitchCurve = [1.1, 1, 0.94]) 
   });
 }
 const SYNTH = {
+  // old school FX: siren, dub siren, referee whistle
+  sy_siren: () => mk(1.7, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR, lfo = 0.5 - 0.5 * Math.cos(TAU * 0.62 * t), f = 620 + 780 * lfo; ph += TAU * f / SR; const env = Math.min(1, t / 0.05) * Math.min(1, (1.7 - t) / 0.25); d[i] = (Math.sin(ph) + 0.25 * Math.sin(2 * ph)) * env; } }),
+  sy_dubsiren: () => mk(2.0, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR, wob = Math.sin(TAU * 7 * t) > 0 ? 1 : 0.5, f = (420 + 380 * wob) * Math.pow(0.7, t), env = Math.min(1, t / 0.02) * Math.min(1, (2 - t) / 0.3); ph += TAU * f / SR; d[i] = Math.tanh(3 * Math.sin(ph)) * env * 0.8; } }),
+  sy_whistle: () => mk(0.7, (d, n) => { let ph = 0, nz = 0; for (let i = 0; i < n; i++) { const t = i / SR, f = 2950 + 260 * Math.sin(TAU * 34 * t), env = Math.min(1, t / 0.015) * Math.min(1, (0.7 - t) / 0.08); ph += TAU * f / SR; nz += 0.2 * (rnd() - nz); d[i] = (Math.sin(ph) * (0.75 + 0.25 * Math.sin(TAU * 34 * t)) + nz * 0.25) * env; } }),
   sy_kick: () => mk(0.6, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (45 + 115 * Math.exp(-t * 28)) / SR; const click = t < 0.004 ? rnd() * (1 - t / 0.004) * 0.4 : 0; d[i] = Math.tanh(1.7 * Math.sin(ph) * Math.exp(-t * 6.5)) + click; } }),
   sy_kick808: () => mk(1.6, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (48 + 90 * Math.exp(-t * 35)) / SR; d[i] = Math.tanh(1.3 * Math.sin(ph)) * Math.exp(-t * 2.2); } }),
   sy_snare: () => mk(0.35, (d, n) => { let ph = 0; const hp = new BQ("hp", 1400, 0.7); for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * 185 * (1 + 0.45 * Math.exp(-t * 40)) / SR; d[i] = 0.55 * Math.sin(ph) * Math.exp(-t * 24) + 0.8 * hp.p(rnd()) * Math.exp(-t * 13); } }),
@@ -1735,6 +1765,33 @@ function trimLead(buf) {
   for (let c = 0; c < buf.numberOfChannels; c++) { const s = buf.getChannelData(c); for (let k = 0; k < n; k++) o[k] += s[k + i] / buf.numberOfChannels; }
   return finish(out, 0.85);
 }
+// a recording through an old sampler: resampled with no anti-alias filter, fewer bits, the output filter, a little drive
+const PROC = {
+  sp12: b => crunch(b, { rate: 26040, bits: 12, lp: 11500, drive: 1.4 }),
+  sp12low: b => crunch(b, { rate: 26040, bits: 12, lp: 9500, drive: 1.5, speed: Math.pow(2, -5 / 12) }),
+  dusty: b => crunch(b, { rate: 22050, bits: 14, lp: 5200, hp: 70, drive: 2.2, dust: true }),
+};
+function crunch(b, o) {
+  const len = b.length, src = new Float32Array(len), speed = o.speed || 1;
+  for (let c = 0; c < b.numberOfChannels; c++) { const ch = b.getChannelData(c); for (let i = 0; i < len; i++) src[i] += ch[i] / b.numberOfChannels; }
+  const n = Math.floor(len / speed) + Math.floor(SR * (o.dust ? 0.05 : 0.01)), out = ctx.createBuffer(1, n, SR), d = out.getChannelData(0);
+  const step = o.rate / SR, q = Math.pow(2, o.bits - 1), a = 1 - Math.exp(-TAU * o.lp / SR), ah = o.hp ? Math.exp(-TAU * o.hp / SR) : 0, td = Math.tanh(o.drive);
+  let ph = 1, held = 0, l1 = 0, l2 = 0, hx = 0, hy = 0, click = 0;
+  for (let i = 0; i < n; i++) {
+    const pos = i * speed, k = Math.floor(pos), f = pos - k, x = k + 1 < len ? src[k] + (src[k + 1] - src[k]) * f : 0;
+    ph += step; if (ph >= 1) { ph -= 1; held = Math.round(Math.max(-1, Math.min(1, x)) * q) / q; }
+    l1 += a * (held - l1); l2 += a * (l1 - l2);
+    let y = l2;
+    if (o.hp) { hy = ah * (hy + y - hx); hx = y; y = hy; }
+    if (o.dust) { if (Math.random() < 0.0006) click = rnd() * 0.25; click *= 0.82; y += click + rnd() * 0.006; }
+    d[i] = Math.tanh(y * o.drive) / td;
+  }
+  // as loud as the recording it comes from, with a short fade at the end
+  const win = (arr, m) => { let e = 0; for (let i = 0; i < m; i++) e += arr[i] * arr[i]; return Math.sqrt(e / m) || 1; };
+  const m = Math.min(len, Math.floor(0.2 * SR)), g = win(src, m) / win(d, Math.min(n, Math.floor(m / speed))), fade = Math.floor(SR * 0.006);
+  for (let i = 0; i < n; i++) d[i] = Math.max(-0.95, Math.min(0.95, d[i] * g)) * (i > n - fade ? (n - i) / fade : 1);
+  return out;
+}
 function loadSound(id) {
   if (cache.has(id)) return Promise.resolve(cache.get(id));
   if (loading.has(id)) return loading.get(id);
@@ -1753,6 +1810,8 @@ function loadSound(id) {
       .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
       .then(b => ({ root: r, buf: trimLead(b) }))))
       .then(zs => { zoneCache.set(id, zs); const mid = zs[Math.floor(zs.length / 2)].buf; cache.set(id, mid); return mid; });
+  } else if (s.kind === "derived") {
+    p = loadSound(s.base).then(b => { const t = PROC[s.proc](b); cache.set(id, t); return t; });
   } else p = Promise.reject(new Error("mancante"));
   p = p.catch(err => { loading.delete(id); throw err; });
   loading.set(id, p);
@@ -2568,6 +2627,9 @@ function setRollNote(s, off) {
 
 /* ================= kit pronti ================= */
 const KITS = [
+  ["jazzclub", "Jazz club ’93", ["os_kick", "os_snare", "os_cross", "os_hat", "os_hat_open", "os_ride", "os_kick2", "os_rimshot", "os_tom_lo", "os_tom_hi", "os_hat_pedal", "in_dbass"]],
+  ["sp1200", "SP-12 crunch", ["sp_kick", "sp_snare", "sp_rimshot", "sp_hat", "sp_hat_open", "sp_ride", "sp_kick_low", "sp_snare_low", "sp_cross", "sp_muted", "sp_tom", "sy_vinyl"]],
+  ["polvere", "Polvere di vinile", ["du_kick", "du_snare", "du_cross", "du_hat", "du_hat_open", "du_ride", "sp_rkick", "du_snare2", "du_brush", "du_tom", "sy_siren", "sy_vinyl"]],
   ["boombap", "Boom bap ’94", ["bh_vkick", "bh_vsnare", "bh_vclap", "bh_vhat", "bh_vopen", "bh_808lofi", "bh_vkick2", "bh_vsnare3", "f8_rim", "bh_vmaraca", "bh_vcym", "sy_vinyl"]],
   ["trap", "Trap", ["bh_trapkick", "bh_808dist", "bh_trapsnare", "bh_trapclap", "bh_traphat", "bh_trapopen", "bh_808sub", "bh_trapsnare2", "f8_rim", "f8_cowbell", "bh_trapfx", "sy_airhorn"]],
   ["808", "808 classico", ["f8_kick", "f8_snare", "f8_clap", "f8_hat", "f8_open", "f8_boom", "f8_lt", "f8_mt", "f8_ht", "f8_cowbell", "f8_clave", "f8_cym"]],
