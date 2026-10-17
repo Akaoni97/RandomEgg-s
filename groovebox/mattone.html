@@ -593,16 +593,19 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
         <div class="master knobs" id="masterKnobs"></div>
       </div>
       <div>
-        <div class="hd"><h2>Registratore · esporta in WAV</h2><span class="lbl" id="recTime">Pronto</span></div>
+        <div class="hd"><h2>Registratore · esporta WAV o MP3</h2><span class="lbl" id="recTime">Pronto</span></div>
         <div class="recrow">
           <select id="recBars" aria-label="Quanto registrare">
             <option value="0">Libera (fermi tu)</option><option value="1">1 battuta</option><option value="2">2 battute</option><option value="4" selected>4 battute</option><option value="8">8 battute</option><option value="16">16 battute</option>
           </select>
-          <button class="key rec2" id="recBtn" type="button">● Registra WAV</button>
+          <select id="recFmt" aria-label="Formato del file">
+            <option value="wav">WAV</option><option value="mp3" selected>MP3 320 kbps</option><option value="both">WAV + MP3</option>
+          </select>
+          <button class="key rec2" id="recBtn" type="button">● Registra</button>
           <button class="key small" id="recAgain" type="button" disabled>Salva di nuovo</button>
         </div>
         <audio id="recPlayer" controls hidden></audio>
-        <p class="rechint">Registra quello che esce dalle casse: sequencer, pad, scratch ed effetti. Con un numero di battute parte dall’inizio del pattern e si ferma da solo. Il file arriva come .zip con dentro il .wav.</p>
+        <p class="rechint">Registra quello che esce dalle casse: sequencer, pad, scratch ed effetti. Con un numero di battute parte dall’inizio del pattern e si ferma da solo. Su claude.ai il file arriva dentro uno .zip (il visualizzatore non accetta .wav e .mp3 sciolti); nell’app per PC viene salvato direttamente.</p>
       </div>
     </section>
   </div>
@@ -658,7 +661,7 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
         <dt><kbd>B</kbd></dt><dd>cambia visualizzatore (o tocca il display)</dd>
         <dt><kbd>Spazio</kbd> <kbd>Invio</kbd></dt><dd>play/stop · registra</dd>
       </dl>
-      <p style="margin-top:10px">Oltre 410 suoni, tra cui 55 strumenti singoli campionati su tre ottave per suonare melodie naturali. Quelli elettronici sono sintetizzati dal vivo; gli strumenti veri vengono da <a href="https://github.com/sgossner/VCSL" target="_blank" rel="noopener">VCSL</a> (Versilian Studios, CC0), FluidR3 GM (Frank Wen, CC BY 3.0) via <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">midi-js-soundfonts</a>, <a href="https://archive.org/details/SalamanderGrandPianoV3" target="_blank" rel="noopener">Salamander Grand Piano</a> (Alexander Holm, CC BY 3.0) i campioni di mridangam di Arthur Carabott, suonati da Harishankar V Menon (CC BY-SA 4.0), e per l’hip hop il set <a href="https://github.com/tidalcycles/sounds-tr808-fischer" target="_blank" rel="noopener">TR-808 di Michael Fischer</a> (CC0), i kit di <a href="https://github.com/Boochi44/free-drum-samples" target="_blank" rel="noopener">Boochi44</a> (CC0), l’<a href="https://github.com/tidalcycles/uzu-drumkit" target="_blank" rel="noopener">uzu-drumkit</a> (pubblico dominio) le voci di <a href="https://github.com/tidalcycles/sounds-repetition" target="_blank" rel="noopener">repetition</a> di Alex McLean (CC0) e, per le melodie, il soundfont Musyng Kite (CC BY-SA 3.0) nella conversione midi-js-soundfonts; le versioni “lo-fi” sono rielaborazioni di quei campioni e restano sotto la stessa licenza.</p>
+      <p style="margin-top:10px">Oltre 410 suoni, tra cui 55 strumenti singoli campionati su tre ottave per suonare melodie naturali. Quelli elettronici sono sintetizzati dal vivo; gli strumenti veri vengono da <a href="https://github.com/sgossner/VCSL" target="_blank" rel="noopener">VCSL</a> (Versilian Studios, CC0), FluidR3 GM (Frank Wen, CC BY 3.0) via <a href="https://github.com/gleitz/midi-js-soundfonts" target="_blank" rel="noopener">midi-js-soundfonts</a>, <a href="https://archive.org/details/SalamanderGrandPianoV3" target="_blank" rel="noopener">Salamander Grand Piano</a> (Alexander Holm, CC BY 3.0) i campioni di mridangam di Arthur Carabott, suonati da Harishankar V Menon (CC BY-SA 4.0), e per l’hip hop il set <a href="https://github.com/tidalcycles/sounds-tr808-fischer" target="_blank" rel="noopener">TR-808 di Michael Fischer</a> (CC0), i kit di <a href="https://github.com/Boochi44/free-drum-samples" target="_blank" rel="noopener">Boochi44</a> (CC0), l’<a href="https://github.com/tidalcycles/uzu-drumkit" target="_blank" rel="noopener">uzu-drumkit</a> (pubblico dominio) le voci di <a href="https://github.com/tidalcycles/sounds-repetition" target="_blank" rel="noopener">repetition</a> di Alex McLean (CC0) e, per le melodie, il soundfont Musyng Kite (CC BY-SA 3.0) nella conversione midi-js-soundfonts; le versioni “lo-fi” sono rielaborazioni di quei campioni e restano sotto la stessa licenza. L’esportazione MP3 usa <a href="https://github.com/zhuker/lamejs" target="_blank" rel="noopener">lamejs</a> (LGPL-3.0).</p>
     </div>
   </section>
 </div>
@@ -1862,7 +1865,7 @@ function recStart(bars) {
   N.out.connect(node); node.connect(mute).connect(ctx.destination);
   recorder.node = node; recorder.mute = mute; recorder.on = true;
   recorder.timer = setInterval(renderRec, 250); renderRec();
-  msg(bars ? "REGISTRO " + bars + " BATTUTE IN WAV…" : "REGISTRO IN WAV · PREMI DI NUOVO PER FERMARE");
+  msg(bars ? "REGISTRO " + bars + " BATTUTE…" : "REGISTRO · PREMI DI NUOVO PER FERMARE");
 }
 function recStop() {
   if (!recorder.on) return;
@@ -1876,33 +1879,65 @@ function recStop() {
   const stamp = new Date(), pad2 = n => String(n).padStart(2, "0");
   const name = "mattone-beat-" + stamp.getFullYear() + pad2(stamp.getMonth() + 1) + pad2(stamp.getDate()) + "-" + pad2(stamp.getHours()) + pad2(stamp.getMinutes());
   const wav = encodeWav(L, R, SR);
-  recorder.last = { name, wav, seconds: recorder.frames / SR };
+  recorder.last = { name, wav, L, R, rate: SR, seconds: recorder.frames / SR, mp3: null };
   const url = URL.createObjectURL(new Blob([wav], { type: "audio/wav" }));
   const player = $("recPlayer"); if (player.src) URL.revokeObjectURL(player.src); player.src = url; player.hidden = false;
   renderRec();
-  msg("REGISTRATO " + fmtTime(recorder.last.seconds) + " · SALVO IL WAV");
+  msg("REGISTRATO " + fmtTime(recorder.last.seconds));
   saveTake();
 }
 async function saveTake() {
   const take = recorder.last; if (!take) return;
-  const zip = makeZip([{ name: take.name + ".wav", data: new Uint8Array(take.wav) }]);
+  const fmt = $("recFmt").value, files = [];
+  if (fmt !== "mp3") files.push({ name: take.name + ".wav", data: new Uint8Array(take.wav), type: "audio/wav" });
+  if (fmt !== "wav") {
+    if (!take.mp3) { try { take.mp3 = await encodeMp3(take.L, take.R, take.rate); } catch (e) { msg("NON RIESCO A CREARE L’MP3: " + String(e.message || e).toUpperCase()); return; } }
+    files.push({ name: take.name + ".mp3", data: take.mp3, type: "audio/mpeg" });
+  }
   const dl = await claude_use("downloads");
   if (!dl) {
-    // outside the claude.ai viewer (e.g. the file opened locally) a plain link still works
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([take.wav], { type: "audio/wav" })); a.download = take.name + ".wav"; a.click();
-    msg("WAV PRONTO: " + take.name.toUpperCase()); return;
+    // in the desktop app (or a local copy) files are saved directly, no zip needed
+    files.forEach((f, i) => setTimeout(() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([f.data], { type: f.type })); a.download = f.name; a.click(); }, i * 400));
+    msg("SALVATO: " + files.map(f => f.name).join(" + ").toUpperCase()); return;
   }
-  try { await dl.save({ filename: take.name + ".zip", data: new Blob([zip], { type: "application/zip" }) }); msg("SALVATO: " + take.name.toUpperCase() + ".ZIP (DENTRO C’È IL WAV)"); }
+  const zip = makeZip(files.map(f => ({ name: f.name, data: f.data })));
+  try { await dl.save({ filename: take.name + ".zip", data: zip }); msg("SALVATO: " + take.name.toUpperCase() + ".ZIP (DENTRO: " + files.map(f => f.name.split(".").pop().toUpperCase()).join(" + ") + ")"); }
   catch (err) {
     const code = err && err.code;
     msg(code === "declined" ? "SALVATAGGIO ANNULLATO · PUOI RIPROVARE CON “SALVA DI NUOVO”" : code === "rate_limited" ? "C’È GIÀ UNA RICHIESTA APERTA · RIPROVA TRA UN ATTIMO" : "QUI NON POSSO SALVARE FILE · ASCOLTA LA REGISTRAZIONE SOTTO IL REGISTRATORE");
   }
 }
+// MP3 via lamejs (LGPL-3.0), loaded only when first needed: from the app folder in the desktop build, from jsDelivr on the web
+const LAME_URL = location.protocol === "app:" ? "vendor/lame.min.js" : "https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js";
+let lamePromise = null;
+function loadLame() {
+  if (window.lamejs) return Promise.resolve(window.lamejs);
+  if (!lamePromise) lamePromise = new Promise((res, rej) => {
+    const sc = document.createElement("script"); sc.src = LAME_URL; sc.async = true;
+    sc.onload = () => window.lamejs ? res(window.lamejs) : rej(new Error("codificatore non disponibile"));
+    sc.onerror = () => { lamePromise = null; rej(new Error("codificatore MP3 non raggiungibile")); };
+    document.head.appendChild(sc);
+  });
+  return lamePromise;
+}
+async function encodeMp3(L, R, rate) {
+  const lame = await loadLame(), enc = new lame.Mp3Encoder(2, rate, 320), out = [], step = 1152, n = L.length;
+  const toI16 = (src, from, to) => { const a = new Int16Array(to - from); for (let i = from; i < to; i++) { const v = Math.max(-1, Math.min(1, src[i])); a[i - from] = v < 0 ? v * 0x8000 : v * 0x7fff; } return a; };
+  for (let i = 0, k = 0; i < n; i += step, k++) {
+    const e = Math.min(n, i + step), b = enc.encodeBuffer(toI16(L, i, e), toI16(R, i, e));
+    if (b.length) out.push(new Uint8Array(b));
+    if (k % 200 === 199) { msg("CREO L’MP3… " + Math.round(i / n * 100) + "%"); await new Promise(r => setTimeout(r, 0)); }   // keep the page responsive
+  }
+  const tail = enc.flush(); if (tail.length) out.push(new Uint8Array(tail));
+  const total = out.reduce((a, b) => a + b.length, 0), mp3 = new Uint8Array(total);
+  let o = 0; out.forEach(b => { mp3.set(b, o); o += b.length; });
+  return mp3;
+}
 function claude_use(name) { try { return window.claude && window.claude.use ? window.claude.use(name) : Promise.resolve(null); } catch (e) { return Promise.resolve(null); } }
 function fmtTime(s) { return Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0"); }
 function renderRec() {
   const b = $("recBtn"), t = $("recTime");
-  b.classList.toggle("on", recorder.on); b.textContent = recorder.on ? "■ Ferma e salva" : "● Registra WAV";
+  b.classList.toggle("on", recorder.on); b.textContent = recorder.on ? "■ Ferma e salva" : "● Registra";
   t.textContent = recorder.on ? fmtTime(recorder.frames / SR) + (recorder.bars ? " / " + recorder.bars + " battute" : "") : recorder.last ? "Ultima: " + fmtTime(recorder.last.seconds) : "Pronto";
   $("recAgain").disabled = !recorder.last || recorder.on;
   if (recorder.on && !recorder.bars) msg("● REC WAV " + fmtTime(recorder.frames / SR));

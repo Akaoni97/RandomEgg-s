@@ -1,0 +1,78 @@
+{
+  "name": "mattone",
+  "productName": "MatTone",
+  "version": "1.0.0",
+  "description": "Mat·Tone, groovebox hip hop con pad, sequencer, scratch ed esportazione WAV/MP3",
+  "main": "main.js",
+  "license": "MIT",
+  "author": "Mat·Tone",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Akaoni97/RandomEgg-s.git",
+    "directory": "groovebox/desktop"
+  },
+  "private": true,
+  "scripts": {
+    "prepare-app": "node scripts/prepare.js",
+    "start": "npm run prepare-app && electron .",
+    "dist": "npm run prepare-app && electron-builder --publish never",
+    "dist:win": "npm run prepare-app && electron-builder --win --publish never",
+    "dist:mac": "npm run prepare-app && electron-builder --mac --publish never",
+    "dist:linux": "npm run prepare-app && electron-builder --linux --publish never"
+  },
+  "dependencies": {
+    "lamejs": "1.2.1"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "it.mattone.groovebox",
+    "productName": "MatTone",
+    "copyright": "Mat·Tone",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "app/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Mat·Tone",
+      "artifactName": "MatTone-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "MatTone-Portatile-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.music",
+      "icon": "build/icon.png",
+      "artifactName": "MatTone-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Audio",
+      "icon": "build/icon.png",
+      "artifactName": "MatTone-${version}.${ext}"
+    },
+    "publish": null
+  }
+}

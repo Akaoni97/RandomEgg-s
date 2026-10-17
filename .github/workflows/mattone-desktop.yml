@@ -1,0 +1,44 @@
+name: Mat·Tone desktop
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "groovebox/**"
+      - ".github/workflows/mattone-desktop.yml"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win
+          - os: macos-latest
+            target: mac
+          - os: ubuntu-latest
+            target: linux
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: groovebox/desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: groovebox/desktop/package-lock.json
+      - run: npm ci
+      - run: npm run dist:${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MatTone-${{ matrix.target }}
+          path: |
+            groovebox/desktop/dist/*.exe
+            groovebox/desktop/dist/*.dmg
+            groovebox/desktop/dist/*.AppImage
+          if-no-files-found: error
