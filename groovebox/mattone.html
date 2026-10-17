@@ -67,7 +67,7 @@ body::after { content: ""; position: fixed; inset: 0; pointer-events: none; back
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
-.app { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+.app { position: relative; z-index: 1; max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
 
 /* metal panels with screws */
 .unit {
@@ -542,8 +542,8 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
 .custhead p { margin: 3px 0 0; font-size: 13px; color: var(--cream-2); }
 .custhead .acts { display: flex; gap: 8px; }
 .custbody { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px; min-height: 0; }
-.custnav { display: grid; align-content: start; gap: 6px; }
-.custnav button { display: grid; gap: 2px; padding: 9px 12px; border: 0; border-radius: 8px; text-align: left; background: var(--well); color: var(--well-text); box-shadow: inset 0 1px 3px rgba(0,0,0,.5); }
+.custnav { display: grid; align-content: start; gap: 5px; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.custnav button { display: grid; gap: 1px; padding: 7px 12px; border: 0; border-radius: 8px; text-align: left; background: var(--well); color: var(--well-text); box-shadow: inset 0 1px 3px rgba(0,0,0,.5); }
 .custnav button b { font-family: var(--f-label); font-weight: 400; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
 .custnav button small { font-size: 11px; color: var(--cream-3); }
 .custnav button[aria-current="page"] { color: var(--cream); box-shadow: inset 3px 0 0 var(--led), inset 0 1px 3px rgba(0,0,0,.5); background: color-mix(in srgb, var(--led) 10%, var(--well)); }
@@ -601,6 +601,110 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
 .s-corona { left: 196px; top: 2px; width: 40px; transform: rotate(12deg); }
 .s-cassetta { left: 62%; bottom: -12px; width: 58px; transform: rotate(-7deg); }
 .s-corona svg, .s-cassetta svg { display: block; width: 100%; }
+
+/* screen shapes (after the screen types, so the bezel of a shape wins) */
+.app[data-shape="arrotondato"] .lcd { padding: 10px; border-radius: 22px; }
+.app[data-shape="arrotondato"] .lcd canvas, .app[data-shape="arrotondato"] .lcd::after { border-radius: 9px; }
+.app[data-shape="arrotondato"] .lcd::after { inset: 10px; }
+.app[data-shape="capsula"] .lcd { padding: 9px 30px; border-radius: 999px; }
+.app[data-shape="capsula"] .lcd canvas, .app[data-shape="capsula"] .lcd::after { border-radius: 8px; }
+.app[data-shape="capsula"] .lcd::after { inset: 9px 30px; }
+.app[data-shape="tv"] .lcd { padding: 12px 58px 12px 12px; border-radius: 18px;
+  background: radial-gradient(circle at calc(100% - 29px) 34%, #b5ac94 0 7px, #3a342c 8px 11px, transparent 12px), radial-gradient(circle at calc(100% - 29px) 70%, #b5ac94 0 7px, #3a342c 8px 11px, transparent 12px), repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 2px, transparent 2px 9px), linear-gradient(180deg, #5a3d24, #2e1d10); }
+.app[data-shape="tv"] .lcd canvas, .app[data-shape="tv"] .lcd::after { border-radius: 7% / 16%; }
+.app[data-shape="tv"] .lcd::after { inset: 12px 58px 12px 12px; box-shadow: inset 0 0 22px rgba(0,0,0,.7); background: radial-gradient(120% 90% at 30% 20%, rgba(255,255,255,.14), rgba(255,255,255,0) 45%); }
+.app[data-shape="inclinato"] .lcd { transform: perspective(700px) rotateX(16deg); transform-origin: 50% 100%; box-shadow: inset 0 2px 7px rgba(0,0,0,.85), 0 14px 18px -10px rgba(0,0,0,.8), 0 0 0 1px var(--edge); }
+.app[data-shape="esagono"] .lcd { padding: 8px 26px; border-radius: 0; clip-path: polygon(3.5% 0, 96.5% 0, 100% 50%, 96.5% 100%, 3.5% 100%, 0 50%); }
+.app[data-shape="esagono"] .lcd canvas, .app[data-shape="esagono"] .lcd::after { border-radius: 2px; }
+.app[data-shape="esagono"] .lcd::after { inset: 8px 26px; }
+.app[data-shape="rack"] .lcd { padding: 12px 22px; border-radius: 4px;
+  background: radial-gradient(circle at 10px 10px, #d8d3c6 0 2.5px, #6a665d 3px 4px, transparent 4.5px), radial-gradient(circle at calc(100% - 10px) 10px, #d8d3c6 0 2.5px, #6a665d 3px 4px, transparent 4.5px), radial-gradient(circle at 10px calc(100% - 10px), #d8d3c6 0 2.5px, #6a665d 3px 4px, transparent 4.5px), radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), #d8d3c6 0 2.5px, #6a665d 3px 4px, transparent 4.5px), repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, transparent 1px 3px), linear-gradient(180deg, #8d8a82, #55524b); }
+.app[data-shape="rack"] .lcd canvas, .app[data-shape="rack"] .lcd::after { border-radius: 2px; }
+.app[data-shape="rack"] .lcd::after { inset: 12px 22px; }
+/* previews of shapes, layouts and pads */
+.shapeprev { display: grid; place-items: center; width: 118px; height: 48px; background: #151412; box-shadow: 0 0 0 1px var(--edge); }
+.shapeprev i { width: 100%; height: 100%; background: linear-gradient(180deg, color-mix(in srgb, var(--led) 40%, #0a0806), #0a0806); }
+.sp-rettangolo { border-radius: 4px; padding: 5px; } .sp-rettangolo i { border-radius: 2px; }
+.sp-arrotondato { border-radius: 14px; padding: 6px; } .sp-arrotondato i { border-radius: 9px; }
+.sp-capsula { border-radius: 999px; padding: 6px 18px; } .sp-capsula i { border-radius: 12px; }
+.sp-tv { width: 118px; border-radius: 10px; padding: 6px 30px 6px 6px; background: radial-gradient(circle at calc(100% - 15px) 35%, #b5ac94 0 4px, transparent 5px), radial-gradient(circle at calc(100% - 15px) 70%, #b5ac94 0 4px, transparent 5px), linear-gradient(180deg, #5a3d24, #2e1d10); } .sp-tv i { border-radius: 16% / 34%; }
+.sp-inclinato { border-radius: 4px; padding: 5px; transform: perspective(160px) rotateX(24deg); } .sp-inclinato i { border-radius: 2px; }
+.sp-esagono { padding: 5px 14px; clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%); } .sp-esagono i { clip-path: polygon(4% 0, 96% 0, 100% 50%, 96% 100%, 4% 100%, 0 50%); }
+.sp-rack { border-radius: 2px; padding: 7px 14px; background: radial-gradient(circle at 6px 6px, #d8d3c6 0 2px, transparent 2.5px), radial-gradient(circle at calc(100% - 6px) 6px, #d8d3c6 0 2px, transparent 2.5px), radial-gradient(circle at 6px calc(100% - 6px), #d8d3c6 0 2px, transparent 2.5px), radial-gradient(circle at calc(100% - 6px) calc(100% - 6px), #d8d3c6 0 2px, transparent 2.5px), linear-gradient(180deg, #8d8a82, #55524b); }
+.rackprev { display: flex; gap: 4px; width: 180px; height: 40px; padding: 6px; border-radius: 6px; background: var(--chassis); box-shadow: 0 0 0 1px var(--edge); }
+.rackprev i { flex: 1; border-radius: 3px; background: var(--key-2); }
+.rackprev .r-logo { background: linear-gradient(180deg, var(--cream) 0 22%, transparent 22% 40%, var(--stripe-1) 40% 50%, var(--stripe-2) 50% 60%, transparent 60%); flex: .9; }
+.rackprev .r-lcd { flex: 3; background: linear-gradient(180deg, color-mix(in srgb, var(--led) 45%, #0a0806), #0a0806); }
+.rackprev .r-vu { flex: 1.4; background: linear-gradient(90deg, #e9dfc6 0 46%, transparent 46% 54%, #e9dfc6 54%); }
+.rackprev .r-tr { flex: 1.1; background: linear-gradient(180deg, var(--key-1) 0 40%, transparent 40% 55%, var(--led) 55% 70%, transparent 70%); }
+.padprev { display: grid; grid-template-columns: repeat(4, 22px); gap: 6px; }
+.padprev i { height: 22px; background: radial-gradient(120% 90% at 50% 0%, var(--rubber-hi), var(--rubber) 70%); box-shadow: 0 2px 0 var(--edge); }
+.padprev i:nth-child(2) { background: var(--hue); }
+.pp-arrotondati i { border-radius: 5px; } .pp-squadrati i { border-radius: 1px; } .pp-tondi i { border-radius: 50%; } .pp-capsule i { border-radius: 999px; height: 16px; margin-top: 3px; }
+/* the top bar in another order (wide screens; narrower ones keep the stacked layout) */
+@media (min-width: 1081px) {
+  .app[data-rack="specchio"] .rack { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+  .app[data-rack="specchio"] .transport { order: 1; } .app[data-rack="specchio"] .vus { order: 2; } .app[data-rack="specchio"] .lcdwrap { order: 3; } .app[data-rack="specchio"] .logo { order: 4; }
+  .app[data-rack="schermo"] .rack { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+  .app[data-rack="schermo"] .lcdwrap { order: 1; } .app[data-rack="schermo"] .logo { order: 2; } .app[data-rack="schermo"] .vus { order: 3; } .app[data-rack="schermo"] .transport { order: 4; }
+}
+.app[data-padside="destra"] .pg-suona { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+.app[data-padside="destra"] .pg-suona .padunit { order: 2; }
+.app[data-tabs="basso"] .tabs { order: 3; }
+/* pad shapes */
+.app[data-padshape="squadrati"] .pad, .app[data-padshape="squadrati"] .pad::after { border-radius: 2px; }
+.app[data-padshape="capsule"] .pad, .app[data-padshape="capsule"] .pad::after { border-radius: 999px; }
+.app[data-padshape="capsule"] .pad { padding-inline: 18px; }
+.app[data-padshape="tondi"] .pad, .app[data-padshape="tondi"] .pad::after { border-radius: 50%; }
+.app[data-padshape="tondi"] .pad { aspect-ratio: 1; justify-items: center; text-align: center; padding: 14% 12%; }
+.app[data-padshape="tondi"] .pad .top { width: 70%; }
+.app[data-padshape="tondi"] .pad .nm { font-size: 11.5px; overflow-wrap: normal; word-break: normal; hyphens: auto; }
+/* light behind the instrument that comes on with every kick */
+.beatlight { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0; will-change: opacity;
+  background: radial-gradient(70% 55% at 50% -5%, color-mix(in srgb, var(--bl, #ff9f2e) 60%, transparent), transparent 70%), radial-gradient(55% 40% at 50% 105%, color-mix(in srgb, var(--bl, #ff9f2e) 32%, transparent), transparent 70%); }
+/* a ring of light from the pad that sounds */
+.pad .ripple { position: absolute; left: 50%; top: 50%; width: 170%; aspect-ratio: 1; border-radius: 50%; pointer-events: none; border: 2px solid var(--hue); box-shadow: 0 0 14px var(--hue), inset 0 0 14px color-mix(in srgb, var(--hue) 50%, transparent); animation: ripple .55s cubic-bezier(.2, .7, .3, 1) forwards; }
+@keyframes ripple { from { opacity: .95; transform: translate(-50%, -50%) scale(.12); } to { opacity: 0; transform: translate(-50%, -50%) scale(1); } }
+/* the LED that glides under the tabs */
+.tabs { position: relative; }
+.tabglow { position: absolute; left: 0; bottom: 4px; width: 40px; height: 3px; border-radius: 3px; pointer-events: none; background: var(--led); box-shadow: 0 0 10px var(--led), 0 0 2px var(--led); opacity: 0; transition: transform .5s cubic-bezier(.2, .9, .2, 1), width .5s cubic-bezier(.2, .9, .2, 1), opacity .2s; }
+/* cards and chips come in one after the other */
+.cpane:not([hidden]) .card, .cpane:not([hidden]) .opt { animation: cardIn .42s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 26ms); }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px) scale(.97); } }
+.card { transition: border-color .15s, box-shadow .15s, transform .18s cubic-bezier(.2, .8, .2, 1); }
+.card:hover { transform: translateY(-2px); }
+/* smooth changes: pages slide, layout pieces travel to their new place, the rest cross-fades */
+::view-transition-group(*) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .85, .2, 1); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .3s; }
+html[data-vt="next"] .pages, html[data-vt="prev"] .pages { view-transition-name: pages; }
+html[data-vt="next"]::view-transition-old(pages) { animation: .26s cubic-bezier(.4, 0, 1, 1) both vtOutL; }
+html[data-vt="next"]::view-transition-new(pages) { animation: .42s cubic-bezier(0, 0, .2, 1) both vtInR; }
+html[data-vt="prev"]::view-transition-old(pages) { animation: .26s cubic-bezier(.4, 0, 1, 1) both vtOutR; }
+html[data-vt="prev"]::view-transition-new(pages) { animation: .42s cubic-bezier(0, 0, .2, 1) both vtInL; }
+@keyframes vtOutL { to { opacity: 0; transform: translateX(-56px) scale(.985); } }
+@keyframes vtInR { from { opacity: 0; transform: translateX(56px) scale(.985); } }
+@keyframes vtOutR { to { opacity: 0; transform: translateX(56px) scale(.985); } }
+@keyframes vtInL { from { opacity: 0; transform: translateX(-56px) scale(.985); } }
+html[data-vt="layout"] .logo { view-transition-name: vt-logo; }
+html[data-vt="layout"] .lcdwrap { view-transition-name: vt-lcd; }
+html[data-vt="layout"] .vus { view-transition-name: vt-vus; }
+html[data-vt="layout"] .transport { view-transition-name: vt-trans; }
+html[data-vt="layout"] .tabs { view-transition-name: vt-tabs; }
+html[data-vt="layout"] .padunit { view-transition-name: vt-pads; }
+html[data-vt="layout"] .pg-suona .col { view-transition-name: vt-col; }
+html[data-vt="cat"] .custpanes { view-transition-name: vt-cat; }
+html[data-vt="cat"]::view-transition-old(vt-cat) { animation: .16s ease-in both vtFade; }
+html[data-vt="cat"]::view-transition-new(vt-cat) { animation: .34s cubic-bezier(0, 0, .2, 1) both vtRise; }
+@keyframes vtFade { to { opacity: 0; } }
+@keyframes vtRise { from { opacity: 0; transform: translateY(16px); } }
+/* "Animazioni: ridotte" */
+.lowmotion .cpane .card, .lowmotion .cpane .opt, .lowmotion .pad .ripple { animation: none; }
+.lowmotion .tabglow, .lowmotion .card { transition: none; }
+@media (min-width: 901px) and (min-height: 600px) {
+  .app[data-tabs="basso"] { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .app[data-padshape="tondi"] .pg-suona .pads { container-type: size; }
+  .app[data-padshape="tondi"] .pg-suona .pad { width: min(calc((100cqw - 30px) / 4), calc((100cqh - 20px) / 3)); min-height: 0; justify-self: center; align-self: center; }
+}
 
 /* intro: when the desktop app opens, or from Personalizza */
 #intro { position: fixed; inset: 0; z-index: 100; overflow: hidden; display: grid; place-items: center; background: #0b0806; cursor: pointer; transition: opacity .5s ease; }
@@ -667,6 +771,7 @@ html.intro-on { overflow: hidden; }
 })();
 </script>
 
+<div class="beatlight" id="beatLight" aria-hidden="true"></div>
 <div class="app" id="app" data-bank="A">
   <header class="unit rack">
     <div class="stickers" id="stickers" aria-hidden="true"></div>
@@ -850,8 +955,16 @@ html.intro-on { overflow: hidden; }
             <section class="cpane" data-cat="schermo" aria-label="Schermo" hidden>
               <h3>Tipo di schermo</h3><p class="cnote">Dallo schermo di oggi al monitor a fosfori: cambia come si accendono i puntini.</p>
               <div class="cards wide" id="cLcd"></div>
+              <h4>Forma dello schermo</h4><div class="cards" id="cShape"></div>
               <h4>Colore della luce</h4><div class="opts sws" id="cScreen"></div><p class="cnote small" id="cScreenNote"></p>
               <h4>Grafica a tempo</h4><div class="opts" id="cVis"></div>
+            </section>
+            <section class="cpane" data-cat="disposizione" aria-label="Disposizione" hidden>
+              <h3>Barra in alto</h3><p class="cnote">In che ordine stanno logo, schermo, indicatori e comandi.</p>
+              <div class="cards wide" id="cRack"></div>
+              <h4>Pagina Suona</h4><div class="opts" id="cPadSide"></div>
+              <h4>Linguette delle pagine</h4><div class="opts" id="cTabs"></div>
+              <h4>Forma dei pad</h4><div class="cards" id="cPadShape"></div>
             </section>
             <section class="cpane" data-cat="indicatori" aria-label="Indicatori" hidden>
               <h3>Indicatori L e R</h3><p class="cnote">I due indicatori accanto allo schermo, uno per cassa: sinistra e destra.</p>
@@ -883,6 +996,12 @@ html.intro-on { overflow: hidden; }
               <p class="cnote" id="appUpd">Gli aggiornamenti arrivano da soli: all’avvio l’app li scarica in sottofondo, in alto vedi a che punto è, poi ti chiede di riavviare.</p>
               <button class="key small" id="appCheck" type="button">Controlla aggiornamenti</button>
               <p class="cnote small">Se qualcosa non va, ogni passaggio è scritto nel file aggiornamenti.log, nella cartella dei dati di Mat.Tone.</p>
+            </section>
+            <section class="cpane" data-cat="movimento" aria-label="Luci e animazioni" hidden>
+              <h3>Luce col beat</h3><p class="cnote">Una luce colorata dietro lo strumento che si accende su ogni cassa. Lo strumento resta fermo, cambia solo la luce.</p>
+              <div class="opts" id="cPulse"></div>
+              <h4>Animazioni</h4><p class="cnote small">Pagine che scorrono, pezzi che si spostano quando cambi la disposizione, schede che entrano.</p><div class="opts" id="cMotion" style="margin-top:8px"></div>
+              <h4>Scia sui pad</h4><p class="cnote small">Un’onda di luce parte dal pad ogni volta che suona.</p><div class="opts" id="cRipple" style="margin-top:8px"></div>
             </section>
             <section class="cpane" data-cat="intro" aria-label="Intro" hidden>
               <h3>Intro</h3><div class="opts" id="cIntro"></div>
@@ -1409,7 +1528,8 @@ function demoPatterns() {
   put(1, 1, 8, [[15]]);
   return P;
 }
-const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "buio", wear: 25, intro: "si", lcd: "oled", meter: "ago", knob: "skin", font: "bungee", stickers: [] };
+const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "buio", wear: 25, intro: "si", lcd: "oled", meter: "ago", knob: "skin", font: "bungee", stickers: [],
+  shape: "rettangolo", rack: "classica", padside: "sinistra", tabs: "alto", padshape: "arrotondati", pulse: "no", motion: "piene", ripple: "si" };
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
@@ -2544,6 +2664,7 @@ function flash(b, p, note) {
   else target = pads[p];
   if (!target) return;
   target.classList.remove("hit"); void target.offsetWidth; target.classList.add("hit");
+  if (state.custom.ripple !== "no" && state.custom.motion !== "ridotte" && target.childElementCount < 8) { const r = el("span", "ripple"); target.appendChild(r); r.addEventListener("animationend", () => r.remove()); }
   clearTimeout(target._t); target._t = setTimeout(() => target.classList.remove("hit"), 90);
 }
 function renderPads() {
@@ -3071,14 +3192,19 @@ const ROOMS = [["buio", "Stanza buia", "#1a1815"], ["mattoni", "Muro di mattoni"
 const KNOB_STYLES = [["skin", "Della scocca", "Il cappuccio che va con la carrozzeria"], ["crema", "Crema vintage", "Bachelite chiara con la tacca scura"], ["alluminio", "Alluminio", "Metallo spazzolato e zigrinato"], ["becco", "Becco d’anatra", "Il puntatore nero degli amplificatori"], ["gomma", "Gomma colorata", "Prende il colore del gruppo"]];
 const FONTS = [["bungee", "Cantiere", "Bungee", 1], ["ops", "Militare", "Black Ops One", 1.04], ["marker", "Pennarello", "Permanent Marker", 1.08], ["righteous", "Anni 70", "Righteous", 1.12], ["vt", "Terminale", "VT323", 1.55], ["pixel", "Pixel", "Silkscreen", 0.92]];
 const STICKERS = [["boombap", "Boom bap"], ["tag", "Tag a spray"], ["giri", "33⅓ giri"], ["nastro", "Nastro adesivo"], ["corona", "Corona"], ["cassetta", "Cassetta"]];
-const CUST_CATS = [["scocca", "Scocca", "Colori e materiali"], ["schermo", "Schermo", "Tipo, colore, grafica"], ["indicatori", "Indicatori L/R", "Le due casse"], ["comandi", "Manopole e pad", "Cappucci, gomme, luci"], ["disco", "Disco", "Vinile ed etichetta"], ["logo", "Logo e adesivi", "Nome, carattere, adesivi"], ["stanza", "Stanza", "Dove sta lo strumento"], ["intro", "Intro", "All’avvio dell’app"], ["app", "App per PC", "Versione e aggiornamenti"]];
+const SHAPES = [["rettangolo", "Rettangolo", "Il classico, spigoli vivi"], ["arrotondato", "Arrotondato", "Angoli morbidi come un telefono"], ["capsula", "Capsula", "Cornice tutta tonda ai lati"], ["tv", "Televisore", "Vetro bombato e due manopole"], ["inclinato", "Inclinato", "Leggermente piegato verso di te"], ["esagono", "Esagono", "Lati tagliati, stile fantascienza anni 80"], ["rack", "Rack con viti", "Cornice di metallo avvitata"]];
+const RACKS = [["classica", "Classica", ["logo", "lcd", "vu", "tr"]], ["specchio", "A specchio", ["tr", "vu", "lcd", "logo"]], ["schermo", "Schermo in testa", ["lcd", "logo", "vu", "tr"]]];
+const PADSHAPES = [["arrotondati", "Arrotondati"], ["squadrati", "Squadrati"], ["tondi", "Tondi"], ["capsule", "Capsule"]];
+const LAYOUT_KEYS = new Set(["shape", "rack", "padside", "tabs", "padshape"]);
+const CUST_CATS = [["scocca", "Scocca", "Colori e materiali"], ["schermo", "Schermo", "Tipo, forma, colore"], ["disposizione", "Disposizione", "Dove sta ogni cosa"], ["indicatori", "Indicatori L/R", "Le due casse"], ["comandi", "Manopole e pad", "Cappucci, gomme, luci"], ["disco", "Disco", "Vinile ed etichetta"], ["logo", "Logo e adesivi", "Nome, carattere, adesivi"], ["stanza", "Stanza", "Dove sta lo strumento"], ["movimento", "Luci e animazioni", "Luce col beat, scie"], ["intro", "Intro", "All’avvio dell’app"], ["app", "App per PC", "Versione e aggiornamenti"]];
 function optButton(host, value, label, swatch, onPick, square) {
   const b = el("button", "opt", (swatch ? '<i class="' + (square ? "sq" : "") + '" style="background:' + swatch + '"></i>' : "") + esc(label));
-  b.type = "button"; b.dataset.v = value; b.addEventListener("click", () => onPick(value)); host.appendChild(b); return b;
+  b.type = "button"; b.dataset.v = value; b.style.setProperty("--i", host.children.length); b.addEventListener("click", () => onPick(value)); host.appendChild(b); return b;
 }
 // a big option with a preview on top
 function cardButton(host, value, name, note, preview, onPick) {
   const b = el("button", "card", '<span class="cprev"></span><b>' + esc(name) + '</b>' + (note ? '<small>' + esc(note) + '</small>' : ""));
+  b.style.setProperty("--i", host.children.length);
   b.type = "button"; b.dataset.v = value; b.addEventListener("click", () => onPick(value));
   if (preview) b.querySelector(".cprev").appendChild(preview);
   host.appendChild(b); return b;
@@ -3122,7 +3248,15 @@ function knobPreview(style) {
   drawKnobCap(c, style, a); return cv;
 }
 function setVis(i) { state.vis = i; save(); $("visBtn").textContent = "VIS · " + VIS[i][1]; fallBuf.fill(0); drawSpec(!ctx); renderCustom(); }
-function setCustom(key, v) { state.custom[key] = v; save(); applyCustom(); renderCustom(); }
+// smooth changes: the browser morphs from the old look to the new one (View Transitions)
+function smooth(fn, kind) {
+  if (!document.startViewTransition || state.custom.motion === "ridotte" || introRun || matchMedia("(prefers-reduced-motion: reduce)").matches) { fn(); return; }
+  const root = document.documentElement;
+  root.dataset.vt = kind;
+  const t = document.startViewTransition(fn);
+  t.finished.finally(() => { if (root.dataset.vt === kind) delete root.dataset.vt; });
+}
+function setCustom(key, v) { smooth(() => { state.custom[key] = v; save(); applyCustom(); renderCustom(); }, LAYOUT_KEYS.has(key) ? "layout" : "fade"); }
 function toggleSticker(id) {
   const s = new Set(state.custom.stickers || []);
   if (s.has(id)) s.delete(id); else s.add(id);
@@ -3135,19 +3269,27 @@ function showCustCat(id) {
   document.querySelectorAll(".cpane").forEach(p => { p.hidden = p.dataset.cat !== id; });
   renderCustom();
 }
-function openCustom() { if (curPage !== "cust") pageBeforeCust = curPage; showPage("cust"); showCustCat(custCat); }
-function closeCustom() { showPage(pageBeforeCust); $("openCust").focus({ preventScroll: true }); }
+function openCustom() { if (curPage !== "cust") pageBeforeCust = curPage; smooth(() => { showPage("cust"); showCustCat(custCat); }, "next"); }
+function closeCustom() { smooth(() => showPage(pageBeforeCust), "prev"); $("openCust").focus({ preventScroll: true }); }
 function buildCustom() {
   CUST_CATS.filter(c => c[0] !== "app" || window.matDesktop).forEach(([id, name, note]) => {
     const b = el("button", "", "<b>" + esc(name) + "</b><small>" + esc(note) + "</small>");
-    b.type = "button"; b.dataset.cat = id; b.addEventListener("click", () => showCustCat(id));
+    b.type = "button"; b.dataset.cat = id; b.addEventListener("click", () => { if (custCat !== id) smooth(() => showCustCat(id), "cat"); });
     $("custNav").appendChild(b);
   });
   SKINS.forEach(([id, name, tag, col, badge]) => {
     const p = el("span", "skinprev", '<i style="background:' + col + '"></i><em>' + esc(badge) + '</em>');
-    cardButton($("cSkin"), id, name, tag, p, v => { applySkin(v); applyCustom(); save(); renderCustom(); });
+    cardButton($("cSkin"), id, name, tag, p, v => smooth(() => { applySkin(v); applyCustom(); save(); renderCustom(); }, "fade"));
   });
   LCD_TYPES.forEach(([id, name, note]) => cardButton($("cLcd"), id, name, note, mkCanvas(192, 60), v => setCustom("lcd", v)));
+  SHAPES.forEach(([id, name, note]) => cardButton($("cShape"), id, name, note, el("span", "shapeprev sp-" + id, "<i></i>"), v => setCustom("shape", v)));
+  RACKS.forEach(([id, name, order]) => cardButton($("cRack"), id, name, order.map(o => ({ logo: "Logo", lcd: "Schermo", vu: "Indicatori", tr: "Comandi" })[o]).join(" · "), el("span", "rackprev", order.map(o => '<i class="r-' + o + '"></i>').join("")), v => setCustom("rack", v)));
+  [["sinistra", "Pad a sinistra"], ["destra", "Pad a destra"]].forEach(([id, name]) => optButton($("cPadSide"), id, name, null, v => setCustom("padside", v)));
+  [["alto", "Pagine in alto"], ["basso", "Pagine in basso"]].forEach(([id, name]) => optButton($("cTabs"), id, name, null, v => setCustom("tabs", v)));
+  PADSHAPES.forEach(([id, name]) => cardButton($("cPadShape"), id, name, "", el("span", "padprev pp-" + id, "<i></i><i></i><i></i><i></i>"), v => setCustom("padshape", v)));
+  [["si", "Accesa"], ["no", "Spenta"]].forEach(([id, name]) => optButton($("cPulse"), id, name, null, v => setCustom("pulse", v)));
+  [["piene", "Piene e fluide"], ["ridotte", "Ridotte"]].forEach(([id, name]) => optButton($("cMotion"), id, name, null, v => setCustom("motion", v)));
+  [["si", "Sì"], ["no", "No"]].forEach(([id, name]) => optButton($("cRipple"), id, name, null, v => setCustom("ripple", v)));
   SCREEN_COLORS.forEach(([id, name, cols]) => optButton($("cScreen"), id, name, cols ? cols[0] : "conic-gradient(#ffb247 0 25%, #79cfff 0 50%, #b6f266 0 75%, #ff6fb5 0)", v => setCustom("screen", v)));
   VIS.forEach(([, name], i) => optButton($("cVis"), String(i), name, null, () => setVis(i)));
   METERS.forEach(([id, name, note]) => cardButton($("cMeter"), id, name, note, mkCanvas(264, 168), v => setCustom("meter", v)));
@@ -3176,6 +3318,7 @@ function renderCustom() {
   const C = state.custom, stk = new Set(C.stickers || []);
   const mark = (id, v) => [...$(id).children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
   mark("cSkin", state.skin); mark("cLcd", C.lcd); mark("cScreen", C.screen); mark("cVis", String(state.vis || 0)); mark("cMeter", C.meter); mark("cKnob", C.knob);
+  mark("cShape", C.shape); mark("cRack", C.rack); mark("cPadSide", C.padside); mark("cTabs", C.tabs); mark("cPadShape", C.padshape); mark("cPulse", C.pulse); mark("cMotion", C.motion); mark("cRipple", C.ripple);
   mark("cLed", C.led); mark("cPad", C.pad); mark("cVinyl", C.vinyl); mark("cLabel", C.label); mark("cFont", C.font); mark("cRoom", C.room); mark("cIntro", C.intro);
   [...$("cStickers").children].forEach(b => b.setAttribute("aria-pressed", stk.has(b.dataset.v)));
   if (document.activeElement !== $("cLogo")) $("cLogo").value = C.logo;
@@ -3208,6 +3351,9 @@ function applyCustom() {
   if (lc && lc[2]) app.setProperty("--led", lc[2]); else app.removeProperty("--led");
   $("app").dataset.pad = C.pad;
   $("app").dataset.lcd = C.lcd;
+  Object.assign($("app").dataset, { shape: C.shape, rack: C.rack, padside: C.padside, tabs: C.tabs, padshape: C.padshape });
+  document.documentElement.classList.toggle("lowmotion", C.motion === "ridotte");
+  if (C.pulse !== "si") $("beatLight").style.opacity = 0;
   const lt = LCD_TYPES.find(t => t[0] === C.lcd) || LCD_TYPES[0];
   $("lcdName").textContent = "Schermo · " + lt[1];
   const f = FONTS.find(x => x[0] === C.font) || FONTS[0];
@@ -3221,6 +3367,8 @@ function applyCustom() {
   logoDot = logo.querySelector("span");
   renderStickers();
   readSkin(); recordCv = null; knobs.forEach(k => k.draw()); drawDeck(true); drawSpec(!ctx); drawVU(!ctx);
+  $("beatLight").style.setProperty("--bl", SK.led);
+  if (typeof placeTabGlow === "function") requestAnimationFrame(() => { fitPages(); sizeCanvases(); placeTabGlow(); });
 }
 function makeBricks() {
   const rows = [], W = 180, H = 90, bh = 30, bw = 60, m = 3;
@@ -3287,11 +3435,12 @@ function tick() {
     while (kickAt.length && kickAt[0] <= now) { kickAt.shift(); kickGlow = 1; }
   }
   kickGlow *= 0.86; beatPulse *= 0.9;
+  if (state.custom.pulse === "si") { const v = Math.min(1, kickGlow) * 0.9; if (Math.abs(v - beatLightV) > 0.008) { $("beatLight").style.opacity = v.toFixed(3); beatLightV = v; } }
   if (logoDot) logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
   drawSpec(!ctx); drawVU(!ctx); drawDeck(false);
   requestAnimationFrame(tick);
 }
-let kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a";
+let beatLightV = 0, kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a";
 const SKINS = [
   ["cantina", "Cantina", "SP-88 · CAMPIONATORE DA CANTINA", "#2a2620", "SER. Nº 0088 · 220V~ 50HZ"],
   ["hifi", "Hi-Fi ’76", "STEREO GROOVE CENTER · MOD. 76", "#c9c5bb", "HIGH FIDELITY · 2×40W"],
@@ -3349,7 +3498,14 @@ function showPage(id) {
   document.querySelectorAll(".page").forEach(pg => { pg.hidden = pg.dataset.page !== id; });
   [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.page === id));
   if (id !== "cust" && state.page !== id) { state.page = id; save(); }
-  fitPages(); sizeCanvases();
+  fitPages(); sizeCanvases(); placeTabGlow();
+}
+// the LED under the tabs glides to the page you pick
+function placeTabGlow() {
+  const g = $("tabs").querySelector(".tabglow"), b = $("tabs").querySelector('[aria-selected="true"]');
+  if (!g) return;
+  if (!b) { g.style.opacity = 0; return; }
+  g.style.opacity = 1; g.style.width = (b.offsetWidth - 28) + "px"; g.style.transform = "translateX(" + (b.offsetLeft + 14) + "px)";
 }
 // the four groups on the Mix page: mute buttons and a meter that jumps on every hit
 const grpHit = [[], [], [], []];   // recent hits per group (the sequencer schedules them a little ahead)
@@ -3377,11 +3533,16 @@ function buildPages() {
   PAGES.forEach(([id, name]) => {
     const b = el("button", "", "<i></i>" + esc(name));
     b.type = "button"; b.dataset.page = id; b.setAttribute("role", "tab");
-    b.addEventListener("click", () => showPage(id));
+    b.addEventListener("click", () => {
+      if (curPage === id) return;
+      const from = PAGES.findIndex(q => q[0] === curPage), to = PAGES.findIndex(q => q[0] === id);
+      smooth(() => showPage(id), from < 0 || to > from ? "next" : "prev");
+    });
     $("tabs").appendChild(b);
   });
+  $("tabs").appendChild(el("span", "tabglow"));
   $("toDeck").addEventListener("click", () => showPage("piatto"));
-  window.addEventListener("resize", () => { fitPages(); sizeCanvases(); });
+  window.addEventListener("resize", () => { fitPages(); sizeCanvases(); placeTabGlow(); });
   showPage(state.page);
 }
 
