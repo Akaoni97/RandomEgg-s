@@ -1,0 +1,2608 @@
+<title>Virtual-Italy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Virtual-Italy · la mappa è la pagina: i comandi galleggiano sopra, le schede salgono dal basso
+   (sul computer diventano un pannello a destra). Verde bottiglia, giallo Vespa, carta di giornale. */
+:root {
+  --bg: #fbf8f1;
+  --surface: #f2ecdf;
+  --ink: #23302b;
+  --muted: #66716b;
+  --line: rgba(35, 48, 43, 0.14);
+  --brand: #2f5d50;
+  --brand-ink: #ffffff;
+  --accent: #f2b632;
+  --accent-ink: #3a2a00;
+  --red: #b8322a;
+  --gold: #b88a12;
+  --warn: #a55a12;
+  --live: #2f7d4f;
+  --glass: rgba(251, 248, 241, 0.92);
+  --shadow: 0 10px 30px rgba(20, 30, 26, 0.18);
+  --sea: #5aa6c9;
+  --f-display: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+  --f-body: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --f-paper: 'Abril Fatface', Georgia, 'Times New Roman', serif;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b2321; --surface: #24302c; --ink: #ece6d8; --muted: #a2aca6; --line: rgba(236, 230, 216, 0.14);
+    --brand: #7fc2ab; --brand-ink: #10201b; --accent: #f2b632; --accent-ink: #2a1e00; --red: #e86b5f;
+    --gold: #e2bd4f; --warn: #f0a35b; --live: #6fd39a; --glass: rgba(27, 35, 33, 0.9); --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b2321; --surface: #24302c; --ink: #ece6d8; --muted: #a2aca6; --line: rgba(236, 230, 216, 0.14);
+  --brand: #7fc2ab; --brand-ink: #10201b; --accent: #f2b632; --accent-ink: #2a1e00; --red: #e86b5f;
+  --gold: #e2bd4f; --warn: #f0a35b; --live: #6fd39a; --glass: rgba(27, 35, 33, 0.9); --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--sea); color: var(--ink); font: 16px/1.45 var(--f-body); overflow: hidden; -webkit-font-smoothing: antialiased; }
+#app { position: fixed; inset: 0; }
+button, input, textarea { font: inherit; color: inherit; }
+a { color: var(--brand); font-weight: 700; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+#map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+#map:active { cursor: grabbing; }
+
+/* Barra in alto */
+.top {
+  position: absolute; z-index: 5; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+.top > * { pointer-events: auto; }
+.brand {
+  display: flex; align-items: baseline; gap: 10px; min-width: 0;
+  background: var(--brand); color: var(--brand-ink); border: 0; border-radius: 999px; padding: 8px 14px 8px 16px;
+  box-shadow: var(--shadow); cursor: pointer;
+}
+.brand-name { font: 700 1.25rem/1 var(--f-display); letter-spacing: 0.01em; white-space: nowrap; }
+.brand-dash { color: var(--accent); }
+.brand-count { font: 800 0.75rem/1 var(--f-body); opacity: 0.85; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.top-actions { display: flex; gap: 6px; }
+.round {
+  position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  border: 0; background: var(--glass); color: var(--ink); box-shadow: var(--shadow); cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.round.small { width: 38px; height: 38px; }
+.round.ghost { box-shadow: none; background: transparent; }
+.ico { display: grid; place-items: center; }
+.badge {
+  position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;
+  background: var(--red); color: #fff; font: 800 0.72rem/20px var(--f-body); text-align: center;
+}
+
+.demobar {
+  position: absolute; z-index: 4; left: 50%; transform: translateX(-50%);
+  top: calc(env(safe-area-inset-top, 0px) + 62px); width: min(760px, calc(100% - 24px));
+  display: flex; align-items: center; gap: 8px;
+  background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 0.8rem; font-weight: 800;
+  box-shadow: var(--shadow);
+}
+.demobar-label { flex: none; }
+.demobar-actions { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.demobar-actions::-webkit-scrollbar { display: none; }
+.demobar button { flex: none; border: 1px solid rgba(58, 42, 0, 0.35); background: rgba(255, 255, 255, 0.4); color: inherit; border-radius: 999px; padding: 4px 10px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+
+.notice {
+  position: absolute; z-index: 4; left: 50%; transform: translateX(-50%);
+  top: calc(env(safe-area-inset-top, 0px) + 64px); width: min(560px, calc(100% - 24px));
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
+  background: var(--glass); border: 2px solid var(--accent); border-radius: var(--r); padding: 10px 12px; box-shadow: var(--shadow); font-size: 0.9rem;
+}
+.demobar ~ .notice { top: calc(env(safe-area-inset-top, 0px) + 106px); }
+.notice-actions { display: flex; gap: 6px; }
+
+.zoom { position: absolute; z-index: 3; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); display: grid; gap: 8px; }
+@media (pointer: coarse) { .zoom { display: none; } }
+
+/* Barra in basso */
+.bottom {
+  position: absolute; z-index: 5; left: 0; right: 0; bottom: 0;
+  padding: 0 max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
+  display: flex; justify-content: center; pointer-events: none;
+}
+.bar {
+  pointer-events: auto; width: min(560px, 100%);
+  display: grid; gap: 10px; background: var(--glass); border-radius: 20px; padding: 12px; box-shadow: var(--shadow); backdrop-filter: blur(8px);
+}
+.bar.choose { grid-template-columns: 1fr auto; align-items: center; border: 2px solid var(--accent); font-size: 0.92rem; }
+.goal { display: grid; gap: 6px; background: none; border: 0; padding: 0 2px; text-align: left; cursor: pointer; font-size: 0.88rem; font-weight: 700; color: var(--muted); }
+.goal-track { display: block; height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.goal-track.big { height: 12px; border-radius: 6px; }
+.goal-fill { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width 0.6s ease; }
+
+/* Bottoni */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px;
+  padding: 10px 18px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink);
+  font-weight: 800; cursor: pointer; text-decoration: none; text-align: center;
+}
+.btn:hover { border-color: var(--muted); }
+.btn:disabled { opacity: 0.55; cursor: default; }
+.btn.primary { background: var(--brand); color: var(--brand-ink); border-color: transparent; }
+.btn.big { min-height: 52px; font: 600 1.1rem/1.1 var(--f-display); letter-spacing: 0.01em; }
+.btn.small { min-height: 36px; padding: 6px 12px; font-size: 0.85rem; border-radius: 10px; }
+.btn.ghost { background: transparent; border-color: transparent; }
+.btn.danger { background: var(--red); color: #fff; border-color: transparent; }
+.danger-text { color: var(--red); }
+.link-btn { background: none; border: 0; padding: 4px 0; color: var(--brand); font-weight: 700; cursor: pointer; text-align: left; text-decoration: underline; text-underline-offset: 3px; }
+.link-btn.strong { font-size: 1rem; text-decoration: none; }
+
+/* Schede */
+.scrim { position: absolute; inset: 0; z-index: 8; background: rgba(15, 22, 19, 0.28); }
+.sheet {
+  position: absolute; z-index: 9; left: 0; right: 0; bottom: 0; max-height: min(86%, 760px); overflow: auto;
+  background: var(--bg); border-radius: 22px 22px 0 0; box-shadow: var(--shadow);
+  padding: 6px max(18px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 22px) max(18px, env(safe-area-inset-left, 0px));
+  animation: rise 0.22s ease-out;
+}
+@keyframes rise { from { transform: translateY(30px); opacity: 0; } }
+@media (min-width: 860px) {
+  .sheet { left: auto; top: calc(env(safe-area-inset-top, 0px) + 70px); right: 14px; bottom: 14px; width: 420px; max-height: none; border-radius: 20px; }
+  .sheet.wide { width: 520px; }
+  .scrim { background: transparent; pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) { .sheet, .toast { animation: none; } .goal-fill { transition: none; } }
+.sheet-head { position: sticky; top: -6px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg); padding: 10px 0 6px; }
+.sheet-head h2 { margin: 0; font: 600 1.35rem/1.15 var(--f-display); text-wrap: balance; min-width: 0; overflow-wrap: anywhere; }
+.sheet-body { display: grid; gap: 14px; }
+.sheet h3 { margin: 6px 0 0; font: 600 1.02rem/1.2 var(--f-display); }
+.sheet p { margin: 0; }
+.stack { display: grid; gap: 12px; }
+.row-wrap { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.small { font-size: 0.86rem; color: var(--muted); }
+.small.pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.center { text-align: center; }
+
+.welcome { display: grid; gap: 14px; padding-bottom: 4px; }
+.eyebrow { font: 800 0.75rem/1 var(--f-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); }
+.welcome-title { margin: 0; font: 700 clamp(1.9rem, 7vw, 2.5rem)/1.05 var(--f-display); text-wrap: balance; }
+.welcome-title span { color: var(--brand); }
+.lead { font-size: 1.05rem; }
+.facts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.facts li { background: var(--surface); border-radius: 12px; padding: 10px; font-size: 0.8rem; color: var(--muted); line-height: 1.2; }
+.facts strong { display: block; font: 600 1.5rem/1.1 var(--f-display); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* Moduli */
+.form { display: grid; gap: 14px; }
+.field { display: grid; gap: 6px; }
+.field-label { font-weight: 800; font-size: 0.9rem; margin: 0; }
+.field-hint { font-size: 0.8rem; color: var(--muted); }
+.field-hint.bad { color: var(--red); font-weight: 700; }
+.field input, .field textarea {
+  width: 100%; min-height: 46px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface);
+  font-size: 1rem; /* 16px: su iPhone niente zoom automatico */
+}
+.field textarea { resize: vertical; min-height: 70px; }
+.field input:focus, .field textarea:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent); }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.92rem; }
+.check input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--brand); }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.form-error { color: var(--red); font-weight: 700; font-size: 0.9rem; }
+.danger-zone { border: 1.5px solid var(--red); border-radius: var(--r); padding: 12px; }
+
+/* Costruzione */
+.build { display: grid; gap: 14px; }
+.build-preview { display: grid; gap: 6px; justify-items: center; }
+.preview { width: 100%; max-width: 280px; aspect-ratio: 4 / 3; border-radius: var(--r); image-rendering: auto; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.swatch {
+  min-height: 38px; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface);
+  font-weight: 700; font-size: 0.86rem; cursor: pointer;
+}
+.swatch.color { width: 38px; padding: 0; background: var(--sw); border: 3px solid var(--bg); box-shadow: 0 0 0 1.5px var(--line); }
+.swatch.on { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 16%, var(--surface)); }
+.swatch.color.on { box-shadow: 0 0 0 3px var(--brand); background: var(--sw); }
+
+/* Abitanti */
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { display: inline-block; padding: 4px 10px; border-radius: 999px; background: var(--surface); font-size: 0.8rem; font-weight: 800; }
+.tag.gold { background: color-mix(in srgb, var(--gold) 22%, var(--bg)); color: var(--gold); }
+.tag.warn { background: color-mix(in srgb, var(--warn) 18%, var(--bg)); color: var(--warn); }
+.tag.live { background: color-mix(in srgb, var(--live) 18%, var(--bg)); color: var(--live); }
+.bio { font-size: 1.05rem; font-style: italic; }
+.facts-list { margin: 0; display: grid; gap: 6px; }
+.facts-list div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+.facts-list dt { color: var(--muted); }
+.facts-list dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.friends-line { font-weight: 800; color: var(--live); }
+.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-block; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 0; font-weight: 700; font-size: 0.88rem; cursor: pointer; color: var(--ink); }
+.chip.muted { color: var(--muted); cursor: default; }
+.rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--surface); border-radius: 12px; padding: 10px 12px; }
+.row.col { display: grid; gap: 6px; justify-content: stretch; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.goal-card { display: grid; gap: 8px; background: var(--surface); border-radius: var(--r); padding: 14px; }
+.wall { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.wall li { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 8px; background: color-mix(in srgb, var(--gold) 12%, var(--bg)); font-weight: 700; font-size: 0.88rem; min-width: 0; overflow-wrap: anywhere; }
+.wall .num { font: 600 0.8rem/1 var(--f-display); color: var(--gold); min-width: 2ch; font-variant-numeric: tabular-nums; }
+.code { margin: 0; max-height: 280px; overflow: auto; background: var(--surface); padding: 12px; border-radius: 12px; font: 0.78rem/1.4 ui-monospace, Menlo, Consolas, monospace; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.table th, .table td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+.table td + td, .table th + th { text-align: right; }
+.prose ol { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+
+/* Il giornale */
+.paper { display: grid; gap: 14px; }
+.masthead { text-align: center; border-bottom: 4px double var(--ink); padding-bottom: 10px; }
+.mast-name { font: 400 clamp(2rem, 8vw, 2.8rem)/1 var(--f-paper); text-transform: uppercase; letter-spacing: 0.02em; }
+.mast-sub { margin-top: 6px !important; font: 800 0.72rem/1 var(--f-body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--red); }
+.news { list-style: none; margin: 0; padding: 0; display: grid; }
+.news-item { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.news-date { font: 800 0.72rem/1 var(--f-body); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.news-title { margin: 2px 0 0 !important; font: 400 1.35rem/1.15 var(--f-paper) !important; text-wrap: balance; }
+.poster { width: 100%; border-radius: 8px; box-shadow: var(--shadow); }
+
+/* Avvisi */
+.toasts { position: absolute; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); display: grid; gap: 8px; width: min(440px, calc(100% - 24px)); pointer-events: none; }
+.toast { background: var(--ink); color: var(--bg); padding: 12px 14px; border-radius: 12px; font-weight: 700; box-shadow: var(--shadow); animation: rise 0.2s ease-out; transition: opacity 0.4s; }
+.toast.err { background: var(--red); color: #fff; }
+.toast.out { opacity: 0; }
+
+@media (max-width: 420px) {
+  .brand-name { font-size: 1.08rem; }
+  .brand { padding: 8px 12px; gap: 8px; }
+  .round { width: 40px; height: 40px; }
+  .top-actions { gap: 4px; }
+}
+@media (max-width: 360px) { .brand-count { display: none; } }
+
+</style>
+<div id="app"></div>
+<script>window.__VI_MODE = 'demo';</script>
+<script type="module">
+// ---- core.js ----
+// Regole di Virtual-Italy: piano regolatore, lotti, strade automatiche, abitanti, amicizie, notizie.
+// Codice puro, senza DOM: lo usano il browser (demo e disegno della mappa) e il server,
+// così le regole sono scritte una volta sola.
+
+const CITY = 'Virtual-Italy';
+const PAPER = 'Virtual-Italy IG';
+const W = 84;
+const H = 60;
+const MAIN_Y = 30;                                  // la strada principale attraversa tutta la mappa
+const SEA_Y = 52;                                   // da qui in giù c'è il mare
+const PIAZZA = { x0: 37, y0: 27, x1: 44, y1: 29 };  // estremi inclusi, a nord della strada principale
+const RESERVE_MS = 24 * 3600000;                    // un cantiere senza email confermata dura 24 ore
+const UNLOCK_RATIO = 0.8;                           // un nuovo quartiere si apre all'80% di occupazione
+const FOUNDERS = 100;
+const FRIEND_REQUESTS_PER_DAY = 20;
+const FOUNTAIN_AT = 25;
+const MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
+
+// Il tracciato delle vie segue una griglia di passo 3: le righe e colonne multiple di 3 sono
+// corsie percorribili, gli altri riquadri 2×2 sono lotti. Così ogni lotto tocca sempre una corsia
+// e ogni corsia porta a una strada: nessuna casa può restare isolata.
+// Le strade principali future (dorsali) stanno anch'esse sulla griglia delle corsie.
+const DISTRICTS = [
+  { id: 1, name: 'Centro', rect: [33, 27, 50, 33], dorsal: null,
+    walls: ['#e8b86a', '#d98b5f', '#f0d39a', '#e3a27a'] },
+  { id: 2, name: 'Borgo Est', rect: [51, 24, 69, 36], dorsal: { x: 60, y0: 18, y1: 42 },
+    walls: ['#f3d6d0', '#d7e6ef', '#f4e7b8', '#dcebd2'] },
+  { id: 3, name: 'Borgo Ovest', rect: [15, 24, 32, 36], dorsal: { x: 24, y0: 18, y1: 42 },
+    walls: ['#d8cfc0', '#c9bba4', '#e6dccb', '#bfb5a6'] },
+  { id: 4, name: 'Collina Nord', rect: [15, 12, 69, 26], dorsal: { y: 18, x0: 15, x1: 68 },
+    walls: ['#c99a6b', '#b98a5e', '#e0c49e', '#a8794f'] },
+  { id: 5, name: 'Marina Sud', rect: [15, 34, 69, 51], dorsal: { y: 42, x0: 15, x1: 68 },
+    walls: ['#f5f3ee', '#dbe8f1', '#f7efe0', '#e5eef0'] },
+];
+
+const ROOFS = [
+  { id: 'coppi', label: 'Coppi', color: '#b5523b' },
+  { id: 'ardesia', label: 'Ardesia', color: '#4b5563' },
+  { id: 'verde', label: 'Rame verde', color: '#4f8a72' },
+  { id: 'blu', label: 'Blu', color: '#3f6aa1' },
+  { id: 'senape', label: 'Senape', color: '#c99a2e' },
+  { id: 'prugna', label: 'Prugna', color: '#7a4a6b' },
+];
+const DOORS = [
+  { id: 'noce', label: 'Noce', color: '#6b4428' },
+  { id: 'verde', label: 'Verde', color: '#2f6b4f' },
+  { id: 'rosso', label: 'Rosso', color: '#b3362f' },
+  { id: 'blu', label: 'Blu', color: '#2d5b8c' },
+  { id: 'giallo', label: 'Giallo', color: '#e0a92a' },
+  { id: 'bianco', label: 'Bianco', color: '#f1ede4' },
+];
+const GARDENS = [
+  { id: 'prato', label: 'Prato' },
+  { id: 'fiori', label: 'Fiori' },
+  { id: 'orto', label: 'Orto' },
+  { id: 'ulivo', label: 'Ulivo' },
+  { id: 'nessuno', label: 'Ghiaia' },
+];
+const DECOS = [
+  { id: 'nessuno', label: 'Niente' },
+  { id: 'vespa', label: 'Vespa' },
+  { id: 'bici', label: 'Bicicletta' },
+  { id: 'panchina', label: 'Panchina' },
+  { id: 'limoni', label: 'Vaso di limoni' },
+  { id: 'cane', label: 'Cuccia' },
+];
+const SHAPES = ['casa', 'villetta', 'torretta'];
+
+class DomainError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.code = code; // validation | conflict | forbidden | notfound | auth
+  }
+}
+const invalid = (msg) => new DomainError('validation', msg);
+const forbidden = (msg) => new DomainError('forbidden', msg);
+
+/* Piano regolatore --------------------------------------------------- */
+
+const key = (x, y) => x + ',' + y;
+const parseKey = (k) => k.split(',').map(Number);
+
+function inRect([x0, y0, x1, y1], x, y) {
+  return x >= x0 && x <= x1 && y >= y0 && y <= y1;
+}
+function inPiazza(x, y) {
+  return x >= PIAZZA.x0 && x <= PIAZZA.x1 && y >= PIAZZA.y0 && y <= PIAZZA.y1;
+}
+function dorsalTiles(d) {
+  const out = [];
+  if (!d) return out;
+  if (d.x !== undefined) for (let y = d.y0; y <= d.y1; y++) out.push(key(d.x, y));
+  else for (let x = d.x0; x <= d.x1; x++) out.push(key(x, d.y));
+  return out;
+}
+
+// Il piano è calcolato una volta: per ogni casella il quartiere, e l'elenco dei lotti.
+const PLAN = (() => {
+  const district = new Int8Array(W * H);
+  const lots = new Set();
+  const lotsByDistrict = new Map(DISTRICTS.map((d) => [d.id, []]));
+  const futureRoads = new Map(); // casella → id del quartiere che la attiva
+  for (const d of DISTRICTS) for (const k of dorsalTiles(d.dorsal)) if (!futureRoads.has(k)) futureRoads.set(k, d.id);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const d = DISTRICTS.find((q) => inRect(q.rect, x, y));
+      if (!d || y >= SEA_Y) continue;
+      district[y * W + x] = d.id;
+      const k = key(x, y);
+      if (x % 3 === 0 || y % 3 === 0 || y === MAIN_Y || inPiazza(x, y) || futureRoads.has(k)) continue;
+      lots.add(k);
+      lotsByDistrict.get(d.id).push(k);
+    }
+  }
+  return { district, lots, lotsByDistrict, futureRoads };
+})();
+
+const districtAt = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : PLAN.district[y * W + x]);
+const isLot = (k) => PLAN.lots.has(k);
+const districtById = (id) => DISTRICTS.find((d) => d.id === id);
+
+function lotsOpen(openDistricts) {
+  let n = 0;
+  for (let id = 1; id <= openDistricts; id++) n += PLAN.lotsByDistrict.get(id).length;
+  return n;
+}
+
+/* Strade automatiche ------------------------------------------------- */
+
+// Rete di base: strada principale, piazza e dorsali dei quartieri aperti.
+function baseNetwork(openDistricts) {
+  const net = new Map();
+  for (let x = 0; x < W; x++) net.set(key(x, MAIN_Y), 'main');
+  for (let y = PIAZZA.y0; y <= PIAZZA.y1; y++) for (let x = PIAZZA.x0; x <= PIAZZA.x1; x++) net.set(key(x, y), 'piazza');
+  for (const d of DISTRICTS) {
+    if (d.id > openDistricts) continue;
+    for (const k of dorsalTiles(d.dorsal)) if (!net.has(k)) net.set(k, 'dorsal');
+  }
+  return net;
+}
+
+const STEPS = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+
+// Percorso più breve (ricerca in ampiezza: ogni passo costa uguale, quindi coincide con A*)
+// dal lotto alla casella di rete più vicina, passando solo su corsie dei quartieri aperti.
+// I vialetti già tracciati fanno parte della rete, così le case vicine li condividono.
+function routeFrom(lotKey, net, openDistricts) {
+  const [sx, sy] = parseKey(lotKey);
+  const prev = new Map([[lotKey, null]]);
+  const queue = [[sx, sy]];
+  for (let i = 0; i < queue.length; i++) {
+    const [x, y] = queue[i];
+    for (const [dx, dy] of STEPS) {
+      const nx = x + dx, ny = y + dy;
+      const nk = key(nx, ny);
+      if (prev.has(nk)) continue;
+      if (net.has(nk)) {
+        const path = [];
+        for (let k = key(x, y); k !== lotKey; k = prev.get(k)) path.push(k);
+        return { path: path.reverse(), reach: nk };
+      }
+      const dId = districtAt(nx, ny);
+      if (!dId || dId > openDistricts || PLAN.lots.has(nk)) continue;
+      prev.set(nk, key(x, y));
+      queue.push([nx, ny]);
+    }
+  }
+  return null;
+}
+
+// Ricostruisce tutta la rete in ordine di arrivo: deterministica, e quando una dorsale si attiva
+// le case vicine si ricollegano da sole a quella, se è più vicina.
+function computeRoads(houses, openDistricts) {
+  const net = baseNetwork(openDistricts);
+  const doors = {};
+  const ordered = Object.values(houses).sort((a, b) => a.reservedAt - b.reservedAt || (a.slot < b.slot ? -1 : 1));
+  for (const h of ordered) {
+    const r = routeFrom(h.slot, net, openDistricts);
+    if (!r) continue;
+    for (const k of r.path) net.set(k, 'lane');
+    const first = r.path[0] || r.reach;
+    const [hx, hy] = parseKey(h.slot);
+    const [fx, fy] = parseKey(first);
+    doors[h.slot] = fx > hx ? 'E' : fx < hx ? 'W' : fy > hy ? 'S' : 'N';
+  }
+  return { roads: Object.fromEntries(net), doors };
+}
+
+function canReach(lotKey, houses, openDistricts) {
+  const { roads } = computeRoads(houses, openDistricts);
+  return !!routeFrom(lotKey, new Map(Object.entries(roads)), openDistricts);
+}
+
+/* Nomi, frasi e filtri ------------------------------------------------ */
+
+const BAD_WORDS = ['cazz', 'merd', 'stronz', 'puttan', 'troia', 'vaffanc', 'fancul', 'coglion', 'frocio', 'froci',
+  'negro', 'ricchion', 'porcodio', 'diocane', 'dioporco', 'mignott', 'zoccol', 'bastard',
+  'fuck', 'shit', 'bitch', 'nigg', 'faggot', 'cunt', 'whore', 'nazist', 'hitler', 'pedofil', 'stupr'];
+// Parole innocue che contengono una delle precedenti.
+const ALLOWED = ['negroni'];
+const RESERVED = ['admin', 'amministratore', 'amministrazione', 'sindaco', 'giornale', 'virtualitaly', 'virtualitalyig',
+  'redazione', 'moderatore', 'moderazione', 'staff', 'comune', 'support', 'supporto', 'assistenza', 'sistema', 'ufficiale'];
+
+function squash(s) {
+  return String(s).toLowerCase()
+    .replace(/[0]/g, 'o').replace(/[1!|]/g, 'i').replace(/3/g, 'e').replace(/[4@]/g, 'a').replace(/5/g, 's').replace(/7/g, 't')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z]/g, '');
+}
+function isOffensive(s) {
+  let q = squash(s);
+  for (const a of ALLOWED) q = q.split(a).join('');
+  return BAD_WORDS.some((w) => q.includes(w));
+}
+
+function checkUsername(raw) {
+  const u = String(raw ?? '').trim();
+  if (!/^[A-Za-z0-9._]{3,20}$/.test(u)) throw invalid('Il nome utente deve avere da 3 a 20 caratteri: lettere, numeri, punto o trattino basso.');
+  if (/^[._]|[._]$/.test(u) || /[._]{2}/.test(u)) throw invalid('Il nome utente non può iniziare o finire con punto o trattino basso, né averne due di fila.');
+  const q = squash(u);
+  if (RESERVED.some((r) => q === r || q.startsWith(r))) throw invalid('Questo nome utente è riservato: scegline un altro.');
+  if (isOffensive(u)) throw invalid('Questo nome utente non è ammesso: scegline un altro.');
+  return u;
+}
+const usernameKey = (u) => String(u).trim().toLowerCase();
+
+function checkEmail(raw) {
+  const e = String(raw ?? '').trim().toLowerCase();
+  if (e.length > 120 || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(e)) throw invalid("L'indirizzo email non sembra valido.");
+  return e;
+}
+
+function checkPassword(p) {
+  if (typeof p !== 'string' || p.length < 8) throw invalid('La password deve avere almeno 8 caratteri.');
+  if (p.length > 200) throw invalid('La password è troppo lunga.');
+  return p;
+}
+
+function cleanBio(raw) {
+  const b = String(raw ?? '').replace(/\s+/g, ' ').trim();
+  if (b.length > 120) throw invalid('La frase di presentazione può avere al massimo 120 caratteri.');
+  if (b && isOffensive(b)) throw invalid('La frase contiene parole non ammesse.');
+  return b;
+}
+
+function cleanInstagram(raw) {
+  let s = String(raw ?? '').trim();
+  if (!s) return '';
+  s = s.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').replace(/[/?#].*$/, '');
+  if (!/^[A-Za-z0-9._]{1,30}$/.test(s)) throw invalid('Il nome Instagram può contenere solo lettere, numeri, punto e trattino basso.');
+  return s.toLowerCase();
+}
+
+function pick(list, id, fallback) {
+  return list.some((o) => o.id === id) ? id : fallback;
+}
+// Lo stile della casa: colori scelti dall'abitante, forma e muri dal quartiere (stabili per lotto).
+function makeStyle(slot, choice = {}) {
+  const [x, y] = parseKey(slot);
+  const d = districtById(districtAt(x, y)) || DISTRICTS[0];
+  const h = hash(slot);
+  return {
+    roof: pick(ROOFS, choice.roof, ROOFS[h % ROOFS.length].id),
+    door: pick(DOORS, choice.door, DOORS[(h >>> 3) % DOORS.length].id),
+    garden: pick(GARDENS, choice.garden, 'prato'),
+    deco: pick(DECOS, choice.deco, 'nessuno'),
+    wall: d.walls[(h >>> 6) % d.walls.length],
+    shape: SHAPES[(h >>> 9) % SHAPES.length],
+  };
+}
+
+function hash(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+/* Stato della città -------------------------------------------------- */
+
+function emptyState(now = Date.now()) {
+  const s = {
+    rev: 1,
+    createdAt: now,
+    nextNumber: 1,
+    openDistricts: 1,
+    residents: {},     // id → { id, username, number, joinedAt, bio, instagram, confirmed, suspended }
+    houses: {},        // lotto → { slot, residentId, style, status, reservedAt, builtAt }
+    roads: {},
+    doors: {},
+    requests: [],      // { id, from, to, at }
+    friendships: [],   // { a, b, since }
+    sentLog: {},       // id → istanti delle richieste inviate nelle ultime 24 ore
+    reports: [],       // { id, from, target, reason, at, resolved }
+    news: [],          // { id, kind, at, residentId?, n?, district?, slot? }
+    milestones: [],
+  };
+  addNews(s, { kind: 'founding', at: now });
+  return refresh(s);
+}
+
+let seq = 0;
+const uid = (p) => p + Date.now().toString(36) + (seq++).toString(36) + Math.random().toString(36).slice(2, 6);
+
+function addNews(s, n) {
+  s.news.unshift({ id: uid('n'), ...n });
+  if (s.news.length > 500) s.news.length = 500;
+}
+
+const residentHouse = (s, residentId) => Object.values(s.houses).find((h) => h.residentId === residentId) || null;
+const builtCount = (s) => Object.values(s.houses).filter((h) => h.status === 'casa').length;
+const isFounder = (r) => !!r && r.number !== null && r.number <= FOUNDERS;
+const areFriends = (s, a, b) => s.friendships.some((f) => (f.a === a && f.b === b) || (f.a === b && f.b === a));
+const friendsOf = (s, id) => s.friendships.filter((f) => f.a === id || f.b === id).map((f) => (f.a === id ? f.b : f.a));
+
+// Dopo ogni modifica alle case: quartieri da aprire, traguardi, strade.
+function refresh(s, now = Date.now()) {
+  while (s.openDistricts < DISTRICTS.length) {
+    const taken = Object.values(s.houses).filter((h) => districtAt(...parseKey(h.slot)) <= s.openDistricts).length;
+    if (taken < lotsOpen(s.openDistricts) * UNLOCK_RATIO) break;
+    s.openDistricts++;
+    addNews(s, { kind: 'district', at: now, district: s.openDistricts });
+  }
+  const built = builtCount(s);
+  for (const m of MILESTONES) {
+    if (built >= m && !s.milestones.includes(m)) {
+      s.milestones.push(m);
+      addNews(s, { kind: 'milestone', at: now, n: m });
+    }
+  }
+  const r = computeRoads(s.houses, s.openDistricts);
+  s.roads = r.roads;
+  s.doors = r.doors;
+  return s;
+}
+
+function needResident(s, ctx) {
+  const r = ctx.user && s.residents[ctx.user.id];
+  if (!r) throw new DomainError('auth', 'Accedi per continuare.');
+  if (r.suspended) throw forbidden('Il tuo account è sospeso.');
+  return r;
+}
+function needAdmin(ctx) {
+  if (!ctx.user?.admin) throw forbidden('Riservato alla redazione.');
+}
+
+function finishHouse(s, r, h, now) {
+  h.status = 'casa';
+  h.builtAt = now;
+  addNews(s, { kind: 'welcome', at: now, residentId: r.id, slot: h.slot });
+}
+
+// Ogni operazione restituisce un nuovo stato; quello vecchio resta intatto se c'è un errore.
+function applyOp(state, op, ctx) {
+  const s = structuredClone(state);
+  const now = ctx.now ?? Date.now();
+  const result = OPS[op?.type]?.(s, op, ctx, now);
+  if (result === undefined) throw invalid('Operazione sconosciuta.');
+  s.rev++;
+  return { state: s, result };
+}
+
+const OPS = {
+  // Server: nuovo account creato (email non ancora confermata).
+  join(s, op, ctx, now) {
+    if (!ctx.system) throw forbidden('Operazione interna.');
+    const username = checkUsername(op.username);
+    if (Object.values(s.residents).some((r) => usernameKey(r.username) === usernameKey(username))) throw invalid('Questo nome utente è già preso.');
+    s.residents[op.id] = { id: op.id, username, number: null, joinedAt: now, bio: '', instagram: '', confirmed: false, suspended: false };
+    return { id: op.id };
+  },
+
+  // Server: email confermata. Il numero di abitante si assegna qui, così i bot non lo consumano.
+  confirm(s, op, ctx, now) {
+    if (!ctx.system) throw forbidden('Operazione interna.');
+    const r = s.residents[op.id];
+    if (!r) throw new DomainError('notfound', 'Abitante non trovato.');
+    if (r.confirmed) return { already: true };
+    r.confirmed = true;
+    r.number = s.nextNumber++;
+    const h = residentHouse(s, r.id);
+    if (h && h.status === 'cantiere') finishHouse(s, r, h, now);
+    refresh(s, now);
+    return { number: r.number };
+  },
+
+  chooseSlot(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    if (residentHouse(s, r.id)) throw invalid('Hai già una casa a Virtual-Italy.');
+    const slot = String(op.slot || '');
+    if (!isLot(slot)) throw invalid('Qui non si può costruire: scegli uno dei lotti liberi.');
+    if (districtAt(...parseKey(slot)) > s.openDistricts) throw invalid('Questo quartiere non è ancora aperto.');
+    if (s.houses[slot]) throw new DomainError('conflict', 'Qualcuno ha appena preso questo lotto: scegline un altro.');
+    const h = { slot, residentId: r.id, style: makeStyle(slot, op.style), status: 'cantiere', reservedAt: now, builtAt: null };
+    s.houses[slot] = h;
+    if (r.confirmed) finishHouse(s, r, h, now);
+    refresh(s, now);
+    return { slot, status: h.status };
+  },
+
+  restyle(s, op, ctx) {
+    const r = needResident(s, ctx);
+    const h = residentHouse(s, r.id);
+    if (!h) throw invalid('Non hai ancora una casa.');
+    h.style = makeStyle(h.slot, { ...h.style, ...op.style });
+    return { ok: true };
+  },
+
+  profile(s, op, ctx) {
+    const r = needResident(s, ctx);
+    if (op.bio !== undefined) r.bio = cleanBio(op.bio);
+    if (op.instagram !== undefined) r.instagram = cleanInstagram(op.instagram);
+    return { ok: true };
+  },
+
+  friendRequest(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    if (!r.confirmed) throw forbidden('Conferma la tua email prima di bussare alle porte.');
+    const to = s.residents[op.to];
+    if (!to || to.id === r.id) throw new DomainError('notfound', 'Abitante non trovato.');
+    if (areFriends(s, r.id, to.id)) throw invalid(`Tu e ${to.username} siete già amici.`);
+    if (s.requests.some((q) => q.from === r.id && q.to === to.id)) throw invalid('Hai già bussato: aspetta la risposta.');
+    const back = s.requests.find((q) => q.from === to.id && q.to === r.id);
+    if (back) {
+      s.requests = s.requests.filter((q) => q !== back);
+      s.friendships.push({ a: to.id, b: r.id, since: now });
+      return { friends: true };
+    }
+    const log = (s.sentLog[r.id] || []).filter((t) => now - t < 86400000);
+    if (log.length >= FRIEND_REQUESTS_PER_DAY) throw forbidden(`Puoi bussare al massimo ${FRIEND_REQUESTS_PER_DAY} volte al giorno. Riprova domani.`);
+    s.sentLog[r.id] = [...log, now];
+    s.requests.push({ id: uid('q'), from: r.id, to: to.id, at: now });
+    return { sent: true };
+  },
+
+  friendRespond(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    const q = s.requests.find((x) => x.id === op.id && x.to === r.id);
+    if (!q) throw new DomainError('notfound', 'Richiesta non trovata.');
+    s.requests = s.requests.filter((x) => x !== q);
+    if (op.accept && s.residents[q.from] && !areFriends(s, q.from, r.id)) s.friendships.push({ a: q.from, b: r.id, since: now });
+    return { accepted: !!op.accept };
+  },
+
+  unfriend(s, op, ctx) {
+    const r = needResident(s, ctx);
+    s.friendships = s.friendships.filter((f) => !((f.a === r.id && f.b === op.id) || (f.b === r.id && f.a === op.id)));
+    return { ok: true };
+  },
+
+  report(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    if (!s.residents[op.target] || op.target === r.id) throw new DomainError('notfound', 'Abitante non trovato.');
+    const reason = String(op.reason || '').trim().slice(0, 300);
+    if (!reason) throw invalid('Scrivi brevemente il motivo della segnalazione.');
+    s.reports.unshift({ id: uid('s'), from: r.id, target: op.target, reason, at: now, resolved: false });
+    return { ok: true };
+  },
+
+  // L'account viene cancellato: la casa torna lotto libero, le notizie restano senza nome.
+  leave(s, op, ctx, now) {
+    const id = ctx.system ? op.id : needResident(s, ctx).id;
+    if (!s.residents[id]) throw new DomainError('notfound', 'Abitante non trovato.');
+    delete s.residents[id];
+    for (const [slot, h] of Object.entries(s.houses)) if (h.residentId === id) delete s.houses[slot];
+    s.requests = s.requests.filter((q) => q.from !== id && q.to !== id);
+    s.friendships = s.friendships.filter((f) => f.a !== id && f.b !== id);
+    delete s.sentLog[id];
+    refresh(s, now);
+    return { ok: true };
+  },
+
+  // Cantieri di chi non ha confermato l'email entro 24 ore: il lotto torna libero.
+  expire(s, op, ctx, now) {
+    if (!ctx.system) throw forbidden('Operazione interna.');
+    let n = 0;
+    for (const [slot, h] of Object.entries(s.houses)) {
+      if (h.status === 'cantiere' && now - h.reservedAt > RESERVE_MS) { delete s.houses[slot]; n++; }
+    }
+    if (n) refresh(s, now);
+    return { freed: n };
+  },
+
+  suspend(s, op, ctx) {
+    needAdmin(ctx);
+    const r = s.residents[op.id];
+    if (!r) throw new DomainError('notfound', 'Abitante non trovato.');
+    r.suspended = !!op.on;
+    return { ok: true };
+  },
+
+  resolveReport(s, op, ctx) {
+    needAdmin(ctx);
+    const rep = s.reports.find((x) => x.id === op.id);
+    if (!rep) throw new DomainError('notfound', 'Segnalazione non trovata.');
+    rep.resolved = true;
+    return { ok: true };
+  },
+};
+
+/* Cosa vede chi guarda ------------------------------------------------ */
+
+// Le richieste, le amicizie e le segnalazioni restano private: ognuno vede solo le sue.
+function publicView(s, viewerId, admin = false) {
+  const residents = {};
+  for (const r of Object.values(s.residents)) {
+    residents[r.id] = r.suspended
+      ? { id: r.id, username: r.username, number: r.number, joinedAt: r.joinedAt, bio: '', instagram: '', confirmed: r.confirmed, suspended: true }
+      : { ...r };
+  }
+  const v = {
+    rev: s.rev, createdAt: s.createdAt, openDistricts: s.openDistricts, residents, houses: s.houses,
+    roads: s.roads, doors: s.doors, news: s.news.slice(0, 120), milestones: s.milestones,
+    requests: viewerId ? s.requests.filter((q) => q.from === viewerId || q.to === viewerId) : [],
+    friendships: viewerId ? s.friendships.filter((f) => f.a === viewerId || f.b === viewerId) : [],
+    reports: [],
+  };
+  if (admin) {
+    v.reports = s.reports.slice(0, 100);
+    v.news = s.news;
+  }
+  return v;
+}
+
+/* Notizie ------------------------------------------------------------- */
+
+function formatNews(n, s) {
+  const r = n.residentId && s.residents[n.residentId];
+  const who = r ? r.username : 'un abitante';
+  const d = n.slot ? districtById(districtAt(...parseKey(n.slot))) : null;
+  switch (n.kind) {
+    case 'founding':
+      return { title: `Nasce ${CITY}`, text: 'Una piazza, una strada principale e tanti lotti liberi. La città aspetta i suoi primi abitanti: il link per entrare è nella bio.' };
+    case 'welcome':
+      return {
+        title: r ? `Benvenuto a ${who}, abitante n°${r.number}` : 'Un nuovo abitante è arrivato in città',
+        text: `Ha costruito casa nel quartiere ${d ? d.name : 'Centro'}.${r && isFounder(r) ? ' È uno dei primi cento: il suo nome è sul Muro dei Fondatori.' : ''}`,
+      };
+    case 'district': {
+      const q = districtById(n.district);
+      return { title: `Apre il quartiere ${q.name}`, text: `Il Centro è quasi pieno: da oggi si può costruire anche a ${q.name}. Nuovi lotti e una nuova strada principale.` };
+    }
+    case 'milestone':
+      return {
+        title: `${CITY} ha ${n.n} abitanti`,
+        text: n.n === FOUNTAIN_AT ? 'Traguardo raggiunto: in piazza è arrivata la fontana. Grazie a tutti!' : `Un nuovo traguardo per la città. ${nextGoal({ milestones: [] }, n.n)}`,
+      };
+    default:
+      return { title: 'Notizia', text: '' };
+  }
+}
+
+// Il prossimo obiettivo collettivo, per la barra in piazza.
+function nextGoal(s, built) {
+  if (built < FOUNTAIN_AT) return `Mancano ${FOUNTAIN_AT - built} abitanti alla fontana in piazza.`;
+  const m = MILESTONES.find((x) => x > built);
+  return m ? `Prossimo traguardo: ${m} abitanti.` : 'Siamo una vera città!';
+}
+function goalProgress(built) {
+  const target = built < FOUNTAIN_AT ? FOUNTAIN_AT : MILESTONES.find((x) => x > built) || built;
+  const from = built < FOUNTAIN_AT ? 0 : [0, ...MILESTONES].filter((x) => x <= built).pop();
+  return { target, from, ratio: target === from ? 1 : (built - from) / (target - from) };
+}
+
+// ---- seed.js ----
+// Abitanti dimostrativi: passano dalle stesse operazioni dei veri iscritti (join → confirm → chooseSlot).
+// Servono alla demo nel browser, alle prove e a `npm run demo`. Non hanno un account per accedere.
+
+const NAMES = ['giulia.romano', 'marco_bianchi', 'sofia.ferri', 'luca.esposito', 'chiara_gallo', 'matteo.conti',
+  'aurora.ricci', 'tommaso.greco', 'alice.marino', 'davide.costa', 'martina.fontana', 'riccardo.moretti', 'elena.bruno',
+  'pietro.colombo', 'bea.lombardi', 'andrea.villa', 'giorgia.serra', 'nicolo.rinaldi', 'francesca.caruso', 'lorenzo.deluca',
+  'anna.mancini', 'federico.galli', 'camilla.leone', 'simone.longo', 'vale.gentile', 'gabriele.martini', 'irene.rossi',
+  'ema.barbieri', 'noemi.testa', 'leo.pellegrini', 'sara.marchetti', 'filippo.sala', 'ginevra.farina', 'alessio.monti',
+  'rebecca.cattaneo', 'samuele.fabbri', 'greta.orlando', 'diego.basile', 'ludovica.neri', 'christian.vitale'];
+const BIOS = ['Amo il mare e la pizza napoletana', 'Ciclista della domenica', 'Caffè sempre, domande poche', '',
+  'Fotografo di tramonti', 'Nonna mi ha insegnato le tagliatelle', '', 'Fan della Vespa dal 1998', 'Leggo in piazza',
+  'Musica, montagna, amici', '', 'Vengo da Bari, abito a Virtual-Italy'];
+
+const DEMO_TAG = 'demo_';
+
+function seedResidents(state, n, now = Date.now(), salt = 0) {
+  let s = state;
+  const sys = { system: true, now };
+  const taken = new Set(Object.values(s.residents).map((r) => usernameKey(r.username)));
+  for (let i = 0; i < n; i++) {
+    let name = NAMES.find((u) => !taken.has(u));
+    if (!name) name = 'abitante.' + (taken.size + 1);
+    taken.add(name);
+    const id = DEMO_TAG + hash(name + salt).toString(36);
+    const t = now - (n - i) * 3600000 * 3;
+    s = applyOp(s, { type: 'join', id, username: name }, { ...sys, now: t }).state;
+    s = applyOp(s, { type: 'confirm', id }, { ...sys, now: t }).state;
+    const slot = pickSlot(s, hash(name + 'slot' + salt));
+    if (!slot) break;
+    const h = hash(name);
+    const style = { roof: ROOFS[h % 6].id, door: DOORS[(h >>> 4) % 6].id, garden: GARDENS[(h >>> 8) % GARDENS.length].id, deco: DECOS[(h >>> 12) % DECOS.length].id };
+    s = applyOp(s, { type: 'chooseSlot', slot, style }, { user: { id }, now: t }).state;
+    s = applyOp(s, { type: 'profile', bio: BIOS[h % BIOS.length] }, { user: { id }, now: t }).state;
+  }
+  return s;
+}
+
+// Lotto libero vicino alla piazza, con un po' di casualità: la città cresce dal centro.
+function pickSlot(s, seed = 0) {
+  const cx = (PIAZZA.x0 + PIAZZA.x1) / 2, cy = PIAZZA.y1;
+  let best = null, bestScore = Infinity;
+  for (const k of PLAN.lots) {
+    if (s.houses[k]) continue;
+    const [x, y] = parseKey(k);
+    if (districtAt(x, y) > s.openDistricts) continue;
+    const score = Math.hypot(x - cx, (y - cy) * 1.4) + ((hash(k + seed) % 1000) / 1000) * 9;
+    if (score < bestScore) { bestScore = score; best = k; }
+  }
+  return best;
+}
+
+// ---- render.js ----
+// Disegno della città su canvas: terreno, strade con incroci automatici, case in vista tre quarti,
+// notte con finestre accese, cartoline per il giornale. Nessuna libreria.
+
+const T = 32; // lato di una casella in pixel del mondo
+
+const C = {
+  grass: '#a9cf7f', grass2: '#9dc574', meadow: '#b7d58c', field1: '#d8c873', field2: '#c7cf7a',
+  sand: '#ecd9a6', sea: '#5aa6c9', sea2: '#4b97bd', foam: '#e9f6fb',
+  asphalt: '#5d6168', asphaltEdge: '#474a50', dorsal: '#6d7178', lane: '#dcc89f', laneEdge: '#c3ab7f',
+  stone: '#e6d9c1', stoneLine: '#cdbd9f', tree: '#5d9a4f', tree2: '#4c8743', trunk: '#7a5636',
+  lot: 'rgba(255,255,255,0.55)', lotChoose: '#fff7d6', night: 'rgba(16,26,58,0.52)', lit: '#ffd56e',
+};
+const roofColor = (id) => (ROOFS.find((r) => r.id === id) || ROOFS[0]).color;
+const doorColor = (id) => (DOORS.find((r) => r.id === id) || DOORS[0]).color;
+
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const f = (c) => Math.max(0, Math.min(255, Math.round(c + amt * 255)));
+  return '#' + ((1 << 24) | (f(n >> 16) << 16) | (f((n >> 8) & 255) << 8) | f(n & 255)).toString(16).slice(1);
+}
+const rnd = (x, y, salt = 0) => (hash(x + ':' + y + ':' + salt) % 1000) / 1000;
+
+/* Terreno (in cache finché non si apre un quartiere) ------------------ */
+
+function drawTerrain(openDistricts) {
+  const cv = document.createElement('canvas');
+  cv.width = W * T;
+  cv.height = H * T;
+  const g = cv.getContext('2d');
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const px = x * T, py = y * T;
+      const d = districtAt(x, y);
+      if (y > SEA_Y) {
+        g.fillStyle = (x + y) % 2 ? C.sea : C.sea2;
+        g.fillRect(px, py, T, T);
+        if (rnd(x, y, 1) > 0.82) { g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(px + 6, py + 12, 12, 2); }
+        continue;
+      }
+      if (y === SEA_Y) {
+        g.fillStyle = C.sand; g.fillRect(px, py, T, T);
+        g.fillStyle = C.foam; g.fillRect(px, py + T - 5, T, 5);
+        continue;
+      }
+      if (d && d <= openDistricts) {
+        g.fillStyle = rnd(x, y) > 0.5 ? C.grass : C.grass2;
+        g.fillRect(px, py, T, T);
+        if (rnd(x, y, 2) > 0.9) dots(g, px, py, '#f4f1e6');
+      } else if (d) {
+        // Campagna dei quartieri futuri: campi coltivati a strisce.
+        const band = Math.floor(y / 3 + x / 9) % 2;
+        g.fillStyle = band ? C.field1 : C.field2;
+        g.fillRect(px, py, T, T);
+        g.fillStyle = 'rgba(0,0,0,0.06)';
+        for (let i = 4; i < T; i += 8) g.fillRect(px, py + i, T, 2);
+      } else {
+        g.fillStyle = rnd(x, y) > 0.5 ? C.meadow : C.grass;
+        g.fillRect(px, py, T, T);
+      }
+    }
+  }
+  // Alberi: boschi fuori dal piano, filari sparsi nella campagna.
+  for (let y = 0; y < SEA_Y - 1; y++) {
+    for (let x = 0; x < W; x++) {
+      if (y === MAIN_Y || y === MAIN_Y - 1 || y === MAIN_Y + 1) continue;
+      const d = districtAt(x, y);
+      const p = d ? (d <= openDistricts ? 0 : 0.1) : (y < 8 || x < 10 || x > 74 ? 0.55 : 0.3);
+      if (PLAN.futureRoads.has(key(x, y))) continue;
+      if (rnd(x, y, 3) < p) tree(g, x * T + 6 + rnd(x, y, 4) * 12, y * T + 8 + rnd(x, y, 5) * 10, 0.8 + rnd(x, y, 6) * 0.5);
+    }
+  }
+  return cv;
+}
+function dots(g, px, py, color) {
+  g.fillStyle = color;
+  for (let i = 0; i < 3; i++) g.fillRect(px + 6 + i * 8, py + 10 + (i % 2) * 9, 2, 2);
+}
+function tree(g, x, y, s = 1) {
+  g.fillStyle = 'rgba(0,0,0,0.15)';
+  g.beginPath(); g.ellipse(x + 2, y + 14 * s, 9 * s, 3 * s, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = C.trunk; g.fillRect(x - 1.5 * s, y + 6 * s, 3 * s, 8 * s);
+  g.fillStyle = C.tree2;
+  g.beginPath(); g.arc(x, y + 2 * s, 8 * s, 0, Math.PI * 2); g.fill();
+  g.fillStyle = C.tree;
+  g.beginPath(); g.arc(x - 2 * s, y, 6 * s, 0, Math.PI * 2); g.fill();
+}
+
+/* Strade ------------------------------------------------------------- */
+
+const ROAD_W = { main: 0.8, dorsal: 0.64, lane: 0.34, piazza: 1 };
+
+function drawRoads(g, roads, x0, y0, x1, y1) {
+  const typeAt = (x, y) => roads[key(x, y)];
+  const pass = (types, edge) => {
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const t = typeAt(x, y);
+        if (!t || !types.includes(t)) continue;
+        if (t === 'piazza') continue;
+        const w = ROAD_W[t] * T + (edge ? 3 : 0);
+        const cx = x * T + T / 2, cy = y * T + T / 2;
+        g.fillStyle = edge ? (t === 'lane' ? C.laneEdge : C.asphaltEdge) : (t === 'lane' ? C.lane : t === 'main' ? C.asphalt : C.dorsal);
+        g.fillRect(cx - w / 2, cy - w / 2, w, w);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const n = typeAt(x + dx, y + dy);
+          if (!n) continue;
+          const aw = Math.min(w, ROAD_W[n] * T + (edge ? 3 : 0));
+          if (dx) g.fillRect(dx > 0 ? cx : cx - T / 2, cy - aw / 2, T / 2, aw);
+          else g.fillRect(cx - aw / 2, dy > 0 ? cy : cy - T / 2, aw, T / 2);
+        }
+      }
+    }
+  };
+  pass(['lane'], true); pass(['lane'], false);
+  pass(['dorsal', 'main'], true); pass(['dorsal', 'main'], false);
+  // Segnaletica: tratteggio sulla strada principale e sulle dorsali.
+  g.fillStyle = 'rgba(255,255,255,0.75)';
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const t = typeAt(x, y);
+      if (t !== 'main' && t !== 'dorsal') continue;
+      const horiz = typeAt(x - 1, y) === t || typeAt(x + 1, y) === t;
+      const vert = typeAt(x, y - 1) === t || typeAt(x, y + 1) === t;
+      if (horiz && !vert) g.fillRect(x * T + 8, y * T + T / 2 - 1, 14, 2);
+      else if (vert && !horiz) g.fillRect(x * T + T / 2 - 1, y * T + 8, 2, 14);
+    }
+  }
+}
+
+function drawFutureRoads(g, openDistricts, x0, y0, x1, y1) {
+  g.save();
+  g.strokeStyle = 'rgba(255,255,255,0.8)';
+  g.lineWidth = 3;
+  g.setLineDash([7, 7]);
+  for (const d of DISTRICTS) {
+    if (!d.dorsal || d.id <= openDistricts) continue;
+    const r = d.dorsal;
+    g.beginPath();
+    if (r.x !== undefined) { if (r.x < x0 - 1 || r.x > x1 + 1) continue; g.moveTo(r.x * T + T / 2, r.y0 * T); g.lineTo(r.x * T + T / 2, (r.y1 + 1) * T); }
+    else { if (r.y < y0 - 1 || r.y > y1 + 1) continue; g.moveTo(r.x0 * T, r.y * T + T / 2); g.lineTo((r.x1 + 1) * T, r.y * T + T / 2); }
+    g.stroke();
+  }
+  g.restore();
+}
+
+/* Piazza ------------------------------------------------------------- */
+
+const PIAZZA_SPOTS = {
+  edicola: [PIAZZA.x0, PIAZZA.y0],
+  muro: [[PIAZZA.x0 + 3, PIAZZA.y0], [PIAZZA.x0 + 4, PIAZZA.y0], [PIAZZA.x0 + 5, PIAZZA.y0]],
+};
+
+function drawPiazza(g, built, night) {
+  const px = PIAZZA.x0 * T, py = PIAZZA.y0 * T;
+  const w = (PIAZZA.x1 - PIAZZA.x0 + 1) * T, h = (PIAZZA.y1 - PIAZZA.y0 + 1) * T;
+  g.fillStyle = C.stone;
+  g.fillRect(px, py, w, h);
+  g.strokeStyle = C.stoneLine;
+  g.lineWidth = 1;
+  for (let i = 0; i <= w; i += 16) { g.beginPath(); g.moveTo(px + i, py); g.lineTo(px + i, py + h); g.stroke(); }
+  for (let j = 0; j <= h; j += 16) { g.beginPath(); g.moveTo(px, py + j); g.lineTo(px + w, py + j); g.stroke(); }
+  // Muro dei Fondatori.
+  const [mx, my] = PIAZZA_SPOTS.muro[0];
+  g.fillStyle = '#b8a789'; g.fillRect(mx * T + 2, my * T + 4, 3 * T - 4, 20);
+  g.fillStyle = '#9c8b6e'; g.fillRect(mx * T + 2, my * T + 20, 3 * T - 4, 4);
+  g.fillStyle = '#d7b85a';
+  for (let i = 0; i < 7; i++) g.fillRect(mx * T + 8 + i * 12, my * T + 9, 7, 5);
+  // Edicola del giornale.
+  const [ex, ey] = PIAZZA_SPOTS.edicola;
+  const ox = ex * T, oy = ey * T;
+  g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(ox + 4, oy + 26, 26, 4);
+  g.fillStyle = '#2f5d50'; g.fillRect(ox + 5, oy + 10, 22, 17);
+  g.fillStyle = '#f2e9d5'; g.fillRect(ox + 8, oy + 14, 16, 8);
+  g.fillStyle = '#c0392b'; g.fillRect(ox + 3, oy + 5, 26, 6);
+  g.fillStyle = '#fff'; g.font = 'bold 5px sans-serif'; g.fillText('GIORNALE', ox + 5, oy + 10);
+  g.fillStyle = '#1d1d1d';
+  for (let i = 0; i < 3; i++) g.fillRect(ox + 10 + i * 5, oy + 16, 3, 4);
+  // Fontana al traguardo dei 25 abitanti, altrimenti l'aiuola con il cartello.
+  const fx = (PIAZZA.x0 + 4) * T, fy = (PIAZZA.y0 + 1.6) * T;
+  if (built >= FOUNTAIN_AT) {
+    g.fillStyle = '#cbbd9f'; g.beginPath(); g.ellipse(fx, fy, 26, 15, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#6fb7d6'; g.beginPath(); g.ellipse(fx, fy, 21, 11, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#cbbd9f'; g.fillRect(fx - 3, fy - 14, 6, 14);
+    g.fillStyle = night ? '#bfe6ff' : '#e6f6ff';
+    g.beginPath(); g.arc(fx, fy - 16, 5, 0, Math.PI * 2); g.fill();
+  } else {
+    g.fillStyle = '#7fb069'; g.beginPath(); g.ellipse(fx, fy, 22, 12, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#e2a33a'; g.fillRect(fx - 1, fy - 18, 2, 14);
+    g.fillStyle = '#f7f1e1'; g.fillRect(fx - 12, fy - 24, 24, 9);
+    g.fillStyle = '#5b4a2c'; g.font = 'bold 5px sans-serif'; g.fillText('FONTANA', fx - 10, fy - 18);
+  }
+  // Panchine e lampioni.
+  for (const bx of [PIAZZA.x0 + 1.4, PIAZZA.x0 + 6.4]) {
+    g.fillStyle = '#7a5636'; g.fillRect(bx * T, (PIAZZA.y0 + 2.3) * T, 18, 4);
+    g.fillRect(bx * T + 2, (PIAZZA.y0 + 2.3) * T + 4, 2, 3); g.fillRect(bx * T + 14, (PIAZZA.y0 + 2.3) * T + 4, 2, 3);
+  }
+}
+
+function lamps(g, x0, x1, night) {
+  for (let x = Math.max(1, x0 - (x0 % 5)); x <= x1; x += 5) {
+    const lx = x * T + 4, ly = (MAIN_Y - 1) * T + 10;
+    g.fillStyle = '#3b3f45'; g.fillRect(lx, ly, 2, 20); g.fillRect(lx, ly, 7, 2);
+    g.fillStyle = night ? C.lit : '#f4efe0'; g.fillRect(lx + 5, ly + 2, 4, 3);
+  }
+}
+function lampGlow(g, x0, x1) {
+  g.save();
+  g.globalCompositeOperation = 'lighter';
+  for (let x = Math.max(1, x0 - (x0 % 5)); x <= x1; x += 5) glow(g, x * T + 11, (MAIN_Y - 1) * T + 15, 26, 0.35);
+  g.restore();
+}
+function glow(g, x, y, r, a) {
+  const gr = g.createRadialGradient(x, y, 0, x, y, r);
+  gr.addColorStop(0, `rgba(255,214,110,${a})`);
+  gr.addColorStop(1, 'rgba(255,214,110,0)');
+  g.fillStyle = gr;
+  g.fillRect(x - r, y - r, r * 2, r * 2);
+}
+
+/* Case --------------------------------------------------------------- */
+
+// Disegna una casa nella casella (coordinate locali 0..32). `lit` accende le finestre.
+function drawHouse(g, style, { lit = false, night = false, founder = false, cantiere = false, flag = null } = {}) {
+  g.fillStyle = 'rgba(0,0,0,0.18)';
+  g.beginPath(); g.ellipse(16, 28.5, 14, 3.2, 0, 0, Math.PI * 2); g.fill();
+  if (style.garden === 'nessuno') { g.fillStyle = '#e4d7b8'; g.fillRect(1, 25, 30, 6); }
+  if (cantiere) return drawSite(g);
+  const wall = style.wall, roof = roofColor(style.roof), door = doorColor(style.door);
+  const win = (x, y, w = 4, h = 4) => {
+    g.fillStyle = '#f7f3ea'; g.fillRect(x - 0.7, y - 0.7, w + 1.4, h + 1.4);
+    g.fillStyle = lit ? C.lit : night ? '#22304d' : '#a9d3ea';
+    g.fillRect(x, y, w, h);
+    if (!lit) { g.fillStyle = 'rgba(255,255,255,0.45)'; g.fillRect(x, y, w / 2, 1); }
+  };
+  if (style.shape === 'villetta') {
+    g.fillStyle = wall; g.fillRect(3, 15, 26, 13);
+    g.fillStyle = shade(wall, -0.08); g.fillRect(3, 15, 26, 2);
+    g.fillStyle = roof;
+    g.beginPath(); g.moveTo(1, 16); g.lineTo(7, 7); g.lineTo(25, 7); g.lineTo(31, 16); g.closePath(); g.fill();
+    g.fillStyle = shade(roof, 0.1);
+    g.beginPath(); g.moveTo(7, 7); g.lineTo(25, 7); g.lineTo(23, 10); g.lineTo(9, 10); g.closePath(); g.fill();
+    win(6, 19); win(22, 19); win(10.5, 19, 3, 4);
+    g.fillStyle = door; g.fillRect(14, 20, 5, 8);
+  } else if (style.shape === 'torretta') {
+    g.fillStyle = wall; g.fillRect(5, 14, 16, 14);
+    g.fillStyle = shade(wall, -0.06); g.fillRect(19, 6, 9, 22);
+    g.fillStyle = roof;
+    g.beginPath(); g.moveTo(3, 15); g.lineTo(12, 6); g.lineTo(21, 15); g.closePath(); g.fill();
+    g.fillStyle = shade(roof, -0.1);
+    g.beginPath(); g.moveTo(18, 7); g.lineTo(23.5, 0.5); g.lineTo(29, 7); g.closePath(); g.fill();
+    win(21.5, 9, 4, 4); win(21.5, 17, 4, 4); win(7, 17);
+    g.fillStyle = door; g.fillRect(12, 20, 5, 8);
+  } else {
+    g.fillStyle = wall; g.fillRect(6, 13, 20, 15);
+    g.fillStyle = shade(wall, -0.07); g.fillRect(6, 13, 20, 2);
+    g.fillStyle = roof;
+    g.beginPath(); g.moveTo(3, 14.5); g.lineTo(16, 2.5); g.lineTo(29, 14.5); g.closePath(); g.fill();
+    g.fillStyle = shade(roof, 0.12);
+    g.beginPath(); g.moveTo(16, 2.5); g.lineTo(29, 14.5); g.lineTo(25, 14.5); g.lineTo(16, 6.5); g.closePath(); g.fill();
+    g.fillStyle = shade(roof, -0.15); g.fillRect(21, 4, 3, 5);
+    win(8.5, 17); win(19.5, 17);
+    g.fillStyle = door; g.fillRect(13.5, 19, 5, 9);
+  }
+  g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(17, 23.5, 0.9, 0.9);
+  if (founder) { g.fillStyle = '#d4af37'; g.fillRect(9, 22.5, 3, 2.4); g.fillStyle = '#8a6d12'; g.fillRect(9.8, 23.3, 1.4, 0.8); }
+  drawGarden(g, style.garden);
+  drawDeco(g, style.deco);
+  if (flag) {
+    g.fillStyle = '#4a4a4a'; g.fillRect(4, 2, 0.9, 11);
+    g.fillStyle = flag; g.beginPath(); g.moveTo(4.9, 2); g.lineTo(10, 4); g.lineTo(4.9, 6); g.closePath(); g.fill();
+  }
+}
+
+function drawSite(g) {
+  g.fillStyle = '#c9c1b2'; g.fillRect(6, 19, 20, 9);
+  g.fillStyle = '#b5ab99';
+  for (let i = 0; i < 4; i++) g.fillRect(6 + i * 5 + (i % 2), 19, 4, 2);
+  g.strokeStyle = '#8a6a3e'; g.lineWidth = 1.2;
+  g.beginPath();
+  for (const x of [5, 16, 27]) { g.moveTo(x, 28); g.lineTo(x, 9); }
+  for (const y of [11, 18]) { g.moveTo(5, y); g.lineTo(27, y); }
+  g.moveTo(5, 18); g.lineTo(16, 11); g.moveTo(16, 18); g.lineTo(27, 11);
+  g.stroke();
+  g.fillStyle = '#f2c230'; g.fillRect(20, 23, 8, 5);
+  g.fillStyle = '#222';
+  for (let i = 0; i < 4; i++) g.fillRect(20 + i * 2, 23, 1, 5);
+}
+
+function drawGarden(g, garden) {
+  if (garden === 'fiori') {
+    const cols = ['#e85d75', '#f2c14e', '#ffffff', '#b07cd8'];
+    for (let i = 0; i < 6; i++) { g.fillStyle = cols[i % 4]; g.fillRect(1.5 + (i % 3) * 1.8, 25 + Math.floor(i / 3) * 2, 1.4, 1.4); }
+    for (let i = 0; i < 4; i++) { g.fillStyle = cols[(i + 1) % 4]; g.fillRect(27 + (i % 2) * 2, 24 + Math.floor(i / 2) * 2, 1.4, 1.4); }
+  } else if (garden === 'orto') {
+    g.fillStyle = '#8a6440'; g.fillRect(0.5, 23, 5, 7);
+    g.fillStyle = '#4f9a3c';
+    for (let i = 0; i < 3; i++) g.fillRect(1.2, 24 + i * 2.2, 3.6, 1.1);
+  } else if (garden === 'ulivo') {
+    g.fillStyle = '#7a5636'; g.fillRect(2.5, 20, 1.6, 7);
+    g.fillStyle = '#8fa66b'; g.beginPath(); g.arc(3.3, 18.5, 4, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#a7bb83'; g.beginPath(); g.arc(2.3, 17.5, 2.4, 0, Math.PI * 2); g.fill();
+  }
+}
+
+function drawDeco(g, deco) {
+  if (deco === 'vespa') {
+    g.fillStyle = '#7cc7b2'; g.fillRect(22.5, 26, 6, 2.5); g.fillRect(27, 23.5, 1.5, 3);
+    g.fillStyle = '#333'; g.beginPath(); g.arc(23.3, 29, 1.3, 0, 7); g.arc(27.8, 29, 1.3, 0, 7); g.fill();
+  } else if (deco === 'bici') {
+    g.strokeStyle = '#2f4f6f'; g.lineWidth = 0.8;
+    g.beginPath(); g.arc(23.5, 28, 2, 0, 7); g.moveTo(30, 28); g.arc(28, 28, 2, 0, 7); g.moveTo(23.5, 28); g.lineTo(26, 25.5); g.lineTo(28, 28); g.stroke();
+  } else if (deco === 'panchina') {
+    g.fillStyle = '#7a5636'; g.fillRect(22, 25.5, 8, 1.6); g.fillRect(22, 27.6, 8, 1.2); g.fillRect(22.5, 28.8, 1, 1.6); g.fillRect(28.5, 28.8, 1, 1.6);
+  } else if (deco === 'limoni') {
+    g.fillStyle = '#c4673d'; g.fillRect(25, 26, 4.5, 4);
+    g.fillStyle = '#4f8f3a'; g.beginPath(); g.arc(27.2, 23.5, 3.2, 0, 7); g.fill();
+    g.fillStyle = '#f4d23c'; g.fillRect(26, 22.5, 1.2, 1.2); g.fillRect(28.2, 24, 1.2, 1.2);
+  } else if (deco === 'cane') {
+    g.fillStyle = '#b5523b'; g.beginPath(); g.moveTo(23, 25.5); g.lineTo(26, 23); g.lineTo(29, 25.5); g.closePath(); g.fill();
+    g.fillStyle = '#d9a066'; g.fillRect(23.5, 25.5, 5, 4);
+    g.fillStyle = '#4a2f1d'; g.fillRect(25.2, 27, 1.6, 2.5);
+  }
+}
+
+/* Mappa -------------------------------------------------------------- */
+
+class CityMap {
+  constructor(canvas, { onTap, onCamera } = {}) {
+    this.cv = canvas;
+    this.g = canvas.getContext('2d');
+    this.onTap = onTap;
+    this.onCamera = onCamera;
+    this.city = null;
+    this.opts = { mode: 'browse', meId: null, friends: new Set(), online: new Set(), night: false, selected: null };
+    this.cam = { x: 41.5 * T, y: 30 * T, z: 1 };
+    this.born = new Map();   // lotto → istante in cui è comparsa (animazione di costruzione)
+    this.terrain = null;
+    this.terrainOpen = 0;
+    this.dirty = true;
+    this.pointers = new Map();
+    this.bind();
+    this.resize();
+    new ResizeObserver(() => this.resize()).observe(canvas);
+    const loop = (t) => {
+      this.now = t;
+      if (this.dirty || this.animating(t)) { this.dirty = false; this.render(t); }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
+  setCity(city, { animateNew = true } = {}) {
+    if (this.city && animateNew) {
+      for (const slot of Object.keys(city.houses)) {
+        const was = this.city.houses[slot];
+        if (!was || was.status !== city.houses[slot].status) this.born.set(slot, performance.now());
+      }
+    }
+    this.city = city;
+    if (this.terrainOpen !== city.openDistricts) { this.terrain = drawTerrain(city.openDistricts); this.terrainOpen = city.openDistricts; }
+    this.dirty = true;
+  }
+  set(opts) { Object.assign(this.opts, opts); this.dirty = true; }
+  animating(t) {
+    if (this.opts.mode === 'choose' || this.opts.selected) return true;
+    for (const [slot, t0] of this.born) { if (t - t0 < 1400) return true; this.born.delete(slot); }
+    return false;
+  }
+
+  resize() {
+    const r = this.cv.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.vw = Math.max(1, r.width);
+    this.vh = Math.max(1, r.height);
+    this.cv.width = Math.round(this.vw * dpr);
+    this.cv.height = Math.round(this.vh * dpr);
+    this.dpr = dpr;
+    if (!this.fitted && this.vw > 50) { this.fitted = true; this.fitCentro(); }
+    this.clamp();
+    this.dirty = true;
+  }
+  fitCentro() {
+    const d = districtById(1).rect;
+    const wTiles = d[2] - d[0] + 3, hTiles = d[3] - d[1] + 6;
+    this.cam.z = Math.max(0.55, Math.min(2.2, Math.min(this.vw / (wTiles * T), this.vh / (hTiles * T))));
+    this.cam.x = ((d[0] + d[2] + 1) / 2) * T;
+    this.cam.y = ((d[1] + d[3] + 1) / 2) * T;
+  }
+  focus(slotOrXY, z) {
+    const [x, y] = typeof slotOrXY === 'string' ? parseKey(slotOrXY) : slotOrXY;
+    this.cam.x = (x + 0.5) * T;
+    this.cam.y = (y + 0.5) * T;
+    if (z) this.cam.z = z;
+    this.clamp();
+    this.dirty = true;
+  }
+  clamp() {
+    const minZ = Math.max(this.vw / (W * T), this.vh / (H * T));
+    this.cam.z = Math.max(minZ, Math.min(3, this.cam.z));
+    const hw = this.vw / 2 / this.cam.z, hh = this.vh / 2 / this.cam.z;
+    this.cam.x = Math.max(hw, Math.min(W * T - hw, this.cam.x));
+    this.cam.y = Math.max(hh, Math.min(H * T - hh, this.cam.y));
+    this.onCamera?.(this.cam);
+  }
+  toWorld(sx, sy) {
+    return [(sx - this.vw / 2) / this.cam.z + this.cam.x, (sy - this.vh / 2) / this.cam.z + this.cam.y];
+  }
+  zoomAt(sx, sy, factor) {
+    const [wx, wy] = this.toWorld(sx, sy);
+    this.cam.z *= factor;
+    this.clamp();
+    const [nx, ny] = this.toWorld(sx, sy);
+    this.cam.x += wx - nx;
+    this.cam.y += wy - ny;
+    this.clamp();
+    this.dirty = true;
+  }
+
+  bind() {
+    const cv = this.cv;
+    cv.style.touchAction = 'none';
+    cv.addEventListener('pointerdown', (e) => {
+      cv.setPointerCapture(e.pointerId);
+      this.pointers.set(e.pointerId, { x: e.offsetX, y: e.offsetY });
+      if (this.pointers.size === 1) this.drag = { x: e.offsetX, y: e.offsetY, moved: 0 };
+      else { this.drag = null; this.pinch = this.pinchInfo(); }
+    });
+    cv.addEventListener('pointermove', (e) => {
+      if (!this.pointers.has(e.pointerId)) return;
+      this.pointers.set(e.pointerId, { x: e.offsetX, y: e.offsetY });
+      if (this.pinch && this.pointers.size === 2) {
+        const p = this.pinchInfo();
+        this.zoomAt(p.cx, p.cy, p.d / this.pinch.d);
+        this.cam.x -= (p.cx - this.pinch.cx) / this.cam.z;
+        this.cam.y -= (p.cy - this.pinch.cy) / this.cam.z;
+        this.clamp();
+        this.pinch = p;
+      } else if (this.drag) {
+        const dx = e.offsetX - this.drag.x, dy = e.offsetY - this.drag.y;
+        this.drag.moved += Math.abs(dx) + Math.abs(dy);
+        this.cam.x -= dx / this.cam.z;
+        this.cam.y -= dy / this.cam.z;
+        this.drag.x = e.offsetX; this.drag.y = e.offsetY;
+        this.clamp();
+      }
+      this.dirty = true;
+    });
+    const up = (e) => {
+      if (!this.pointers.has(e.pointerId)) return;
+      this.pointers.delete(e.pointerId);
+      if (this.drag && this.drag.moved < 8 && e.type === 'pointerup') this.tap(e.offsetX, e.offsetY);
+      this.drag = null;
+      if (this.pointers.size < 2) this.pinch = null;
+    };
+    cv.addEventListener('pointerup', up);
+    cv.addEventListener('pointercancel', up);
+    cv.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      this.zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * 0.0015));
+    }, { passive: false });
+  }
+  pinchInfo() {
+    const [a, b] = [...this.pointers.values()];
+    return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+  }
+
+  tap(sx, sy) {
+    const [wx, wy] = this.toWorld(sx, sy);
+    let x = Math.floor(wx / T), y = Math.floor(wy / T);
+    // Le case sporgono verso l'alto: un tocco sul tetto conta per la casa sotto.
+    if (!this.city.houses[key(x, y)] && this.city.houses[key(x, y + 1)] && wy - y * T > T * 0.4) y += 1;
+    const k = key(x, y);
+    const h = this.city.houses[k];
+    if (h) return this.onTap?.({ kind: 'house', slot: k, house: h });
+    if (inPiazza(x, y)) {
+      const [ex, ey] = PIAZZA_SPOTS.edicola;
+      if (x === ex && y === ey) return this.onTap?.({ kind: 'giornale' });
+      if (PIAZZA_SPOTS.muro.some(([mx, my]) => mx === x && my === y)) return this.onTap?.({ kind: 'muro' });
+      return this.onTap?.({ kind: 'piazza' });
+    }
+    const d = districtAt(x, y);
+    if (PLAN.lots.has(k) && d && d <= this.city.openDistricts) return this.onTap?.({ kind: 'lot', slot: k });
+    if (d && d > this.city.openDistricts) return this.onTap?.({ kind: 'locked', district: d });
+    this.onTap?.({ kind: 'none' });
+  }
+
+  render(t) {
+    const g = this.g;
+    g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    g.fillStyle = C.sea;
+    g.fillRect(0, 0, this.vw, this.vh);
+    if (!this.city) return;
+    g.save();
+    g.translate(this.vw / 2, this.vh / 2);
+    g.scale(this.cam.z, this.cam.z);
+    g.translate(-this.cam.x, -this.cam.y);
+    const hw = this.vw / 2 / this.cam.z, hh = this.vh / 2 / this.cam.z;
+    const view = {
+      x0: Math.max(0, Math.floor((this.cam.x - hw) / T) - 1), y0: Math.max(0, Math.floor((this.cam.y - hh) / T) - 1),
+      x1: Math.min(W - 1, Math.ceil((this.cam.x + hw) / T) + 1), y1: Math.min(H - 1, Math.ceil((this.cam.y + hh) / T) + 1),
+    };
+    drawWorld(g, this.city, this.terrain, view, { ...this.opts, t, born: this.born, z: this.cam.z });
+    g.restore();
+  }
+}
+
+// Disegna la porzione `view` del mondo (in caselle) sul contesto già trasformato in pixel del mondo.
+function drawWorld(g, city, terrain, view, o) {
+  const { x0, y0, x1, y1 } = view;
+  const night = !!o.night;
+  g.imageSmoothingEnabled = true;
+  g.drawImage(terrain, x0 * T, y0 * T, (x1 - x0 + 1) * T, (y1 - y0 + 1) * T, x0 * T, y0 * T, (x1 - x0 + 1) * T, (y1 - y0 + 1) * T);
+  drawFutureRoads(g, city.openDistricts, x0, y0, x1, y1);
+  drawRoads(g, city.roads, x0, y0, x1, y1);
+  if (PIAZZA.x1 >= x0 && PIAZZA.x0 <= x1 && PIAZZA.y1 >= y0 && PIAZZA.y0 <= y1) drawPiazza(g, builtCount(city), night);
+
+  // Lotti liberi.
+  const choose = o.mode === 'choose';
+  const pulse = choose ? 0.5 + 0.5 * Math.sin((o.t || 0) / 300) : 0;
+  g.save();
+  g.setLineDash([4, 3]);
+  g.lineWidth = choose ? 2 : 1.2;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const k = key(x, y);
+      if (!PLAN.lots.has(k) || city.houses[k]) continue;
+      const d = districtAt(x, y);
+      if (d > city.openDistricts) continue;
+      if (choose) { g.fillStyle = `rgba(255,247,214,${0.35 + pulse * 0.3})`; g.fillRect(x * T + 3, y * T + 3, T - 6, T - 6); }
+      g.strokeStyle = choose ? '#7a5b14' : C.lot;
+      g.strokeRect(x * T + 3.5, y * T + 3.5, T - 7, T - 7);
+    }
+  }
+  g.restore();
+
+  lamps(g, x0, x1, night);
+
+  // Case, dall'alto verso il basso perché quelle davanti coprano quelle dietro.
+  const houses = Object.values(city.houses).filter((h) => {
+    const [x, y] = parseKey(h.slot);
+    return x >= x0 && x <= x1 && y >= y0 && y <= y1 + 1;
+  }).sort((a, b) => parseKey(a.slot)[1] - parseKey(b.slot)[1]);
+  const lights = [];
+  for (const h of houses) {
+    const [x, y] = parseKey(h.slot);
+    const r = city.residents[h.residentId];
+    const online = o.online?.has(h.residentId);
+    const t0 = o.born?.get(h.slot);
+    const age = t0 !== undefined ? (o.t || 0) - t0 : Infinity;
+    const grow = age < 900 ? easeOutBack(Math.max(0, age) / 900) : 1;
+    // Vialetto dalla porta alla corsia.
+    const dir = city.doors?.[h.slot];
+    if (dir) {
+      g.fillStyle = C.lane;
+      const cx = x * T + T / 2, cy = y * T + T / 2;
+      if (dir === 'S') g.fillRect(cx - 2.5, cy + 10, 5, T / 2 - 10);
+      else if (dir === 'N') g.fillRect(cx - 2.5, y * T, 5, 6);
+      else if (dir === 'E') g.fillRect(cx + 8, cy + 9, T / 2 - 8, 4);
+      else g.fillRect(x * T, cy + 9, T / 2 - 8, 4);
+    }
+    g.save();
+    g.translate(x * T + T / 2, y * T + T);
+    g.scale(grow, grow);
+    g.translate(-T / 2, -T);
+    const isFriend = o.friends?.has(h.residentId);
+    drawHouse(g, h.style, {
+      lit: night && online, night, founder: isFounder(r), cantiere: h.status === 'cantiere',
+      flag: h.residentId === o.meId ? '#e0a92a' : isFriend ? '#3f6aa1' : null,
+    });
+    g.restore();
+    if (night && online) lights.push([x * T + 16, y * T + 19]);
+    if (age < 1400) sparkle(g, x * T + 16, y * T + 14, age);
+  }
+
+  if (night) {
+    g.fillStyle = C.night;
+    g.fillRect(x0 * T, y0 * T, (x1 - x0 + 1) * T, (y1 - y0 + 1) * T);
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    for (const [lx, ly] of lights) glow(g, lx, ly, 22, 0.45);
+    g.restore();
+    lampGlow(g, x0, x1);
+  }
+
+  // Etichette dei nomi e selezione.
+  const showNames = (o.z || 1) >= 2.2;
+  for (const h of houses) {
+    const [x, y] = parseKey(h.slot);
+    const r = city.residents[h.residentId];
+    const sel = o.selected === h.slot;
+    if (sel) {
+      g.save();
+      g.strokeStyle = '#ffd34d'; g.lineWidth = 2.5;
+      g.beginPath(); g.ellipse(x * T + 16, y * T + 28, 16, 5, 0, 0, Math.PI * 2); g.stroke();
+      g.restore();
+    }
+    if (r && (showNames || sel || h.residentId === o.meId)) label(g, x * T + 16, y * T + T + 1, r.username, h.residentId === o.meId, o.z || 1);
+  }
+  if (o.selected && !city.houses[o.selected] && PLAN.lots.has(o.selected)) {
+    const [x, y] = parseKey(o.selected);
+    g.save();
+    g.strokeStyle = '#d4462f'; g.lineWidth = 3;
+    g.strokeRect(x * T + 2, y * T + 2, T - 4, T - 4);
+    g.restore();
+  }
+
+  // Nomi dei quartieri ancora chiusi.
+  g.save();
+  g.textAlign = 'center';
+  for (const d of DISTRICTS) {
+    if (d.id <= city.openDistricts) continue;
+    const [a, b, c, e] = d.rect;
+    const cx = ((a + c + 1) / 2) * T, cy = ((b + e + 1) / 2) * T + (d.id === 4 ? -2 * T : d.id === 5 ? 2 * T : 0);
+    if (cx < x0 * T - 200 || cx > x1 * T + 200 || cy < y0 * T - 100 || cy > y1 * T + 100) continue;
+    g.font = '700 22px Fredoka, "Trebuchet MS", sans-serif';
+    g.fillStyle = 'rgba(60,48,20,0.55)';
+    g.fillText(d.name, cx, cy);
+    g.font = '600 12px Nunito, "Trebuchet MS", sans-serif';
+    g.fillText(d.id === city.openDistricts + 1 ? 'il prossimo quartiere ad aprire' : 'quartiere futuro', cx, cy + 18);
+  }
+  g.restore();
+}
+
+// Nomi a dimensione fissa sullo schermo, accorciati alla larghezza del lotto per non sovrapporsi.
+function label(g, x, y, text, mine, z = 1) {
+  g.save();
+  const fs = 11 / z;
+  g.font = `800 ${fs}px Nunito, "Trebuchet MS", sans-serif`;
+  const maxW = T * 0.94 - fs;
+  let t = text;
+  if (g.measureText(t).width > maxW) {
+    while (t.length > 3 && g.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+    t += '…';
+  }
+  const w = g.measureText(t).width + fs;
+  const hgt = fs * 1.5;
+  g.fillStyle = mine ? '#ffd34d' : 'rgba(255,255,255,0.9)';
+  g.beginPath(); g.roundRect(x - w / 2, y - hgt / 2, w, hgt, hgt / 2); g.fill();
+  g.fillStyle = '#2b2a26';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(t, x, y + fs * 0.05);
+  g.restore();
+}
+function sparkle(g, x, y, age) {
+  const p = age / 1400;
+  g.save();
+  g.globalAlpha = 1 - p;
+  g.fillStyle = '#fff3b0';
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const r = 6 + p * 22;
+    g.fillRect(x + Math.cos(a) * r - 1.5, y + Math.sin(a) * r - 1.5, 3, 3);
+  }
+  g.restore();
+}
+function easeOutBack(p) {
+  const c = 1.7;
+  return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2);
+}
+
+/* Anteprima della casa e cartoline per Instagram ---------------------- */
+
+function drawPreview(canvas, style, { cantiere = false } = {}) {
+  const g = canvas.getContext('2d');
+  const s = canvas.width / 40;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = C.grass;
+  g.fillRect(0, 0, canvas.width, canvas.height);
+  g.fillStyle = C.lane;
+  g.fillRect(0, canvas.height - 6 * s, canvas.width, 6 * s);
+  g.setTransform(s, 0, 0, s, 4 * s, 2 * s);
+  drawHouse(g, style, { cantiere });
+}
+
+// Cartolina per il giornale: testata, ritaglio della mappa sulla zona della notizia, titolo e testo.
+async function renderPoster(city, news, format = 'post') {
+  try { await Promise.all([document.fonts.load('400 80px "Abril Fatface"'), document.fonts.load('700 40px Nunito'), document.fonts.load('600 40px Fredoka')]); } catch { /* caratteri di riserva */ }
+  const Wp = 1080, Hp = format === 'story' ? 1920 : 1350;
+  const cv = document.createElement('canvas');
+  cv.width = Wp; cv.height = Hp;
+  const g = cv.getContext('2d');
+  const paper = '#f6f1e3', ink = '#1f2a26', red = '#b8322a';
+  g.fillStyle = paper; g.fillRect(0, 0, Wp, Hp);
+  const top = format === 'story' ? 150 : 60;
+  g.fillStyle = ink; g.textAlign = 'center';
+  g.font = '400 96px "Abril Fatface", Georgia, serif';
+  g.fillText(CITY.toUpperCase(), Wp / 2, top + 90);
+  g.fillStyle = red; g.fillRect(70, top + 118, Wp - 140, 6);
+  g.fillStyle = ink; g.font = '700 30px Nunito, sans-serif';
+  const date = new Date(news.at).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  g.fillText(`${PAPER.toUpperCase()}  ·  ${date.toUpperCase()}`, Wp / 2, top + 166);
+  g.fillRect(70, top + 190, Wp - 140, 2);
+
+  // Mappa
+  const mapY = top + 220, mapH = format === 'story' ? 900 : 640, mapX = 70, mapW = Wp - 140;
+  const [fx, fy] = news.slot ? parseKey(news.slot) : [PIAZZA.x0 + 4, PIAZZA.y0 + 1];
+  const z = 2.6;
+  const terrain = drawTerrain(city.openDistricts);
+  g.save();
+  g.beginPath(); g.rect(mapX, mapY, mapW, mapH); g.clip();
+  g.translate(mapX + mapW / 2, mapY + mapH / 2);
+  g.scale(z, z);
+  g.translate(-(fx + 0.5) * T, -(fy + 0.5) * T);
+  const hw = mapW / 2 / z / T, hh = mapH / 2 / z / T;
+  drawWorld(g, city, terrain, {
+    x0: Math.max(0, Math.floor(fx - hw) - 1), y0: Math.max(0, Math.floor(fy - hh) - 1),
+    x1: Math.min(W - 1, Math.ceil(fx + hw) + 1), y1: Math.min(H - 1, Math.ceil(fy + hh) + 1),
+  }, { z: 2, selected: null, t: 0 });
+  g.restore();
+  g.strokeStyle = ink; g.lineWidth = 4; g.strokeRect(mapX, mapY, mapW, mapH);
+
+  const f = formatNews(news, city);
+  g.textAlign = 'left';
+  g.fillStyle = ink;
+  g.font = '400 64px "Abril Fatface", Georgia, serif';
+  let y = wrap(g, f.title, 70, mapY + mapH + 100, Wp - 140, 74);
+  g.font = '600 36px Nunito, sans-serif';
+  g.fillStyle = '#3b4642';
+  y = wrap(g, f.text, 70, y + 30, Wp - 140, 50);
+  g.fillStyle = red;
+  g.fillRect(0, Hp - (format === 'story' ? 210 : 110), Wp, format === 'story' ? 210 : 110);
+  g.fillStyle = '#fff'; g.textAlign = 'center';
+  g.font = '700 38px Fredoka, Nunito, sans-serif';
+  g.fillText('Vieni ad abitare qui · link in bio', Wp / 2, Hp - (format === 'story' ? 130 : 45));
+  return cv;
+}
+function wrap(g, text, x, y, maxW, lh) {
+  const words = text.split(' ');
+  let line = '';
+  for (const w of words) {
+    const t = line ? line + ' ' + w : w;
+    if (g.measureText(t).width > maxW && line) { g.fillText(line, x, y); y += lh; line = w; } else line = t;
+  }
+  if (line) g.fillText(line, x, y);
+  return y;
+}
+
+// ---- store.js ----
+// Due archivi con la stessa interfaccia:
+// - RemoteStore: il server vero (server/server.js), una sola città per tutti.
+// - LocalStore: demo nel browser. La città vive solo in questo browser e le email sono finte.
+
+
+class Base {
+  constructor() { this.listeners = new Set(); this.city = null; this.me = null; this.online = new Set(); }
+  subscribe(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
+  emit(kind) { for (const fn of this.listeners) fn(kind); }
+}
+
+/* Server ------------------------------------------------------------------ */
+
+class RemoteStore extends Base {
+  constructor() { super(); this.mode = 'server'; }
+
+  async call(method, p, body) {
+    let res;
+    try {
+      res = await fetch(p, { method, credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-VI': '1' }, body: body ? JSON.stringify(body) : undefined });
+    } catch {
+      throw new DomainError('network', 'Connessione assente: controlla internet e riprova.');
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new DomainError(data.code || 'validation', data.error || 'Qualcosa non ha funzionato. Riprova.');
+    return data;
+  }
+
+  async init() {
+    const s = await this.call('GET', '/api/session');
+    this.me = s.me;
+    this.devMail = s.devMail;
+    await this.refresh();
+    this.listen();
+  }
+  async refresh() {
+    const d = await this.call('GET', '/api/city');
+    this.take(d);
+  }
+  take(d) {
+    if (d.city) this.city = d.city;
+    if (d.online) this.online = new Set(d.online);
+    this.emit('city');
+  }
+  listen() {
+    this.es?.close();
+    this.es = new EventSource('/api/events');
+    this.es.addEventListener('city', (e) => {
+      const d = JSON.parse(e.data);
+      this.online = new Set(d.online);
+      if (!this.city || d.rev !== this.city.rev) this.refresh().catch(() => {});
+      else this.emit('online');
+    });
+  }
+  async afterAuth(d) {
+    this.me = d.me ?? (await this.call('GET', '/api/session')).me;
+    await this.refresh();
+    this.listen();
+    this.emit('me');
+  }
+
+  async register(form) { const d = await this.call('POST', '/api/register', form); await this.afterAuth(d); return d; }
+  async confirm(token) { const d = await this.call('POST', '/api/confirm', { token }); await this.afterAuth(d); return d; }
+  resend() { return this.call('POST', '/api/resend'); }
+  async login(login, password) { const d = await this.call('POST', '/api/login', { login, password }); await this.afterAuth(d); return d; }
+  async logout() { await this.call('POST', '/api/logout'); this.me = null; await this.refresh(); this.listen(); this.emit('me'); }
+  requestReset(email) { return this.call('POST', '/api/reset/request', { email }); }
+  async resetPassword(token, password) { const d = await this.call('POST', '/api/reset', { token, password }); await this.afterAuth({}); return d; }
+  async op(op) { const d = await this.call('POST', '/api/op', { op }); this.take(d); return d.result; }
+  exportData() { return this.call('GET', '/api/me/export'); }
+  async deleteAccount(password) { await this.call('POST', '/api/me/delete', { password }); this.me = null; await this.refresh(); this.emit('me'); }
+  admin() { return this.call('GET', '/api/admin'); }
+}
+
+/* Demo nel browser ---------------------------------------------------------- */
+
+const KEY = 'virtual-italy-demo-v1';
+const localBox = () => { try { return window.localStorage; } catch { return null; } };
+function load() { try { return JSON.parse(localBox()?.getItem(KEY) || 'null'); } catch { return null; } }
+function save(v) { try { localBox()?.setItem(KEY, JSON.stringify(v)); } catch { /* demo senza memoria */ } }
+
+class LocalStore extends Base {
+  constructor() { super(); this.mode = 'demo'; this.devMail = true; }
+
+  async init() {
+    const saved = load();
+    this.db = saved?.version === 1 ? saved : this.fresh();
+    this.me = this.db.session ? this.meView(this.db.session) : null;
+    this.publish();
+    // Qualche abitante finto entra ed esce, per vedere le finestre accese di sera.
+    this.timer = setInterval(() => this.shuffleOnline(), 15000);
+  }
+  fresh() {
+    const now = Date.now();
+    return { version: 1, state: seedResidents(emptyState(now - 6 * 86400000), 14, now), accounts: {}, tokens: {}, session: null, inbox: [] };
+  }
+  persist() { save(this.db); }
+  meView(id) {
+    const a = this.db.accounts[id];
+    if (!a) return null;
+    return { id, email: a.email, username: this.db.state.residents[id]?.username, emailConfirmed: a.confirmed, admin: true };
+  }
+  shuffleOnline() {
+    const ids = Object.keys(this.db.state.residents).filter((id) => id.startsWith(DEMO_TAG));
+    this.online = new Set(ids.filter((id, i) => (i * 7 + Math.floor(Date.now() / 15000)) % 3 === 0));
+    if (this.me) this.online.add(this.me.id);
+    this.emit('online');
+  }
+  publish() {
+    this.city = publicView(this.db.state, this.me?.id, true);
+    if (!this.online.size) this.shuffleOnline();
+    this.emit('city');
+  }
+  apply(op, ctx) {
+    const r = applyOp(this.db.state, op, { now: Date.now(), ...ctx });
+    this.db.state = r.state;
+    this.persist();
+    this.publish();
+    return r.result;
+  }
+  mail(to, subject, body, action) {
+    this.db.inbox.unshift({ id: uid('m'), to, subject, body, action, at: Date.now() });
+    this.db.inbox.length = Math.min(this.db.inbox.length, 30);
+  }
+
+  async register(f) {
+    if (f.website || Number(f.elapsed) < 2500) throw new DomainError('validation', 'Non siamo riusciti a completare l\'iscrizione: riprova tra qualche secondo.');
+    const email = checkEmail(f.email);
+    const username = checkUsername(f.username);
+    checkPassword(f.password);
+    if (!f.accept) throw new DomainError('validation', 'Per iscriverti devi accettare il regolamento e l\'informativa privacy.');
+    if (!f.adult) throw new DomainError('validation', 'Per iscriverti devi avere almeno 14 anni.');
+    if (Object.values(this.db.accounts).some((a) => a.email === email)) throw new DomainError('validation', 'Esiste già un abitante con questa email: prova ad accedere.');
+    const id = 'u_' + uid('');
+    this.apply({ type: 'join', id, username }, { system: true });
+    this.db.accounts[id] = { email, password: f.password, confirmed: false, source: f.source || 'diretto', createdAt: Date.now() };
+    const token = uid('t');
+    this.db.tokens[token] = { id, kind: 'confirm' };
+    this.mail(email, 'Conferma la tua casa a Virtual-Italy', `Ciao ${username}, per finire la tua casa conferma l'indirizzo email entro 24 ore.`, { kind: 'confirm', token });
+    this.db.session = id;
+    this.me = this.meView(id);
+    this.persist();
+    this.publish();
+    this.emit('me');
+    return { ok: true, devToken: token };
+  }
+  async confirm(token) {
+    const t = this.db.tokens[token];
+    if (!t || t.kind !== 'confirm') throw new DomainError('validation', 'Il link di conferma non è valido o è già stato usato.');
+    delete this.db.tokens[token];
+    this.db.accounts[t.id].confirmed = true;
+    const r = this.apply({ type: 'confirm', id: t.id }, { system: true });
+    this.db.session = t.id;
+    this.me = this.meView(t.id);
+    this.persist();
+    this.emit('me');
+    return { ok: true, number: r.number };
+  }
+  async resend() {
+    const id = this.me?.id;
+    const token = uid('t');
+    this.db.tokens[token] = { id, kind: 'confirm' };
+    this.mail(this.me.email, 'Conferma la tua casa a Virtual-Italy', 'Nuovo link di conferma.', { kind: 'confirm', token });
+    this.persist();
+    return { ok: true, devToken: token };
+  }
+  async login(login, password) {
+    const l = String(login || '').trim().toLowerCase();
+    const id = Object.keys(this.db.accounts).find((k) => this.db.accounts[k].email === l || usernameKey(this.db.state.residents[k]?.username || '') === l);
+    if (!id || this.db.accounts[id].password !== password) throw new DomainError('auth', 'Email, nome utente o password errati.');
+    this.db.session = id;
+    this.me = this.meView(id);
+    this.persist();
+    this.publish();
+    this.emit('me');
+    return { ok: true };
+  }
+  async logout() { this.db.session = null; this.me = null; this.persist(); this.publish(); this.emit('me'); }
+  async requestReset(email) {
+    const id = Object.keys(this.db.accounts).find((k) => this.db.accounts[k].email === String(email).trim().toLowerCase());
+    let token;
+    if (id) {
+      token = uid('t');
+      this.db.tokens[token] = { id, kind: 'reset' };
+      this.mail(this.db.accounts[id].email, 'Nuova password per Virtual-Italy', 'Apri il link per scegliere una nuova password.', { kind: 'reset', token });
+      this.persist();
+    }
+    return { ok: true, devToken: token };
+  }
+  async resetPassword(token, password) {
+    checkPassword(password);
+    const t = this.db.tokens[token];
+    if (!t || t.kind !== 'reset') throw new DomainError('validation', 'Il link non è valido o è scaduto: chiedine uno nuovo.');
+    delete this.db.tokens[token];
+    this.db.accounts[t.id].password = password;
+    return this.login(this.db.accounts[t.id].email, password);
+  }
+  async op(op) {
+    if (op.type === 'leave') throw new DomainError('validation', 'Per cancellare l\'account usa le impostazioni.');
+    return this.apply(op, { user: { id: this.me?.id, admin: true } });
+  }
+  async exportData() {
+    const id = this.me.id, a = this.db.accounts[id], s = this.db.state;
+    return { esportatoIl: new Date().toISOString(), account: { email: a.email, nomeUtente: s.residents[id]?.username, provenienza: a.source },
+      abitante: s.residents[id], casa: residentHouse(s, id), amici: friendsOf(s, id).map((x) => s.residents[x]?.username) };
+  }
+  async deleteAccount(password) {
+    const id = this.me.id;
+    if (this.db.accounts[id].password !== password) throw new DomainError('validation', 'La password non è corretta.');
+    this.apply({ type: 'leave', id }, { system: true });
+    delete this.db.accounts[id];
+    this.db.session = null;
+    this.me = null;
+    this.persist();
+    this.publish();
+    this.emit('me');
+  }
+  async admin() {
+    const sources = {};
+    for (const a of Object.values(this.db.accounts)) {
+      const s = (sources[a.source] ||= { source: a.source, n: 0, confirmed: 0 });
+      s.n++; if (a.confirmed) s.confirmed++;
+    }
+    return { sources: Object.values(sources), outbox: this.db.inbox.map((m) => ({ to: m.to, subject: m.subject, body: m.body, at: m.at })), mailConfigured: false };
+  }
+
+  // Solo demo: la casella email finta, nuovi abitanti finti, ripartenza.
+  inbox() { return this.db.inbox; }
+  addResidents(n) {
+    this.db.state = seedResidents(this.db.state, n, Date.now(), Date.now());
+    this.persist();
+    this.publish();
+  }
+  knock() {
+    // Un vicino finto bussa alla porta dell'utente della demo.
+    if (!this.me) return false;
+    const s = this.db.state;
+    const from = Object.keys(s.residents).find((id) => id.startsWith(DEMO_TAG) && !s.requests.some((q) => q.from === id) && !s.friendships.some((f) => f.a === id || f.b === id));
+    if (!from) return false;
+    this.apply({ type: 'friendRequest', to: this.me.id }, { user: { id: from } });
+    return true;
+  }
+  reset() { this.db = this.fresh(); this.me = null; this.persist(); this.publish(); this.emit('me'); }
+}
+
+// ---- app.js ----
+// Interfaccia di Virtual-Italy: mappa a tutto schermo, schede dal basso, iscrizione, scelta del lotto,
+// costruzione della casa, amicizie, giornale e redazione.
+
+
+
+const DEMO = window.__VI_MODE === 'demo' || new URLSearchParams(location.search).has('demo');
+const store = DEMO ? new LocalStore() : new RemoteStore();
+const $ = (sel, root = document) => root.querySelector(sel);
+
+/* Piccoli attrezzi --------------------------------------------------------- */
+
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === false || v === null || v === undefined) continue;
+    if (k === 'class') el.className = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'html') el.innerHTML = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) el.append(c.nodeType ? c : String(c));
+  return el;
+}
+
+const ICONS = {
+  paper: '<path d="M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2h-1M7 9h7M7 12h7M7 15h4"/>',
+  mail: '<path d="M4 7h16v11H4zM4 7l8 6 8-6"/>',
+  user: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 19c1.5-3.5 4-5 7-5s5.5 1.5 7 5"/>',
+  home: '<path d="M4 11 12 4l8 7M6.5 9.5V19h11V9.5M10 19v-5h4v5"/>',
+  x: '<path d="M6 6l12 12M18 6 6 18"/>',
+  moon: '<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+  desk: '<path d="M4 6h16v10H4zM9 20h6M12 16v4"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+};
+const icon = (name) => h('span', { class: 'ico', 'aria-hidden': 'true', html: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>` });
+
+function toast(text, kind = 'ok') {
+  const el = h('div', { class: `toast ${kind}`, role: 'status' }, text);
+  const box = $('#toasts');
+  box.append(el);
+  while (box.children.length > 2) box.firstElementChild.remove();
+  setTimeout(() => el.classList.add('out'), kind === 'err' ? 4200 : 2800);
+  setTimeout(() => el.remove(), kind === 'err' ? 4700 : 3300);
+}
+const errText = (e) => (e instanceof DomainError || e?.message ? e.message : 'Qualcosa non ha funzionato. Riprova.');
+
+async function run(btn, fn) {
+  if (btn) btn.disabled = true;
+  try { return await fn(); } catch (e) { toast(errText(e), 'err'); return undefined; } finally { if (btn) btn.disabled = false; }
+}
+const fmtDate = (t) => new Date(t).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+const fmtDay = (t) => new Date(t).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+const ls = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch { /* niente */ } } };
+const ss = { get(k) { try { return sessionStorage.getItem(k); } catch { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch { /* niente */ } } };
+
+/* Stato dell'interfaccia ------------------------------------------------- */
+
+const ui = { mode: 'browse', sheet: null, nightOverride: ls.get('vi-night'), welcomeSeen: ls.get('vi-welcome') === '1' };
+let map;
+
+const me = () => store.me;
+const myResident = () => me() && store.city.residents[me().id];
+const myHouse = () => me() && residentHouse(store.city, me().id);
+const isNight = () => (ui.nightOverride ? ui.nightOverride === 'night' : (() => { const hr = new Date().getHours(); return hr >= 20 || hr < 7; })());
+
+/* Guscio ----------------------------------------------------------------- */
+
+function shell() {
+  const app = $('#app');
+  app.replaceChildren(
+    h('canvas', { id: 'map', 'aria-label': `Mappa di ${CITY}` }),
+    h('header', { class: 'top' },
+      h('button', { class: 'brand', onclick: () => { closeSheet(); map.fitCentro(); map.dirty = true; }, 'aria-label': 'Torna al centro' },
+        h('span', { class: 'brand-name' }, 'Virtual', h('span', { class: 'brand-dash' }, '-'), 'Italy'),
+        h('span', { class: 'brand-count', id: 'count' })),
+      h('nav', { class: 'top-actions' },
+        h('button', { class: 'round', id: 'btn-night', onclick: toggleNight, 'aria-label': 'Giorno o notte' }),
+        h('button', { class: 'round', onclick: () => openGiornale(), 'aria-label': 'Il giornale' }, icon('paper')),
+        h('button', { class: 'round', id: 'btn-mail', onclick: () => openMailbox(), 'aria-label': 'Cassetta delle lettere' }, icon('mail'), h('span', { class: 'badge', id: 'mail-badge', hidden: true })),
+        h('button', { class: 'round', id: 'btn-me', onclick: () => (me() ? openProfile() : openLogin()), 'aria-label': 'Il mio profilo' }, icon('user')))),
+    DEMO ? demoBar() : null,
+    h('div', { class: 'notice', id: 'notice', hidden: true }),
+    h('div', { class: 'zoom' },
+      h('button', { class: 'round small', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1.3), 'aria-label': 'Ingrandisci' }, icon('plus')),
+      h('button', { class: 'round small', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1 / 1.3), 'aria-label': 'Rimpicciolisci' }, icon('minus'))),
+    h('footer', { class: 'bottom', id: 'bottom' }),
+    h('div', { class: 'scrim', id: 'scrim', hidden: true, onclick: closeSheet }),
+    h('section', { class: 'sheet', id: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'true' }),
+    h('div', { class: 'toasts', id: 'toasts' }),
+  );
+  map = new CityMap($('#map'), { onTap });
+  window.__virtualItaly = { store, map }; // comodo per il debug dalla console
+}
+
+function demoBar() {
+  return h('div', { class: 'demobar' },
+    h('span', { class: 'demobar-label', title: 'La città vive solo in questo browser e le email sono finte.' }, 'Demo'),
+    h('span', { class: 'demobar-actions' },
+      h('button', { onclick: () => { store.addResidents(5); toast('Sono arrivati 5 nuovi abitanti'); } }, '+5 abitanti'),
+      h('button', { onclick: () => { if (!me()) return toast('Prima iscriviti: poi un vicino busserà alla tua porta.', 'err'); toast(store.knock() ? 'Qualcuno ha bussato: guarda la cassetta' : 'Hai già conosciuto tutti i vicini'); } }, 'Fai bussare un vicino'),
+      h('button', { onclick: openDemoInbox }, 'Email finte'),
+      h('button', { onclick: () => { store.reset(); ui.mode = 'browse'; closeSheet(); toast('Demo ripartita'); } }, 'Ricomincia')));
+}
+
+function toggleNight() {
+  ui.nightOverride = isNight() ? 'day' : 'night';
+  ls.set('vi-night', ui.nightOverride);
+  update();
+}
+
+// Ridisegna le parti fisse: contatore, barra in basso, avvisi.
+function update() {
+  const city = store.city;
+  if (!city) return;
+  const built = builtCount(city);
+  $('#count').textContent = `${built} ${built === 1 ? 'abitante' : 'abitanti'}`;
+  const night = isNight();
+  $('#btn-night').replaceChildren(icon(night ? 'sun' : 'moon'));
+  $('#btn-night').setAttribute('aria-label', night ? 'Passa al giorno' : 'Passa alla notte');
+  const mine = me();
+  const incoming = mine ? city.requests.filter((q) => q.to === mine.id).length : 0;
+  const badge = $('#mail-badge');
+  badge.hidden = !incoming;
+  badge.textContent = incoming;
+  $('#btn-mail').hidden = !mine;
+
+  map.set({
+    mode: ui.mode, meId: mine?.id || null, night, online: store.online,
+    friends: new Set(mine ? friendsOf(city, mine.id) : []),
+  });
+
+  // Avviso email da confermare.
+  const notice = $('#notice');
+  const house = myHouse();
+  if (mine && !mine.emailConfirmed) {
+    const left = house ? Math.max(0, Math.ceil((house.reservedAt + RESERVE_MS - Date.now()) / 3600000)) : null;
+    notice.hidden = false;
+    notice.replaceChildren(
+      h('div', {}, h('strong', {}, 'Conferma la tua email'),
+        h('span', {}, house ? ` per finire la casa: il cantiere resta tuo per altre ${left} ore.` : ` per diventare abitante a tutti gli effetti. L'abbiamo mandata a ${mine.email}.`)),
+      h('div', { class: 'notice-actions' },
+        DEMO ? h('button', { class: 'btn small primary', onclick: openDemoInbox }, 'Apri l\'email') : null,
+        h('button', { class: 'btn small', onclick: (e) => run(e.currentTarget, async () => { const r = await store.resend(); devLinkToast(r); toast('Ti abbiamo mandato un nuovo link.'); }) }, 'Invia di nuovo')));
+  } else notice.hidden = true;
+
+  // Barra in basso.
+  const bottom = $('#bottom');
+  if (ui.mode === 'choose') {
+    bottom.replaceChildren(h('div', { class: 'bar choose' },
+      h('div', {}, h('strong', {}, 'Tocca un lotto libero'), h('span', {}, ' Quelli tratteggiati sono disponibili.')),
+      h('button', { class: 'btn', onclick: () => { ui.mode = 'browse'; map.set({ selected: null }); update(); } }, 'Annulla')));
+    return;
+  }
+  const g = goalProgress(built);
+  const goal = h('button', { class: 'goal', onclick: () => openMuro() },
+    h('span', { class: 'goal-text' }, nextGoal(city, built)),
+    h('span', { class: 'goal-track' }, h('span', { class: 'goal-fill', style: `width:${Math.round(g.ratio * 100)}%` })));
+  let cta;
+  if (!mine) cta = h('button', { class: 'btn primary big', onclick: openRegister }, 'Vieni ad abitare qui');
+  else if (!house) cta = h('button', { class: 'btn primary big', onclick: startChoosing }, 'Scegli il tuo lotto');
+  else cta = h('button', { class: 'btn big', onclick: () => { map.focus(house.slot, 2); openHouse(house.slot); } }, icon('home'), 'La mia casa');
+  bottom.replaceChildren(h('div', { class: 'bar' }, goal, cta));
+}
+
+function devLinkToast(r) {
+  if (r?.devLink) console.info('Link email (sviluppo):', r.devLink);
+}
+
+/* Schede ----------------------------------------------------------------- */
+
+function openSheet(title, body, { wide = false, onClose } = {}) {
+  const sheet = $('#sheet');
+  ui.sheet = { onClose };
+  sheet.className = 'sheet' + (wide ? ' wide' : '');
+  sheet.replaceChildren(
+    h('div', { class: 'sheet-head' },
+      h('h2', { id: 'sheet-title' }, title),
+      h('button', { class: 'round small ghost', onclick: closeSheet, 'aria-label': 'Chiudi' }, icon('x'))),
+    h('div', { class: 'sheet-body' }, body));
+  sheet.setAttribute('aria-labelledby', 'sheet-title');
+  sheet.hidden = false;
+  $('#scrim').hidden = false;
+  sheet.scrollTop = 0;
+  const first = sheet.querySelector('input, textarea');
+  if (first && matchMedia('(pointer: fine)').matches) first.focus();
+}
+function closeSheet() {
+  const s = ui.sheet;
+  ui.sheet = null;
+  $('#sheet').hidden = true;
+  $('#scrim').hidden = true;
+  if (ui.mode !== 'choose') map?.set({ selected: null });
+  s?.onClose?.();
+}
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
+
+const field = (label, input, hint) => h('label', { class: 'field' }, h('span', { class: 'field-label' }, label), input, hint ? h('span', { class: 'field-hint' }, hint) : null);
+const formError = () => h('p', { class: 'form-error', role: 'alert', hidden: true });
+function showError(el, e) { el.textContent = errText(e); el.hidden = false; }
+
+/* Benvenuto e iscrizione -------------------------------------------------- */
+
+function openWelcome() {
+  const built = builtCount(store.city);
+  openSheet('', h('div', { class: 'welcome' },
+    h('p', { class: 'eyebrow' }, `${PAPER} presenta`),
+    h('h1', { class: 'welcome-title' }, 'Benvenuto a ', h('span', {}, CITY)),
+    h('p', { class: 'lead' }, 'Una città che cresce con chi ci abita. Scegli un lotto, costruisci la tua casa e bussa alla porta dei vicini.'),
+    DEMO ? h('p', { class: 'small' }, 'Questa è una demo: la città vive solo in questo browser, gli altri abitanti sono finti e le email non partono davvero.') : null,
+    h('ul', { class: 'facts' },
+      h('li', {}, h('strong', {}, built), built === 1 ? ' abitante' : ' abitanti'),
+      h('li', {}, h('strong', {}, Math.max(0, FOUNDERS - built)), ' posti da Fondatore'),
+      h('li', {}, h('strong', {}, lotsOpen(store.city.openDistricts) - Object.keys(store.city.houses).length), ' lotti liberi')),
+    h('div', { class: 'stack' },
+      h('button', { class: 'btn primary big', onclick: openRegister }, 'Vieni ad abitare qui'),
+      h('button', { class: 'btn', onclick: openLogin }, 'Ho già una casa: accedi'),
+      h('button', { class: 'btn ghost', onclick: closeSheet }, 'Prima voglio guardare la città'))),
+    { onClose: () => { ui.welcomeSeen = true; ls.set('vi-welcome', '1'); } });
+}
+
+function openRegister() {
+  const started = Date.now();
+  const err = formError();
+  const userHint = h('span', { class: 'field-hint' }, 'Da 3 a 20 caratteri: lettere, numeri, punto o trattino basso. Sarà scritto davanti alla tua casa.');
+  const form = h('form', { class: 'form', novalidate: true },
+    field('Email', h('input', { id: 'reg-email', name: 'email', type: 'email', autocomplete: 'email', required: true, inputmode: 'email' }), 'Serve per confermare la casa e recuperare la password. Nessuno la vedrà.'),
+    h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Nome utente'),
+      h('input', { id: 'reg-user', name: 'username', autocomplete: 'username', required: true, maxlength: 20, autocapitalize: 'off', spellcheck: 'false' }), userHint),
+    field('Password', h('input', { id: 'reg-pass', name: 'password', type: 'password', autocomplete: 'new-password', required: true, minlength: 8 }), 'Almeno 8 caratteri.'),
+    h('input', { class: 'hp', name: 'website', tabindex: '-1', autocomplete: 'off', 'aria-hidden': 'true' }),
+    h('label', { class: 'check' }, h('input', { id: 'reg-accept', type: 'checkbox', name: 'accept' }),
+      h('span', {}, 'Accetto il ', h('a', { href: '#', onclick: (e) => { e.preventDefault(); openRules(openRegister); } }, 'regolamento e l\'informativa privacy'), '.')),
+    h('label', { class: 'check' }, h('input', { id: 'reg-adult', type: 'checkbox', name: 'adult' }), h('span', {}, 'Ho almeno 14 anni.')),
+    err,
+    h('button', { class: 'btn primary big', type: 'submit' }, 'Crea il mio account'),
+    h('p', { class: 'small center' }, 'Hai già una casa? ', h('a', { href: '#', onclick: (e) => { e.preventDefault(); openLogin(); } }, 'Accedi')));
+  form.username.addEventListener('input', () => {
+    userHint.classList.remove('bad');
+    const v = form.username.value.trim();
+    if (!v) return;
+    const taken = Object.values(store.city.residents).some((r) => r.username.toLowerCase() === v.toLowerCase());
+    if (taken) { userHint.textContent = 'Questo nome utente è già preso.'; userHint.classList.add('bad'); } else userHint.textContent = `Davanti alla tua casa ci sarà scritto “${v}”.`;
+  });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    err.hidden = true;
+    const btn = form.querySelector('[type=submit]');
+    run(btn, async () => {
+      try {
+        const r = await store.register({
+          email: form.email.value, username: form.username.value.trim(), password: form.password.value,
+          accept: form.accept.checked, adult: form.adult.checked, website: form.website.value,
+          elapsed: Date.now() - started, source: ss.get('vi-source') || 'diretto',
+        });
+        devLinkToast(r);
+        closeSheet();
+        toast(`Account creato. Ti abbiamo mandato un'email per confermare.`);
+        startChoosing();
+      } catch (ex) { showError(err, ex); }
+    });
+  });
+  openSheet('Vieni ad abitare qui', form);
+}
+
+function openLogin() {
+  const err = formError();
+  const form = h('form', { class: 'form', novalidate: true },
+    field('Email o nome utente', h('input', { id: 'login-id', name: 'login', autocomplete: 'username', required: true, autocapitalize: 'off' })),
+    field('Password', h('input', { id: 'login-pass', name: 'password', type: 'password', autocomplete: 'current-password', required: true })),
+    err,
+    h('button', { class: 'btn primary big', type: 'submit' }, 'Entra'),
+    h('p', { class: 'small center' },
+      h('a', { href: '#', onclick: (e) => { e.preventDefault(); openResetRequest(); } }, 'Password dimenticata?'), ' · ',
+      h('a', { href: '#', onclick: (e) => { e.preventDefault(); openRegister(); } }, 'Non hai ancora una casa?')));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    err.hidden = true;
+    run(form.querySelector('[type=submit]'), async () => {
+      try {
+        await store.login(form.login.value, form.password.value);
+        closeSheet();
+        toast(`Bentornato, ${me().username}`);
+        const house = myHouse();
+        if (house) map.focus(house.slot, 1.8);
+      } catch (ex) { showError(err, ex); }
+    });
+  });
+  openSheet('Accedi', form);
+}
+
+function openResetRequest() {
+  const err = formError();
+  const form = h('form', { class: 'form', novalidate: true },
+    h('p', {}, 'Scrivi l\'email con cui ti sei iscritto: ti mandiamo un link per scegliere una nuova password.'),
+    field('Email', h('input', { id: 'reset-email', name: 'email', type: 'email', autocomplete: 'email', required: true })),
+    err,
+    h('button', { class: 'btn primary big', type: 'submit' }, 'Mandami il link'));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    run(form.querySelector('[type=submit]'), async () => {
+      try {
+        const r = await store.requestReset(form.email.value);
+        devLinkToast(r);
+        closeSheet();
+        toast('Se l\'email è registrata, ti è arrivato il link (controlla anche lo spam).');
+        if (DEMO && r.devToken) openDemoInbox();
+      } catch (ex) { showError(err, ex); }
+    });
+  });
+  openSheet('Nuova password', form);
+}
+
+function openResetForm(token) {
+  const err = formError();
+  const form = h('form', { class: 'form', novalidate: true },
+    field('Nuova password', h('input', { id: 'reset-pass', name: 'password', type: 'password', autocomplete: 'new-password', required: true, minlength: 8 }), 'Almeno 8 caratteri.'),
+    err,
+    h('button', { class: 'btn primary big', type: 'submit' }, 'Salva la password'));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    run(form.querySelector('[type=submit]'), async () => {
+      try { await store.resetPassword(token, form.password.value); closeSheet(); toast('Password cambiata: sei dentro.'); } catch (ex) { showError(err, ex); }
+    });
+  });
+  openSheet('Scegli una nuova password', form);
+}
+
+async function confirmEmail(token) {
+  const r = await run(null, () => store.confirm(token));
+  if (!r) return;
+  closeSheet();
+  const house = myHouse();
+  if (house) { map.focus(house.slot, 2); toast(`Email confermata: sei l'abitante n°${r.number}. La tua casa è finita!`); }
+  else { toast(`Email confermata: sei l'abitante n°${r.number}. Ora scegli il tuo lotto.`); startChoosing(); }
+}
+
+/* Lotti e costruzione -------------------------------------------------------- */
+
+function startChoosing() {
+  if (!me()) return openRegister();
+  if (myHouse()) return toast('Hai già una casa a Virtual-Italy.');
+  closeSheet();
+  ui.mode = 'choose';
+  map.fitCentro();
+  update();
+}
+
+function neighbours(slot, radius = 3) {
+  const [x, y] = parseKey(slot);
+  return Object.values(store.city.houses).filter((hh) => {
+    const [hx, hy] = parseKey(hh.slot);
+    return hh.slot !== slot && Math.abs(hx - x) <= radius && Math.abs(hy - y) <= radius;
+  }).map((hh) => store.city.residents[hh.residentId]).filter(Boolean);
+}
+
+function openLot(slot) {
+  map.set({ selected: slot });
+  const d = districtById(districtAt(...parseKey(slot)));
+  const near = neighbours(slot);
+  const canBuild = me() && !myHouse();
+  openSheet(`Lotto libero · ${d.name}`, h('div', { class: 'stack' },
+    h('p', {}, near.length ? 'I tuoi vicini sarebbero:' : 'Qui intorno non abita ancora nessuno: saresti il primo della via.'),
+    near.length ? h('ul', { class: 'chips' }, near.slice(0, 12).map((r) => h('li', { class: 'chip' }, r.username))) : null,
+    canBuild ? h('button', { class: 'btn primary big', onclick: () => openBuild(slot) }, 'Costruisci qui')
+      : !me() ? h('button', { class: 'btn primary big', onclick: openRegister }, 'Iscriviti per costruire qui')
+        : h('p', { class: 'small' }, 'Hai già una casa: questo lotto resta per un nuovo abitante.')),
+    { onClose: () => { if (ui.mode !== 'choose') map.set({ selected: null }); } });
+}
+
+function swatches(name, list, value, onPick, colorOf) {
+  return h('div', { class: 'swatches', role: 'radiogroup' }, list.map((o) => h('button', {
+    type: 'button', class: 'swatch' + (o.id === value ? ' on' : '') + (colorOf ? ' color' : ''), role: 'radio', 'aria-checked': String(o.id === value),
+    'aria-label': o.label, title: o.label, style: colorOf ? `--sw:${o.color}` : null,
+    onclick: () => onPick(o.id),
+  }, colorOf ? null : o.label)));
+}
+
+function openBuild(slot, { restyle = false } = {}) {
+  const current = restyle ? myHouse().style : makeStyle(slot);
+  const choice = { roof: current.roof, door: current.door, garden: current.garden, deco: current.deco };
+  const preview = h('canvas', { class: 'preview', width: 320, height: 240, 'aria-label': 'Anteprima della casa' });
+  const groups = h('div', { class: 'stack' });
+  const paint = () => {
+    drawPreview(preview, makeStyle(slot, choice));
+    groups.replaceChildren(
+      h('div', {}, h('p', { class: 'field-label' }, 'Tetto'), swatches('roof', ROOFS, choice.roof, (v) => { choice.roof = v; paint(); }, true)),
+      h('div', {}, h('p', { class: 'field-label' }, 'Porta'), swatches('door', DOORS, choice.door, (v) => { choice.door = v; paint(); }, true)),
+      h('div', {}, h('p', { class: 'field-label' }, 'Giardino'), swatches('garden', GARDENS, choice.garden, (v) => { choice.garden = v; paint(); })),
+      h('div', {}, h('p', { class: 'field-label' }, 'Davanti casa'), swatches('deco', DECOS, choice.deco, (v) => { choice.deco = v; paint(); })));
+  };
+  paint();
+  const d = districtById(districtAt(...parseKey(slot)));
+  const btn = h('button', { class: 'btn primary big', onclick: (e) => run(e.currentTarget, async () => {
+    if (restyle) {
+      await store.op({ type: 'restyle', style: choice });
+      closeSheet();
+      toast('Casa rinnovata');
+      return;
+    }
+    const r = await store.op({ type: 'chooseSlot', slot, style: choice });
+    ui.mode = 'browse';
+    closeSheet();
+    map.focus(slot, 2);
+    if (r.status === 'casa') toast(`Benvenuto a ${CITY}, abitante n°${myResident().number}!`);
+    else toast('Cantiere aperto! Conferma l\'email per finire la casa.');
+    update();
+  }) }, restyle ? 'Salva le modifiche' : 'Costruisci la casa');
+  openSheet(restyle ? 'Rinnova la casa' : 'La tua casa', h('div', { class: 'build' },
+    h('div', { class: 'build-preview' }, preview, h('p', { class: 'small' }, `Le forme e i muri seguono lo stile del quartiere ${d.name}.`)),
+    h('div', { class: 'stack' }, groups, btn)), { wide: true });
+}
+
+/* Case e abitanti -------------------------------------------------------- */
+
+function openHouse(slot) {
+  const city = store.city;
+  const house = city.houses[slot];
+  const r = house && city.residents[house.residentId];
+  if (!r) return;
+  map.set({ selected: slot });
+  const mine = me();
+  const isMe = mine && mine.id === r.id;
+  const d = districtById(districtAt(...parseKey(slot)));
+  const badges = h('div', { class: 'badges' },
+    r.number ? h('span', { class: 'tag' }, `Abitante n°${r.number}`) : null,
+    isFounder(r) ? h('span', { class: 'tag gold' }, 'Fondatore') : null,
+    house.status === 'cantiere' ? h('span', { class: 'tag warn' }, 'Cantiere') : null,
+    store.online.has(r.id) ? h('span', { class: 'tag live' }, 'In città ora') : null,
+    r.suspended ? h('span', { class: 'tag warn' }, 'Sospeso') : null);
+  const facts = h('dl', { class: 'facts-list' },
+    h('div', {}, h('dt', {}, 'Quartiere'), h('dd', {}, d.name)),
+    h('div', {}, h('dt', {}, 'Arrivato il'), h('dd', {}, fmtDate(house.builtAt || house.reservedAt))),
+    r.instagram ? h('div', {}, h('dt', {}, 'Instagram'), h('dd', {}, h('a', { href: `https://instagram.com/${r.instagram}`, target: '_blank', rel: 'noopener noreferrer' }, '@' + r.instagram))) : null);
+  const actions = h('div', { class: 'stack' });
+  if (isMe) {
+    actions.append(
+      h('button', { class: 'btn', onclick: () => openBuild(slot, { restyle: true }) }, 'Rinnova la casa'),
+      h('button', { class: 'btn', onclick: openProfile }, 'Modifica il profilo'));
+  } else if (!mine) {
+    actions.append(h('button', { class: 'btn primary', onclick: openRegister }, 'Iscriviti per bussare alla porta'));
+  } else {
+    const out = city.requests.find((q) => q.from === mine.id && q.to === r.id);
+    const inc = city.requests.find((q) => q.to === mine.id && q.from === r.id);
+    if (areFriends(city, mine.id, r.id)) {
+      actions.append(h('p', { class: 'friends-line' }, `Tu e ${r.username} siete amici.`),
+        h('button', { class: 'btn ghost small', onclick: (e) => run(e.currentTarget, async () => { await store.op({ type: 'unfriend', id: r.id }); openHouse(slot); }) }, 'Rimuovi amicizia'));
+    } else if (inc) {
+      actions.append(h('button', { class: 'btn primary', onclick: (e) => run(e.currentTarget, async () => { await store.op({ type: 'friendRespond', id: inc.id, accept: true }); toast(`Ora tu e ${r.username} siete amici`); openHouse(slot); }) }, `${r.username} ha bussato: apri la porta`));
+    } else if (out) {
+      actions.append(h('button', { class: 'btn', disabled: true }, 'Hai bussato: aspetta la risposta'));
+    } else {
+      actions.append(h('button', { class: 'btn primary', onclick: (e) => run(e.currentTarget, async () => {
+        const res = await store.op({ type: 'friendRequest', to: r.id });
+        toast(res.friends ? `Avevate bussato entrambi: ora siete amici!` : `Hai bussato alla porta di ${r.username}`);
+        openHouse(slot);
+      }) }, 'Bussa alla porta'));
+    }
+    actions.append(h('button', { class: 'link-btn', onclick: () => openReport(r) }, 'Segnala questo abitante'));
+  }
+  openSheet(r.username, h('div', { class: 'stack' },
+    badges,
+    r.bio ? h('p', { class: 'bio' }, `“${r.bio}”`) : isMe ? h('p', { class: 'small' }, 'Aggiungi una frase di presentazione dal tuo profilo.') : null,
+    facts, actions));
+}
+
+function openReport(r) {
+  const err = formError();
+  const form = h('form', { class: 'form', novalidate: true },
+    h('p', {}, `La redazione leggerà la segnalazione su ${r.username}. Chi viene segnalato non saprà chi l'ha fatto.`),
+    field('Motivo', h('textarea', { id: 'report-reason', name: 'reason', rows: 3, maxlength: 300, required: true })),
+    err,
+    h('button', { class: 'btn primary', type: 'submit' }, 'Invia la segnalazione'));
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    run(form.querySelector('[type=submit]'), async () => {
+      try { await store.op({ type: 'report', target: r.id, reason: form.reason.value }); closeSheet(); toast('Segnalazione inviata alla redazione'); } catch (ex) { showError(err, ex); }
+    });
+  });
+  openSheet('Segnala', form);
+}
+
+function openMailbox() {
+  const city = store.city;
+  const mine = me();
+  if (!mine) return openLogin();
+  const name = (id) => city.residents[id]?.username || 'ex abitante';
+  const goTo = (id) => { const hs = residentHouse(city, id); if (hs) { closeSheet(); map.focus(hs.slot, 2); openHouse(hs.slot); } };
+  const incoming = city.requests.filter((q) => q.to === mine.id);
+  const outgoing = city.requests.filter((q) => q.from === mine.id);
+  const friends = friendsOf(city, mine.id);
+  const respond = (q, accept) => async (e) => {
+    await run(e.currentTarget, async () => { await store.op({ type: 'friendRespond', id: q.id, accept }); toast(accept ? `Ora tu e ${name(q.from)} siete amici` : 'Richiesta rifiutata'); openMailbox(); });
+  };
+  openSheet('Cassetta delle lettere', h('div', { class: 'stack' },
+    h('h3', {}, 'Hanno bussato alla tua porta'),
+    incoming.length ? h('ul', { class: 'rows' }, incoming.map((q) => h('li', { class: 'row' },
+      h('button', { class: 'link-btn strong', onclick: () => goTo(q.from) }, name(q.from)),
+      h('span', { class: 'row-actions' },
+        h('button', { class: 'btn small primary', onclick: respond(q, true) }, 'Accetta'),
+        h('button', { class: 'btn small', onclick: respond(q, false) }, 'Rifiuta'))))) : h('p', { class: 'small' }, 'Nessuna richiesta per ora.'),
+    h('h3', {}, `I tuoi amici (${friends.length})`),
+    friends.length ? h('ul', { class: 'chips' }, friends.map((id) => h('li', {}, h('button', { class: 'chip', onclick: () => goTo(id) }, name(id)))))
+      : h('p', { class: 'small' }, 'Tocca una casa sulla mappa e bussa alla porta per fare amicizia.'),
+    outgoing.length ? h('h3', {}, 'In attesa di risposta') : null,
+    outgoing.length ? h('ul', { class: 'chips' }, outgoing.map((q) => h('li', { class: 'chip muted' }, name(q.to)))) : null));
+}
+
+function openProfile() {
+  const mine = me();
+  if (!mine) return openLogin();
+  const r = myResident();
+  const err = formError();
+  const form = h('form', { class: 'form', novalidate: true },
+    field('Frase di presentazione', h('textarea', { id: 'prof-bio', name: 'bio', rows: 2, maxlength: 120 }), 'Al massimo 120 caratteri, la vede chi visita la tua casa.'),
+    field('Il mio Instagram (facoltativo)', h('input', { id: 'prof-ig', name: 'instagram', autocapitalize: 'off', placeholder: 'nomeutente' }), 'Lo mostriamo sulla tua casa solo se lo scrivi qui.'),
+    err,
+    h('button', { class: 'btn primary', type: 'submit' }, 'Salva il profilo'));
+  form.bio.value = r?.bio || '';
+  form.instagram.value = r?.instagram || '';
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    run(form.querySelector('[type=submit]'), async () => {
+      try { await store.op({ type: 'profile', bio: form.bio.value, instagram: form.instagram.value }); toast('Profilo salvato'); } catch (ex) { showError(err, ex); }
+    });
+  });
+  const delErr = formError();
+  const del = h('form', { class: 'form danger-zone', novalidate: true, hidden: true },
+    h('p', {}, 'La tua casa verrà demolita e il lotto tornerà libero. Amicizie e richieste vengono cancellate. Non si può annullare.'),
+    field('Scrivi la password per confermare', h('input', { id: 'del-pass', name: 'password', type: 'password', autocomplete: 'current-password' })),
+    delErr,
+    h('button', { class: 'btn danger', type: 'submit' }, 'Cancella definitivamente il mio account'));
+  del.addEventListener('submit', (e) => {
+    e.preventDefault();
+    run(del.querySelector('[type=submit]'), async () => {
+      try { await store.deleteAccount(del.password.value); closeSheet(); toast('Account cancellato. Grazie di essere passato da qui.'); } catch (ex) { showError(delErr, ex); }
+    });
+  });
+  openSheet(mine.username || 'Il mio profilo', h('div', { class: 'stack' },
+    h('div', { class: 'badges' },
+      r?.number ? h('span', { class: 'tag' }, `Abitante n°${r.number}`) : h('span', { class: 'tag warn' }, 'Email da confermare'),
+      isFounder(r) ? h('span', { class: 'tag gold' }, 'Fondatore') : null),
+    form,
+    h('h3', {}, 'Account'),
+    h('p', { class: 'small' }, `Email: ${mine.email}`),
+    h('div', { class: 'row-wrap' },
+      mine.admin ? h('button', { class: 'btn', onclick: openRedazione }, icon('desk'), 'Redazione') : null,
+      h('button', { class: 'btn', onclick: (e) => run(e.currentTarget, async () => showExport(await store.exportData())) }, 'Scarica i miei dati'),
+      h('button', { class: 'btn', onclick: (e) => run(e.currentTarget, async () => { await store.logout(); closeSheet(); toast('Sei uscito. A presto!'); }) }, 'Esci'),
+      h('button', { class: 'btn ghost danger-text', onclick: () => { del.hidden = !del.hidden; } }, 'Cancella account')),
+    del,
+    h('p', { class: 'small' }, h('a', { href: '#', onclick: (e) => { e.preventDefault(); openRules(openProfile); } }, 'Regolamento e privacy'))));
+}
+
+function showExport(data) {
+  const text = JSON.stringify(data, null, 2);
+  const pre = h('pre', { class: 'code' }, text);
+  openSheet('I miei dati', h('div', { class: 'stack' },
+    h('p', { class: 'small' }, 'Questi sono tutti i dati che la città conserva su di te.'),
+    pre,
+    h('div', { class: 'row-wrap' },
+      h('button', { class: 'btn', onclick: () => navigator.clipboard?.writeText(text).then(() => toast('Copiato'), () => selectText(pre)) }, 'Copia'),
+      DEMO ? null : h('a', { class: 'btn', href: '/api/me/export', download: 'virtual-italy-i-miei-dati.json' }, 'Scarica il file'))));
+}
+function selectText(el) { const r = document.createRange(); r.selectNodeContents(el); getSelection().removeAllRanges(); getSelection().addRange(r); }
+
+/* Piazza, quartieri, giornale -------------------------------------------------- */
+
+function openMuro() {
+  const city = store.city;
+  const founders = Object.values(city.residents).filter((r) => isFounder(r)).sort((a, b) => a.number - b.number);
+  const built = builtCount(city);
+  const g = goalProgress(built);
+  openSheet('Muro dei Fondatori', h('div', { class: 'stack' },
+    h('div', { class: 'goal-card' },
+      h('p', {}, h('strong', {}, nextGoal(city, built))),
+      h('span', { class: 'goal-track big' }, h('span', { class: 'goal-fill', style: `width:${Math.round(g.ratio * 100)}%` })),
+      h('p', { class: 'small' }, 'A 25 abitanti arriva la fontana in piazza. Ogni nuovo abitante migliora la città per tutti.')),
+    h('p', {}, `I primi ${FOUNDERS} abitanti hanno una targa d'oro sulla casa e il nome inciso qui.`),
+    founders.length ? h('ol', { class: 'wall' }, founders.map((r) => h('li', {}, h('span', { class: 'num' }, r.number), r.username)))
+      : h('p', { class: 'small' }, 'Il muro è ancora vuoto: il primo nome potrebbe essere il tuo.'),
+    h('p', { class: 'small' }, `Posti da Fondatore ancora liberi: ${Math.max(0, FOUNDERS - founders.length)}.`)));
+}
+
+function openLocked(id) {
+  const d = districtById(id);
+  const open = store.city.openDistricts;
+  const total = lotsOpen(open);
+  const taken = Object.keys(store.city.houses).filter((k) => districtAt(...parseKey(k)) <= open).length;
+  const need = Math.max(0, Math.ceil(total * UNLOCK_RATIO) - taken);
+  openSheet(d.name, h('div', { class: 'stack' },
+    id === open + 1
+      ? h('p', {}, `È il prossimo quartiere ad aprire: mancano ${need} ${need === 1 ? 'casa' : 'case'} nei quartieri aperti. Avrà ${PLAN.lotsByDistrict.get(id).length} lotti e una nuova strada principale.`)
+      : h('p', {}, `Per ora è campagna. Aprirà dopo gli altri quartieri, con ${PLAN.lotsByDistrict.get(id).length} lotti.`),
+    h('p', { class: 'small' }, 'Le linee tratteggiate bianche sono le strade principali già previste dal piano regolatore.')));
+}
+
+function openGiornale() {
+  const city = store.city;
+  const admin = me()?.admin;
+  const list = h('ol', { class: 'news' }, city.news.map((n) => {
+    const f = formatNews(n, city);
+    return h('li', { class: 'news-item' },
+      h('p', { class: 'news-date' }, fmtDay(n.at)),
+      h('h3', { class: 'news-title' }, f.title),
+      h('p', {}, f.text),
+      h('div', { class: 'row-wrap' },
+        n.slot && city.houses[n.slot] ? h('button', { class: 'link-btn', onclick: () => { closeSheet(); map.focus(n.slot, 2.2); } }, 'Vedi sulla mappa') : null,
+        admin ? h('button', { class: 'link-btn', onclick: () => openPoster(n, 'post') }, 'Cartolina post') : null,
+        admin ? h('button', { class: 'link-btn', onclick: () => openPoster(n, 'story') }, 'Storia') : null));
+  }));
+  openSheet('', h('div', { class: 'paper' },
+    h('div', { class: 'masthead' }, h('p', { class: 'mast-name' }, CITY), h('p', { class: 'mast-sub' }, `${PAPER} · il giornale della città`)),
+    admin ? h('button', { class: 'btn small', onclick: openRedazione }, icon('desk'), 'Redazione') : null,
+    list), { wide: true });
+}
+
+async function openPoster(n, format) {
+  openSheet(format === 'story' ? 'Storia per Instagram' : 'Post per Instagram', h('p', { class: 'small' }, 'Preparo l\'immagine…'), { wide: true });
+  const cv = await renderPoster(store.city, n, format);
+  const url = cv.toDataURL('image/png');
+  const name = `virtual-italy-${format}-${new Date(n.at).toISOString().slice(0, 10)}.png`;
+  openSheet(format === 'story' ? 'Storia per Instagram' : 'Post per Instagram', h('div', { class: 'stack' },
+    h('img', { class: 'poster', src: url, alt: formatNews(n, store.city).title }),
+    DEMO ? h('p', { class: 'small' }, 'Nella demo il download è bloccato: tieni premuta l\'immagine (o clic destro) per salvarla.')
+      : h('a', { class: 'btn primary', href: url, download: name }, 'Scarica l\'immagine'),
+    h('p', { class: 'small' }, `Testo suggerito: ${formatNews(n, store.city).text} Il link per entrare è in bio.`)), { wide: true });
+}
+
+async function openRedazione() {
+  const data = await run(null, () => store.admin());
+  if (!data) return;
+  const city = store.city;
+  const name = (id) => city.residents[id]?.username || 'ex abitante';
+  const reports = city.reports.filter((r) => !r.resolved);
+  const residents = Object.values(city.residents);
+  openSheet('Redazione', h('div', { class: 'stack' },
+    h('ul', { class: 'facts' },
+      h('li', {}, h('strong', {}, residents.filter((r) => r.confirmed).length), ' abitanti confermati'),
+      h('li', {}, h('strong', {}, residents.filter((r) => !r.confirmed).length), ' in attesa di conferma'),
+      h('li', {}, h('strong', {}, `${city.openDistricts}/5`), ' quartieri aperti')),
+    h('h3', {}, 'Da dove arrivano gli iscritti'),
+    data.sources.length ? h('table', { class: 'table' },
+      h('thead', {}, h('tr', {}, h('th', {}, 'Provenienza'), h('th', {}, 'Iscritti'), h('th', {}, 'Confermati'))),
+      h('tbody', {}, data.sources.map((s) => h('tr', {}, h('td', {}, s.source), h('td', {}, s.n), h('td', {}, s.confirmed || 0)))))
+      : h('p', { class: 'small' }, 'Ancora nessun iscritto.'),
+    h('p', { class: 'small' }, 'Per sapere quali post funzionano, nella bio usa link come …/?da=bio e nelle storie …/?da=storia.'),
+    h('h3', {}, `Segnalazioni aperte (${reports.length})`),
+    reports.length ? h('ul', { class: 'rows' }, reports.map((rep) => h('li', { class: 'row col' },
+      h('p', {}, h('strong', {}, name(rep.target)), ` · segnalato il ${fmtDay(rep.at)}`),
+      h('p', { class: 'small' }, rep.reason),
+      h('span', { class: 'row-actions' },
+        h('button', { class: 'btn small', onclick: (e) => run(e.currentTarget, async () => { await store.op({ type: 'resolveReport', id: rep.id }); openRedazione(); }) }, 'Archivia'),
+        city.residents[rep.target] ? h('button', { class: 'btn small danger', onclick: (e) => run(e.currentTarget, async () => {
+          await store.op({ type: 'suspend', id: rep.target, on: !city.residents[rep.target].suspended });
+          await store.op({ type: 'resolveReport', id: rep.id });
+          toast('Abitante sospeso'); openRedazione();
+        }) }, 'Sospendi') : null)))) : h('p', { class: 'small' }, 'Nessuna segnalazione da leggere.'),
+    data.mailConfigured ? null : h('h3', {}, 'Posta in uscita (email non ancora configurate)'),
+    data.mailConfigured ? null : data.outbox.length ? h('ul', { class: 'rows' }, data.outbox.slice(0, 10).map((m) => h('li', { class: 'row col' },
+      h('p', {}, h('strong', {}, m.subject), ` → ${m.to}`), h('p', { class: 'small pre' }, m.body)))) : h('p', { class: 'small' }, 'Vuota.')), { wide: true });
+}
+
+function openRules(back) {
+  openSheet('Regolamento e privacy', h('div', { class: 'stack prose' },
+    h('h3', {}, 'Regolamento della città'),
+    h('ol', {},
+      h('li', {}, 'Un account per persona, una casa per account.'),
+      h('li', {}, 'Nome utente e frase di presentazione devono essere rispettosi: niente insulti, volgarità, spam o nomi che imitano altre persone o la redazione.'),
+      h('li', {}, 'Chi non rispetta le regole può essere segnalato e sospeso dalla redazione.'),
+      h('li', {}, 'Per iscriversi bisogna avere almeno 14 anni.')),
+    h('h3', {}, 'Informativa privacy (sintesi)'),
+    h('p', {}, `Conserviamo email, nome utente, password (cifrata), casa, profilo, amicizie e la provenienza dell'iscrizione. L'email serve solo per confermare l'account e recuperare la password: non è mai mostrata agli altri e non viene ceduta a terzi. Il profilo Instagram compare solo se lo inserisci tu. Dal tuo profilo puoi scaricare tutti i tuoi dati o cancellare l'account in ogni momento.`),
+    h('p', { class: 'small' }, 'Testo da completare con i dati del titolare del trattamento prima della pubblicazione.'),
+    back ? h('button', { class: 'btn', onclick: back }, 'Torna indietro') : null));
+}
+
+function openDemoInbox() {
+  const mails = store.inbox();
+  openSheet('Email finte (demo)', h('div', { class: 'stack' },
+    h('p', { class: 'small' }, 'Nella versione vera queste email arrivano nella casella di posta di chi si iscrive.'),
+    mails.length ? h('ul', { class: 'rows' }, mails.map((m) => h('li', { class: 'row col' },
+      h('p', {}, h('strong', {}, m.subject), ` → ${m.to}`),
+      h('p', { class: 'small' }, m.body),
+      m.action ? h('button', { class: 'btn small primary', onclick: () => (m.action.kind === 'confirm' ? confirmEmail(m.action.token) : openResetForm(m.action.token)) },
+        m.action.kind === 'confirm' ? 'Conferma l\'email' : 'Scegli la nuova password') : null))) : h('p', { class: 'small' }, 'Nessuna email per ora.')));
+}
+
+/* Tocchi sulla mappa ------------------------------------------------------- */
+
+function onTap(t) {
+  if (ui.mode === 'choose') {
+    if (t.kind === 'lot') return openLot(t.slot);
+    if (t.kind === 'locked') return toast('Questo quartiere non è ancora aperto: scegli un lotto tratteggiato.', 'err');
+    if (t.kind === 'house') return toast('Questo lotto è già occupato.', 'err');
+    return;
+  }
+  if (t.kind === 'house') return openHouse(t.slot);
+  if (t.kind === 'lot') return openLot(t.slot);
+  if (t.kind === 'giornale') return openGiornale();
+  if (t.kind === 'muro' || t.kind === 'piazza') return openMuro();
+  if (t.kind === 'locked') return openLocked(t.district);
+  closeSheet();
+}
+
+/* Avvio ------------------------------------------------------------------- */
+
+async function boot() {
+  shell();
+  try {
+    await store.init();
+  } catch (e) {
+    $('#bottom').replaceChildren(h('div', { class: 'bar' }, h('p', {}, errText(e)), h('button', { class: 'btn', onclick: () => location.reload() }, 'Riprova')));
+    return;
+  }
+  map.setCity(store.city, { animateNew: false });
+  store.subscribe(() => { map.setCity(store.city); update(); });
+  update();
+
+  // Link dalle email e provenienza (?da=instagram) dal link in bio.
+  const q = new URLSearchParams(location.search);
+  if (q.get('da')) ss.set('vi-source', q.get('da').replace(/[^a-z0-9_-]/gi, '').slice(0, 30));
+  const confirmToken = q.get('conferma');
+  const resetToken = q.get('nuova-password');
+  if (!DEMO && (confirmToken || resetToken || q.get('da'))) history.replaceState(null, '', location.pathname);
+  if (confirmToken) return confirmEmail(confirmToken);
+  if (resetToken) return openResetForm(resetToken);
+  if (location.pathname === '/giornale') return openGiornale();
+  if (!me() && !ui.welcomeSeen) openWelcome();
+  else if (me() && !myHouse()) startChoosing();
+}
+
+if ('serviceWorker' in navigator && !DEMO && location.protocol !== 'file:') navigator.serviceWorker.register('/sw.js').catch(() => {});
+setInterval(update, 60000);
+boot();
+
+</script>

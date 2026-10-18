@@ -1,5 +1,7 @@
 # Magazzino Ferroleghe · versione Claude
 
+> In questo repository c'è anche **[Virtual-Italy](virtual-italy/)**, il paese digitale collegato a Virtual-Italy IG: vedi `virtual-italy/README.md`.
+
 Ricostruzione di “MPR Logistics · Magazzino” con la **stessa logica operativa** e una grafica nuova:
 baie, mucchi e tettoia; lotti separati; arrivi aggregati *N container in X giorni*; carico, scarico,
 appunti, ordini, calendario, storico. Tutto in italiano, usabile da PC e da telefono.

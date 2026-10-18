@@ -1,0 +1,15 @@
+{
+  "name": "virtual-italy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Virtual-Italy: il paese digitale che cresce con chi ci abita, collegato al giornale Virtual-Italy IG.",
+  "type": "module",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "DEV_MAIL=1 ADMIN_EMAILS=${ADMIN_EMAILS:-redazione@example.com} node server/server.js",
+    "demo": "DEMO_DATA=1 DEV_MAIL=1 ADMIN_EMAILS=${ADMIN_EMAILS:-redazione@example.com} DATA_DIR=data-demo node server/server.js",
+    "test": "node --test test/*.test.js",
+    "build:demo": "node scripts/build-demo.mjs"
+  }
+}
