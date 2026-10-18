@@ -450,6 +450,46 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .pg-suona { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 14px; align-items: start; }
 .pg-suona .col { display: grid; gap: 14px; align-content: start; min-width: 0; }
 .pg-mix { display: grid; gap: 14px; align-content: start; }
+.pg-voce { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-content: start; }
+.pg-voce .vrec { grid-column: 1 / -1; display: grid; gap: 12px; }
+.pg-voce .hd { flex-wrap: wrap; }
+.vstate { text-transform: none; letter-spacing: .02em; font-size: 11px; color: var(--cream-2); max-width: 60ch; }
+.vstate.bad { color: #ff7a6a; }
+.vrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
+.vgrow { flex: 1; }
+.vlen, .vshift { display: inline-flex; align-items: center; gap: 8px; }
+.vshift input { width: min(220px, 40vw); accent-color: var(--led); }
+.vshift output { font-family: var(--f-label); font-size: 10px; min-width: 52px; color: var(--cream-2); }
+#vPunch.on, #vRec.on { animation: blink 1s steps(2) infinite; }
+.vwavewrap { position: relative; }
+#vWave { display: block; width: 100%; height: 132px; border-radius: 8px; cursor: crosshair; touch-action: none; box-shadow: 0 0 0 3px var(--edge), 0 0 0 4px var(--line); }
+.vcount { position: absolute; inset: 0; display: grid; place-items: center; font: 400 72px/1 var(--f-vfd); color: var(--led); text-shadow: 0 0 22px var(--led); pointer-events: none; }
+.vbar { position: absolute; right: 10px; bottom: 8px; font-family: var(--f-label); font-size: 10px; letter-spacing: .1em; color: var(--scr-acc); pointer-events: none; }
+.vwarn { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 8px; background: color-mix(in srgb, #ff3b30 22%, var(--well)); color: var(--well-text); font-size: 13px; }
+#vMeter { width: 180px; height: 14px; border-radius: 3px; }
+#vDev { max-width: 200px; }
+.vtakes { display: grid; gap: 6px; }
+.vtake { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 6px; align-items: center; }
+.vtpick { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 10px; align-items: center; text-align: left; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--well); color: var(--well-text); min-width: 0; }
+.vtpick i { grid-row: span 2; width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--well-ink); }
+.vtpick b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vtpick small { font-size: 11px; color: var(--well-ink); }
+.vtpick[aria-pressed="true"] { border-color: var(--led); box-shadow: inset 0 0 0 1px var(--led); }
+.vtpick[aria-pressed="true"] i { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.vseg { flex-wrap: wrap; }
+.vseg button { padding: 5px 9px; font-size: 10px; }
+.vchain { display: grid; gap: 12px; align-content: start; }
+.vfrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.vknobs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; }
+.vtext { display: grid; gap: 10px; align-content: start; }
+.vlyr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+#vLyr { min-height: 280px; resize: vertical; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--well); color: var(--well-text); font: 14px/1.75 var(--f-ui); }
+.vprompt { height: 280px; overflow-y: auto; padding: 120px 14px; border-radius: 8px; background: var(--scr-bg); box-shadow: inset 0 2px 10px rgba(0,0,0,.6); font: 400 21px/1.35 var(--f-vfd); color: color-mix(in srgb, var(--scr-ink) 42%, transparent); scrollbar-width: thin; }
+.vpl { padding: 2px 0; transition: color .15s, text-shadow .15s; overflow-wrap: anywhere; }
+.vpl::before { content: attr(data-n); display: inline-block; width: 2.2em; font-size: 13px; opacity: .55; }
+.vpl.on { color: var(--scr-ink); text-shadow: 0 0 12px var(--scr-ink); }
+.vpempty { margin: -100px 0 0; font: 400 18px/1.4 var(--f-vfd); }
+@media (max-width: 900px) { .pg-voce, .vlyr { grid-template-columns: minmax(0, 1fr); } .vprompt { height: 200px; padding: 80px 12px; } #vLyr { min-height: 180px; } }
 .pg-mix .mixer { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 28px; align-items: start; }
 .groups { display: grid; grid-template-rows: auto minmax(0, 1fr); }
 .gstrips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; min-height: 0; }
@@ -1446,6 +1486,49 @@ html.intro-on { overflow: hidden; }
         </div>
       </section>
     </div>
+    <div class="page pg-voce" data-page="voce" role="tabpanel" aria-label="Voce" hidden>
+      <section class="unit vrec" aria-label="Registra la voce">
+        <div class="hd"><h2>Voce · registra il rap sul beat</h2><span class="lbl vstate" id="vState">Con le cuffie è meglio: senza, il microfono sente anche il beat.</span></div>
+        <div class="vrow">
+          <button class="key rec2" id="vRec" type="button">● Registra</button>
+          <button class="key" id="vPunch" type="button" disabled>↺ Rifai un pezzo</button>
+          <label class="vlen"><span class="lbl">Lunghezza</span><select id="vLen"><option value="4">4 battute</option><option value="8">8 battute</option><option value="12">12 battute</option><option value="16">16 battute</option><option value="24">24 battute</option><option value="32">32 battute</option><option value="48">48 battute</option><option value="64">64 battute</option></select></label>
+          <span class="lbl" id="vLenNote"></span><span class="vgrow"></span>
+          <button class="key small" id="vMute" type="button" title="La presa scelta suona insieme al beat"><span class="ledi"></span>Voce nel beat</button>
+        </div>
+        <div class="vrow">
+          <button class="key small" id="vPre" type="button" title="Il beat parte una battuta prima di te, col click"><span class="ledi"></span>Una battuta prima</button>
+          <button class="key small" id="vClick" type="button" title="Quattro colpi prima di cominciare"><span class="ledi"></span>Click d’attacco</button>
+          <button class="key small" id="vMon" type="button" title="Senti la tua voce con la catena mentre registri: solo in cuffia"><span class="ledi"></span>Ascoltati in cuffia</button>
+          <button class="key small" id="vRep" type="button" title="Finita la presa, la voce ricomincia (per un ritornello)"><span class="ledi"></span>Ripeti la voce</button>
+        </div>
+        <div class="vwavewrap"><canvas id="vWave" aria-label="Forma d’onda della presa: trascina per scegliere le battute da rifare"></canvas><div class="vcount" id="vCount" hidden></div><span class="vbar" id="vBar"></span></div>
+        <div class="vwarn" id="vWarn" hidden><span id="vWarnTxt"></span><button class="key small" id="vWarnFix" type="button">Rimetti quel tempo</button></div>
+        <div class="vrow">
+          <label class="vshift"><span class="lbl">Sposta la presa</span><input type="range" id="vShift" min="-500" max="500" step="5" value="0"><output id="vShiftOut">—</output></label>
+          <span class="vgrow"></span>
+          <button class="key small" id="vMic" type="button">🎤 Accendi il microfono</button>
+          <select id="vDev" aria-label="Microfono"><option value="">Microfono predefinito</option></select>
+          <canvas id="vMeter" width="180" height="14" aria-label="Livello del microfono"></canvas>
+          <label class="key small" for="vFile">Carica una voce</label><input type="file" id="vFile" accept="audio/*,.wav,.mp3,.m4a,.ogg,.aac" hidden>
+        </div>
+        <div class="vtakes" id="vTakes"></div>
+        <p class="cnote small">Premi <b>● Registra</b>: il beat riparte dall’inizio, una battuta di attacco col click, poi tocca a te; si ferma da solo alla fine delle battute scelte. Ogni presa resta, e scegli quale suona nel beat. Per correggere un pezzo trascina sulla forma d’onda le battute sbagliate e premi <b>↺ Rifai</b>: il beat riparte poco prima e ricanti solo lì, in una presa nuova. Il ritardo del microfono viene compensato da solo; se senti la voce in anticipo o in ritardo, usa <b>Sposta la presa</b>.</p>
+      </section>
+      <section class="unit vchain" aria-label="Catena voce">
+        <div class="hd"><h2>Catena voce</h2><span class="lbl">non tocca la registrazione: la cambi quando vuoi</span></div>
+        <div class="seg vseg" id="vPresets" role="group" aria-label="Suono della voce"></div>
+        <div class="vfrow"><span class="lbl">Filtro</span><div class="seg vseg" id="vFilt" role="group" aria-label="Filtro della voce"></div></div>
+        <div class="knobs vknobs" id="vKnobs"></div>
+      </section>
+      <section class="unit vtext" aria-label="Testo">
+        <div class="hd"><h2>Testo · una riga per battuta</h2><span class="lbl">mentre suona si accende la riga della battuta</span></div>
+        <div class="vlyr">
+          <textarea id="vLyr" spellcheck="false" aria-label="Testo, una riga per battuta" placeholder="Prima barra della strofa&#10;Seconda barra…&#10;&#10;(una riga vuota è una battuta di pausa)"></textarea>
+          <div class="vprompt" id="vPrompt"></div>
+        </div>
+      </section>
+    </div>
     <div class="page pg-cust" data-page="cust" role="tabpanel" aria-label="Personalizza" hidden>
       <section class="unit cust">
         <header class="custhead">
@@ -1539,6 +1622,7 @@ html.intro-on { overflow: hidden; }
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
+            <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
             <li><b>VIS</b> accanto allo schermo (o <kbd>B</kbd>) cambia la grafica a tempo: spettro, specchio, oscilloscopio, cerchio e cascata, più l’equalizzatore anni 80 a segmenti, il goniometro XY dello stereo, le colline, il tunnel, l’iperspazio, il fuoco, il radar che gira una volta a battuta e la pioggia digitale.</li>
             <li><b>FX</b> (o <kbd>J</kbd>) accende gli effetti visivi a tempo su tutta la stanza: <b>Club</b> (luci sul muro, laser, scintille, scossa), <b>VHS</b>, <b>Cinema</b>, <b>Glitch</b> e <b>Sogno</b>. In Personalizza → Luci e animazioni li combini come vuoi e ne regoli l’intensità.</li>
             <li>Il tasto <b>3D</b> accanto alle pagine (o <kbd>T</kbd>) cambia visuale: frontale, sul banco, di tre quarti da destra o da sinistra. Si suona anche in 3D.</li>
@@ -2512,6 +2596,11 @@ try {
   }
 } catch (e) { /* storage unavailable */ }
 if (!state.custom) state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY);
+// the voice page: takes (their samples are in IndexedDB), the chain, the lyrics
+const VOICE_DEF = () => ({ takes: [], sel: null, count: 0, len: 8, preroll: true, click: true, monitor: false, rep: false, mute: false, lyrics: "", preset: "boombap",
+  ch: { comp: 0.6, ess: 0.45, warm: 0.35, bri: 0.25, dbl: 0.15, echo: 0.1, rev: 0.16, filt: "no", vol: 0.9 } });
+function voiceFix() { const d = VOICE_DEF(); state.voice = Object.assign(d, state.voice || {}); state.voice.ch = Object.assign(VOICE_DEF().ch, state.voice.ch || {}); if (!Array.isArray(state.voice.takes)) state.voice.takes = []; }
+voiceFix();
 // every pattern has its length and grid, every row as many steps as that; the song points only at patterns that exist
 function fixPatterns() {
   if (!Array.isArray(state.pmeta)) state.pmeta = [];
@@ -3087,6 +3176,7 @@ function initAudio() {
   N.grp = BANKS.map((_, b) => [stripChain(N.bus, b), stripChain(N.duckV, b)]);
   initDeck();
   initStudio();
+  initVoice();
   applyMaster(); updateDelayTime();
   preloadBanks();
   return true;
@@ -3285,6 +3375,7 @@ function start() {
   playing = true; step = 0; songEnded = false; songJump = null; stepLog.length = 0; barT.length = 0;
   nextTime = ctx.currentTime + 0.06; gridOrigin = nextTime; drawQ.length = 0;
   schedule(); timer = setInterval(schedule, 20);
+  voiceOnStart();
   renderTransport(); renderSong();
   msg((song ? "CANZONE · PARTE " + (songPos.i + 1) + "/" + state.song.length : "IN PLAY") + " · PATTERN " + (state.pattern + 1) + (recording ? " · REC" : ""));
 }
@@ -3292,6 +3383,7 @@ function stop() {
   playing = false; clearInterval(timer); queued = null; repeatStep = null; shownStep = -1; drawQ.length = 0; songEnded = false; songJump = null;
   if (ctx) for (const v of voices.slice()) stopVoice(v, ctx.currentTime);
   renderTransport(); renderPatterns(); renderPlayhead(); renderSong(); $("vPos").textContent = "1.1";
+  voiceOnStop();
   msg("STOP");
 }
 // a hit played while recording goes on the step nearest to when it sounded (t: when it sounds, now if not given)
@@ -6197,6 +6289,7 @@ function tick() {
   if (state.custom.pulse === "si") { const v = Math.min(1, kickGlow) * 0.9; if (Math.abs(v - beatLightV) > 0.008) { $("beatLight").style.opacity = v.toFixed(3); beatLightV = v; } }
   if (logoDot) logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
   drawSpec(!ctx); drawVU(!ctx); drawDeck(false); drawVfx(performance.now());
+  if (curPage === "voce") voiceLive();
   requestAnimationFrame(tick);
 }
 let beatLightV = 0, kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a";
@@ -6332,7 +6425,7 @@ function initDesktop() {
 }
 
 // ---------- pages ----------
-const PAGES = [["suona", "Suona"], ["piatto", "Piatto"], ["seq", "Sequencer"], ["mix", "Mix · Registra"], ["guida", "Guida"]];
+const PAGES = [["suona", "Suona"], ["piatto", "Piatto"], ["seq", "Sequencer"], ["mix", "Mix · Registra"], ["voce", "Voce"], ["guida", "Guida"]];
 function fitPages() { $("pages").style.setProperty("--pg-h", $("pages").clientHeight + "px"); }
 let curPage = "suona";
 function showPage(id) {
@@ -6342,6 +6435,7 @@ function showPage(id) {
   [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.page === id));
   if (id !== "cust" && state.page !== id) { state.page = id; save(); }
   fitPages(); sizeCanvases(); placeTabGlow(); if (id === "mix") drawEq(); if (id === "suona") drawForm();
+  if (id === "voce") { if (state.voice.takes.length && !ctx && navigator.userActivation && navigator.userActivation.isActive) initAudio(); voiceRender(); } else if (VO.stream) voiceMicClose();
 }
 // the LED under the tabs glides to the page you pick
 function placeTabGlow() {
@@ -6620,7 +6714,7 @@ function cellExtras(c, o) {
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
-const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin"];
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice"];
 function f32ToB64(d) {
   const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
   for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
@@ -6642,14 +6736,16 @@ async function saveProject() {
     catch (e) { /* a lost recording: the project still opens, with the group's sound on that pad */ }
   }
   const st = {}; PROJ_KEYS.forEach(k => { st[k] = state[k]; });
-  const proj = { app: "Mat.Tone", kind: "progetto", ver: 1, saved: new Date().toISOString(), state: st, sounds };
+  const voices = [];
+  for (const t of state.voice.takes) { const b = VO.bufs.get(t.id); if (b) voices.push({ id: t.id, sr: b.sampleRate, data: f32ToB64(b.getChannelData(0)) }); }
+  const proj = { app: "Mat.Tone", kind: "progetto", ver: 1, saved: new Date().toISOString(), state: st, sounds, voices };
   const d = new Date(), pad2 = n => String(n).padStart(2, "0");
   const name = "mattone-progetto-" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + "-" + pad2(d.getHours()) + pad2(d.getMinutes()) + ".mattone";
   const data = new TextEncoder().encode(JSON.stringify(proj));
   const dl = await claude_use("downloads");
   if (!dl) {
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "application/json" })); a.download = name; a.click();
-    msg("PROGETTO SALVATO: " + name.toUpperCase() + (sounds.length ? " · CON " + sounds.length + (sounds.length > 1 ? " CAMPIONI TUOI" : " CAMPIONE TUO") : "")); return;
+    msg("PROGETTO SALVATO: " + name.toUpperCase() + (sounds.length ? " · CON " + sounds.length + (sounds.length > 1 ? " CAMPIONI TUOI" : " CAMPIONE TUO") : "") + (voices.length ? " · " + voices.length + (voices.length > 1 ? " PRESE DI VOCE" : " PRESA DI VOCE") : "")); return;
   }
   try { await dl.save({ filename: name.replace(/\.mattone$/, ".zip"), data: makeZip([{ name, data }]) }); msg("PROGETTO SALVATO IN UNO .ZIP · RIAPRILO COSÌ COM’È"); }
   catch (err) { msg(err && err.code === "declined" ? "SALVATAGGIO ANNULLATO" : "QUI NON POSSO SALVARE FILE"); }
@@ -6675,10 +6771,14 @@ function openProject(file) {
       cache.set(s.id, b); userSave(s.id, b);
     }
     const st = proj.state; PROJ_KEYS.forEach(k => { if (st[k] !== undefined) state[k] = st[k]; });
+    if (st.voice === undefined) state.voice = null;
+    voiceFix(); voiceSoloStop();
+    for (const t of proj.voices || []) { const b = voiceBufFrom(b64ToF32(t.data), t.sr || 44100); VO.bufs.set(t.id, b); VO.peaks.delete(t.id); voiceKeep(t.id, b); }
+    state.voice.takes = state.voice.takes.filter(t => VO.bufs.has(t.id)); if (!vTake()) state.voice.sel = state.voice.takes.length ? state.voice.takes[0].id : null;
     state.banks.forEach((bk, bi) => bk.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
     state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY, state.custom || {});
     fixPatterns(); state.pattern = 0; edPage = 0;
-    setBpm(state.bpm); applyMaster(); applyStudio(); save(); renderAll(); applySkin(state.skin); applyCustom(); renderStudio();
+    setBpm(state.bpm); applyMaster(); applyStudio(); voiceApply(); save(); renderAll(); applySkin(state.skin); applyCustom(); renderStudio(); renderPrompt(); voiceRender();
     state.banks.flat().forEach(pr => loadSound(pr.sound).catch(() => {}));
     msg("PROGETTO APERTO: " + file.name.replace(/\.(mattone|zip|json)$/i, "").toUpperCase() + ((proj.sounds || []).length ? " · " + proj.sounds.length + (proj.sounds.length > 1 ? " CAMPIONI" : " CAMPIONE") : ""));
   }).catch(() => msg("QUESTO FILE NON È UN PROGETTO DI MAT.TONE"));
@@ -6800,6 +6900,422 @@ function buildStudio() {
   renderStudio();
 }
 
+/* ================= voce: il rap registrato sul beat, con le sue prese, la catena e il testo ================= */
+// the takes' samples live in their own IndexedDB; the list, the chain and the lyrics travel with the state
+const VOICE_MAX = 12, VOICE_XF = 0.02;
+const VO = { ready: false, stream: null, src: null, mono: null, an: null, inLat: 0.01, rec: null, play: null, playG: null, solo: null, skip: 0, sel: null, drag: null, bufs: new Map(), peaks: new Map(), waveKey: "", bar: -1, lastMeter: 0 };
+const VOICE_FILTERS = [["no", "Nessuno"], ["tel", "Telefono"], ["radio", "Radio AM"], ["cass", "Cassetta"]];
+const VOICE_PRESETS = [
+  ["pulita", "Pulita", { comp: 0.3, ess: 0.3, warm: 0.1, bri: 0.15, dbl: 0, echo: 0, rev: 0.08, filt: "no" }],
+  ["boombap", "Boom bap", { comp: 0.6, ess: 0.45, warm: 0.35, bri: 0.25, dbl: 0.15, echo: 0.1, rev: 0.16, filt: "no" }],
+  ["telefono", "Telefono", { comp: 0.7, ess: 0.2, warm: 0.55, bri: 0, dbl: 0, echo: 0.05, rev: 0.05, filt: "tel" }],
+  ["radio", "Radio AM", { comp: 0.75, ess: 0.2, warm: 0.7, bri: 0, dbl: 0, echo: 0, rev: 0.1, filt: "radio" }],
+  ["cassetta", "Cassetta", { comp: 0.55, ess: 0.35, warm: 0.6, bri: -0.3, dbl: 0.1, echo: 0.08, rev: 0.12, filt: "cass" }],
+  ["doppia", "Doppia", { comp: 0.55, ess: 0.45, warm: 0.3, bri: 0.3, dbl: 0.7, echo: 0.05, rev: 0.14, filt: "no" }],
+  ["dub", "Eco dub", { comp: 0.5, ess: 0.4, warm: 0.4, bri: 0.1, dbl: 0.1, echo: 0.45, rev: 0.22, filt: "no" }],
+];
+const vbar = () => 240 / state.bpm;
+const vTake = id => state.voice.takes.find(t => t.id === (id || state.voice.sel));
+let voiceDbP = null;
+function voiceDb() {
+  if (!voiceDbP) voiceDbP = new Promise((res, rej) => {
+    try { const r = indexedDB.open("mattone-voce", 1); r.onupgradeneeded = () => r.result.createObjectStore("t", { keyPath: "id" }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }
+    catch (e) { rej(e); }
+  });
+  return voiceDbP;
+}
+function voiceTx(mode, fn) { return voiceDb().then(db => new Promise((res, rej) => { const t = db.transaction("t", mode), q = fn(t.objectStore("t")); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); })); }
+function voiceKeep(id, buf) { return voiceTx("readwrite", st => st.put({ id, sr: buf.sampleRate, data: new Float32Array(buf.getChannelData(0)) })).catch(() => false); }
+function voiceBufFrom(data, sr) { const b = ctx.createBuffer(1, Math.max(1, data.length), sr); b.getChannelData(0).set(data); return b; }
+
+// the chain: high-pass, the radio and phone filters, a split-band de-esser, compressor, tape warmth, air, a doubler, the sends
+function initVoice() {
+  const biq = (type, f, q) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q) b.Q.value = q; return b; };
+  const V = VO;
+  V.in = ctx.createGain(); V.hp = biq("highpass", 90, 0.7); V.fa = biq("highpass", 20, 0.7); V.fb = biq("lowpass", 20000, 0.7);
+  // de-esser: the band above 5.5 kHz gets its own fast compressor (Linkwitz-Riley split, the low side delayed like the compressor)
+  V.lo1 = biq("lowpass", 5500, 0.7071); V.lo2 = biq("lowpass", 5500, 0.7071); V.hi1 = biq("highpass", 5500, 0.7071); V.hi2 = biq("highpass", 5500, 0.7071);
+  V.loD = ctx.createDelay(0.05); V.loD.delayTime.value = 0.006;
+  V.ess = ctx.createDynamicsCompressor(); V.ess.attack.value = 0.002; V.ess.release.value = 0.06; V.ess.knee.value = 3; V.ess.ratio.value = 10;
+  V.mix = ctx.createGain();
+  V.comp = ctx.createDynamicsCompressor(); V.comp.attack.value = 0.004; V.comp.release.value = 0.15; V.comp.knee.value = 6;
+  V.mk = ctx.createGain(); V.sat = ctx.createWaveShaper(); V.sat.oversample = "2x"; V.bri = biq("highshelf", 7000);
+  V.out = ctx.createGain(); V.tap = ctx.createGain();
+  V.in.connect(V.hp).connect(V.fa).connect(V.fb);
+  V.fb.connect(V.lo1).connect(V.lo2).connect(V.loD).connect(V.mix);
+  V.fb.connect(V.hi1).connect(V.hi2).connect(V.ess).connect(V.mix);
+  V.mix.connect(V.comp).connect(V.mk).connect(V.sat).connect(V.bri).connect(V.out);
+  // the double: two short, slowly drifting delays, one each side
+  V.dbl = ctx.createGain(); V.dbl.gain.value = 0;
+  [[0.013, 0.31, -0.75], [0.021, 0.43, 0.75]].forEach(([d, f, pan]) => {
+    const dl = ctx.createDelay(0.1), lfo = ctx.createOscillator(), amt = ctx.createGain(), p = ctx.createStereoPanner();
+    dl.delayTime.value = d; lfo.frequency.value = f; amt.gain.value = 0.0025; lfo.connect(amt).connect(dl.delayTime); lfo.start(); p.pan.value = pan;
+    V.bri.connect(dl).connect(p).connect(V.dbl);
+  });
+  V.dbl.connect(V.out);
+  V.es = ctx.createGain(); V.rs = ctx.createGain();
+  V.out.connect(N.master); V.out.connect(V.tap); V.out.connect(V.es).connect(N.echoIn); V.out.connect(V.rs).connect(N.revIn);
+  V.ready = true;
+  voiceApply();
+  // the takes kept from last time
+  for (const t of state.voice.takes) if (!V.bufs.has(t.id)) voiceTx("readonly", st => st.get(t.id)).then(r => { if (r) { V.bufs.set(t.id, voiceBufFrom(r.data, r.sr)); VO.waveKey = ""; voiceRender(); } }).catch(() => {});
+}
+// the voice chain looks ahead 6 ms more than a group strip (two compressors against one): the takes start that much earlier.
+// The beat leaves the speakers about 18 ms after it is scheduled (strip, glue and limiter look-ahead): that is what you sing to.
+const VOICE_LAT = 0.006, VOICE_HEAR = 0.018;
+function voiceApply() {
+  if (!VO.ready) return;
+  const c = state.voice.ch, t = ctx.currentTime, V = VO, set = (p, v) => p.setTargetAtTime(v, t, 0.03);
+  const F = { no: [20, 0.7, 20000, 0.7, 0], tel: [450, 0.9, 3000, 1.4, 0.35], radio: [700, 1.1, 2400, 2, 0.5], cass: [70, 0.6, 7000, 0.5, 0.15] }[c.filt] || [20, 0.7, 20000, 0.7, 0];
+  set(V.fa.frequency, F[0]); set(V.fa.Q, F[1]); set(V.fb.frequency, F[2]); set(V.fb.Q, F[3]);
+  set(V.ess.threshold, -8 - c.ess * 32);
+  set(V.comp.threshold, -c.comp * 34); set(V.comp.ratio, 1.5 + c.comp * 6); set(V.mk.gain, Math.pow(10, c.comp * 11 / 20));
+  const k = 1 + (c.warm + F[4]) * 5, n = 1024, cv = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; cv[i] = Math.tanh(k * x) / Math.tanh(k); }
+  V.sat.curve = cv;
+  set(V.bri.gain, c.bri * 8); set(V.dbl.gain, c.dbl * 0.7);
+  set(V.es.gain, c.echo * 0.9); set(V.rs.gain, c.rev * 0.9); set(V.out.gain, state.voice.mute ? 0 : c.vol);
+}
+// where take bar 0 falls on the clock of the transport
+function voiceAnchor(take) {
+  let bars = take.startBar - VO.skip;
+  if (state.songOn && state.song.length && !VO.rec && songFrom > 0) bars -= state.song.slice(0, songFrom).reduce((a, e) => a + pm(e.p).bars * e.n, 0);
+  return gridOrigin + bars * vbar() + (take.shift || 0) / 1000 - VOICE_LAT;
+}
+function voiceStopPlay() { if (VO.play) { try { VO.play.stop(); } catch (e) { /* ended */ } VO.play = VO.playG = null; } }
+function voicePlaySel() {
+  voiceStopPlay();
+  const take = vTake(); if (!take || !playing || !VO.ready) return;
+  const buf = VO.bufs.get(take.id); if (!buf) return;
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; s.connect(g).connect(VO.in);
+  if (state.voice.rep) { s.loop = true; s.loopStart = 0; s.loopEnd = Math.min(buf.duration, take.bars * vbar()); }
+  const now = ctx.currentTime + 0.02; let when = voiceAnchor(take), off = 0;
+  if (when < now) { off = now - when; when = now; if (s.loop) off %= s.loopEnd; else if (off >= buf.duration) return; }
+  s.start(when, off); VO.play = s; VO.playG = g;
+}
+function voiceOnStart() { if (!VO.rec) VO.skip = 0; if (VO.rec && !VO.rec.punch) return; voicePlaySel(); }
+function voiceOnStop() { voiceStopPlay(); if (VO.rec) voiceRecFinish(); }
+
+/* ---------- the microphone ---------- */
+function voiceStatus(t, bad) { const e = $("vState"); if (e) { e.textContent = t; e.classList.toggle("bad", !!bad); } }
+function voiceDevices() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+  navigator.mediaDevices.enumerateDevices().then(list => {
+    const sel = $("vDev"), cur = sel.value;
+    sel.innerHTML = ""; sel.appendChild(new Option("Microfono predefinito", ""));
+    list.filter(d => d.kind === "audioinput" && d.deviceId && d.deviceId !== "default").forEach((d, i) => sel.appendChild(new Option(d.label || "Ingresso " + (i + 1), d.deviceId)));
+    sel.value = [...sel.options].some(o => o.value === cur) ? cur : "";
+  }).catch(() => {});
+}
+function voiceMicOpen() {
+  if (VO.stream) return Promise.resolve(true);
+  if (!initAudio()) return Promise.resolve(false);
+  const md = navigator.mediaDevices;
+  if (!md || !md.getUserMedia) { voiceStatus("Questo browser non può usare il microfono: registra col telefono e usa «Carica una voce».", true); return Promise.resolve(false); }
+  voiceStatus("Chiedo il permesso del microfono…");
+  const dev = $("vDev").value;
+  return md.getUserMedia({ audio: Object.assign({ echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 1 } }, dev ? { deviceId: { exact: dev } } : {}) }).then(stream => {
+    VO.stream = stream; VO.src = ctx.createMediaStreamSource(stream);
+    VO.mono = ctx.createGain(); VO.mono.channelCount = 1; VO.mono.channelCountMode = "explicit"; VO.mono.channelInterpretation = "speakers";
+    VO.an = ctx.createAnalyser(); VO.an.fftSize = 1024; VO.src.connect(VO.mono).connect(VO.an);
+    const tr = stream.getAudioTracks()[0], st = tr && tr.getSettings ? tr.getSettings() : {};
+    VO.inLat = typeof st.latency === "number" ? st.latency : 0.01;
+    tr && tr.addEventListener("ended", () => { if (VO.rec) voiceRecFinish(); voiceMicClose(true); });
+    voiceMonitor(); voiceDevices(); voiceRender();
+    voiceStatus("Microfono acceso: guarda il livello, deve arrivare al verde-giallo quando rappi forte, mai al rosso.");
+    return true;
+  }).catch(err => {
+    const name = err && err.name;
+    if (name === "NotFoundError" || name === "OverconstrainedError") voiceStatus("Non trovo questo microfono: scegline un altro.", true);
+    else if (location.protocol === "app:") voiceStatus("Il microfono è bloccato: consenti a Mat.Tone di usarlo nelle impostazioni di privacy del computer, poi riprova.", true);
+    else voiceStatus("Qui il microfono non è permesso (la pagina su claude.ai può bloccarlo): usa l’app per PC, oppure registra col telefono e usa «Carica una voce».", true);
+    return false;
+  });
+}
+function voiceMicClose(force) {
+  if (VO.rec && !force) return;
+  if (VO.stream) VO.stream.getTracks().forEach(t => t.stop());
+  try { if (VO.src) VO.src.disconnect(); if (VO.mono) VO.mono.disconnect(); } catch (e) { /* gone */ }
+  VO.stream = VO.src = VO.mono = VO.an = null;
+  voiceRender();
+}
+// hear yourself through the chain while you record (headphones, or the speakers will feed back)
+function voiceMonitor() {
+  if (!VO.mono || !VO.ready) return;
+  try { VO.mono.disconnect(VO.in); } catch (e) { /* was not connected */ }
+  if (state.voice.monitor) VO.mono.connect(VO.in);
+}
+
+/* ---------- recording: a new take, or one part of a take again ---------- */
+function voiceRec(punch) {
+  if (VO.rec) { voiceRecFinish(); return; }
+  if (!initAudio()) return;
+  const take = punch ? vTake() : null;
+  if (punch) {
+    if (!take || !VO.sel) { voiceStatus("Prima trascina sulla forma d’onda le battute da rifare.", true); return; }
+    const b = VO.bufs.get(take.id); if (!b) return;
+    if (b.sampleRate !== ctx.sampleRate) { voiceStatus("Questa presa viene da un altro computer: registrane una nuova per rifarne dei pezzi.", true); return; }
+    if (take.bpm !== state.bpm) { voiceStatus("La presa è a " + take.bpm + " BPM: rimetti quel tempo per rifarne un pezzo.", true); return; }
+  } else if (state.voice.takes.length >= VOICE_MAX) { voiceStatus("Al massimo " + VOICE_MAX + " prese: cancellane una che non ti serve.", true); return; }
+  voiceSoloStop();
+  voiceMicOpen().then(ok => { if (ok) voiceRecGo(punch, take); });
+}
+function voiceRecGo(punch, take) {
+  if (playing) stop();
+  const v = state.voice, bar = vbar(), song = !!(state.songOn && state.song.length);
+  if (song) songFrom = 0;
+  let startBar, bars, a, b, skip = 0;
+  if (punch) {
+    startBar = take.startBar; bars = take.bars; a = VO.sel.a; b = VO.sel.b;
+    // start a bar before the part, on a bar where the loop is at its top, so the beat lines up as when the take was sung
+    if (!song) { const P = pm().bars, x = a - 1 + startBar; if (x > 0) skip = x - ((x % P) + P) % P; }
+  } else {
+    startBar = v.preroll ? 1 : 0;
+    bars = song ? Math.max(1, songBars() - startBar) : v.len; a = 0; b = bars;
+  }
+  VO.skip = skip;
+  const lat = Math.max(0, Math.min(0.45, (ctx.outputLatency || 0) + (ctx.baseLatency || 0) + VO.inLat + VOICE_HEAR));
+  // the microphone on channel 1, a gate the audio clock opens and closes on channel 2: the take is exact to the sample
+  const gate = ctx.createConstantSource(), merge = ctx.createChannelMerger(2), proc = ctx.createScriptProcessor(4096, 2, 1), mute = ctx.createGain(); mute.gain.value = 0;
+  VO.mono.connect(merge, 0, 0); gate.connect(merge, 0, 1); merge.connect(proc); proc.connect(mute).connect(ctx.destination);
+  const r = VO.rec = { punch, take, startBar, bars, a, b, lat, gate, merge, proc, chunks: [], len: 0, open: false, closed: false, peak: 0 };
+  proc.onaudioprocess = e => {
+    if (VO.rec !== r || r.closed) return;
+    const ib = e.inputBuffer, L = ib.getChannelData(0), G = ib.getChannelData(1), n = L.length;
+    let i = 0; while (i < n && G[i] <= 0.5) i++;
+    if (i === n) { if (r.open) r.closed = true; return; }
+    let z = i; while (z < n && G[z] > 0.5) z++;
+    r.open = true; const c = L.slice(i, z); r.chunks.push(c); r.len += c.length;
+    for (let k = 0; k < c.length; k++) r.peak = Math.max(r.peak, Math.abs(c[k]));
+    if (z < n) r.closed = true;
+  };
+  setTimeout(() => {
+    if (VO.rec !== r) return;
+    start();
+    const anchor = gridOrigin + (startBar - skip) * bar + (punch ? (take.shift || 0) / 1000 : 0);
+    r.anchor = anchor;
+    r.cA = Math.max(gridOrigin, anchor + a * bar - (punch ? VOICE_XF : 0)); r.cB = anchor + b * bar + (punch ? VOICE_XF : 0);
+    gate.start(r.cA + lat); gate.stop(r.cB + lat);
+    // the old take falls silent for the part being sung again
+    if (punch && VO.playG) { const g = VO.playG.gain, pa = anchor - VOICE_LAT + a * bar, pb = anchor - VOICE_LAT + b * bar; g.setValueAtTime(1, Math.max(ctx.currentTime, pa - 0.01)); g.linearRampToValueAtTime(0, pa); g.setValueAtTime(0, pb); g.linearRampToValueAtTime(1, pb + 0.01); }
+    // the count-in: a click on every beat before the singing starts
+    if (v.click) for (let t = gridOrigin; t < r.cA - 0.01; t += bar / 4) click(t, Math.abs(((t - gridOrigin) / bar) % 1) < 0.01);
+    r.timer = setTimeout(() => { if (VO.rec === r) voiceRecFinish(); }, (r.cB + lat + 0.35 - ctx.currentTime) * 1000);
+    voiceRender();
+  }, 250);
+  voiceStatus(punch ? "RIFACCIO " + (b - a > 1 ? "LE BATTUTE " + (a + 1) + "–" + b : "LA BATTUTA " + b) + "…" : "PRONTI…"); voiceRender();
+}
+function voiceRecFinish() {
+  const r = VO.rec; if (!r) return;
+  VO.rec = null; clearTimeout(r.timer);
+  try { r.proc.onaudioprocess = null; r.proc.disconnect(); r.merge.disconnect(); r.gate.disconnect(); VO.mono && VO.mono.disconnect(r.merge); } catch (e) { /* gone */ }
+  if (playing) stop();
+  VO.skip = 0;
+  const sr = ctx.sampleRate, data = new Float32Array(r.len); let o = 0; for (const c of r.chunks) { data.set(c, o); o += c.length; }
+  if (data.length < sr * 0.3) { voiceStatus("Fermata prima di cominciare: premi di nuovo il tasto rosso.", true); voiceRender(); return; }
+  if (r.peak < 0.004) { voiceStatus("Non ho sentito niente: controlla il microfono (il livello qui sotto deve muoversi).", true); voiceRender(); return; }
+  const v = state.voice, id = "voce_" + Date.now().toString(36);
+  let take, buf;
+  if (!r.punch) {
+    const k = Math.min(8, 0.75 / r.peak); for (let i = 0; i < data.length; i++) data[i] *= k;
+    const n = Math.min(data.length, Math.floor(sr * 0.004)); for (let i = 0; i < n; i++) data[i] *= i / n;
+    buf = voiceBufFrom(data, sr);
+    take = { id, name: "Presa " + (++v.count), bpm: state.bpm, startBar: r.startBar, bars: Math.max(1, Math.min(r.bars, Math.ceil(buf.duration / vbar() - 0.02))), shift: 0, k };
+  } else {
+    // the new part goes into a copy of the take, faded in and out over 20 ms
+    const old = VO.bufs.get(r.take.id).getChannelData(0), ia = Math.round((r.cA - r.anchor) * sr), xf = Math.round(VOICE_XF * sr);
+    const out = new Float32Array(Math.max(old.length, ia + data.length)); out.set(old);
+    for (let i = 0; i < data.length; i++) { const j = ia + i; if (j < 0) continue; const w = Math.min(1, i / xf, (data.length - 1 - i) / xf); out[j] = out[j] * (1 - w) + data[i] * r.take.k * w; }
+    buf = voiceBufFrom(out, sr);
+    take = Object.assign({}, r.take, { id, name: r.take.name.replace(/ · rifatta.*$/, "") + " · rifatta " + (r.b - r.a > 1 ? (r.a + 1) + "–" + r.b : "la " + r.b) });
+  }
+  VO.bufs.set(id, buf); voiceKeep(id, buf);
+  v.takes.unshift(take); v.sel = id; VO.sel = null; save();
+  voiceStatus((r.punch ? "Fatto: " + (r.b - r.a > 1 ? "battute " + (r.a + 1) + "–" + r.b + " rifatte" : "battuta " + r.b + " rifatta") + " in una presa nuova, l’altra resta." : "Fatta la " + take.name.toLowerCase() + ": " + take.bars + (take.bars > 1 ? " battute" : " battuta") + ". Premi play per sentirla sul beat.") + (r.peak > 0.97 ? " Era troppo forte e gracchia: allontanati un po’ o abbassa l’ingresso." : ""));
+  voiceRender();
+}
+
+/* ---------- takes ---------- */
+function voiceSelect(id) { state.voice.sel = id; VO.sel = null; save(); voiceRender(); if (playing) voicePlaySel(); }
+function voiceDelete(id) {
+  const v = state.voice; v.takes = v.takes.filter(t => t.id !== id);
+  VO.bufs.delete(id); VO.peaks.delete(id); voiceTx("readwrite", st => st.delete(id)).catch(() => {});
+  if (v.sel === id) { v.sel = v.takes.length ? v.takes[0].id : null; if (playing) voicePlaySel(); }
+  save(); voiceRender();
+}
+function voiceSoloStop() { if (VO.solo) { try { VO.solo.s.stop(); } catch (e) { /* ended */ } VO.solo = null; voiceRender(); } }
+function voiceSolo(id) {
+  if (!initAudio()) return;
+  if (VO.solo && VO.solo.id === id) { voiceSoloStop(); return; }
+  voiceSoloStop();
+  const buf = VO.bufs.get(id); if (!buf) return;
+  const s = ctx.createBufferSource(); s.buffer = buf; s.connect(VO.in); s.start();
+  VO.solo = { id, s, t0: ctx.currentTime }; s.onended = () => { if (VO.solo && VO.solo.s === s) { VO.solo = null; voiceRender(); } };
+  voiceRender();
+}
+function voiceExport(id) {
+  const t = vTake(id), b = VO.bufs.get(id); if (!t || !b) return;
+  const d = b.getChannelData(0), name = "mattone-" + t.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + t.bpm + "bpm.wav";
+  giveFiles([{ name, data: new Uint8Array(encodeWav(d, d, b.sampleRate)), type: "audio/wav" }], name.replace(/\.wav$/, ".zip"))
+    .then(n => msg("VOCE SALVATA: " + n.toUpperCase())).catch(err => msg(err && err.code === "declined" ? "SALVATAGGIO ANNULLATO" : "QUI NON POSSO SALVARE FILE"));
+}
+// a voice recorded elsewhere (the phone): it starts on the first bar, then «Sposta la presa» puts it in time
+function voiceImport(file) {
+  if (!initAudio()) return;
+  if (state.voice.takes.length >= VOICE_MAX) { voiceStatus("Al massimo " + VOICE_MAX + " prese: cancellane una che non ti serve.", true); return; }
+  file.arrayBuffer().then(ab => ctx.decodeAudioData(ab)).then(src => {
+    if (src.duration > 360) { voiceStatus("Il file è troppo lungo: al massimo 6 minuti.", true); return; }
+    const n = src.length, d = new Float32Array(n);
+    for (let c = 0; c < src.numberOfChannels; c++) { const x = src.getChannelData(c); for (let i = 0; i < n; i++) d[i] += x[i] / src.numberOfChannels; }
+    let pk = 0; for (let i = 0; i < n; i++) pk = Math.max(pk, Math.abs(d[i]));
+    const k = pk > 0 ? Math.min(8, 0.75 / pk) : 1; for (let i = 0; i < n; i++) d[i] *= k;
+    const v = state.voice, id = "voce_" + Date.now().toString(36), buf = voiceBufFrom(d, src.sampleRate);
+    v.takes.unshift({ id, name: file.name.replace(/\.[a-z0-9]+$/i, "").slice(0, 24) || "Voce caricata", bpm: state.bpm, startBar: 0, bars: Math.max(1, Math.ceil(buf.duration / vbar())), shift: 0, k });
+    v.sel = id; ++v.count; VO.bufs.set(id, buf); voiceKeep(id, buf); save();
+    voiceStatus("Voce caricata: parte sulla prima battuta. Se non è a tempo, usa «Sposta la presa».");
+    voiceRender();
+  }).catch(() => voiceStatus("Non riesco a leggere questo file audio.", true));
+}
+
+/* ---------- the page ---------- */
+function voicePeaks(id) {
+  const b = VO.bufs.get(id); if (!b) return null;
+  let p = VO.peaks.get(id); if (p && p.n === b.length) return p;
+  const d = b.getChannelData(0), N2 = 1600, step = Math.max(1, Math.floor(d.length / N2)), mn = new Float32Array(N2), mx = new Float32Array(N2);
+  for (let i = 0; i < N2; i++) { let a = 0, z = 0; for (let j = i * step, e = Math.min(d.length, j + step); j < e; j++) { if (d[j] < a) a = d[j]; if (d[j] > z) z = d[j]; } mn[i] = a; mx[i] = z; }
+  p = { n: b.length, mn, mx, sec: d.length / b.sampleRate, step: step / b.sampleRate }; VO.peaks.set(id, p); return p;
+}
+// the waveform of the take over its bars, the part chosen to sing again, the playhead
+function drawVoiceWave(pos) {
+  const cv = $("vWave"); if (!cv || !cv.offsetParent) return;
+  const W = cv.width = Math.round(cv.clientWidth * DPR()), H = cv.height = Math.round(cv.clientHeight * DPR()), c = cv.getContext("2d"), k = DPR();
+  const take = vTake(), rec = VO.rec, bars = rec && !rec.punch ? rec.bars : take ? take.bars : state.voice.len, bar = vbar();
+  c.fillStyle = SK.scrBg || "#0b0806"; c.fillRect(0, 0, W, H);
+  const X = b => b / bars * W, ink = SK.scrInk || "#ffb247";
+  if (VO.sel && !rec) { c.fillStyle = withAlpha(SK.led, 0.22); c.fillRect(X(VO.sel.a), 0, X(VO.sel.b) - X(VO.sel.a), H); c.fillStyle = SK.led; c.fillRect(X(VO.sel.a), 0, 2 * k, H); c.fillRect(X(VO.sel.b) - 2 * k, 0, 2 * k, H); }
+  c.font = (9 * k) + 'px "Silkscreen", monospace'; c.textBaseline = "top";
+  const every = bars > 32 ? 4 : bars > 16 ? 2 : 1;
+  for (let b = 0; b <= bars; b++) {
+    c.fillStyle = withAlpha(ink, b % 4 === 0 ? 0.35 : 0.14); c.fillRect(Math.round(X(b)), 0, k, H);
+    if (b < bars && b % every === 0) { c.fillStyle = withAlpha(ink, 0.6); c.fillText(String(b + 1), X(b) + 3 * k, 3 * k); }
+  }
+  const p = take && !(rec && !rec.punch) ? voicePeaks(take.id) : null, mid = H * 0.56, amp = H * 0.4;
+  if (p) {
+    c.fillStyle = ink;
+    const sx = (take.shift || 0) / 1000;
+    for (let x = 0; x < W; x++) {
+      const t = x / W * bars * bar - sx, i = Math.floor(t / p.step); if (i < 0 || i >= p.mn.length) continue;
+      const top = mid - p.mx[i] * amp, bot = mid - p.mn[i] * amp; c.fillRect(x, top, 1, Math.max(1, bot - top));
+    }
+  } else {
+    c.fillStyle = withAlpha(ink, 0.5); c.textAlign = "center"; c.font = (11 * k) + 'px "VT323", monospace';
+    c.fillText(rec ? "REGISTRO…" : state.voice.takes.length ? (ctx ? "CARICO LA PRESA…" : "TOCCA PLAY PER CARICARE LE PRESE") : "NESSUNA PRESA: PREMI IL TASTO ROSSO", W / 2, H / 2 - 6 * k); c.textAlign = "left";
+  }
+  if (pos != null && pos >= 0 && pos <= bars) { c.fillStyle = rec ? "#ff4a3d" : SK.scrAcc || "#fff"; c.fillRect(X(pos), 0, 2 * k, H); }
+}
+function renderPrompt() {
+  const host = $("vPrompt"); if (!host) return;
+  const lines = (state.voice.lyrics || "").split("\n");
+  host.innerHTML = "";
+  if (!(state.voice.lyrics || "").trim()) { host.appendChild(el("p", "vpempty", "Scrivi il testo qui a fianco, una riga per battuta: mentre suona, la riga della battuta si accende.")); return; }
+  lines.forEach((l, i) => { const d = el("div", "vpl"); d.dataset.n = i + 1; d.textContent = l || "·"; host.appendChild(d); });
+  VO.bar = -2;
+}
+function voiceRender() {
+  if (!$("vTakes")) return;
+  const v = state.voice, rec = VO.rec;
+  $("vRec").classList.toggle("on", !!rec && !rec.punch); $("vRec").textContent = rec && !rec.punch ? "■ Ferma" : "● Registra";
+  $("vPunch").classList.toggle("on", !!rec && rec.punch); $("vPunch").textContent = rec && rec.punch ? "■ Ferma" : VO.sel ? "↺ Rifai " + (VO.sel.b - VO.sel.a > 1 ? "le battute " + (VO.sel.a + 1) + "–" + VO.sel.b : "la battuta " + (VO.sel.a + 1)) : "↺ Rifai un pezzo";
+  $("vPunch").disabled = !rec && (!vTake() || !VO.sel); $("vRec").disabled = !!rec && rec.punch; $("vPunch").disabled ||= !!rec && !rec.punch;
+  $("vLen").value = String(v.len); $("vLen").disabled = !!rec;
+  $("vLenNote").textContent = state.songOn && state.song.length ? "con la canzone accesa registra tutta la canzone" : "";
+  [["vPre", v.preroll], ["vClick", v.click], ["vMon", v.monitor], ["vRep", v.rep], ["vMute", !v.mute]].forEach(([id, on]) => { $(id).setAttribute("aria-pressed", on); $(id).classList.toggle("on", on); });
+  $("vMic").textContent = VO.stream ? "🎤 Spegni il microfono" : "🎤 Accendi il microfono"; $("vMic").setAttribute("aria-pressed", !!VO.stream);
+  const take = vTake();
+  $("vShift").disabled = !take; $("vShift").value = take ? take.shift || 0 : 0; $("vShiftOut").textContent = take ? ((take.shift || 0) > 0 ? "+" : "") + (take.shift || 0) + " ms" : "—";
+  const warn = take && take.bpm !== state.bpm;
+  $("vWarn").hidden = !warn; if (warn) $("vWarnTxt").textContent = "Questa presa è stata registrata a " + take.bpm + " BPM e ora sei a " + state.bpm + ": non è più a tempo.";
+  const host = $("vTakes"); host.innerHTML = "";
+  if (!v.takes.length) host.appendChild(el("p", "cnote small", "Ancora nessuna presa. Le prese restano salvate su questo dispositivo e nel file del progetto."));
+  v.takes.forEach(t => {
+    const row = el("div", "vtake" + (t.id === v.sel ? " sel" : "")), b = VO.bufs.get(t.id), secs = b ? b.duration : 0;
+    const pick = el("button", "vtpick", '<i></i><b>' + esc(t.name) + '</b><small>' + t.bars + (t.bars > 1 ? " battute" : " battuta") + " · " + (secs ? fmtTime(secs) : "—") + " · " + t.bpm + " BPM</small>");
+    pick.type = "button"; pick.setAttribute("aria-pressed", t.id === v.sel); pick.title = "Usa questa presa sul beat"; pick.addEventListener("click", () => voiceSelect(t.id));
+    const mk = (txt, title, fn) => { const x = el("button", "key small", txt); x.type = "button"; x.title = title; x.setAttribute("aria-label", title); x.addEventListener("click", fn); return x; };
+    const solo = mk(VO.solo && VO.solo.id === t.id ? "■" : "▶", "Ascolta solo la voce", () => voiceSolo(t.id));
+    const wav = mk("WAV", "Salva questa presa (voce asciutta)", () => voiceExport(t.id));
+    const del = mk("✕", "Cancella la presa", () => { if (del.dataset.armed) { voiceDelete(t.id); return; } del.dataset.armed = "1"; del.textContent = "Sicuro?"; setTimeout(() => { if (del.isConnected) { delete del.dataset.armed; del.textContent = "✕"; } }, 2500); });
+    row.append(pick, solo, wav, del); host.appendChild(row);
+  });
+  const c = v.ch;
+  [...$("vPresets").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === v.preset));
+  [...$("vFilt").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === c.filt));
+  VO.knobs && VO.knobs.forEach(k => k.draw());
+  if (document.activeElement !== $("vLyr")) $("vLyr").value = v.lyrics || "";
+  VO.waveKey = ""; drawVoiceWave(null);
+}
+// every frame while the page is open: playhead, the line of the lyrics, the count-in, the input level
+function voiceLive() {
+  const rec = VO.rec, take = vTake(), bar = vbar(), now = ctx ? ctx.currentTime : 0;
+  let pos = null, cur = -1;
+  if (rec && rec.anchor != null) {
+    pos = (now - rec.anchor) / bar; cur = Math.floor(pos);
+    const left = rec.cA - now;
+    if (left > 0) { const beats = Math.ceil(left / (bar / 4)); $("vCount").textContent = beats <= 4 ? String(beats) : "PRONTI"; $("vCount").hidden = false; }
+    else { $("vCount").hidden = true; if (!rec.said) { rec.said = true; voiceStatus(rec.punch ? "VAI! Rifai " + (rec.b - rec.a > 1 ? "le battute " + (rec.a + 1) + "–" + rec.b : "la battuta " + rec.b) + "." : "VAI! Registro " + rec.bars + (rec.bars > 1 ? " battute" : " battuta") + "… premi di nuovo per fermare."); } }
+  } else if (playing && take) { const a = voiceAnchor(take) + VOICE_LAT - (take.shift || 0) / 1000; pos = (now - a) / bar; if (state.voice.rep && pos >= 0) pos %= take.bars; cur = Math.floor(pos); $("vCount").hidden = true; }
+  else if (VO.solo) { pos = (now - VO.solo.t0) / bar; cur = Math.floor(pos); $("vCount").hidden = true; }
+  else $("vCount").hidden = true;
+  if (pos !== null || VO.waveKey !== "s") { drawVoiceWave(pos); VO.waveKey = pos !== null ? "" : "s"; }
+  // the line of the bar being sung
+  if (cur !== VO.bar) {
+    VO.bar = cur;
+    const host = $("vPrompt"); [...host.children].forEach((d, i) => d.classList.toggle("on", i === cur));
+    const on = host.children[cur]; if (on && on.classList.contains("vpl")) host.scrollTo({ top: on.offsetTop - host.clientHeight / 2 + on.offsetHeight / 2, behavior: lowMotion() ? "auto" : "smooth" });
+    $("vBar").textContent = cur >= 0 && pos !== null ? "BATTUTA " + (cur + 1) + (take || rec ? " / " + (rec && !rec.punch ? rec.bars : take ? take.bars : "") : "") : "";
+  }
+  // input level
+  const cv = $("vMeter");
+  if (cv && VO.an && performance.now() - VO.lastMeter > 33) {
+    VO.lastMeter = performance.now();
+    if (!VO.mbuf) VO.mbuf = new Float32Array(VO.an.fftSize);
+    VO.an.getFloatTimeDomainData(VO.mbuf); let pk = 0; for (const x of VO.mbuf) pk = Math.max(pk, Math.abs(x));
+    VO.mpk = Math.max(pk, (VO.mpk || 0) * 0.92);
+    const c = cv.getContext("2d"), W = cv.width, H = cv.height, db = 20 * Math.log10(Math.max(1e-5, VO.mpk)), u = Math.max(0, Math.min(1, (db + 48) / 48));
+    c.clearRect(0, 0, W, H); c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(0, 0, W, H);
+    for (let i = 0; i < 24; i++) { const x = i / 24 * W, on = i / 24 < u; c.fillStyle = on ? (i >= 22 ? "#ff3b30" : i >= 17 ? "#ffd23f" : "#49e07a") : "rgba(255,255,255,.08)"; c.fillRect(x + 1, 2, W / 24 - 2, H - 4); }
+  }
+}
+function buildVoice() {
+  const v = state.voice;
+  VOICE_PRESETS.forEach(([id, name, p]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { Object.assign(v.ch, p); v.preset = id; save(); voiceApply(); voiceRender(); }); $("vPresets").appendChild(b); });
+  VOICE_FILTERS.forEach(([id, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { v.ch.filt = id; v.preset = ""; save(); voiceApply(); voiceRender(); }); $("vFilt").appendChild(b); });
+  const pct = x => Math.round(x * 100), host = $("vKnobs");
+  VO.knobs = [["Compress.", "comp", 0, 1, pct, 0.5], ["Sibilanti", "ess", 0, 1, pct, 0.4], ["Calore", "warm", 0, 1, pct, 0.3], ["Brillanza", "bri", -1, 1, x => (x > 0 ? "+" : "") + Math.round(x * 8) + "dB", 0], ["Doppia", "dbl", 0, 1, pct, 0], ["Eco", "echo", 0, 1, pct, 0.1], ["Riverbero", "rev", 0, 1, pct, 0.15], ["Volume", "vol", 0, 1.5, pct, 0.9]]
+    .map(([label, key, min, max, fmt, def]) => makeKnob(host, { label, min, max, def, fmt, center: key === "bri", get: () => v.ch[key], set: x => { v.ch[key] = x; v.preset = ""; save(); voiceApply(); [...$("vPresets").children].forEach(b => b.setAttribute("aria-pressed", false)); } }));
+  $("vRec").addEventListener("click", () => voiceRec(false));
+  $("vPunch").addEventListener("click", () => voiceRec(true));
+  $("vLen").addEventListener("change", e => { v.len = +e.target.value; save(); voiceRender(); });
+  const tog = (id, key, after) => $(id).addEventListener("click", () => { v[key] = !v[key]; save(); if (after) after(); voiceRender(); });
+  tog("vPre", "preroll"); tog("vClick", "click"); tog("vMon", "monitor", voiceMonitor); tog("vRep", "rep", () => { if (playing) voicePlaySel(); });
+  $("vMute").addEventListener("click", () => { v.mute = !v.mute; save(); voiceApply(); voiceRender(); msg(v.mute ? "VOCE MUTA" : "VOCE ACCESA"); });
+  $("vMic").addEventListener("click", () => { if (VO.stream) voiceMicClose(); else voiceMicOpen(); });
+  $("vDev").addEventListener("change", () => { if (VO.stream && !VO.rec) { voiceMicClose(); voiceMicOpen(); } });
+  $("vShift").addEventListener("input", e => { const t = vTake(); if (!t) return; t.shift = +e.target.value; $("vShiftOut").textContent = (t.shift > 0 ? "+" : "") + t.shift + " ms"; drawVoiceWave(null); });
+  $("vShift").addEventListener("change", () => { save(); if (playing) voicePlaySel(); });
+  $("vFile").addEventListener("change", e => { const f = e.target.files[0]; if (f) voiceImport(f); e.target.value = ""; });
+  $("vWarnFix").addEventListener("click", () => { const t = vTake(); if (t) { setBpm(t.bpm); voiceRender(); } });
+  let lt = 0;
+  $("vLyr").addEventListener("input", e => { v.lyrics = e.target.value.slice(0, 20000); clearTimeout(lt); lt = setTimeout(save, 400); renderPrompt(); });
+  // drag over the waveform to choose the bars to sing again
+  const cv = $("vWave"), barAt = e => { const r = cv.getBoundingClientRect(), t = vTake(), bars = t ? t.bars : v.len; return Math.max(0, Math.min(bars, (e.clientX - r.left) / r.width * bars)); };
+  cv.addEventListener("pointerdown", e => { if (!vTake() || VO.rec) return; cv.setPointerCapture(e.pointerId); const b = Math.floor(barAt(e)); VO.drag = b; VO.sel = { a: b, b: b + 1 }; voiceRender(); });
+  cv.addEventListener("pointermove", e => { if (VO.drag === null) return; const x = barAt(e), t = vTake(), a = Math.min(VO.drag, Math.floor(x)), b = Math.max(VO.drag + 1, Math.ceil(x)); VO.sel = { a, b: Math.min(b, t.bars) }; drawVoiceWave(null); voiceRender(); });
+  cv.addEventListener("pointerup", () => { VO.drag = null; });
+  cv.addEventListener("dblclick", () => { VO.sel = null; voiceRender(); });
+  renderPrompt(); voiceRender();
+}
+
 /* ---------- per il DAW: tracce separate e file MIDI ---------- */
 let playUntil = Infinity;   // the scheduler goes quiet after this time (the tails of a bounce still ring out)
 async function giveFiles(files, zipName) {
@@ -6823,6 +7339,7 @@ function exportStems() {
   if (secs > 240) { msg("TROPPO LUNGO PER LE TRACCE: MASSIMO 4 MINUTI"); return; }
   if (playing) stop();
   const names = [...BANKS.map(b => b.id + " " + b.name), "Effetti e piatto"], taps = [...N.grp.map((_, i) => N.gTap[i]), N.fxTap];
+  if (VO.ready && vTake() && !state.voice.mute && VO.bufs.has(state.voice.sel)) { names.push("Voce"); taps.push(VO.tap); }
   // one processor for all of them, so the tracks stay aligned to the sample: two channels per track, the gate last
   const gate = ctx.createConstantSource(), nt = taps.length, merge = ctx.createChannelMerger(nt * 2 + 1), proc = ctx.createScriptProcessor(4096, nt * 2 + 1, 1), mute = ctx.createGain(); mute.gain.value = 0;
   const parts = taps.map((tap, k) => { const split = ctx.createChannelSplitter(2); tap.connect(split); split.connect(merge, 0, 2 * k); split.connect(merge, 1, 2 * k + 1); return { name: names[k], tap, split, L: [], R: [] }; });
@@ -7071,7 +7588,7 @@ function meterGroups() {
   });
 }
 function buildPages() {
-  buildStrips(); buildEq(); buildStudio();
+  buildStrips(); buildEq(); buildStudio(); buildVoice();
   $("stemBtn").addEventListener("click", exportStems);
   $("midiExp").addEventListener("click", exportMidi);
   const loop = () => { meterGroups(); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
