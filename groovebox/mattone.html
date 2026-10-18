@@ -356,6 +356,12 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .cell.pitched::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 5px; height: 2px; background: rgba(20,16,10,.6); border-radius: 1px; }
 .cell.now { box-shadow: inset 0 0 0 2px var(--cream); }
 .roll .cell, .roll .lab { height: 22px; }
+.roll .cell.len, .roll .cell.tie { overflow: visible; }
+.roll .cell.len::after, .roll .cell.tie::after { content: ""; position: absolute; top: 32%; bottom: 32%; left: 50%; right: -4px; border-radius: 2px; background: color-mix(in srgb, var(--hue) 75%, var(--cell)); pointer-events: none; z-index: 1; }
+.roll .cell.tie::after { left: -4px; }
+.roll .cell.tie.tieend::after { right: 30%; border-radius: 0 3px 3px 0; }
+.roll .cell.glide { background-image: linear-gradient(45deg, transparent 44%, rgba(20,16,10,.75) 45% 55%, transparent 56%); }
+.roll .cell.acc.len::after, .roll .cell.acc + .cell.tie::after { background: var(--hue); }
 .rootrow-cells .cell:not(.on):not(.acc) { background: var(--cell-beat); }
 
 /* ---------- library ---------- */
@@ -1426,6 +1432,7 @@ html.intro-on { overflow: hidden; }
             <label class="lbl humanl" title="Sposta di pochi millesimi tempi e volumi, come un batterista vero">Mano umana <input type="range" id="human" min="0" max="100" value="0" aria-label="Mano umana"><output id="humanOut">0%</output></label>
             <select id="ideaSel" aria-label="Un groove pronto per il gruppo"><option value="">🎲 Idea per il gruppo…</option></select>
             <button class="key small" id="variaBtn" type="button" title="Piccoli cambi al groove del gruppo">Varia</button>
+            <button class="key small" id="idea808" type="button" hidden title="Una linea di 808 sulla cassa del gruppo A, con note lunghe e un glissato">🎲 Idea 808</button>
             <button class="key small" id="muteBank" type="button">Silenzia gruppo</button>
             <button class="key small" id="clearTrack" type="button">Cancella pad</button>
           </div>
@@ -1637,6 +1644,7 @@ html.intro-on { overflow: hidden; }
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
+            <li><b>Basso 808</b> (Sequencer → Melodia): trascina una nota verso destra per allungarla; col tasto destro (o tenendo premuto) scegli lunghezza e <b>glissato</b>, così la nota prima scivola in quella nuova come nella trap. <b>🎲 Idea 808</b> scrive una linea sulla cassa del gruppo A e, se il pad non ha un suono intonato, ci mette l’808. In libreria, categoria 808: lungo pulito, sporco e corto.</li>
             <li><b>🎬 Video per i social</b> (Mix o Voce): verticale per TikTok, Reels e Shorts, quadrato o orizzontale. Tre stili: <b>Strumento</b> (schermo, lancette e pad che si accendono), <b>Disco</b> (il vinile che gira con lo spettro intorno) e <b>Testo</b> (le barre grandi, a tempo). Titolo, nome d’arte, effetti FX e testo a tempo; il video si registra mentre suona e si salva in MP4.</li>
             <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
             <li><b>VIS</b> accanto allo schermo (o <kbd>B</kbd>) cambia la grafica a tempo: spettro, specchio, oscilloscopio, cerchio e cascata, più l’equalizzatore anni 80 a segmenti, il goniometro XY dello stereo, le colline, il tunnel, l’iperspazio, il fuoco, il radar che gira una volta a battuta e la pioggia digitale.</li>
@@ -2118,6 +2126,7 @@ const SYNTH_ROWS = [
   ["sy_rim","Rim elettronico","Batteria",null], ["sy_cowbell","Campanaccio 808","Batteria",null],
   ["sy_shaker","Shaker elettronico","Batteria",null], ["sy_crash","Piatto elettronico","Batteria",null],
   ["sy_snap","Schiocco di dita","Batteria",null],
+  ["sy_808","808 lungo pulito","808",36], ["sy_808dirt","808 sporco","808",36], ["sy_808short","808 corto","808",36],
   ["sy_bass","Basso synth","Bassi",36], ["sy_sub","Sub basso","Bassi",36], ["sy_acid","Basso acido","Bassi",36],
   ["sy_pluck","Pluck","Synth",60], ["sy_lead","Lead morbido","Synth",60], ["sy_pad","Pad sintetico","Synth",60],
   ["sy_bell","Campana FM","Synth",72], ["sy_organ","Organo synth","Synth",60], ["sy_chip","Chiptune","Synth",72],
@@ -2824,6 +2833,10 @@ const SYNTH = {
   sy_dubsiren: () => mk(2.0, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR, wob = Math.sin(TAU * 7 * t) > 0 ? 1 : 0.5, f = (420 + 380 * wob) * Math.pow(0.7, t), env = Math.min(1, t / 0.02) * Math.min(1, (2 - t) / 0.3); ph += TAU * f / SR; d[i] = Math.tanh(3 * Math.sin(ph)) * env * 0.8; } }),
   sy_whistle: () => mk(0.7, (d, n) => { let ph = 0, nz = 0; for (let i = 0; i < n; i++) { const t = i / SR, f = 2950 + 260 * Math.sin(TAU * 34 * t), env = Math.min(1, t / 0.015) * Math.min(1, (0.7 - t) / 0.08); ph += TAU * f / SR; nz += 0.2 * (rnd() - nz); d[i] = (Math.sin(ph) * (0.75 + 0.25 * Math.sin(TAU * 34 * t)) + nz * 0.25) * env; } }),
   sy_kick: () => mk(0.6, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (45 + 115 * Math.exp(-t * 28)) / SR; const click = t < 0.004 ? rnd() * (1 - t / 0.004) * 0.4 : 0; d[i] = Math.tanh(1.7 * Math.sin(ph) * Math.exp(-t * 6.5)) + click; } }),
+  // 808 basses: a sine that falls into its note (the punch), long, dirty or short
+  sy_808: () => mk(3.4, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * 65.406 * (1 + 0.85 * Math.exp(-t * 26)) / SR; d[i] = (Math.sin(ph) + 0.06 * Math.sin(2 * ph)) * Math.min(1, t * 500) * Math.exp(-t * 0.75); } }),
+  sy_808dirt: () => mk(2.8, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * 65.406 * (1 + 1.1 * Math.exp(-t * 30)) / SR; d[i] = Math.tanh(3.4 * Math.sin(ph) * Math.exp(-t * 0.3)) * 0.85 * Math.min(1, t * 500) * Math.exp(-t * 0.9); } }),
+  sy_808short: () => mk(1.0, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * 65.406 * (1 + 1.4 * Math.exp(-t * 40)) / SR; d[i] = Math.tanh(1.7 * Math.sin(ph)) * Math.min(1, t * 600) * Math.exp(-t * 4.2); } }),
   sy_kick808: () => mk(1.6, (d, n) => { let ph = 0; for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * (48 + 90 * Math.exp(-t * 35)) / SR; d[i] = Math.tanh(1.3 * Math.sin(ph)) * Math.exp(-t * 2.2); } }),
   sy_snare: () => mk(0.35, (d, n) => { let ph = 0; const hp = new BQ("hp", 1400, 0.7); for (let i = 0; i < n; i++) { const t = i / SR; ph += TAU * 185 * (1 + 0.45 * Math.exp(-t * 40)) / SR; d[i] = 0.55 * Math.sin(ph) * Math.exp(-t * 24) + 0.8 * hp.p(rnd()) * Math.exp(-t * 13); } }),
   sy_clap: () => mk(0.5, (d, n) => { const bp = new BQ("bp", 1150, 0.9); for (let i = 0; i < n; i++) { const t = i / SR; let e = 0; for (let k = 0; k < 3; k++) { const s = k * 0.011; if (t >= s) e += Math.exp(-(t - s) * 170); } if (t >= 0.033) e += 0.8 * Math.exp(-(t - 0.033) * 15); d[i] = bp.p(rnd()) * e; } }),
@@ -3248,7 +3261,7 @@ function updateDelayTime() { if (ctx) { N.delay.delayTime.setTargetAtTime(60 / s
 /* ================= voices ================= */
 const voices = [];
 function stopVoice(v, t) { try { v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(0, t, 0.01); v.src.stop(t + 0.08); } catch (e) { /* stopped */ } }
-function playBuffer(soundId, pr, t, vel, note, tag) {
+function playBuffer(soundId, pr, t, vel, note, tag, dur) {
   let buf = cache.get(soundId);
   if (!buf) { loadSound(soundId).catch(() => {}); return null; }
   const s = SOUNDS.get(soundId), semis = pr.pitch + note;
@@ -3265,7 +3278,7 @@ function playBuffer(soundId, pr, t, vel, note, tag) {
   const D = buf.duration, off = (f.rv ? 1 - f.en : f.st) * D, seg = Math.max(0.005, (f.en - f.st) * D);
   const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
   const g = ctx.createGain(), level = pr.vol * vel, full = seg / rate;
-  const len = pr.gate > 0 ? Math.min(full, pr.gate * sixteenth()) : full;
+  const len = dur ? Math.min(full, dur) : pr.gate > 0 ? Math.min(full, pr.gate * sixteenth()) : full;
   const att = Math.max(f.att, f.st > 0 || f.rv ? 0.002 : 0);
   if (att > 0) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + Math.min(att, len)); } else g.gain.setValueAtTime(level, t);
   if (len < full) { g.gain.setValueAtTime(level, t + Math.max(att, len - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.03); }
@@ -3277,12 +3290,12 @@ function playBuffer(soundId, pr, t, vel, note, tag) {
   if (ctx.createStereoPanner && pr.pan) { const pan = ctx.createStereoPanner(); pan.pan.value = pr.pan; g.connect(pan).connect(dest); } else g.connect(dest);
   if (pr.rev > 0) { const rs = ctx.createGain(); rs.gain.value = pr.rev * (gi ? state.geq[+gi[1]][3] : 1); g.connect(rs).connect(N.revIn); }   // the group level reaches the reverb too
   src.start(t, off, seg); src.stop(t + Math.min(full, len + 0.05) + 0.01);
-  const v = { src, g, tag, sound: soundId, ch: f.ch };
+  const v = { src, g, tag, sound: soundId, ch: f.ch, rate, level, end: t + Math.min(full, len), natural: t + full, base: root == null ? null : s.home - root, lofi: fxActive.has("lofi") };
   voices.push(v);
   src.onended = () => { const i = voices.indexOf(v); if (i >= 0) voices.splice(i, 1); };
   return v;
 }
-function trigger(b, p, t, vel = 0.85, note = 0, live = false, keep = false) {
+function trigger(b, p, t, vel = 0.85, note = 0, live = false, keep = false, opt = null) {
   if (!ctx) return;
   grpHit[b].push({ t, v: Math.min(1, vel * 1.1) }); if (grpHit[b].length > 8) grpHit[b].shift();
   padHitT[b * 12 + p] = t; padHitV[b * 12 + p] = Math.min(1, vel * 1.1);
@@ -3290,17 +3303,30 @@ function trigger(b, p, t, vel = 0.85, note = 0, live = false, keep = false) {
   if (!s) return;
   const tag = b + ":" + p;
   const ch = pr.ch || 0;
+  // a glide: the note still sounding on this pad bends to the new pitch instead of starting again
+  if (opt && opt.glide && s.root != null) {
+    const gv = voices.find(v => v.tag === tag && v.base != null && v.end >= t - 0.005);
+    if (gv) { glideVoice(gv, pr, note, t, opt); const wait = (t - ctx.currentTime) * 1000; if (live || wait < 8) flash(b, p, note); else setTimeout(() => flash(b, p, note), wait); return; }
+  }
   for (const v of voices) {
     if (keep) break;
     if (s.root != null && v.tag === tag) stopVoice(v, t);
     else if (/hat(?!_open)/.test(pr.sound) && /hat_open/.test(v.sound)) stopVoice(v, t);
     else if (ch && v.ch === ch && v.tag && v.tag.split(":")[0] === String(b)) stopVoice(v, t);   // choke group: one cuts the other
   }
-  if (!playBuffer(pr.sound, pr, t, vel, note, tag)) return;
+  if (!playBuffer(pr.sound, pr, t, vel, note, tag, opt && opt.dur)) return;
   const wait = (t - ctx.currentTime) * 1000;
   if (live || wait < 8) flash(b, p, note); else setTimeout(() => flash(b, p, note), wait);
   if (b === 0 && /kick/.test(pr.sound)) kickAt.push(t);
   if (s.kick && state.pump > 0.01) duckAt(t);
+}
+function glideVoice(v, pr, note, t, opt) {
+  const nr = Math.pow(2, (v.base + pr.pitch + note) / 12) * (v.lofi ? 0.94 : 1), pr2 = v.src.playbackRate;
+  pr2.cancelScheduledValues(t); pr2.setValueAtTime(v.rate, t); pr2.linearRampToValueAtTime(nr, t + opt.glide); v.rate = nr;
+  // the note goes on for its own length (or as long as the sound lasts), then fades
+  const end = opt.dur ? t + opt.dur : Math.max(t + 0.25, v.natural), g = v.g.gain;
+  g.cancelScheduledValues(t); g.setValueAtTime(v.level, t); g.setValueAtTime(v.level, Math.max(t, end - 0.04)); g.linearRampToValueAtTime(0.0001, end + 0.03);
+  v.src.stop(end + 0.06); v.end = end;
 }
 // the "pump": the rest of the mix dips on the kick and swells back up before the next beat
 const pumpAt = [];
@@ -3388,7 +3414,8 @@ function schedule() {
         // "mano umana": a few milliseconds early or late and a little softer or harder, never the same twice
         const h = state.human, tt = h ? t + (Math.random() * 2 - 1) * 0.011 * h * (s % cpb === 0 ? 0.4 : 1) : t;
         const vel = STEP_VEL[v[0]] * (h ? 1 + (Math.random() * 2 - 1) * 0.22 * h : 1), roll = v[2] > 1 ? v[2] : 1;
-        for (let r = 0; r < roll; r++) { const tr = Math.max(ctx.currentTime, tt + r * stepDur() / roll), vr = vel * (r ? 0.8 : 1); if (v[4] > 1) playNotes(b, p, tr, vr, v[1], false, v[4]); else trigger(b, p, tr, vr, v[1]); }   // a roll: the hits share the step
+        const opt = roll > 1 ? null : noteOpt(pat[b][p], s, len, v);
+        for (let r = 0; r < roll; r++) { const tr = Math.max(ctx.currentTime, tt + r * stepDur() / roll), vr = vel * (r ? 0.8 : 1); if (v[4] > 1) playNotes(b, p, tr, vr, v[1], false, v[4], opt); else trigger(b, p, tr, vr, v[1], false, false, opt); }   // a roll: the hits share the step
       }
     }
     if (metronome && !songEnded && step % cpb === 0) click(t, step % m.div === 0);
@@ -3399,6 +3426,14 @@ function schedule() {
     step = (step + 1) % len;
     if (step === 0) patternEnd();
   }
+}
+// a melodic note may last several steps (v[5]) and slide into its pitch (v[6]: short, medium, long glide);
+// a note held into a gliding one lasts until it, so the slide starts from a note still sounding
+const GLIDES = [0, 0.05, 0.1, 0.2];
+function noteOpt(row, s, len, v) {
+  let dur = v[5] > 1 ? v[5] * stepDur() : 0;
+  for (let k = 1; k <= len; k++) { const n = row[(s + k) % len]; if (n) { if (n[6]) dur = Math.max(dur, k * stepDur() + 0.03); break; } }
+  return dur || v[6] ? { dur, glide: GLIDES[v[6] || 0] } : null;
 }
 function click(t, down) {
   const o = ctx.createOscillator(), g = ctx.createGain();
@@ -4429,6 +4464,7 @@ function build() {
   $("octUp").addEventListener("click", () => { state.oct = Math.min(3, state.oct + 1); save(); renderAll(); });
   $("tabGrid").addEventListener("click", () => { state.view = "grid"; save(); renderEditor(); });
   $("tabRoll").addEventListener("click", () => { state.view = "roll"; save(); renderEditor(); });
+  $("idea808").addEventListener("click", idea808);
   $("muteBank").addEventListener("click", () => { state.mutes[state.bank] = !state.mutes[state.bank]; save(); renderBanks(); renderEditorHead(); renderGroups(); msg("GRUPPO " + BANKS[state.bank].id + (state.mutes[state.bank] ? " MUTO" : " ATTIVO")); });
   $("clearTrack").addEventListener("click", () => { state.patterns[state.pattern][state.bank][state.pad] = new Array(patLen()).fill(0); save(); renderPads(); renderEditor(); renderPatterns(); renderLeds(); msg("CANCELLATO " + padLabel(state.bank, state.pad)); });
   $("openLib").addEventListener("click", openLibrary);
@@ -4858,7 +4894,8 @@ function renderInspector() {
 function renderEditorHead() {
   const roll = state.view === "roll", s = curSound();
   $("tabGrid").setAttribute("aria-pressed", !roll); $("tabRoll").setAttribute("aria-pressed", roll);
-  $("edCtx").textContent = roll ? "Melodia di " + padLabel(state.bank, state.pad) + " · " + (s ? s.name : "") + " · " + NOTE_NAMES[state.root] + " " + SCALES[state.scale][0].toLowerCase() : "Gruppo " + BANKS[state.bank].id + " · tocco = colpo · due = accento";
+  $("idea808").hidden = !roll; $("ideaSel").hidden = $("variaBtn").hidden = roll;
+  $("edCtx").textContent = roll ? "Melodia di " + padLabel(state.bank, state.pad) + " · " + (s ? s.name : "") + " · " + NOTE_NAMES[state.root] + " " + SCALES[state.scale][0].toLowerCase() + " · trascina per allungare, tasto destro per il glissato" : "Gruppo " + BANKS[state.bank].id + " · tocco = colpo · due = accento";
   $("muteBank").textContent = (state.mutes[state.bank] ? "Riattiva " : "Silenzia ") + BANKS[state.bank].id;
   $("muteBank").classList.toggle("on", state.mutes[state.bank]);
   $("clearTrack").textContent = "Cancella " + padLabel(state.bank, state.pad);
@@ -4929,7 +4966,13 @@ function renderEditor() {
   } else {
     const arr = pat[state.pad];
     const shown = arr.map(v => v ? edRows.reduce((a, r) => Math.abs(r - v[1]) < Math.abs(a - v[1]) ? r : a, edRows[0]) : null);
-    for (const c of edCells) { const v = arr[c.s]; c.el.className = "cell" + (v && shown[c.s] === c.off ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") + (v[4] > 1 ? " chord" : "") : ""); }
+    // the steps a long note goes on through, on its own row, until the next note
+    const tie = new Map();
+    arr.forEach((v, s0) => { if (!v || !(v[5] > 1)) return; for (let k = 1; k < v[5] && s0 + k < arr.length && !arr[s0 + k]; k++) tie.set(s0 + k, { off: shown[s0], end: k === v[5] - 1 || s0 + k + 1 >= arr.length || !!arr[s0 + k + 1] }); });
+    for (const c of edCells) {
+      const v = arr[c.s], ti = tie.get(c.s);
+      c.el.className = "cell" + (v && shown[c.s] === c.off ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") + (v[4] > 1 ? " chord" : "") + (v[5] > 1 ? " len" : "") + (v[6] ? " glide" : "") : ti && ti.off === c.off ? " tie" + (ti.end ? " tieend" : "") : "");
+    }
   }
   lastNow = -2; renderPlayhead();
 }
@@ -6759,9 +6802,81 @@ function closeStepPop() { if (stepPop) { stepPop.remove(); stepPop = null; } doc
 // right click, or a long press on touch screens, opens the options of a cell
 let longT = 0, longFired = false;
 function cellExtras(c, o) {
-  c.addEventListener("contextmenu", e => { e.preventDefault(); if (state.view === "grid") openStepPop(c, state.bank, o.p, o.s); });
-  c.addEventListener("pointerdown", e => { if (e.pointerType === "mouse" || state.view !== "grid") return; longFired = false; clearTimeout(longT); longT = setTimeout(() => { longFired = true; openStepPop(c, state.bank, o.p, o.s); }, 450); });
+  c.addEventListener("contextmenu", e => { e.preventDefault(); if (state.view === "grid") openStepPop(c, state.bank, o.p, o.s); else openNotePop(c, o); });
+  c.addEventListener("pointerdown", e => { if (state.view === "roll" && e.button === 0) rollDragStart(e, o); });
+  c.addEventListener("pointerdown", e => { if (e.pointerType === "mouse") return; longFired = false; clearTimeout(longT); longT = setTimeout(() => { longFired = true; if (state.view === "grid") openStepPop(c, state.bank, o.p, o.s); else if (!rollDrag || !rollDrag.moved) { rollDrag = null; openNotePop(c, o); } }, 450); });
   ["pointerup", "pointercancel", "pointerleave"].forEach(ev => c.addEventListener(ev, () => clearTimeout(longT)));
+}
+
+// drag a note to the right to make it longer (a drag from an empty step writes the note first)
+let rollDrag = null;
+function rollDragStart(e, o) {
+  rollDrag = { o, x: e.clientX, moved: false };
+  const move = ev => {
+    const d = rollDrag; if (!d) return;
+    if (!d.moved && Math.abs(ev.clientX - d.x) < 8) return;
+    if (!d.moved) { d.moved = true; clearTimeout(longT); }
+    const hit = document.elementFromPoint(ev.clientX, ev.clientY), o2 = hit && edCells.find(x => x.el === hit);
+    if (!o2 || o2.off !== d.o.off || o2.s < d.o.s) return;
+    const arr = state.patterns[state.pattern][state.bank][state.pad], L = o2.s - d.o.s + 1;
+    let v = arr[d.o.s]; if (!v || v[1] !== d.o.off) { v = arr[d.o.s] = [1, d.o.off]; d.made = true; }
+    const n = v.slice(); while (n.length < 5) n.push(n.length === 2 ? 1 : n.length === 3 ? 100 : 1);
+    n[5] = L > 1 ? L : undefined; arr[d.o.s] = n; longFired = true; renderEditor();
+  };
+  const up = () => {
+    removeEventListener("pointermove", move); removeEventListener("pointerup", up); removeEventListener("pointercancel", up);
+    const d = rollDrag; rollDrag = null;
+    if (d && d.moved) { save(); renderPads(); renderPatterns(); renderLeds(); const v = state.patterns[state.pattern][state.bank][state.pad][d.o.s]; if (v && initAudio()) trigger(state.bank, state.pad, ctx.currentTime, 0.85, v[1], false, false, { dur: (v[5] || 1) * stepDur(), glide: 0 }); }
+  };
+  addEventListener("pointermove", move); addEventListener("pointerup", up); addEventListener("pointercancel", up);
+}
+// the options of a note of the melody: hit, length, glide
+function openNotePop(cellEl, o) {
+  closeStepPop();
+  const b = state.bank, p = state.pad, arr = state.patterns[state.pattern][b][p], s = o.s;
+  if (!arr[s] || arr[s][1] !== o.off) { arr[s] = [1, o.off]; save(); renderEditor(); renderPads(); renderLeds(); }
+  const pop = el("div", "steppop"); pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Opzioni della nota");
+  const v = () => arr[s] || [1, o.off], full = () => { const n = v().slice(); while (n.length < 5) n.push(n.length === 2 ? 1 : n.length === 3 ? 100 : 1); return n; };
+  const hear = () => { const n = v(); if (initAudio()) trigger(b, p, ctx.currentTime, STEP_VEL[n[0]], n[1], false, false, { dur: (n[5] || 1) * stepDur(), glide: 0 }); };
+  const row = (label, opts, get, setv) => {
+    const r = el("div", "sprow"); r.appendChild(el("span", "lbl", label));
+    const seg = el("div", "seg");
+    opts.forEach(([val, txt]) => { const b2 = el("button", null, txt); b2.type = "button"; b2.setAttribute("aria-pressed", get() === val); b2.addEventListener("click", () => { setv(val); [...seg.children].forEach(x => x.setAttribute("aria-pressed", x === b2)); save(); renderEditor(); hear(); }); seg.appendChild(b2); });
+    r.appendChild(seg); pop.appendChild(r);
+  };
+  const d = pm().div, lens = d === 16 ? [[1, "1/16"], [2, "1/8"], [4, "1/4"], [8, "1/2"], [16, "Intera"]] : [[1, "1"], [2, "2"], [d / 4, "1/4"], [d / 2, "1/2"], [d, "Intera"]];
+  pop.appendChild(el("div", "sphd", "Nota " + noteName(baseNote(curSound()) + v()[1]) + " · step " + (s % d + 1) + (pm().bars > 1 ? " · battuta " + (Math.floor(s / d) + 1) : "")));
+  row("Colpo", [[1, "Normale"], [2, "Accento"], [3, "Fantasma"]], () => v()[0], x => { const n = full(); n[0] = x; arr[s] = n; });
+  row("Lunghezza", lens, () => v()[5] || 1, x => { const n = full(); n[5] = x > 1 ? x : undefined; arr[s] = n; });
+  row("Glissato dalla nota prima", [[0, "No"], [1, "Corto"], [2, "Medio"], [3, "Lungo"]], () => v()[6] || 0, x => { const n = full(); n[6] = x || undefined; arr[s] = n; });
+  const acts = el("div", "spacts");
+  const del = el("button", "key small", "Togli la nota"); del.type = "button"; del.addEventListener("click", () => { arr[s] = 0; save(); closeStepPop(); renderEditor(); renderPads(); renderLeds(); renderPatterns(); });
+  const ok = el("button", "key small on", "Fatto"); ok.type = "button"; ok.addEventListener("click", closeStepPop);
+  acts.append(del, ok); pop.appendChild(acts);
+  document.body.appendChild(pop);
+  const r = cellEl.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(innerWidth - pw - 8, r.left + r.width / 2 - pw / 2)) + "px";
+  pop.style.top = (r.bottom + ph + 12 < innerHeight ? r.bottom + 8 : Math.max(8, r.top - ph - 8)) + "px";
+  stepPop = pop;
+  setTimeout(() => document.addEventListener("pointerdown", popOutside, true), 0);
+}
+// a line of 808 that follows the kicks of group A: long notes, a move on the third bar, an octave slide at the end of the bar
+function idea808() {
+  if (!initAudio()) return;
+  const b = state.bank, p = state.pad, pr = state.banks[b][p], P = state.patterns[state.pattern], m = pm(), len = m.bars * m.div, cpb = m.div / 4;
+  let s0 = SOUNDS.get(pr.sound);
+  if (!s0 || s0.root == null) { pr.sound = "sy_808"; pr.pitch = 0; pr.gate = 0; resetForm(pr); loadSound("sy_808").catch(() => {}); msg("808 SUL PAD " + padLabel(b, p)); }
+  const kicks = padRoles(0).kick;
+  let hits = []; for (let s = 0; s < len; s++) if (kicks.some(k => P[0][k][s])) hits.push(s);
+  if (hits.length < 2) { hits = []; for (let bar = 0; bar < m.bars; bar++) hits.push(bar * m.div, bar * m.div + cpb * 2 + Math.round(cpb / 2)); }
+  const sc = scaleNotes().length, prog = [0, 0, sc >= 7 ? 5 : sc - 2, sc >= 7 ? 4 : sc - 3], row = new Array(len).fill(0);
+  hits.forEach((s, i) => {
+    const nxt = i + 1 < hits.length ? hits[i + 1] : len + hits[0], bar = Math.floor(s / m.div), last = !hits.slice(i + 1).some(x => Math.floor(x / m.div) === bar);
+    let off = degreeOffset(prog[bar % 4]), gl = 0;
+    if (last && i > 0 && hits[i - 1] >= bar * m.div && Math.random() < 0.6) { off += 12; gl = 2; }
+    row[s] = [s % m.div === 0 ? 2 : 1, off, 1, 100, 1, Math.max(1, Math.min(nxt - s, cpb * 3)), gl || undefined];
+  });
+  P[b][p] = row; save(); renderAll(); msg("IDEA 808 SU " + padLabel(b, p) + ": " + hits.length + " NOTE SULLA CASSA");
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
@@ -7808,7 +7923,8 @@ function exportMidi() {
         const tr = tracks.get(key), roll = v[2] > 1 ? v[2] : 1, vel = [0, 96, 120, 50][v[0]] || 96;
         const t = tick0 + i * st + (m.div === 16 && i % 2 ? Math.round(st * state.swing / 100) : 0);
         const note = Math.max(0, Math.min(127, tuned ? (s.home || 60) + pr.pitch + v[1] : 36 + b * 12 + p));
-        for (let r = 0; r < roll; r++) { const on = Math.round(t + r * st / roll); tr.ev.push([on, 1, 0x90 | tr.ch, note, r ? Math.round(vel * 0.8) : vel], [on + Math.max(1, Math.round(st / roll * 0.9)), 0, 0x80 | tr.ch, note, 0]); }
+        const nl = roll === 1 && v[5] > 1 ? v[5] : 1;
+        for (let r = 0; r < roll; r++) { const on = Math.round(t + r * st / roll); tr.ev.push([on, 1, 0x90 | tr.ch, note, r ? Math.round(vel * 0.8) : vel], [on + Math.max(1, Math.round(st * nl / roll * 0.9)), 0, 0x80 | tr.ch, note, 0]); }
       });
     }));
     tick0 += m.bars * PPQ * 4;
@@ -7842,9 +7958,9 @@ function chordOffsets(off, size) {
   return Array.from({ length: size }, (_, k) => degreeOffset(d + 2 * k));
 }
 // the first note cuts what was ringing on that pad, the others join it
-function playNotes(b, p, t, vel, off, live, size) {
-  const offs = chordOffsets(off, size), st = (state.strum || 0) / 1000;
-  offs.forEach((o, k) => trigger(b, p, t + k * st, vel * (k ? 0.82 : 1), o, live && k === 0, k > 0));
+function playNotes(b, p, t, vel, off, live, size, opt) {
+  const offs = chordOffsets(off, size), st = (state.strum || 0) / 1000, o2 = opt && opt.dur ? { dur: opt.dur, glide: 0 } : null;
+  offs.forEach((o, k) => trigger(b, p, t + k * st, vel * (k ? 0.82 : 1), o, live && k === 0, k > 0, o2));
 }
 function renderChords() {
   [...$("chordSeg").children].forEach(b => b.setAttribute("aria-pressed", +b.dataset.v === (state.chord || 1)));
