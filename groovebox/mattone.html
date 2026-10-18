@@ -1072,6 +1072,12 @@ html[data-vt="cat"]::view-transition-new(vt-cat) { animation: .34s cubic-bezier(
 .item .del { border: 0; background: transparent; color: var(--cream-3); font-size: 11px; padding: 4px 6px; border-radius: 5px; cursor: pointer; }
 .item .del:hover, .item .del.sure { color: #fff; background: var(--red); }
 /* ---------- visuale 3D: la plancia come un oggetto sul tavolo ---------- */
+.vfx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#vfxBack { z-index: 0; } #vfxAdd { z-index: 29; mix-blend-mode: screen; } #vfxInk { z-index: 29; }
+.lcdbtns { display: flex; gap: 6px; flex: none; }
+#vfxBtn[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--led), 0 0 10px -3px var(--led); }
+.vfxamt { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.vfxamt input { width: min(260px, 60vw); accent-color: var(--led); }
 .motes { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0; }
 .app { transform-origin: 50% 50%; }
 html.v3d .app { transform-style: preserve-3d; will-change: transform; }
@@ -1196,6 +1202,7 @@ html.intro-on { overflow: hidden; }
 <canvas class="scene" id="scene" aria-hidden="true" hidden></canvas>
 <div class="beatlight" id="beatLight" aria-hidden="true"></div>
 <canvas class="motes" id="motes" aria-hidden="true"></canvas>
+<canvas class="vfx" id="vfxBack" aria-hidden="true" hidden></canvas><canvas class="vfx" id="vfxAdd" aria-hidden="true" hidden></canvas><canvas class="vfx" id="vfxInk" aria-hidden="true" hidden></canvas>
 <div class="app" id="app" data-bank="A">
   <div class="chassis3d" aria-hidden="true"><i class="c-shadow"></i><i class="c-back"></i><i class="c-left"></i><i class="c-right"></i><i class="c-front"></i><i class="c-top"></i></div>
   <header class="unit rack">
@@ -1210,7 +1217,7 @@ html.intro-on { overflow: hidden; }
       <button class="key small" id="openCust" type="button">✎ Personalizza</button>
     </div>
     <div class="lcdwrap">
-      <div class="lcdhead"><span class="lbl" id="lcdName">Schermo · OLED moderno</span><button class="updpill" id="updPill" type="button" hidden></button><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button></div>
+      <div class="lcdhead"><span class="lbl" id="lcdName">Schermo · OLED moderno</span><button class="updpill" id="updPill" type="button" hidden></button><span class="lcdbtns"><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button><button class="key small" id="vfxBtn" type="button" title="Effetti visivi a tempo (tasto J)">FX · Spenti</button></span></div>
       <div class="lcd" id="vfd"><canvas id="spec" aria-label="Display: tocca per cambiare visualizzatore"></canvas></div>
       <div class="steps16" id="leds" aria-hidden="true"></div>
       <div class="sr-only" aria-live="polite"><span id="vPat">01</span> <span id="vBpm">088</span> <span id="vPos">1.1</span> <span id="msg">PREMI PLAY O TOCCA UN PAD</span></div>
@@ -1505,6 +1512,11 @@ html.intro-on { overflow: hidden; }
               <div class="opts" id="cPulse"></div>
               <h4>Animazioni</h4><p class="cnote small">Pagine che scorrono, pezzi che si spostano quando cambi la disposizione, schede che entrano.</p><div class="opts" id="cMotion" style="margin-top:8px"></div>
               <h4>Scia sui pad</h4><p class="cnote small">Un’onda di luce parte dal pad ogni volta che suona.</p><div class="opts" id="cRipple" style="margin-top:8px"></div>
+              <h4>Effetti visivi a tempo</h4><p class="cnote small">Sopra e dietro lo strumento, a ritmo con la musica, e si possono combinare. Il tasto <b>FX</b> accanto allo schermo (o <kbd>J</kbd>) passa da un insieme all’altro.</p>
+              <div class="opts" id="cVfxPre" style="margin-top:8px"></div>
+              <div class="opts" id="cVfx" style="margin-top:8px"></div>
+              <label class="vfxamt"><span class="lbl">Intensità</span><input type="range" id="cVfxAmt" min="10" max="100" step="5"></label>
+              <p class="cnote small" id="cVfxNote" hidden>Con le animazioni ridotte gli effetti restano spenti.</p>
             </section>
             <section class="cpane" data-cat="intro" aria-label="Intro" hidden>
               <h3>Intro</h3><div class="opts" id="cIntro"></div>
@@ -1527,6 +1539,8 @@ html.intro-on { overflow: hidden; }
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
+            <li><b>VIS</b> accanto allo schermo (o <kbd>B</kbd>) cambia la grafica a tempo: spettro, specchio, oscilloscopio, cerchio e cascata, più l’equalizzatore anni 80 a segmenti, il goniometro XY dello stereo, le colline, il tunnel, l’iperspazio, il fuoco, il radar che gira una volta a battuta e la pioggia digitale.</li>
+            <li><b>FX</b> (o <kbd>J</kbd>) accende gli effetti visivi a tempo su tutta la stanza: <b>Club</b> (luci sul muro, laser, scintille, scossa), <b>VHS</b>, <b>Cinema</b>, <b>Glitch</b> e <b>Sogno</b>. In Personalizza → Luci e animazioni li combini come vuoi e ne regoli l’intensità.</li>
             <li>Il tasto <b>3D</b> accanto alle pagine (o <kbd>T</kbd>) cambia visuale: frontale, sul banco, di tre quarti da destra o da sinistra. Si suona anche in 3D.</li>
             <li><b>Reparto tekno</b>: nella libreria la categoria <b>Tekno</b> (casse 909, dure e col rimbombo, acid 303, hoover, accordi dub techno, loop 909 a 140 BPM). Per la free party ci sono la cassa hardtek, lo stab “mentasm”, l’acid che urla, le rullate e l’allarme. I kit <b>Tekno 140</b>, <b>Acid 140</b>, <b>Loop 909 · 140</b>, <b>Free party 170</b> e <b>Hardtek 180</b> portano il tempo dove serve e, se il pattern è vuoto, ci mettono un groove da cui partire.</li>
             <li><b>Campiona</b> (sotto il pad selezionato), come su una groovebox: dal <b>microfono o da un ingresso</b> (scheda audio, Missaggio stereo, BlackHole…), dall’<b>audio del computer</b> (una scheda con YouTube o Spotify: parte da sola quando arriva il suono) o dal <b>beat</b> che sta suonando (ricampiona le battute scelte, a tempo). Poi <b>✂ Taglia nei pad</b> lo spezza sui pad, oppure lo metti intero su un pad. Resta salvato tra «I tuoi suoni» (✕ nella libreria per eliminarlo).</li>
@@ -1569,6 +1583,7 @@ html.intro-on { overflow: hidden; }
             <dt><kbd>Z</kbd><kbd>X</kbd><kbd>C</kbd><kbd>V</kbd></dt><dd>gruppi · <kbd>N</kbd> suoni/note</dd>
             <dt><kbd>6</kbd>…<kbd>0</kbd></dt><dd>effetti al volo · <kbd>G</kbd> taglio</dd>
             <dt><kbd>B</kbd></dt><dd>cambia visualizzatore (o tocca il display)</dd>
+            <dt><kbd>J</kbd></dt><dd>effetti visivi: Club, VHS, Cinema, Glitch, Sogno, spenti</dd>
             <dt><kbd>T</kbd></dt><dd>vista 3D della plancia (cambia visuale)</dd>
             <dt><kbd>H</kbd></dt><dd>note repeat acceso/spento</dd>
             <dt><kbd>Spazio</kbd> <kbd>Invio</kbd></dt><dd>play/stop · registra</dd>
@@ -2473,7 +2488,7 @@ function userDelete(id) {
   save(); renderAll(); renderLibrary();
 }
 const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", disc: "lp", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "studio", wear: 25, intro: "si", lcd: "oled", meter: "ago", knob: "skin", font: "bungee", stickers: [],
-  shape: "rettangolo", rack: "classica", padside: "sinistra", tabs: "alto", padshape: "arrotondati", pulse: "no", motion: "piene", ripple: "si", view: "piatta" };
+  shape: "rettangolo", rack: "classica", padside: "sinistra", tabs: "alto", padshape: "arrotondati", pulse: "no", motion: "piene", ripple: "si", view: "piatta", vfx: [], vfxAmt: 70 };
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
@@ -4298,7 +4313,9 @@ function build() {
   KITS.forEach(([id, name]) => $("kitSel").appendChild(new Option(name, id)));
   $("kitSel").addEventListener("change", e => { if (e.target.value) loadKit(e.target.value); e.target.value = ""; });
   $("visBtn").addEventListener("click", () => cycleVis(1));
+  $("vfxBtn").addEventListener("click", cycleVfx);
   $("spec").addEventListener("click", () => cycleVis(1));
+  if (!VIS[state.vis || 0]) state.vis = 0;
   $("visBtn").textContent = "VIS · " + VIS[state.vis || 0][1];
 
   window.addEventListener("keydown", onKeyDown);
@@ -4635,6 +4652,7 @@ function onKeyDown(e) {
   if (k === "n") { setMode(state.mode === "note" ? "pad" : "note"); return; }
   if (k === "g") { deck.cutOn(); return; }
   if (k === "b") { cycleVis(1); return; }
+  if (k === "j") { cycleVfx(); return; }
   if (k === "t") { cycleView(); return; }
   if (k === "h") { nrToggle(); return; }
   const f = FX.find(x => x.key === k); if (f) { e.preventDefault(); fxOn(f.id); }
@@ -4648,6 +4666,7 @@ function flash(b, p, note) {
   else target = pads[p];
   if (!target) return;
   target.classList.remove("hit"); void target.offsetWidth; target.classList.add("hit");
+  if (target.classList.contains("pad")) vfxBurst(target);
   if (state.custom.ripple !== "no" && state.custom.motion !== "ridotte" && target.childElementCount < 8) {
     const r = el("span", "ripple"); target.appendChild(r); r.addEventListener("animationend", () => r.remove());
     // a few sparks fly out of the middle of the pad
@@ -5037,7 +5056,7 @@ function drawSpec(idle) {
   // top bar: pattern in a lit box, transport, group, visualizer
   let tx = chipText("P" + String(state.pattern + 1).padStart(2, "0"), 4, 2, 2);
   tx = lcdText(recording ? "● REC" : playing ? "▶ PLAY" : "■ STOP", tx + 6, 2, 1, recording ? 2 : 1);
-  const vn = VIS[state.vis || 0][2], vx = LCD_W - 2 - vn.length * 6 + 1, bank = BANKS[state.bank];
+  const vn = (VIS[state.vis || 0] || VIS[0])[2], vx = LCD_W - 2 - vn.length * 6 + 1, bank = BANKS[state.bank];
   let gname = bank.id + "·" + lcdNorm(bank.name);
   const room = Math.floor((vx - 8 - (tx + 10)) / 6); if (gname.length > room) gname = gname.slice(0, Math.max(1, room - 1)) + ".";
   lcdText(gname, tx + 10, 2); lcdText(vn, vx, 2, 1, 2);
@@ -5058,8 +5077,9 @@ function drawSpec(idle) {
     for (let k = 0; k < 2; k++) { px(x0 + k, 64, now ? 2 : on ? 1 : 0); if (now) px(x0 + k, 63, 2); else if (on) px(x0 + k, 63, 1); }
   }
   // visualizer area: fixed size, only its contents move
-  const mode = VIS[state.vis || 0][0], x0 = VX, y0 = VY, w = VW, h = VH;
-  if (mode === "spec") {
+  const mode = (VIS[state.vis || 0] || VIS[0])[0], x0 = VX, y0 = VY, w = VW, h = VH;
+  if (VIS_MORE.has(mode)) drawVisMore(mode, idle);
+  else if (mode === "spec") {
     for (let b = 0; b < 32; b++) {
       const top = Math.round(specBins[b] * (h - 1)), pk = Math.round(specPeak[b] * (h - 1)), bx = x0 + Math.floor(b * w / 32), bw = Math.floor(w / 32) - 1;
       for (let k = 0; k < top; k++) for (let c = 0; c < bw; c++) px(bx + c, y0 + h - 1 - k, 1);
@@ -5119,11 +5139,338 @@ function drawSpec(idle) {
   clipL = 0; clipR = LCD_W;
   lcdRender();
 }
-const VIS = [["spec", "Spettro", "SPETTRO"], ["mirror", "Specchio", "SPECCHIO"], ["scope", "Oscilloscopio", "OSCILLO"], ["ring", "Cerchio", "CERCHIO"], ["fall", "Cascata", "CASCATA"]];
+// more visualizers: they draw inside the window of the screen and nowhere else
+const vpx = (x, y, v = 1) => { x |= 0; y |= 0; if (x >= VX && x < VX + VW && y >= VY && y < VY + VH) lcdBuf[y * LCD_W + x] = v; };
+function vLine(x0, y0, x1, y1, v = 1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let i = 0; i <= n; i++) vpx(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), v); }
+const bandAvg = (a, z) => { let s = 0; for (let b = a; b < z; b++) s += specBins[b]; return s / (z - a); };
+const VIS_ST = { t: 0, hist: [], xy: new Float32Array(VW * VH), fire: new Float32Array(VW * (VH + 2)), stars: [], rings: [], blips: [], rain: [], prev: [0, 0, 0], eqPk: new Float32Array(12) };
+const RAIN_CH = "0123456789ABCDEF%/-:";
+function tinyGlyph(ch, x, y, v) { const g = TINY[ch]; if (g) for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) if (g[r * 3 + c] === "#") vpx(x + c, y + r, v); }
+function drawVisMore(mode, idle) {
+  const x0 = VX, y0 = VY, w = VW, h = VH, S = VIS_ST, bass = bandAvg(0, 5), mid = bandAvg(8, 18), high = bandAvg(20, 32), kick = Math.min(1, kickGlow);
+  S.t++;
+  if (mode === "eq80") {
+    // the graphic equalizer of an 80s stereo: segments, a red zone on top and the peak that hangs on
+    const nb = 12, gap = 3, bw = Math.floor((w - 20 - gap * (nb - 1)) / nb), seg = 13, sh = 3;
+    const labels = ["60", "", "250", "", "", "1K", "", "", "4K", "", "", "16K"];
+    for (let i = 0; i < nb; i++) {
+      const v = Math.pow(bandAvg(Math.floor(i * 32 / nb), Math.floor((i + 1) * 32 / nb)), 0.85), lit = Math.round(v * seg);
+      S.eqPk[i] = Math.max(lit, S.eqPk[i] - 0.12);
+      const bx = x0 + 10 + i * (bw + gap);
+      for (let s = 0; s < seg; s++) {
+        const on = s < lit || s === Math.round(S.eqPk[i]) && S.eqPk[i] > 0.5, yy = y0 + h - 8 - s * sh;
+        if (on) for (let c = 0; c < bw; c++) for (let r = 0; r < sh - 1; r++) vpx(bx + c, yy - r, s >= seg - 3 ? 2 : 1);
+        else vpx(bx + (bw >> 1), yy, 1);   // the unlit segment, just a dot
+      }
+      if (labels[i]) { const lw = labels[i].length * 4 - 1; tinyLabel(labels[i], bx + Math.floor((bw - lw) / 2), y0 + h - 5); }
+    }
+    for (const yy of [y0 + h - 8 - 10 * sh, y0 + h - 8]) for (let x = x0 + 2; x < x0 + 7; x++) vpx(x, yy, 1);
+    tinyLabel("0", x0 + 2, y0 + h - 8 - 10 * sh - 6); tinyLabel("DB", x0 + w - 9, y0 + 1);
+  } else if (mode === "xy") {
+    // a goniometer: left against right, turned 45° so a mono sound stands up straight
+    const cx = x0 + Math.floor(w / 2), cy = y0 + Math.floor(h / 2), R = Math.floor(h / 2) - 1;
+    for (let i = 0; i < S.xy.length; i++) S.xy[i] *= 0.72;
+    if (ctx && N.anL && !idle) {
+      if (!S.bl || S.bl.length !== N.anL.fftSize) { S.bl = new Float32Array(N.anL.fftSize); S.br = new Float32Array(N.anR.fftSize); }
+      N.anL.getFloatTimeDomainData(S.bl); N.anR.getFloatTimeDomainData(S.br);
+      for (let i = 0; i < S.bl.length; i++) {
+        const l = S.bl[i], r = S.br[i], X = Math.round(cx + (l - r) * 0.7071 * R * 1.6), Y = Math.round(cy - (l + r) * 0.7071 * R * 1.1);
+        const q = (Y - y0) * w + (X - x0); if (X >= x0 && X < x0 + w && Y >= y0 && Y < y0 + h) S.xy[q] = Math.min(1.4, S.xy[q] + 0.35);
+      }
+    }
+    for (let k = -R; k <= R; k += 2) { vpx(cx + k, cy - k); vpx(cx + k, cy + k); }
+    for (let a = 0; a < 90; a++) { const t = a / 90 * Math.PI * 2; if (a % 3 === 0) vpx(cx + Math.cos(t) * R * 1.4, cy + Math.sin(t) * R); }
+    tinyLabel("L", cx - R - 6, y0 + 1); tinyLabel("R", cx + R + 4, y0 + 1); tinyLabel("M", cx - 1, y0 + 1); tinyLabel("S", x0 + w - 5, cy - 2);
+    for (let r = 0; r < h; r++) for (let x = 0; x < w; x++) { const v = S.xy[r * w + x]; if (v > 0.05 && v * 1.6 > (BAYER[(x & 3) + (r & 3) * 4] + 0.5) / 16) vpx(x0 + x, y0 + r, v > 0.6 ? 2 : 1); }
+    if (idle || !ctx) vpx(cx, cy, 2);
+  } else if (mode === "joy") {
+    // ridge lines, one per moment, the newest in front: the hidden parts stay hidden
+    const n = 64, rows = 11, step = 4, lw = Math.min(w - 12, 150), lx = x0 + Math.floor((w - lw) / 2);
+    if (S.t % 3 === 0 || !S.hist.length) {
+      const line = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        const d = Math.abs(i - n / 2) / (n / 2), win = Math.exp(-d * d * 5);
+        const b = specBins[Math.min(31, Math.floor(Math.abs(i - n / 2) / (n / 2) * 24))];
+        line[i] = win * (idle || !ctx ? 0.06 + Math.random() * 0.05 : b * (0.75 + Math.random() * 0.5)) + Math.random() * 0.03;
+      }
+      S.hist.unshift(line); if (S.hist.length > rows) S.hist.pop();
+    }
+    const horizon = new Int16Array(w).fill(999);
+    S.hist.forEach((line, k) => {
+      const base = y0 + h - 2 - k * step; let prev = null;
+      for (let x = 0; x < lw; x++) {
+        const f = x / (lw - 1) * (n - 1), i = Math.floor(f), t = f - i, v = line[i] * (1 - t) + line[Math.min(n - 1, i + 1)] * t;
+        const yy = Math.round(base - v * 26), col = lx + x - x0;
+        if (yy < horizon[col]) {
+          const from = prev === null ? yy : prev;
+          for (let q = Math.min(from, yy); q <= Math.max(from, yy); q++) if (q < horizon[col]) vpx(lx + x, q, k === 0 ? 2 : 1);
+          horizon[col] = yy;
+        }
+        prev = yy;
+      }
+    });
+  } else if (mode === "tunnel") {
+    // a corridor of frames rushing at you, faster with the bass
+    const cx = x0 + w / 2 + Math.sin(S.t * 0.021) * 18, cy = y0 + h / 2 + Math.cos(S.t * 0.017) * 6;
+    if (!S.rings.length) for (let i = 0; i < 9; i++) S.rings.push(1 + i * 0.9);
+    const sp = 0.025 + bass * 0.12 + kick * 0.08;
+    S.rings = S.rings.map(z => z - sp).map(z => z < 0.25 ? z + 8.1 : z).sort((a, b) => b - a);
+    S.rings.forEach(z => {
+      const hw = w * 0.5 / z, hh = h * 0.5 / z * 1.1, v = z < 1.4 && kick > 0.3 ? 2 : 1;
+      if (hw > w * 1.6) return;
+      vLine(cx - hw, cy - hh, cx + hw, cy - hh, v); vLine(cx - hw, cy + hh, cx + hw, cy + hh, v);
+      vLine(cx - hw, cy - hh, cx - hw, cy + hh, v); vLine(cx + hw, cy - hh, cx + hw, cy + hh, v);
+    });
+    for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) for (let k = 0; k < 40; k += 3) vpx(cx + dx * (6 + k * 2.6), cy + dy * (3 + k * 0.7), 1);
+  } else if (mode === "stars") {
+    // hyperspace: the louder it gets, the longer the streaks
+    if (!S.stars.length) for (let i = 0; i < 90; i++) S.stars.push({ x: Math.random() * 2 - 1, y: Math.random() * 2 - 1, z: Math.random() });
+    const sp = 0.006 + bass * 0.05 + kick * 0.04 + high * 0.02, cx = x0 + w / 2, cy = y0 + h / 2;
+    for (const s of S.stars) {
+      const pz = s.z; s.z -= sp;
+      if (s.z <= 0.02) { s.x = Math.random() * 2 - 1; s.y = Math.random() * 2 - 1; s.z = 1; continue; }
+      const X = cx + s.x / s.z * w * 0.18, Y = cy + s.y / s.z * h * 0.3, PX = cx + s.x / pz * w * 0.18, PY = cy + s.y / pz * h * 0.3;
+      if (X < x0 - 20 || X > x0 + w + 20 || Y < y0 - 20 || Y > y0 + h + 20) { s.z = 1; s.x = Math.random() * 2 - 1; s.y = Math.random() * 2 - 1; continue; }
+      vLine(PX, PY, X, Y, s.z < 0.3 ? 2 : 1);
+    }
+  } else if (mode === "fire") {
+    // the demo-scene fire: heat comes up from the bottom, the kick throws fuel on it
+    const W2 = w, H2 = h + 2, F = S.fire, fuel = 0.35 + bass * 1.3 + kick * 1.1;
+    for (let x = 0; x < W2; x++) { const tongue = 0.45 + 0.55 * Math.max(0, Math.sin(x * 0.21 + S.t * 0.05) * Math.sin(x * 0.067 - S.t * 0.031)), v = Math.random() < 0.6 ? Math.random() * fuel * (0.5 + tongue) : 0; F[(H2 - 1) * W2 + x] = v; F[(H2 - 2) * W2 + x] = Math.max(F[(H2 - 2) * W2 + x] * 0.5, v * 0.9); }
+    for (let y = 0; y < H2 - 2; y++) for (let x = 0; x < W2; x++) {
+      const a = F[(y + 1) * W2 + (x + W2 - 1) % W2], b = F[(y + 1) * W2 + x], c = F[(y + 1) * W2 + (x + 1) % W2], d = F[(y + 2) * W2 + x];
+      F[y * W2 + x] = Math.max(0, (a + b + c + d) / 4 * 0.935 - 0.008);
+    }
+    for (let r = 0; r < h; r++) for (let x = 0; x < w; x++) { const v = F[r * W2 + x]; if (v > 0.07 && v * 1.5 > (BAYER[(x & 3) + (r & 3) * 4] + 0.5) / 16) vpx(x0 + x, y0 + r, v > 0.42 ? 2 : 1); }
+  } else if (mode === "radar") {
+    // a sweep that goes round once a bar; every hit leaves a blip that fades
+    const R = Math.floor(h / 2) - 1, cx = x0 + R + 6, cy = y0 + Math.floor(h / 2);
+    const barSec = 240 / state.bpm, a = ((ctx ? ctx.currentTime : performance.now() / 1000) / barSec % 1) * Math.PI * 2 - Math.PI / 2;
+    for (let k = 0; k < 96; k++) { const t = k / 96 * Math.PI * 2; vpx(cx + Math.cos(t) * R, cy + Math.sin(t) * R, 1); if (k % 2 === 0) vpx(cx + Math.cos(t) * R * 0.5, cy + Math.sin(t) * R * 0.5, 1); }
+    for (let k = -R; k <= R; k += 2) { vpx(cx + k, cy); vpx(cx, cy + k); }
+    for (let k = 0; k < 6; k++) { const t = a - k * 0.07; for (let r = 0; r <= R; r += k ? 2 : 1) vpx(cx + Math.cos(t) * r, cy + Math.sin(t) * r, k ? 1 : 2); }
+    const bands = [bass, mid, high], radii = [0.3, 0.62, 0.88];
+    bands.forEach((v, i) => { if (!idle && v - S.prev[i] > 0.07 && v > 0.25) S.blips.push({ a, r: radii[i] * R + (Math.random() - 0.5) * 3, life: 1, s: i }); S.prev[i] = v; });
+    S.blips = S.blips.filter(b => (b.life -= 0.012) > 0);
+    for (const b of S.blips) { const X = cx + Math.cos(b.a) * b.r, Y = cy + Math.sin(b.a) * b.r, v = b.life > 0.6 ? 2 : 1; if (b.life > 0.25 || S.t & 1) { vpx(X, Y, v); vpx(X + 1, Y, v); vpx(X, Y + 1, v); vpx(X + 1, Y + 1, v); } }
+    // the read-out next to it
+    const tx = cx + R + 12;
+    tinyLabel("BERSAGLI " + String(S.blips.length).padStart(2, "0"), tx, y0 + 3);
+    tinyLabel("CASSA", tx, y0 + 14); tinyLabel("RULLANTE", tx, y0 + 25); tinyLabel("PIATTI", tx, y0 + 36);
+    bands.forEach((v, i) => { const len = Math.round(v * (x0 + w - tx - 38)); for (let q = 0; q < len; q += 2) for (let r = 0; r < 3; r++) vpx(tx + 36 + q, y0 + 15 + i * 11 + r, i === 0 && kick > 0.4 ? 2 : 1); });
+  } else if (mode === "rain") {
+    // digital rain, faster on every hit
+    if (!S.rain.length) for (let c = 0; c < Math.floor(w / 4); c++) S.rain.push({ y: Math.random() * -60, sp: 0.25 + Math.random() * 0.45, len: 4 + Math.floor(Math.random() * 7), ch: [] });
+    const boost = 1 + bass * 2.5 + kick * 2;
+    S.rain.forEach((d, c) => {
+      d.y += d.sp * boost;
+      if (d.y - d.len * 6 > h) { d.y = Math.random() * -20; d.sp = 0.25 + Math.random() * 0.45; d.len = 4 + Math.floor(Math.random() * 7); }
+      const head = Math.floor(d.y / 6);
+      for (let k = 0; k < d.len; k++) {
+        const row = head - k; if (row < 0) continue;
+        if (!d.ch[row] || Math.random() < 0.04) d.ch[row] = RAIN_CH[Math.floor(Math.random() * RAIN_CH.length)];
+        if (k > d.len - 3 && (row + S.t >> 2 & 1)) continue;   // the tail breaks up
+        tinyGlyph(d.ch[row], x0 + c * 4, y0 + row * 6, k === 0 ? 2 : 1);
+      }
+    });
+  }
+}
+function tinyLabel(s, x, y) { for (const ch of lcdNorm(s)) { tinyGlyph(ch, x, y, 1); x += 4; } }
+const VIS = [["spec", "Spettro", "SPETTRO"], ["mirror", "Specchio", "SPECCHIO"], ["scope", "Oscilloscopio", "OSCILLO"], ["ring", "Cerchio", "CERCHIO"], ["fall", "Cascata", "CASCATA"],
+  ["eq80", "EQ ’80", "EQ 80"], ["xy", "Goniometro", "XY"], ["joy", "Colline", "COLLINE"], ["tunnel", "Tunnel", "TUNNEL"], ["stars", "Iperspazio", "STELLE"], ["fire", "Fuoco", "FUOCO"], ["radar", "Radar", "RADAR"], ["rain", "Pioggia", "PIOGGIA"]];
+const VIS_MORE = new Set(["eq80", "xy", "joy", "tunnel", "stars", "fire", "radar", "rain"]);
+function visReset() { fallBuf.fill(0); VIS_ST.xy.fill(0); VIS_ST.fire.fill(0); VIS_ST.hist = []; VIS_ST.blips = []; VIS_ST.eqPk.fill(0); }
 function cycleVis(dir = 1) {
   state.vis = ((state.vis || 0) + dir + VIS.length) % VIS.length; save();
   $("visBtn").textContent = "VIS · " + VIS[state.vis][1];
-  fallBuf.fill(0); drawSpec(!ctx);
+  visReset(); drawSpec(!ctx); msg("VISUALIZZATORE " + lcdNorm(VIS[state.vis][1]));
+}
+/* ================= effetti visivi a tempo: tre tele sopra e sotto lo strumento ================= */
+const VFX_LIST = [
+  ["muro", "Luci sul muro", "Fari colorati dietro lo strumento che spazzano la stanza a tempo"],
+  ["aurora", "Onde di colore", "Nuvole di luce che respirano coi medi"],
+  ["laser", "Laser da club", "Raggi sottili che si aprono a ventaglio sulla cassa"],
+  ["scintille", "Scintille", "Ogni colpo sui pad lancia scintille, la cassa fa fontana dal logo"],
+  ["vhs", "Videocassetta", "Righe, il disturbo che scorre e la scritta PLAY del videoregistratore"],
+  ["pellicola", "Pellicola 16 mm", "Graffi, polvere, luce che trema e bordi bruciati"],
+  ["glitch", "Glitch digitale", "Strappi di colore e blocchi di pixel sui colpi forti"],
+  ["scossa", "Scossa", "Lo strumento sobbalza su ogni cassa"],
+];
+const VFX_PRESETS = [["spenti", "Spenti", []], ["club", "Club", ["muro", "laser", "scintille", "scossa"]], ["vhs", "VHS", ["vhs", "scossa"]], ["cinema", "Cinema", ["pellicola", "muro"]], ["glitch", "Glitch", ["glitch", "scintille", "scossa"]], ["sogno", "Sogno", ["aurora", "scintille"]]];
+const VX_ST = { on: new Set(), t: 0, last: 0, kickPrev: 0, midPrev: 0, parts: [], scratches: [], glitch: null, glitchAt: 0, playT0: 0, E: { bass: 0, mid: 0, high: 0 }, cache: {}, tf: "" };
+function vfxPresetOf(list) { const s = [...list].sort().join(); const p = VFX_PRESETS.find(x => [...x[2]].sort().join() === s); return p ? p[1] : "Su misura"; }
+function renderVfxBtn() { const b = $("vfxBtn"); if (b) { b.textContent = "FX · " + vfxPresetOf(state.custom.vfx || []); b.setAttribute("aria-pressed", (state.custom.vfx || []).length > 0); } }
+function setVfx(list) { state.custom.vfx = list; save(); applyVfx(); renderCustom(); }
+function cycleVfx() {
+  const cur = vfxPresetOf(state.custom.vfx || []), i = VFX_PRESETS.findIndex(p => p[1] === cur), next = VFX_PRESETS[(i + 1) % VFX_PRESETS.length];
+  setVfx(next[2].slice()); msg(next[2].length ? "EFFETTI · " + next[1].toUpperCase() : "EFFETTI SPENTI");
+}
+function applyVfx() {
+  VX_ST.on = new Set(state.custom.vfx || []);
+  renderVfxBtn();
+  if (!VX_ST.on.size) vfxClear();
+}
+function vfxClear() {
+  for (const id of ["vfxBack", "vfxAdd", "vfxInk"]) { const cv = $(id); if (cv && cv.width) { cv.width = 0; cv.hidden = true; } }
+  VX_ST.parts.length = 0; VX_ST.glitch = null;
+  if (VX_ST.tf) { const a = $("app").style; a.translate = ""; a.scale = ""; VX_ST.tf = ""; }
+}
+// a canvas the size of the window (k = resolution)
+function vfxCanvas(id, k) {
+  const cv = $(id), W = Math.round(innerWidth * k), H = Math.round(innerHeight * k);
+  cv.hidden = false;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; VX_ST.cache = {}; }
+  const c = cv.getContext("2d"); c.setTransform(k, 0, 0, k, 0, 0); c.clearRect(0, 0, innerWidth, innerHeight); return c;
+}
+// sparks out of a pad (called by the flash of the pad)
+function vfxBurst(elm, n = 14, col) {
+  if (!VX_ST.on.has("scintille") || VX_ST.parts.length > 420) return;
+  const r = elm.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  col = col || hueColor;
+  for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, v = 120 + Math.random() * 320; VX_ST.parts.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 120, life: 0.5 + Math.random() * 0.5, col, s: 1 + Math.random() * 1.6 }); }
+}
+function vfxFountain() {
+  const d = logoDot || document.querySelector(".logo b"); if (!d) return;
+  const r = d.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, cols = [SK.led, hueColor, "#fff2d8"];
+  for (let i = 0; i < 26; i++) { const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.3, v = 260 + Math.random() * 380; VX_ST.parts.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.7 + Math.random() * 0.6, col: cols[i % 3], s: 1.2 + Math.random() * 1.4 }); }
+}
+function hues() { const cs = getComputedStyle($("app")); return ["--hA", "--hB", "--hC", "--hD"].map(v => cs.getPropertyValue(v).trim() || "#f2a43a"); }
+function drawVfx(now) {
+  const S = VX_ST;
+  if (!S.on.size) return;
+  if (lowMotion() || introRun || document.hidden) { vfxClear(); return; }
+  const dt = S.last ? Math.min(0.05, (now - S.last) / 1000) : 0.016; S.last = now; S.t += dt;
+  const amt = (state.custom.vfxAmt ?? 70) / 100, W = innerWidth, H = innerHeight, on = id => S.on.has(id);
+  // what the music is doing: smoothed bands and the kick
+  const E = S.E, run = playing ? 1 : 0.25;
+  E.bass += (bandAvg(0, 5) - E.bass) * 0.3; E.mid += (bandAvg(8, 18) - E.mid) * 0.3; E.high += (bandAvg(20, 32) - E.high) * 0.3;
+  const kick = Math.min(1, kickGlow), kickHit = kick > 0.6 && kick > S.kickPrev + 0.1; S.kickPrev = kick;   // a new kick: the glow went up
+  const midHit = E.mid - S.midPrev > 0.06 && E.mid > 0.3; S.midPrev = E.mid;
+  if (playing && !S.playT0) S.playT0 = now; if (!playing) S.playT0 = 0;
+  if (!S.H || now - S.Hat > 1000) { S.H = hues(); S.Hat = now; }
+  // ---- behind the instrument ----
+  if (on("muro") || on("aurora")) {
+    const c = vfxCanvas("vfxBack", 0.5); c.globalCompositeOperation = "lighter";
+    if (on("aurora")) for (let i = 0; i < 3; i++) {
+      const x = W * (0.5 + 0.38 * Math.sin(S.t * (0.11 + i * 0.05) + i * 2.1)), y = H * (0.45 + 0.3 * Math.cos(S.t * (0.09 + i * 0.04) + i)), r = Math.max(W, H) * (0.32 + E.mid * 0.25 + i * 0.04);
+      const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, withAlpha(S.H[(i + Math.floor(S.t / 8)) % 4], (0.16 + E.mid * 0.35) * amt)); g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+    }
+    if (on("muro")) for (let i = 0; i < 4; i++) {
+      // a beam from the ceiling and the pool of light it leaves on the wall
+      const sx = W * (0.12 + i * 0.25), x = W * (0.5 + 0.48 * Math.sin(S.t * (0.35 + i * 0.13) * (0.6 + run) + i * 1.7)), y = H * 0.62, r = H * (0.28 + E.bass * 0.18);
+      const a = (0.1 + (E.bass * 0.5 + kick * 0.35) * run) * amt, col = S.H[i];
+      const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, withAlpha(col, a)); g.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = g; c.fillRect(0, 0, W, H);
+      const lg = c.createLinearGradient(sx, 0, x, y); lg.addColorStop(0, withAlpha(col, a * 0.9)); lg.addColorStop(1, withAlpha(col, 0));
+      c.fillStyle = lg; c.beginPath(); c.moveTo(sx - 6, -4); c.lineTo(sx + 6, -4); c.lineTo(x + r * 0.55, y); c.lineTo(x - r * 0.55, y); c.closePath(); c.fill();
+    }
+  } else if ($("vfxBack").width) { $("vfxBack").width = 0; $("vfxBack").hidden = true; }
+  // ---- light in front of it (added to what is under) ----
+  const useAdd = on("laser") || on("scintille") || on("glitch") || on("pellicola") || on("vhs") || on("muro") || on("aurora");
+  const useInk = on("vhs") || on("pellicola") || on("glitch");
+  const ca = useAdd ? vfxCanvas("vfxAdd", 1) : null, ci = useInk ? vfxCanvas("vfxInk", 1) : null;
+  if (!useAdd && $("vfxAdd").width) { $("vfxAdd").width = 0; $("vfxAdd").hidden = true; }
+  if (!useInk && $("vfxInk").width) { $("vfxInk").width = 0; $("vfxInk").hidden = true; }
+  // the coloured light also falls on the instrument, softer
+  if (on("muro") || on("aurora")) { ca.globalAlpha = 0.32; ca.drawImage($("vfxBack"), 0, 0, W, H); ca.globalAlpha = 1; }
+  if (on("laser")) {
+    const bar = 240 / state.bpm, cols = ["#3dff6e", "#ff2d55", "#35d6ff", "#ffd23f"], col = cols[Math.floor(S.t / bar / 2) % 4];
+    const open = 0.35 + kick * 0.5 + E.bass * 0.3, a = (0.05 + (0.12 + kick * 0.32 + E.high * 0.12) * run) * amt;
+    ca.lineCap = "round";
+    for (const [sx, dir] of [[0, 1], [W, -1]]) for (let i = 0; i < 5; i++) {
+      const ang = 0.22 + i / 4 * open + 0.22 * Math.sin(S.t * 0.8 + i * 0.4 + (dir < 0 ? 1.5 : 0)), L = Math.hypot(W, H);
+      const ex = sx + dir * Math.cos(ang) * L, ey = Math.sin(ang) * L;
+      ca.strokeStyle = withAlpha(col, a * 0.35); ca.lineWidth = 6; ca.beginPath(); ca.moveTo(sx, -2); ca.lineTo(ex, ey); ca.stroke();
+      ca.strokeStyle = withAlpha(col, a); ca.lineWidth = 1.3; ca.beginPath(); ca.moveTo(sx, -2); ca.lineTo(ex, ey); ca.stroke();
+    }
+    if (kick > 0.5) { const g = ca.createRadialGradient(W / 2, 0, 0, W / 2, 0, H * 0.5); g.addColorStop(0, withAlpha(col, 0.12 * kick * amt)); g.addColorStop(1, "rgba(0,0,0,0)"); ca.fillStyle = g; ca.fillRect(0, 0, W, H * 0.5); }
+  }
+  if (!on("scintille")) S.parts.length = 0;
+  else {
+    if (kickHit) vfxFountain();
+    ca.lineCap = "round";
+    S.parts = S.parts.filter(p => {
+      const px0 = p.x, py0 = p.y; p.vy += 520 * dt; p.vx *= 1 - 1.4 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+      if (p.life <= 0 || p.y > H + 10) return false;
+      ca.strokeStyle = withAlpha(p.col, Math.min(1, p.life * 1.6) * (0.5 + amt * 0.5)); ca.lineWidth = p.s;
+      ca.beginPath(); ca.moveTo(px0, py0); ca.lineTo(p.x, p.y); ca.stroke(); return true;
+    });
+  }
+  if (on("vhs")) {
+    // scanlines, pre-drawn once per size
+    if (!S.cache.scan) { const p = document.createElement("canvas"); p.width = 4; p.height = 3; const g = p.getContext("2d"); g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 2, 4, 1); S.cache.scan = ci.createPattern(p, "repeat"); }
+    ci.globalAlpha = 0.35 * amt + 0.1; ci.fillStyle = S.cache.scan; ci.fillRect(0, 0, W, H); ci.globalAlpha = 1;
+    // the tracking band that rolls down the picture
+    const bh = 34 + E.bass * 30, by = (S.t * 70) % (H + 200) - 100;
+    ci.fillStyle = "rgba(0,0,0," + (0.12 * amt).toFixed(3) + ")"; ci.fillRect(0, by, W, bh);
+    for (let i = 0; i < 70 * amt + 10; i++) { const y = by + Math.random() * bh, x = Math.random() * W, l = 10 + Math.random() * 120; ca.fillStyle = "rgba(255,255,255," + (Math.random() * 0.35 * amt).toFixed(3) + ")"; ca.fillRect(x, y, l, 1); }
+    if (kickHit || Math.random() < 0.01) S.tear = { y: Math.random() * H, life: 0.12 };
+    if (S.tear && (S.tear.life -= dt) > 0) { ca.fillStyle = "rgba(255,255,255,.25)"; ca.fillRect(0, S.tear.y, W, 2); ca.fillStyle = "rgba(80,220,255,.18)"; ca.fillRect(0, S.tear.y + 2, W, 3); }
+    // colour that bleeds at the edges
+    const eg = ca.createLinearGradient(0, 0, W, 0); eg.addColorStop(0, "rgba(255,0,90," + (0.07 * amt).toFixed(3) + ")"); eg.addColorStop(0.08, "rgba(0,0,0,0)"); eg.addColorStop(0.92, "rgba(0,0,0,0)"); eg.addColorStop(1, "rgba(0,180,255," + (0.07 * amt).toFixed(3) + ")");
+    ca.fillStyle = eg; ca.fillRect(0, 0, W, H);
+    // the on-screen text of the video recorder
+    const sec = S.playT0 ? Math.floor((now - S.playT0) / 1000) : 0, fs = Math.max(20, Math.min(30, W / 46));
+    const label = recording ? "● REC" : playing ? "PLAY ▶" : "STOP ■", count = Math.floor(sec / 3600) + ":" + String(Math.floor(sec / 60) % 60).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
+    ci.font = fs + 'px "VT323", monospace'; ci.textBaseline = "top";
+    const osd = (t, x, y, align) => { ci.textAlign = align; ci.fillStyle = "rgba(255,0,80,.55)"; ci.fillText(t, x + 2, y); ci.fillStyle = "rgba(0,200,255,.55)"; ci.fillText(t, x - 2, y); ci.fillStyle = recording && t === label ? "#ff5a4a" : "rgba(255,255,255,.92)"; ci.fillText(t, x, y); };
+    if (!playing || S.t % 1.2 < 0.9 || !recording) osd(label, 28, 22, "left");
+    osd("SP", W - 28, 22, "right"); osd(count, 28, H - fs - 22, "left");
+    osd(String(state.bpm) + " BPM", W - 28, H - fs - 22, "right");
+  }
+  if (on("pellicola")) {
+    // burnt edges
+    if (!S.cache.burn) { const g = ci.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.72); g.addColorStop(0, "rgba(20,10,0,0)"); g.addColorStop(0.8, "rgba(30,14,2,.35)"); g.addColorStop(1, "rgba(10,4,0,.85)"); S.cache.burn = g; }
+    ci.globalAlpha = 0.35 + amt * 0.65; ci.fillStyle = S.cache.burn; ci.fillRect(0, 0, W, H); ci.globalAlpha = 1;
+    // the projector light trembles (24 times a second)
+    if (!S.f24 || now - S.f24 > 41) { S.f24 = now; S.flk = Math.random(); S.specks = []; const n = Math.floor(Math.random() * 7 * amt);
+      for (let i = 0; i < n; i++) S.specks.push({ x: Math.random() * W, y: Math.random() * H, r: 0.6 + Math.random() * 2.4, hair: Math.random() < 0.18, a: Math.random() * Math.PI });
+      if (Math.random() < 0.06) S.scratches.push({ x: Math.random() * W, life: 0.4 + Math.random() * 1.6, v: (Math.random() - 0.5) * 30, a: 0.15 + Math.random() * 0.25 });
+      S.weave = (Math.random() - 0.5) * 1.2; }
+    ci.fillStyle = "rgba(0,0,0," + (S.flk * 0.08 * amt).toFixed(3) + ")"; ci.fillRect(0, 0, W, H);
+    ca.fillStyle = "rgba(255,190,110," + ((1 - S.flk) * 0.04 * amt + kick * 0.03).toFixed(3) + ")"; ca.fillRect(0, 0, W, H);
+    for (const s of S.specks) {
+      ci.fillStyle = ci.strokeStyle = "rgba(10,6,2,.7)";
+      if (s.hair) { ci.lineWidth = 0.8; ci.beginPath(); ci.moveTo(s.x, s.y); ci.quadraticCurveTo(s.x + Math.cos(s.a) * 22, s.y + Math.sin(s.a) * 22 + 10, s.x + Math.cos(s.a) * 34, s.y + 30); ci.stroke(); }
+      else { ci.beginPath(); ci.arc(s.x, s.y, s.r, 0, Math.PI * 2); ci.fill(); }
+    }
+    S.scratches = S.scratches.filter(s => { s.life -= dt; s.x += s.v * dt; if (s.life <= 0) return false; ca.fillStyle = "rgba(255,245,225," + (s.a * amt).toFixed(3) + ")"; ca.fillRect(s.x, 0, 1, H); return true; });
+  }
+  if (on("glitch")) {
+    if ((kickHit || midHit) && now - S.glitchAt > 260 && playing) {
+      S.glitchAt = now; const bands = [];
+      for (let i = 0; i < 3 + Math.floor(Math.random() * 5 * amt); i++) bands.push({ y: Math.random() * H, h: 4 + Math.random() * 46, dx: (Math.random() - 0.5) * 60 * amt });
+      S.glitch = { life: 0.1 + Math.random() * 0.12, bands };
+    }
+    if (S.glitch && (S.glitch.life -= dt) > 0) {
+      for (const b of S.glitch.bands) {
+        ca.fillStyle = "rgba(255,0,110,.22)"; ca.fillRect(b.dx, b.y, W, b.h);
+        ca.fillStyle = "rgba(0,230,255,.22)"; ca.fillRect(-b.dx, b.y + 2, W, b.h);
+        ci.fillStyle = "rgba(0,0,0,.35)"; ci.fillRect(0, b.y + b.h, W, 1);
+        for (let k = 0; k < 6; k++) { const s = 6 + Math.random() * 14; ca.fillStyle = ["rgba(255,255,255,.5)", "rgba(255,0,120,.5)", "rgba(0,255,200,.5)"][k % 3]; ca.fillRect(Math.random() * W, b.y + Math.random() * b.h, s, s * 0.6); }
+      }
+    } else S.glitch = null;
+  }
+  // ---- the instrument itself: it jumps on the kick, shivers with the glitch, weaves like film ----
+  let tx = 0, ty = 0, sc = 1;
+  if (on("scossa")) { sc += kick * 0.012 * amt; ty += kick * 2.5 * amt; }
+  if (on("glitch") && S.glitch) tx += S.glitch.bands[0].dx * 0.15;
+  if (on("pellicola")) ty += (S.weave || 0) * amt;
+  const tf = Math.abs(tx) + Math.abs(ty) + Math.abs(sc - 1) < 0.02 ? "" : tx.toFixed(1) + "px " + ty.toFixed(1) + "px|" + sc.toFixed(4);
+  if (tf !== S.tf) { const a = $("app").style, [t, s] = tf ? tf.split("|") : ["", ""]; a.translate = t; a.scale = s; S.tf = tf; }
+}
+function buildVfxCustom() {
+  VFX_PRESETS.forEach(([id, name, list]) => optButton($("cVfxPre"), id, name, null, () => setVfx(list.slice())));
+  VFX_LIST.forEach(([id, name, note]) => { const b = optButton($("cVfx"), id, name, null, v => { const s = new Set(state.custom.vfx || []); s.has(v) ? s.delete(v) : s.add(v); setVfx(VFX_LIST.map(x => x[0]).filter(x => s.has(x))); }); b.title = note; });
+  $("cVfxAmt").addEventListener("input", e => { state.custom.vfxAmt = +e.target.value; save(); });
+}
+function renderVfxCustom() {
+  const on = new Set(state.custom.vfx || []), pre = vfxPresetOf(state.custom.vfx || []);
+  [...$("cVfx").children].forEach(b => b.setAttribute("aria-pressed", on.has(b.dataset.v)));
+  [...$("cVfxPre").children].forEach(b => b.setAttribute("aria-pressed", (VFX_PRESETS.find(p => p[0] === b.dataset.v) || [])[1] === pre));
+  $("cVfxAmt").value = state.custom.vfxAmt ?? 70;
+  $("cVfxNote").hidden = !lowMotion();
 }
 const METERS = [
   ["ago", "Lancetta classica", "Quadrante crema con l’ago, come un registratore a bobine"],
@@ -5667,7 +6014,7 @@ function knobPreview(style) {
   c.strokeStyle = hueColor; c.beginPath(); c.arc(58, 58, 50, a0, a); c.stroke();
   drawKnobCap(c, style, a); return cv;
 }
-function setVis(i) { state.vis = i; save(); $("visBtn").textContent = "VIS · " + VIS[i][1]; fallBuf.fill(0); drawSpec(!ctx); renderCustom(); }
+function setVis(i) { state.vis = i; save(); $("visBtn").textContent = "VIS · " + VIS[i][1]; visReset(); drawSpec(!ctx); renderCustom(); }
 // smooth changes: the browser morphs from the old look to the new one (View Transitions)
 function smooth(fn, kind) {
   if (!document.startViewTransition || state.custom.motion === "ridotte" || introRun || matchMedia("(prefers-reduced-motion: reduce)").matches) { fn(); return; }
@@ -5718,6 +6065,7 @@ function buildCustom() {
   [["piene", "Piene e fluide"], ["ridotte", "Ridotte"]].forEach(([id, name]) => optButton($("cMotion"), id, name, null, v => setCustom("motion", v)));
   VIEWS.forEach(([id, name]) => optButton($("cView"), id, name, null, v => setView(v)));
   [["si", "Sì"], ["no", "No"]].forEach(([id, name]) => optButton($("cRipple"), id, name, null, v => setCustom("ripple", v)));
+  buildVfxCustom();
   SCREEN_COLORS.forEach(([id, name, cols]) => optButton($("cScreen"), id, name, cols ? cols[0] : "conic-gradient(#ffb247 0 25%, #79cfff 0 50%, #b6f266 0 75%, #ff6fb5 0)", v => setCustom("screen", v)));
   VIS.forEach(([, name], i) => optButton($("cVis"), String(i), name, null, () => setVis(i)));
   METERS.forEach(([id, name, note]) => cardButton($("cMeter"), id, name, note, mkCanvas(264, 168), v => setCustom("meter", v)));
@@ -5750,6 +6098,7 @@ function renderCustom() {
   const mark = (id, v) => [...$(id).children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
   mark("cSkin", state.skin); mark("cLcd", C.lcd); mark("cScreen", C.screen); mark("cVis", String(state.vis || 0)); mark("cMeter", C.meter); mark("cKnob", C.knob);
   mark("cView", C.view || "piatta"); mark("cDisc", discId()); if ($("discSel")) $("discSel").value = discId(); mark("cShape", C.shape); mark("cRack", C.rack); mark("cPadSide", C.padside); mark("cTabs", C.tabs); mark("cPadShape", C.padshape); mark("cPulse", C.pulse); mark("cMotion", C.motion); mark("cRipple", C.ripple);
+  renderVfxCustom();
   mark("cLed", C.led); mark("cPad", C.pad); mark("cVinyl", C.vinyl); mark("cLabel", C.label); mark("cFont", C.font); mark("cRoom", C.room); mark("cIntro", C.intro);
   [...$("cStickers").children].forEach(b => b.setAttribute("aria-pressed", stk.has(b.dataset.v)));
   if (document.activeElement !== $("cLogo")) $("cLogo").value = C.logo;
@@ -5796,6 +6145,7 @@ function applyCustom() {
   const logo = document.querySelector(".logo b");
   logo.innerHTML = i >= 0 ? esc(t.slice(0, i)) + "<span>" + t[i] + "</span>" + esc(t.slice(i + 1)) : esc(t);
   logoDot = logo.querySelector("span");
+  applyVfx();
   renderStickers();
   readSkin(); recordCv = null; knobs.forEach(k => k.draw()); drawDeck(true); drawSpec(!ctx); drawVU(!ctx);
   $("beatLight").style.setProperty("--bl", SK.led);
@@ -5846,7 +6196,7 @@ function tick() {
   kickGlow *= 0.86; beatPulse *= 0.9;
   if (state.custom.pulse === "si") { const v = Math.min(1, kickGlow) * 0.9; if (Math.abs(v - beatLightV) > 0.008) { $("beatLight").style.opacity = v.toFixed(3); beatLightV = v; } }
   if (logoDot) logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
-  drawSpec(!ctx); drawVU(!ctx); drawDeck(false);
+  drawSpec(!ctx); drawVU(!ctx); drawDeck(false); drawVfx(performance.now());
   requestAnimationFrame(tick);
 }
 let beatLightV = 0, kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a";
