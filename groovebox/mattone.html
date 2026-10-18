@@ -761,6 +761,8 @@ html[data-vt="cat"]::view-transition-new(vt-cat) { animation: .34s cubic-bezier(
 .micstate.bad { color: #ff8a7a; }
 .micname { display: flex; gap: 6px; align-items: center; flex: 1; min-width: 160px; }
 .micname input { flex: 1; min-width: 0; }
+.micsrc { flex-wrap: wrap; }
+.micsrc button { flex: 1 1 auto; }
 .micopt { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: 12px; }
 .item .del { border: 0; background: transparent; color: var(--cream-3); font-size: 11px; padding: 4px 6px; border-radius: 5px; cursor: pointer; }
 .item .del:hover, .item .del.sure { color: #fff; background: var(--red); }
@@ -963,7 +965,7 @@ html.intro-on { overflow: hidden; }
           <div class="acts">
             <button class="key on" id="openLib" type="button">Cambia suono</button>
             <label class="key" for="file">Carica un file</label>
-            <button class="key micbtn" id="micBtn" type="button"><span class="micdot"></span>Registra dal microfono</button>
+            <button class="key micbtn" id="micBtn" type="button" title="Dal microfono, dall’audio del computer (YouTube…) o dal beat"><span class="micdot"></span>Campiona</button>
             <button class="key" id="chopBtn" type="button" title="Taglia un loop o un break in pezzi sui pad">✂ Taglia in pezzi</button>
             <input type="file" id="file" accept="audio/*" hidden>
             <button class="key" id="toDeck" type="button">Metti sul piatto</button>
@@ -1017,7 +1019,7 @@ html.intro-on { overflow: hidden; }
             <h3>Come si scratcha</h3>
             <ol>
               <li>Trascina il disco avanti e indietro: la velocità della mano è la velocità del suono. Fermo = silenzio.</li>
-              <li>Vuoi scratchare la tua voce? Registrala sul pad con <b>Registra dal microfono</b>, poi <b>Metti sul piatto</b>.</li>
+              <li>Vuoi scratchare la tua voce? Registrala sul pad con <b>Campiona</b>, poi <b>Metti sul piatto</b>.</li>
               <li><b>Taglio</b> (tasto <kbd>G</kbd>) apre e chiude il fader al volo, come un crossfader.</li>
               <li><b>Campiona il beat</b> mette sul disco una battuta di quello che sta suonando.</li>
               <li>Baby, Chirp, Flare, Tear, Transformer, Scribble, Crab, Orbit e Stab: il piatto le esegue da solo, a tempo. Tocca il disco per riprendere il controllo.</li>
@@ -1185,11 +1187,11 @@ html.intro-on { overflow: hidden; }
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
             <li>Il tasto <b>3D</b> accanto alle pagine (o <kbd>T</kbd>) cambia visuale: frontale, sul banco, di tre quarti da destra o da sinistra. Si suona anche in 3D.</li>
             <li><b>Reparto tekno</b>: nella libreria la categoria <b>Tekno</b> (casse 909, dure e col rimbombo, acid 303, hoover, accordi dub techno, loop 909 a 140 BPM). Per la free party ci sono la cassa hardtek, lo stab “mentasm”, l’acid che urla, le rullate e l’allarme. I kit <b>Tekno 140</b>, <b>Acid 140</b>, <b>Loop 909 · 140</b>, <b>Free party 170</b> e <b>Hardtek 180</b> portano il tempo dove serve e, se il pattern è vuoto, ci mettono un groove da cui partire.</li>
-            <li><b>Registra dal microfono</b> (sotto il pad selezionato): premi il tasto rosso, fai il tuo suono, ripremi. I silenzi vengono tagliati, il volume sistemato, e il suono resta salvato tra «I tuoi suoni» (✕ nella libreria per eliminarlo).</li>
+            <li><b>Campiona</b> (sotto il pad selezionato), come su una groovebox: dal <b>microfono o da un ingresso</b> (scheda audio, Missaggio stereo, BlackHole…), dall’<b>audio del computer</b> (una scheda con YouTube o Spotify: parte da sola quando arriva il suono) o dal <b>beat</b> che sta suonando (ricampiona le battute scelte, a tempo). Poi <b>✂ Taglia nei pad</b> lo spezza sui pad, oppure lo metti intero su un pad. Resta salvato tra «I tuoi suoni» (✕ nella libreria per eliminarlo).</li>
             <li><b>Pattern lunghi e terzine</b> (Sequencer): ogni pattern può durare 1, 2 o 4 battute, su griglia a sedicesimi o a terzine (1/8 T per lo shuffle, 1/16 T per le rullate trap). Cambiando, i colpi restano al loro posto nel tempo.</li>
             <li><b>Canzone</b> (sotto il sequencer): metti in fila i pattern, ognuno ripetuto quante volte vuoi, accendi «Suona la canzone» e premi Play. «Registra la canzone» la esporta tutta.</li>
             <li><b>Note repeat</b> (sotto i pad, tasto <kbd>H</kbd>): tieni premuto un pad e viene ripetuto a tempo, da 1/4 a 1/32, anche a terzine. Con il REC acceso le ripetizioni finiscono nel pattern: perfetto per charleston e rullate.</li>
-            <li><b>✂ Taglia in pezzi</b> (sotto il pad selezionato): apre il suono del pad, trova da solo i colpi di un loop o di un break e lo divide fino a 12 pezzi, uno per pad. Può scrivere il pattern che li risuona al loro posto e portare il tempo a quello del loop: poi li rimescoli come vuoi.</li>
+            <li><b>✂ Taglia in pezzi</b> (sotto il pad selezionato): apre il suono del pad, trova da solo i colpi di un loop o di un break e lo divide fino a 48 pezzi: 12 per gruppo, poi continua nei gruppi successivi. Può scrivere il pattern che li risuona al loro posto e portare il tempo a quello del loop: poi li rimescoli come vuoi.</li>
             <li>In alto a sinistra scegli la <b>scocca</b>: Cantina, Hi-Fi ’76, Surplus ’68 o Metro ’89.</li>
           </ol>
         </div>
@@ -1226,19 +1228,24 @@ html.intro-on { overflow: hidden; }
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
-<div class="micwrap" id="micBox" hidden role="dialog" aria-modal="true" aria-label="Registra dal microfono">
+<div class="micwrap" id="micBox" hidden role="dialog" aria-modal="true" aria-label="Campiona">
   <div class="unit micbox">
-    <div class="hd"><h2>Registra dal microfono</h2><button class="key small" id="micClose" type="button">✕ Chiudi</button></div>
+    <div class="hd"><h2>Campiona</h2><button class="key small" id="micClose" type="button">✕ Chiudi</button></div>
+    <div class="seg micsrc" id="micSrc" role="group" aria-label="Da dove campionare"><button type="button" data-s="mic" aria-pressed="true">🎙 Microfono o ingresso</button><button type="button" data-s="pc" aria-pressed="false">🖥 Audio del computer</button><button type="button" data-s="beat" aria-pressed="false">↻ Il beat</button></div>
+    <div class="microw" id="micInRow"><label class="lbl micname">Ingresso <select id="micDev" aria-label="Ingresso audio"><option value="">Quello predefinito</option></select></label></div>
+    <div class="microw" id="micBeatRow" hidden><label class="lbl micname">Quante battute <select id="micBars" aria-label="Battute da ricampionare"><option value="1">1</option><option value="2" selected>2</option><option value="4">4</option><option value="8">8</option></select></label></div>
     <canvas id="micScope" width="720" height="170" aria-hidden="true"></canvas>
     <div class="microw"><span class="mictime" id="micTime">0,0 s</span><span class="micstate" id="micState" aria-live="polite"></span></div>
     <div class="microw">
       <button class="bigkey rec" id="micRec" type="button" aria-label="Registra"><span class="dot"></span></button>
       <button class="key" id="micPlay" type="button" disabled>▶ Ascolta</button>
       <label class="lbl micname">Nome <input class="search" id="micName" maxlength="24" autocomplete="off"></label>
-      <button class="key on" id="micUse" type="button" disabled>Metti sul pad</button>
+      <button class="key" id="micUse" type="button" disabled>Metti sul pad</button>
+      <button class="key on" id="micChop" type="button" disabled>✂ Taglia nei pad</button>
     </div>
-    <label class="lbl micopt"><input type="checkbox" id="micTrim" checked> Taglia i silenzi all’inizio e alla fine</label>
-    <p class="cnote small">Massimo 15 secondi. Il suono viene portato al volume giusto e resta salvato tra «I tuoi suoni» nella libreria, anche quando riapri Mat.Tone.</p>
+    <label class="lbl micopt" id="micTrimL"><input type="checkbox" id="micTrim" checked> Taglia i silenzi all’inizio e alla fine</label>
+    <p class="cnote small" id="micHint"></p>
+    <p class="cnote small">Il suono viene portato al volume giusto e resta salvato tra «I tuoi suoni», anche quando riapri Mat.Tone.</p>
   </div>
 </div>
 <div class="micwrap" id="chopBox" hidden role="dialog" aria-modal="true" aria-label="Taglia il campione">
@@ -1248,7 +1255,7 @@ html.intro-on { overflow: hidden; }
     <div class="microw"><span class="mictime" id="chopTime">0,0 s</span><span class="micstate" id="chopState" aria-live="polite"></span></div>
     <div class="microw">
       <div class="seg" id="chopMode" role="group" aria-label="Come tagliare"><button type="button" data-m="hits" aria-pressed="true">Sui colpi</button><button type="button" data-m="even" aria-pressed="false">In parti uguali</button></div>
-      <label class="lbl micopt">Pezzi <input type="range" id="chopN" min="2" max="12" value="8" aria-label="Quanti pezzi"><output id="chopNOut">8</output></label>
+      <label class="lbl micopt">Pezzi <input type="range" id="chopN" min="2" max="48" value="8" aria-label="Quanti pezzi"><output id="chopNOut">8</output></label>
       <button class="key" id="chopPlay" type="button">▶ Tutto</button>
     </div>
     <div class="microw">
@@ -1256,7 +1263,7 @@ html.intro-on { overflow: hidden; }
       <label class="lbl micopt" id="chopBpmL"><input type="checkbox" id="chopBpm" checked> Porta il tempo a quello del loop</label>
       <button class="key on" id="chopUse" type="button">Metti sui pad</button>
     </div>
-    <p class="cnote small">Tocca un pezzo per sentirlo (o i tasti dei pad, spazio per tutto). Trascina una linea per spostare il taglio; doppio tocco per aggiungerne o toglierne uno, fino a 12. I pezzi vanno sui pad del gruppo e restano tra «I tuoi suoni».</p>
+    <p class="cnote small">Tocca un pezzo per sentirlo (o i tasti dei pad, spazio per tutto). Trascina una linea per spostare il taglio; doppio tocco per aggiungerne o toglierne uno. Ogni gruppo ha 12 pad: oltre il 12° pezzo si continua nel gruppo dopo (fino a 48, tutti e 4 i gruppi). I pezzi restano tra «I tuoi suoni».</p>
   </div>
 </div>
 <aside class="drawer" id="drawer" hidden aria-label="Libreria suoni">
@@ -1850,18 +1857,41 @@ function addUserSound(name, src, buf) {
 }
 // the sounds saved last time are known before the pads are restored
 for (const m of userMeta()) if (m && m.id) SOUNDS.set(m.id, { id: m.id, name: m.name, cat: "I tuoi suoni", root: null, home: null, kind: "user", src: m.src || "Suono tuo", stored: true });
-let micNum = userMeta().filter(m => m.src === "Microfono").length;
 
-/* ---------- registratore dal microfono ---------- */
-const MIC_MAX = 15;
-const mic = { stream: null, src: null, proc: null, an: null, chunks: [], len: 0, sr: 44100, on: false, buf: null, t0: 0, raf: 0, peak: 0, preview: null };
+/* ---------- campionatore: microfono o ingresso, audio del computer, il beat ---------- */
+const MIC_MAX = 60;
+const mic = { stream: null, src: null, proc: null, an: null, chunks: [], len: 0, sr: 44100, on: false, buf: null, t0: 0, raf: 0, peak: 0, preview: null, kind: "mic", take: "mic", wait: false, pre: null, beat: null };
+// where the sound comes from: default name and the label it keeps among your sounds
+const MIC_KINDS = { mic: ["Voce", "Microfono"], pc: ["Campione", "Computer"], beat: ["Il mio beat", "Ricampionato"] };
+const micCount = k => userMeta().filter(m => m.src === MIC_KINDS[k][1]).length;
+const MIC_HINTS = {
+  mic: "Fino a 60 secondi. In «Ingresso» trovi anche le schede audio, il «Missaggio stereo» di Windows, il «Monitor» di Linux o BlackHole sul Mac: così campioni quello che suona il computer.",
+  pc: "Nella finestra che si apre scegli la scheda (YouTube, Spotify web…) o lo schermo e spunta «Condividi l’audio». Va in Chrome, Edge e nell’app per Windows. La registrazione parte da sola col suono, fino a 60 secondi. Campionare per suonare va benissimo; per pubblicare un pezzo con un campione riconoscibile serve il permesso di chi ne ha i diritti.",
+  beat: "Il beat viene registrato esatto, dall’inizio del pattern e senza tagli, così i pezzi restano a tempo. Poi lo tagli nei pad e lo rimescoli, come il «resample» delle groovebox.",
+};
+function micKind(k) {
+  if (mic.on) return;
+  mic.kind = k;
+  [...$("micSrc").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.s === k));
+  $("micInRow").hidden = k !== "mic"; $("micBeatRow").hidden = k !== "beat"; $("micTrimL").hidden = k === "beat";
+  const nm = $("micName"); if (!nm.value || nm.dataset.auto === "1") { nm.value = MIC_KINDS[k][0] + " " + (micCount(k) + 1); nm.dataset.auto = "1"; }
+  $("micHint").textContent = MIC_HINTS[k];
+  if (!mic.buf) micStatus(k === "pc" ? "Premi il tasto rosso e scegli cosa ascoltare." : k === "beat" ? "Premi il tasto rosso: il beat riparte dall’inizio e viene registrato." : "Premi il tasto rosso, poi fai il tuo suono: voce, mani, oggetti, o quello che arriva dall’ingresso.");
+}
+function micDevices() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+  navigator.mediaDevices.enumerateDevices().then(list => {
+    const sel = $("micDev"), cur = sel.value || state.micDev || "";
+    sel.innerHTML = ""; sel.appendChild(new Option("Quello predefinito", ""));
+    list.filter(d => d.kind === "audioinput" && d.deviceId && d.deviceId !== "default").forEach((d, i) => sel.appendChild(new Option(d.label || "Ingresso " + (i + 1), d.deviceId)));
+    sel.value = [...sel.options].some(o => o.value === cur) ? cur : "";
+  }).catch(() => {});
+}
 function openMic() {
   initAudio();
-  const p = padLabel(state.bank, state.pad);
-  $("micUse").textContent = "Metti sul pad " + p;
-  if (!$("micName").value) $("micName").value = "Voce " + (micNum + 1);
-  $("micBox").hidden = false; micDraw();
-  micStatus(mic.buf ? "Ascolta, rifai o mettilo sul pad" : "Premi il tasto rosso, poi fai il tuo suono: voce, mani, oggetti…");
+  $("micUse").textContent = "Metti sul pad " + padLabel(state.bank, state.pad);
+  $("micBox").hidden = false; micKind(mic.kind); micDraw(); micDevices();
+  if (mic.buf) micStatus("Ascolta, rifai, taglialo nei pad o mettilo sul pad.");
   $("micRec").focus();
 }
 function closeMic() {
@@ -1873,40 +1903,101 @@ function closeMic() {
 function micStatus(t, bad) { const e = $("micState"); e.textContent = t; e.classList.toggle("bad", !!bad); }
 function micRelease() {
   if (mic.stream) mic.stream.getTracks().forEach(t => t.stop());
-  try { if (mic.src) mic.src.disconnect(); if (mic.proc) { mic.proc.onaudioprocess = null; mic.proc.disconnect(); } } catch (e) { /* gone */ }
+  // only our own connections: when resampling, the source is the master output, which keeps playing
+  try { if (mic.src) { mic.src.disconnect(mic.proc); mic.src.disconnect(mic.an); } } catch (e) { /* gone */ }
+  try { if (mic.proc) { mic.proc.onaudioprocess = null; mic.proc.disconnect(); } } catch (e) { /* gone */ }
   mic.stream = mic.src = mic.proc = mic.an = null;
 }
 function micStart() {
   if (!initAudio()) return;
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micStatus("Questo browser non può usare il microfono. Registra col telefono e usa «Carica un file».", true); return; }
-  micStatus("Chiedo il permesso del microfono…");
-  navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }).then(stream => {
+  if (mic.kind === "beat") { beatStart(); return; }
+  const md = navigator.mediaDevices, pc = mic.kind === "pc", cons = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+  let ask;
+  if (pc) {
+    const pol = document.permissionsPolicy || document.featurePolicy;
+    if (!md || !md.getDisplayMedia || (pol && pol.allowsFeature && !pol.allowsFeature("display-capture"))) {
+      micStatus(md && md.getDisplayMedia ? "Qui la pagina non può ascoltare le altre schede (su claude.ai è bloccato): usa l’app per PC, oppure «Microfono o ingresso» con il Missaggio stereo, il Monitor o BlackHole." : "Questo browser non può ascoltare le altre schede: usa Chrome o Edge, oppure l’app per PC.", true);
+      return;
+    }
+    micStatus("Scegli cosa ascoltare e spunta «Condividi l’audio»…");
+    ask = md.getDisplayMedia({ video: true, audio: Object.assign({ suppressLocalAudioPlayback: false }, cons), systemAudio: "include", selfBrowserSurface: "exclude", surfaceSwitching: "include", preferCurrentTab: false });
+  } else {
+    if (!md || !md.getUserMedia) { micStatus("Questo browser non può usare il microfono. Registra col telefono e usa «Carica un file».", true); return; }
+    micStatus("Chiedo il permesso…");
+    const dev = $("micDev").value;
+    ask = md.getUserMedia({ audio: Object.assign({ channelCount: { ideal: 2 } }, cons, dev ? { deviceId: { exact: dev } } : {}) });
+  }
+  ask.then(stream => {
     if ($("micBox").hidden) { stream.getTracks().forEach(t => t.stop()); return; }
-    mic.stream = stream; mic.chunks = []; mic.len = 0; mic.sr = ctx.sampleRate; mic.peak = 0; mic.buf = null;
-    mic.src = ctx.createMediaStreamSource(stream);
-    mic.an = ctx.createAnalyser(); mic.an.fftSize = 2048;
-    mic.proc = ctx.createScriptProcessor(4096, 1, 1);
-    const mute = ctx.createGain(); mute.gain.value = 0;
-    mic.src.connect(mic.an); mic.src.connect(mic.proc); mic.proc.connect(mute).connect(ctx.destination);
-    mic.proc.onaudioprocess = e => {
-      if (!mic.on) return;
-      const d = e.inputBuffer.getChannelData(0), c = new Float32Array(d);
-      for (let i = 0; i < c.length; i++) mic.peak = Math.max(mic.peak, Math.abs(c[i]));
-      mic.chunks.push(c); mic.len += c.length;
-      if (mic.len >= MIC_MAX * mic.sr) micStop();
-    };
-    mic.on = true; mic.t0 = performance.now();
-    $("micRec").classList.add("on"); $("micRec").setAttribute("aria-label", "Ferma la registrazione");
-    $("micPlay").disabled = $("micUse").disabled = true;
-    micStatus("REGISTRO… premi di nuovo il tasto rosso per fermare (massimo " + MIC_MAX + " secondi)");
-    const live = () => { if (!mic.on) return; micDraw(); mic.raf = requestAnimationFrame(live); };
-    live();
+    if (!stream.getAudioTracks().length) {
+      stream.getTracks().forEach(t => t.stop());
+      micStatus(location.protocol === "app:" && !/Win/i.test(navigator.platform) ? "Su questo computer l’app non riceve l’audio di sistema: usa «Microfono o ingresso» con BlackHole (Mac) o il «Monitor» della scheda audio (Linux)." : "Non arriva audio: scegli una scheda (per esempio quella di YouTube) e spunta «Condividi l’audio».", true);
+      return;
+    }
+    stream.getVideoTracks().forEach(t => { t.enabled = false; });
+    stream.getAudioTracks()[0].addEventListener("ended", () => micStop());   // "stop sharing" in the browser bar
+    micCapture(ctx.createMediaStreamSource(stream), stream, true);
+    if (!pc) micDevices();
   }).catch(err => {
     const name = err && err.name;
-    if (name === "NotFoundError" || name === "OverconstrainedError") micStatus("Non trovo nessun microfono collegato.", true);
+    if (pc) micStatus(name === "NotAllowedError" ? "Nessuna scheda scelta. Premi di nuovo il tasto rosso quando vuoi." : "Non riesco ad ascoltare il computer qui: prova l’app per PC o «Microfono o ingresso».", name !== "NotAllowedError");
+    else if (name === "NotFoundError" || name === "OverconstrainedError") micStatus("Non trovo questo ingresso: scegline un altro.", true);
     else if (location.protocol === "app:") micStatus("Il microfono è bloccato: consenti a Mat.Tone di usarlo nelle impostazioni di privacy del computer, poi riprova.", true);
     else micStatus("Qui il microfono non è permesso (la pagina su claude.ai può bloccarlo). Usa l’app per PC, oppure registra col telefono e usa «Carica un file».", true);
   });
+}
+// resample: the beat from the top of the pattern, for exactly the bars chosen
+// The master goes to channel 1 in mono; channel 2 carries a "gate" that the audio clock opens on the first downbeat
+// and closes after the last bar, so the take is exact to the sample.
+function beatStart() {
+  const bars = +$("micBars").value, secs = bars * 240 / state.bpm;
+  if (playing) stop();
+  const mono = ctx.createGain(); mono.channelCount = 1; mono.channelCountMode = "explicit"; mono.channelInterpretation = "speakers";
+  const gate = ctx.createConstantSource(), merge = ctx.createChannelMerger(2);
+  N.out.connect(mono); mono.connect(merge, 0, 0); gate.connect(merge, 0, 1);
+  mic.beat = { mono, gate, secs, open: false };
+  mic.known = { bars, bpm: state.bpm };   // the chop editor need not guess the tempo of a resample
+  micCapture(merge, null, false);
+  micStatus("RICAMPIONO " + bars + (bars > 1 ? " BATTUTE" : " BATTUTA") + "…");
+  // the capture runs first; the beat starts a moment later, so its first hit is not lost
+  setTimeout(() => { if (!mic.on || mic.beat !== null && mic.beat.gate !== gate) return; start(); gate.start(gridOrigin); gate.stop(gridOrigin + secs); }, 300);
+}
+// wait: the take starts with the first sound (with a hair before it), so there is time to press play on the video
+function micCapture(src, stream, wait) {
+  mic.stream = stream; mic.chunks = []; mic.pre = null; mic.len = 0; mic.sr = ctx.sampleRate; mic.peak = 0; mic.buf = null; mic.wait = wait;
+  mic.src = src;
+  mic.an = ctx.createAnalyser(); mic.an.fftSize = 2048;
+  mic.proc = ctx.createScriptProcessor(4096, 2, 1);
+  const mute = ctx.createGain(); mute.gain.value = 0;
+  src.connect(mic.an); src.connect(mic.proc); mic.proc.connect(mute).connect(ctx.destination);
+  mic.proc.onaudioprocess = e => {
+    if (!mic.on) return;
+    const ib = e.inputBuffer, L = ib.getChannelData(0), R = ib.numberOfChannels > 1 ? ib.getChannelData(1) : L, n = L.length;
+    let c, pk = 0;
+    if (mic.beat) {   // only the samples while the gate is open
+      const bt = mic.beat, keep = [];
+      for (let i = 0; i < n; i++) if (R[i] > 0.5) { keep.push(L[i]); bt.open = true; } else if (bt.open && !bt.closed) { bt.closed = true; setTimeout(() => micStop(), 0); }
+      c = Float32Array.from(keep); for (let i = 0; i < c.length; i++) pk = Math.max(pk, Math.abs(c[i]));
+    } else {
+      c = new Float32Array(n);
+      for (let i = 0; i < n; i++) { c[i] = (L[i] + R[i]) / 2; pk = Math.max(pk, Math.abs(c[i])); }
+    }
+    if (mic.wait) {
+      if (pk < 0.01) { mic.pre = c; return; }
+      mic.wait = false; mic.t0 = performance.now();
+      if (mic.pre) { mic.chunks.push(mic.pre); mic.len += mic.pre.length; }
+      setTimeout(() => micStatus("REGISTRO… premi di nuovo il tasto rosso per fermare (massimo " + MIC_MAX + " secondi)"), 0);
+    }
+    mic.peak = Math.max(mic.peak, pk);
+    mic.chunks.push(c); mic.len += c.length;
+    if (mic.len >= MIC_MAX * mic.sr) setTimeout(() => micStop(), 0);
+  };
+  mic.on = true; mic.t0 = performance.now();
+  $("micRec").classList.add("on"); $("micRec").setAttribute("aria-label", "Ferma la registrazione");
+  $("micPlay").disabled = $("micUse").disabled = $("micChop").disabled = true;
+  micStatus(wait ? (mic.kind === "pc" ? "IN ASCOLTO: fai partire il video o la canzone, la registrazione parte col suono." : "IN ASCOLTO: parte appena arriva il suono.") : "REGISTRO… premi di nuovo il tasto rosso per fermare (massimo " + MIC_MAX + " secondi)");
+  const live = () => { if (!mic.on) return; micDraw(); mic.raf = requestAnimationFrame(live); };
+  live();
 }
 // cut the silence before and after, remove the offset, fade the edges, bring it to full level
 function micShape(data, sr, trim) {
@@ -1919,7 +2010,7 @@ function micShape(data, sr, trim) {
     while (b > a && Math.abs(data[b - 1]) < thr) b--;
     a = Math.max(0, a - Math.floor(sr * 0.012)); b = Math.min(data.length, b + Math.floor(sr * 0.09));
   }
-  const out = data.slice(a, b), n = out.length, fi = Math.min(n, Math.floor(sr * 0.003)), fo = Math.min(n, Math.floor(sr * 0.025));
+  const out = data.slice(a, b), n = out.length, fi = Math.min(n, Math.floor(sr * 0.003)), fo = Math.min(n, Math.floor(sr * (trim ? 0.025 : 0.004)));
   for (let i = 0; i < fi; i++) out[i] *= i / fi;
   for (let i = 0; i < fo; i++) out[n - 1 - i] *= i / fo;
   if (peak > 0) for (let i = 0; i < n; i++) out[i] *= 0.89 / peak;
@@ -1928,16 +2019,20 @@ function micShape(data, sr, trim) {
 function micStop(quiet) {
   if (!mic.on) return;
   mic.on = false; cancelAnimationFrame(mic.raf);
+  const beat = mic.beat; mic.beat = null;
+  if (beat) { if (playing) stop(); try { N.out.disconnect(beat.mono); beat.gate.disconnect(); } catch (e) { /* gone */ } }
   $("micRec").classList.remove("on"); $("micRec").setAttribute("aria-label", "Registra");
   micRelease();
   if (quiet) return;
-  if (mic.len < mic.sr * 0.05 || mic.peak < 0.004) { micStatus("Non ho sentito niente: avvicinati al microfono e riprova.", true); mic.buf = null; micDraw(); return; }
+  if (mic.wait) { micStatus(mic.kind === "pc" ? "Non è arrivato nessun suono: controlla di aver spuntato «Condividi l’audio» e che il video stia suonando." : "Non è arrivato nessun suono.", true); mic.buf = null; micDraw(); return; }
+  if (mic.len < mic.sr * 0.05 || mic.peak < 0.004) { micStatus(beat ? "Il beat è muto: metti qualcosa nel pattern e riprova." : "Non ho sentito niente: avvicinati al microfono e riprova.", true); mic.buf = null; micDraw(); return; }
   const all = new Float32Array(mic.len); let o = 0; for (const c of mic.chunks) { all.set(c, o); o += c.length; }
   mic.chunks = [];
-  const shaped = micShape(all, mic.sr, $("micTrim").checked);
+  const shaped = micShape(all, mic.sr, !beat && $("micTrim").checked);
   mic.buf = ctx.createBuffer(1, shaped.length, mic.sr); mic.buf.getChannelData(0).set(shaped);
-  $("micPlay").disabled = $("micUse").disabled = false;
-  micStatus("Fatto: " + mic.buf.duration.toFixed(1).replace(".", ",") + " secondi. Ascolta, rifai o mettilo sul pad." + (mic.peak > 0.98 ? " (Era un po’ troppo forte: se gracchia, allontanati e rifai.)" : ""));
+  mic.take = mic.kind;
+  $("micPlay").disabled = $("micUse").disabled = $("micChop").disabled = false;
+  micStatus("Fatto: " + mic.buf.duration.toFixed(1).replace(".", ",") + " secondi. Ascolta, taglialo nei pad o mettilo su un pad." + (mic.peak > 0.98 && !beat ? " (Era un po’ troppo forte: se gracchia, abbassa e rifai.)" : ""));
   micDraw(); micPlay();
 }
 function micPlay() {
@@ -1948,17 +2043,25 @@ function micPlay() {
   s.onended = () => { if (mic.preview === s) mic.preview = null; };
   run();
 }
+const micTakeName = () => ($("micName").value || "").trim() || MIC_KINDS[mic.take][0] + " " + (micCount(mic.take) + 1);
 function micUse() {
   if (!mic.buf) return;
-  const name = ($("micName").value || "").trim() || "Voce " + (micNum + 1), b = state.bank, p = state.pad;
-  const id = addUserSound(name, "Microfono", mic.buf);
-  micNum++;
+  const name = micTakeName(), b = state.bank, p = state.pad;
+  const id = addUserSound(name, MIC_KINDS[mic.take][1], mic.buf);
   state.banks[b][p].sound = id; state.banks[b][p].gate = 0; state.banks[b][p].pitch = 0; save();
   renderAll(); if (!$("drawer").hidden) renderLibrary();
   userSave(id, mic.buf).then(ok => msg("PAD " + padLabel(b, p) + ": " + name.toUpperCase() + (ok ? " · SALVATO" : " · SOLO PER ORA")));
   mic.buf = null; $("micName").value = "";
   closeMic();
   trigger(b, p, ctx.currentTime);
+}
+// the take goes straight into the chop editor, to be spread over the pads
+function micChop() {
+  if (!mic.buf) return;
+  const buf = mic.buf, name = micTakeName(), src = MIC_KINDS[mic.take][1], known = mic.take === "beat" ? mic.known : null;
+  mic.buf = null; $("micName").value = "";
+  closeMic();
+  chopOpen(buf, name, null, 0, src, known);
 }
 // the scope: live input while recording, the take with a playhead afterwards
 function micDraw(play) {
@@ -1969,8 +2072,8 @@ function micDraw(play) {
   c.beginPath(); c.moveTo(0, H / 2); c.lineTo(W, H / 2); c.stroke();
   c.fillStyle = led; c.strokeStyle = led;
   if (mic.on && mic.an) {
-    // everything recorded so far, squeezed into the 15 seconds of the window
-    const per = MIC_MAX * mic.sr / W; let x = 0, acc = 0, mx = 0;
+    // everything recorded so far: the window grows ten seconds at a time (a resample shows its whole length)
+    const span = mic.beat ? mic.beat.secs : Math.max(10, Math.ceil(mic.len / mic.sr / 10 + 0.001) * 10), per = span * mic.sr / W; let x = 0, acc = 0, mx = 0;
     for (const ch of mic.chunks) for (let i = 0; i < ch.length; i++) { mx = Math.max(mx, Math.abs(ch[i])); if (++acc >= per) { const h = Math.max(1, mx * H * 0.48); c.fillRect(x, H / 2 - h, 1, h * 2); x++; acc = 0; mx = 0; } }
     c.fillStyle = "#ff3b30"; c.fillRect(x, 0, 2, H);
     const sec = mic.len / mic.sr; $("micTime").textContent = sec.toFixed(1).replace(".", ",") + " s";
@@ -1994,6 +2097,10 @@ function bindMic() {
   $("micRec").addEventListener("click", () => { if (mic.on) micStop(); else micStart(); });
   $("micPlay").addEventListener("click", micPlay);
   $("micUse").addEventListener("click", micUse);
+  $("micChop").addEventListener("click", micChop);
+  [...$("micSrc").children].forEach(b => b.addEventListener("click", () => micKind(b.dataset.s)));
+  $("micDev").addEventListener("change", e => { state.micDev = e.target.value; save(); });
+  $("micName").addEventListener("input", e => { e.target.dataset.auto = "0"; });
 }
 // remove one of your sounds for good; the pads that used it go back to the group's sound
 function userDelete(id) {
@@ -3010,20 +3117,25 @@ function openChop() {
   if (!initAudio()) return;
   const pr = curPr(), s = SOUNDS.get(pr.sound);
   if (!s) return;
-  loadSound(pr.sound).then(buf => {
-    if (buf.duration < 0.2) { msg("TROPPO CORTO PER TAGLIARLO: SCEGLI UN LOOP O UN BREAK"); return; }
-    const n = buf.length, ch = buf.numberOfChannels, d = new Float32Array(n);
-    for (let c = 0; c < ch; c++) { const x = buf.getChannelData(c); for (let i = 0; i < n; i++) d[i] += x[i] / ch; }
-    let gpk = 0; for (let i = 0; i < n; i++) gpk = Math.max(gpk, Math.abs(d[i]));
-    Object.assign(chop, { id: pr.sound, buf, d, sr: buf.sampleRate, gpk: gpk || 1, pitch: pr.pitch, bank: state.bank, mode: "hits", drag: -1, down: null, tap: null });
-    chop.onsets = findOnsets(d, buf.sampleRate); chop.est = loopBpm();
-    chop.n = Math.max(2, Math.min(8, chop.onsets.length + 1));
-    $("chopTitle").textContent = "Taglia · " + s.name;
-    $("chopBox").hidden = false;
-    sizeChop(); chopAuto();
-    $("chopPlay").focus();
-  }).catch(() => msg("NON RIESCO AD APRIRE QUESTO SUONO"));
+  loadSound(pr.sound).then(buf => chopOpen(buf, s.name, pr.sound, pr.pitch)).catch(() => msg("NON RIESCO AD APRIRE QUESTO SUONO"));
 }
+// id: the pad's sound, or null for a fresh take from the sampler (src says where it came from)
+function chopOpen(buf, name, id, pitch, src, known) {
+  if (buf.duration < 0.2) { msg("TROPPO CORTO PER TAGLIARLO: SCEGLI UN LOOP O UN BREAK"); return; }
+  const n = buf.length, ch = buf.numberOfChannels, d = new Float32Array(n);
+  for (let c = 0; c < ch; c++) { const x = buf.getChannelData(c); for (let i = 0; i < n; i++) d[i] += x[i] / ch; }
+  let gpk = 0; for (let i = 0; i < n; i++) gpk = Math.max(gpk, Math.abs(d[i]));
+  Object.assign(chop, { id, name, src: src || "", buf, d, sr: buf.sampleRate, gpk: gpk || 1, pitch, bank: state.bank, mode: "hits", drag: -1, down: null, tap: null });
+  chop.onsets = findOnsets(d, buf.sampleRate); chop.est = known ? Object.assign({ len: n }, known) : loopBpm();
+  chop.n = Math.max(2, Math.min(id ? 8 : 12, chop.onsets.length + 1));   // a take fills the twelve pads of the group
+  $("chopTitle").textContent = "Taglia · " + name;
+  $("chopBox").hidden = false;
+  sizeChop(); chopAuto();
+  $("chopPlay").focus();
+}
+// piece i: the twelve pads of the group, then on into the next groups
+const chopPad = i => ({ b: (chop.bank + Math.floor(i / 12)) % BANKS.length, p: i % 12 });
+const chopLabel = i => { const q = chopPad(i); return padLabel(q.b, q.p); };
 function closeChop() {
   chopStop();
   $("chopBox").hidden = true;
@@ -3057,30 +3169,32 @@ function chopAuto() {
 // the tempo of a loop: the sound lasts 1, 2, 4 or 8 bars (plus at most a short tail) and its hits fall on the sixteenths;
 // a sound without a rhythm (a note, a voice) has none
 function loopBpm() {
-  const rate = Math.pow(2, chop.pitch / 12), dur = chop.d.length / chop.sr / rate, on = chop.onsets.slice(0, 16).map(o => o.pos / chop.sr / rate);
+  const rate = Math.pow(2, chop.pitch / 12), dur = chop.d.length / chop.sr / rate, on = chop.onsets.slice(0, 12).map(o => o.pos / chop.sr / rate);   // the strongest hits: kicks and snares, rarely swung
   if (dur < 1 || on.length < 3) return null;
   let best = null;
   for (const bars of [1, 2, 4, 8]) {
-    const lo = Math.ceil(240 * bars / dur - 1e-9), hi = Math.floor(240 * bars / Math.max(0.5, dur - Math.max(0.2, Math.min(0.6, dur * 0.12))));
+    const lo = Math.ceil(240 * bars / dur - 0.02),   // a take of exactly N bars is a hair off the integer tempo
+        hi = Math.floor(240 * bars / Math.max(0.5, dur - Math.max(0.2, Math.min(0.6, dur * 0.12))));
     for (let bpm = Math.max(60, lo); bpm <= Math.min(200, hi); bpm++) {
       // how well the hits line up on the sixteenths, whatever the small constant offset of the cuts
       const st = 15 / bpm; let cs = 0, sn = 0;
       for (const t of on) { cs += Math.cos(2 * Math.PI * t / st); sn += Math.sin(2 * Math.PI * t / st); }
-      const err = 1 - Math.hypot(cs, sn) / on.length, score = err + Math.abs(bpm - state.bpm) / 4000;
+      const err = 1 - Math.hypot(cs, sn) / on.length, tail = dur - 240 * bars / bpm, score = err + Math.abs(bpm - state.bpm) / 4000 + 0.15 * tail / dur;
       if (!best || score < best.score) best = { bars, bpm, score, err, len: Math.min(chop.d.length, Math.round(bars * 240 / bpm * rate * chop.sr)) };
     }
   }
   return best && best.err < 0.25 ? best : null;
 }
 function chopInfo() {
-  const n = chop.cuts.length, lb = chop.est, b = chop.bank;
+  const n = chop.cuts.length, lb = chop.est;
   $("chopN").value = Math.max(2, n); $("chopNOut").textContent = n;
   [...$("chopMode").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.m === chop.mode));
   $("chopTime").textContent = (chop.d.length / chop.sr).toFixed(2).replace(".", ",") + " s";
   $("chopState").textContent = (chop.mode === "hits" ? chop.onsets.length + (chop.onsets.length === 1 ? " colpo trovato" : " colpi trovati") + " · " : "") + n + (n === 1 ? " pezzo" : " pezzi") + (lb ? " · loop di " + lb.bars + (lb.bars > 1 ? " battute" : " battuta") + " a " + lb.bpm + " BPM" : "");
   $("chopSeqL").hidden = n < 2;
   $("chopBpmL").hidden = !lb;
-  $("chopUse").textContent = n > 1 ? "Metti sui pad " + padLabel(b, 0) + "–" + padLabel(b, n - 1) : "Metti sul pad " + padLabel(b, 0);
+  $("chopUse").textContent = n > 1 ? "Metti sui pad " + chopLabel(0) + "–" + chopLabel(n - 1) : "Metti sul pad " + chopLabel(0);
+  if (n > 12) $("chopState").textContent += " · oltre il 12° si continua nei gruppi " + [...new Set(chop.cuts.slice(12).map((_, i) => BANKS[chopPad(i + 12).b].id))].join(", ") + " (al posto dei loro suoni)";
 }
 function drawChop(play) {
   const cv = $("chopCv"), c = cv.getContext("2d"), W = cv.width, H = cv.height, pk = chop.peaks;
@@ -3100,7 +3214,7 @@ function drawChop(play) {
     const x = X(a);
     c.fillStyle = i === chop.drag ? "#fff4e0" : hue;
     if (i) { c.fillRect(x - k, 0, 2 * k, H); c.beginPath(); c.moveTo(x - 7 * k, 0); c.lineTo(x + 7 * k, 0); c.lineTo(x, 9 * k); c.fill(); c.beginPath(); c.moveTo(x - 7 * k, H); c.lineTo(x + 7 * k, H); c.lineTo(x, H - 9 * k); c.fill(); }
-    const lab = padLabel(chop.bank, i);
+    const lab = chopLabel(i);
     if (X(chopEnd(i)) - x > c.measureText(lab).width + 10 * k) c.fillText(lab, x + 6 * k, 12 * k);   // only where it fits
   });
   if (play != null) { c.fillStyle = "#fff4e0"; c.fillRect(X(play) - k, 0, 2 * k, H); }
@@ -3155,7 +3269,7 @@ function chopPointer(cv) {
     if (chop.tap && now - chop.tap.t < 350 && Math.abs(dn.px - chop.tap.px) < 24) {   // a double tap adds a cut, or takes it away
       chop.tap = null; chopStop();
       if (dn.hit > 0) chop.cuts.splice(dn.hit, 1);
-      else if (chop.cuts.length >= 12) msg("AL MASSIMO 12 PEZZI, UNO PER PAD");
+      else if (chop.cuts.length >= 48) msg("AL MASSIMO 48 PEZZI: 12 PAD PER 4 GRUPPI");
       else { const p = zeroNear(dn.pos); if (chop.cuts.every(a => Math.abs(a - p) > chop.sr * 0.01)) { chop.cuts.push(p); chop.cuts.sort((a, b) => a - b); } }
       chopInfo(); drawChop(); return;
     }
@@ -3175,7 +3289,9 @@ function chopKey(e) {
 // each piece becomes one of your sounds, on the pads of the group in order; a pattern can play them back in their place
 function chopUse() {
   if (!chop.d) return;
-  const b = chop.bank, s = SOUNDS.get(chop.id), name = (n => n.length > 18 ? n.slice(0, 18).replace(/\s+\S*$/, "") : n)(s.name.replace(/\s*·.*$/, "")), cuts = chop.cuts.slice(), sr = chop.sr, L = chop.d.length;
+  const b = chop.bank, name = (n => n.length > 18 ? n.slice(0, 18).replace(/\s+\S*$/, "") : n)(chop.name.replace(/\s*·.*$/, "")), cuts = chop.cuts.slice(), sr = chop.sr, L = chop.d.length;
+  // a fresh take is also kept whole, to cut it again another time
+  if (!chop.id) { const whole = addUserSound(chop.name, chop.src || "Campione", chop.buf); userSave(whole, chop.buf); }
   const lb = $("chopBpm").checked ? chop.est : null;
   if (lb) setBpm(lb.bpm);
   const hits = cuts.map((a, i) => {
@@ -3184,8 +3300,8 @@ function chopUse() {
     const fi = Math.min(n, Math.round(sr * 0.0015)), fo = Math.min(n, Math.round(sr * 0.006));
     for (let k = 0; k < fi; k++) o[k] *= k / fi;
     for (let k = 0; k < fo; k++) o[n - 1 - k] *= k / fo;
-    const id = addUserSound(name + " · " + (i + 1), "Taglio di " + s.name, out);
-    const pr = state.banks[b][i]; pr.sound = id; pr.gate = 0; pr.pitch = chop.pitch;
+    const id = addUserSound(name + " · " + (i + 1), "Taglio di " + chop.name, out), q = chopPad(i);
+    const pr = state.banks[q.b][q.p]; pr.sound = id; pr.gate = 0; pr.pitch = chop.pitch;
     userSave(id, out);
     return a / sr;
   });
@@ -3193,13 +3309,14 @@ function chopUse() {
   if ($("chopSeq").checked && cuts.length > 1) {
     const rate = Math.pow(2, chop.pitch / 12), need = chop.est ? Math.round(chop.est.len / sr / rate / (240 / state.bpm)) : Math.ceil(L / sr / rate / (240 / state.bpm) - 0.05);
     if (need > pm().bars) setShape(BARS.find(x => x >= need) || BARS[BARS.length - 1], pm().div);
-    const pat = state.patterns[state.pattern][b], len = patLen(), sd = stepDur();
-    hits.forEach((at, i) => { pat[i].fill(0); const st = Math.round(at / rate / sd); if (st < len) { pat[i][st] = [1, 0]; wrote = true; } });
+    const pat = state.patterns[state.pattern], len = patLen(), sd = stepDur();
+    hits.forEach((at, i) => { const q = chopPad(i), row = pat[q.b][q.p]; row.fill(0); const st = Math.round(at / rate / sd); if (st < len) { row[st] = [1, 0]; wrote = true; } });
   }
   state.bank = b; state.pad = 0;
   closeChop(); save(); renderAll(); if (!$("drawer").hidden) renderLibrary();
   if (ctx) trigger(b, 0, ctx.currentTime);
-  msg(cuts.length + (cuts.length > 1 ? " PEZZI SUI PAD " + padLabel(b, 0) + "–" + padLabel(b, cuts.length - 1) : " PEZZO SUL PAD " + padLabel(b, 0)) + (lb ? " · " + state.bpm + " BPM" : "") + (wrote ? " · PATTERN SCRITTO: PREMI PLAY" : ""));
+  if (ctx) state.banks.flat().forEach(pr => loadSound(pr.sound).catch(() => {}));
+  msg(cuts.length + (cuts.length > 1 ? " PEZZI SUI PAD " + chopLabel(0) + "–" + chopLabel(cuts.length - 1) : " PEZZO SUL PAD " + chopLabel(0)) + (lb ? " · " + state.bpm + " BPM" : "") + (wrote ? " · PATTERN SCRITTO: PREMI PLAY" : ""));
 }
 function bindChop() {
   $("chopBtn").addEventListener("click", openChop);

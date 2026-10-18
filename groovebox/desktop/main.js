@@ -1,6 +1,6 @@
 // Mat.Tone desktop: the same groovebox page, served from the app folder through an app:// scheme
 // (fetch() of the sample files does not work from file://, and a fixed origin keeps saved patterns).
-const { app, BrowserWindow, protocol, net, session, shell, Menu, ipcMain } = require("electron");
+const { app, BrowserWindow, protocol, net, session, shell, Menu, ipcMain, desktopCapturer } = require("electron");
 const path = require("path");
 const { pathToFileURL } = require("url");
 const { checkForUpdates } = require("./updater");
@@ -47,6 +47,14 @@ app.whenReady().then(() => {
     if (process.env.MATTONE_SAVE_DIR) item.setSavePath(path.join(process.env.MATTONE_SAVE_DIR, item.getFilename()));   // automated tests
     else item.setSaveDialogOptions({ title: "Salva il beat", defaultPath: path.join(app.getPath("music"), item.getFilename()) });
   });
+  // "Audio del computer" in the sampler: the screen (never shown) with the system sound, which Windows can give;
+  // elsewhere no audio arrives and the page suggests an input like BlackHole or the sound card's monitor
+  session.defaultSession.setDisplayMediaRequestHandler((_request, callback) => {
+    desktopCapturer.getSources({ types: ["screen"] }).then(sources => {
+      if (!sources.length) return callback({});
+      callback(process.platform === "win32" ? { video: sources[0], audio: "loopback" } : { video: sources[0] });
+    }).catch(() => callback({}));
+  }, { useSystemPicker: true });
   // the page asks for the version and for an update check (Personalizza → App)
   ipcMain.handle("app-version", () => app.getVersion());
   ipcMain.handle("check-updates", e => checkForUpdates(BrowserWindow.fromWebContents(e.sender), true));

@@ -1,7 +1,7 @@
 {
   "name": "mattone",
   "productName": "Mat.Tone",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Mat.Tone, groovebox hip hop con pad, sequencer, scratch ed esportazione WAV/MP3",
   "main": "main.js",
   "license": "MIT",
@@ -68,7 +68,8 @@
       "icon": "build/icon.png",
       "artifactName": "Mat.Tone-${version}-${arch}.${ext}",
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Mat.Tone usa il microfono per registrare i tuoi suoni sui pad."
+        "NSMicrophoneUsageDescription": "Mat.Tone usa il microfono per registrare i tuoi suoni sui pad.",
+        "NSAudioCaptureUsageDescription": "Mat.Tone ascolta l’audio del computer per campionarlo sui pad."
       }
     },
     "linux": {
