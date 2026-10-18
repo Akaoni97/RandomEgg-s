@@ -296,6 +296,25 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .humanl { display: flex; align-items: center; gap: 8px; }
 .humanl input { width: 110px; }
 .humanl output { min-width: 3.5ch; color: var(--led); }
+.cell.r2::before, .cell.r3::before, .cell.r4::before { position: absolute; top: 1px; left: 3px; font-family: var(--f-vfd); font-size: 12px; line-height: 1; color: rgba(20,16,10,.8); }
+.cell.r2::before { content: "×2"; } .cell.r3::before { content: "×3"; } .cell.r4::before { content: "×4"; }
+.cell.maybe { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,.32) 0 3px, transparent 3px 7px); }
+.steppop { position: fixed; z-index: 45; display: grid; gap: 10px; padding: 12px 14px; border-radius: 10px; background: var(--chassis); box-shadow: 0 0 0 1px var(--edge), 0 18px 40px rgba(0,0,0,.6); animation: cardIn .25s cubic-bezier(.34, 1.4, .64, 1); width: min(340px, calc(100vw - 16px)); }
+.steppop .sphd { font-family: var(--f-label); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--led); }
+.steppop .sprow { display: grid; gap: 4px; }
+.steppop .seg button { flex: 1; padding: 6px 4px; }
+.steppop .spacts { display: flex; justify-content: space-between; gap: 8px; }
+.form { display: grid; gap: 8px; margin-top: 4px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.formhd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+#formCv { width: 100%; height: auto; aspect-ratio: 640 / 120; border-radius: 8px; display: block; touch-action: none; cursor: ew-resize; box-shadow: inset 0 2px 8px rgba(0,0,0,.8), 0 0 0 1px var(--edge); }
+.formrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.formknobs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.formknobs .knob canvas { width: 48px; height: 48px; }
+.formtog { display: grid; gap: 6px; justify-items: stretch; }
+.formch { display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+.formch select { background: var(--well); color: var(--well-text); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px; }
+.projrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 2px; }
+.projhint { text-transform: none; letter-spacing: .02em; }
 .cell.ghost { background: color-mix(in srgb, var(--hue) 22%, var(--cell)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hue) 55%, transparent); }
 .cell.pitched::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 5px; height: 2px; background: rgba(20,16,10,.6); border-radius: 1px; }
 .cell.now { box-shadow: inset 0 0 0 2px var(--cream); }
@@ -1034,7 +1053,8 @@ html.intro-on { overflow: hidden; }
         <div class="nrbar">
           <button class="key small" id="nrBtn" type="button" aria-pressed="false" title="Tasto H"><span class="ledi"></span>Note repeat</button>
           <div class="seg" id="nrSeg" role="group" aria-label="Velocità del note repeat"></div>
-          <span class="hint">Accendilo e tieni premuto un pad: lo ripete a tempo (T = terzine). Con REC finisce nel pattern.</span>
+          <button class="key small" id="midiBtn" type="button" aria-pressed="false" title="Suona i pad da un controller MIDI"><span class="ledi"></span><span>MIDI</span></button>
+          <span class="hint">Note repeat: tieni premuto un pad e lo ripete a tempo (T = terzine); con REC finisce nel pattern. MIDI: i pad del controller (note 36–47) suonano i pad del gruppo.</span>
         </div>
       </section>
       <div class="col">
@@ -1057,6 +1077,18 @@ html.intro-on { overflow: hidden; }
           </div>
           <div class="knobs" id="knobs"></div>
           <div class="gate"><span class="lbl">Durata nota</span><div class="seg" id="gate" role="group" aria-label="Durata nota"></div></div>
+          <div class="form">
+            <div class="formhd"><span class="lbl">Forma del suono · trascina inizio e fine</span><button class="key small" id="formReset" type="button">Com’era</button></div>
+            <canvas id="formCv" width="640" height="120" aria-label="Forma d’onda del pad: trascina le linee di inizio e fine"></canvas>
+            <div class="formrow">
+              <div class="knobs formknobs" id="formKnobs"></div>
+              <div class="formtog">
+                <button class="key small" id="formRev" type="button" aria-pressed="false"><span class="ledi"></span>Al contrario</button>
+                <button class="key small" id="formSp" type="button" aria-pressed="false" title="12 bit a 26 kHz, come l’SP-1200"><span class="ledi"></span>SP-12</button>
+                <label class="lbl formch" title="I pad dello stesso gruppo choke si zittiscono a vicenda, come charleston aperto e chiuso">Choke <select id="formCh" aria-label="Gruppo choke"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
+              </div>
+            </div>
+          </div>
         </section>
         <section class="unit fxunit" aria-label="Effetti al volo">
           <div class="hd"><h2>Effetti al volo · tieni premuto</h2></div>
@@ -1179,6 +1211,7 @@ html.intro-on { overflow: hidden; }
             <button class="key small" id="recAgain" type="button" disabled>Salva di nuovo</button>
           </div>
           <audio id="recPlayer" controls hidden></audio>
+          <div class="projrow"><span class="lbl">Progetto</span><button class="key small" id="projSave" type="button" title="Ctrl+S">Salva progetto</button><label class="key small" for="projFile">Apri progetto</label><input type="file" id="projFile" accept=".mattone,.zip,.json,application/json,application/zip" hidden><span class="lbl projhint">pattern, canzone, pad, mix e i tuoi campioni in un solo file</span></div>
           <p class="rechint">Registra quello che esce dalle casse: sequencer, pad, scratch ed effetti. Con un numero di battute parte dall’inizio del pattern e si ferma da solo. Su claude.ai il file arriva dentro uno .zip (il visualizzatore non accetta .wav e .mp3 sciolti); nell’app per PC viene salvato direttamente.</p>
         <div class="eq73">
           <div class="hd"><h2>EQ ’73 · equalizzatore da banco</h2><div class="seg" id="eqPresets" role="group" aria-label="Suono dell’EQ"></div></div>
@@ -1289,6 +1322,10 @@ html.intro-on { overflow: hidden; }
             <li><b>✂ Taglia in pezzi</b> (sotto il pad selezionato): apre il suono del pad, trova da solo i colpi di un loop o di un break e lo divide fino a 48 pezzi: 12 per gruppo, poi continua nei gruppi successivi. Può scrivere il pattern che li risuona al loro posto e portare il tempo a quello del loop: poi li rimescoli come vuoi.</li>
             <li><b>Libreria</b> (Cambia suono): le casse sono divise per famiglia (generi, batteria, strumenti, synth). Tocca un suono e lo senti già sul pad; con ↑ ↓ li sfogli, «↺ Rimetti» torna a quello di prima, ☆ lo tiene tra i <b>Preferiti</b>. In alto anche <b>Kit pronti</b> e <b>I tuoi</b> suoni.</li>
             <li><b>Equalizzatori</b> (Mix): ogni gruppo ha bassi, medi, alti e livello, come i canali di un banco; sul master c’è l’<b>EQ ’73</b> da console, con taglia-bassi, bassi e medi a frequenze fisse e alti a 12 kHz, più cinque suoni pronti (Bassi grassi, Polvere ’70, Radio AM, Aria). Doppio clic su una manopola la rimette piatta.</li>
+            <li><b>Forma del suono</b> (sotto il pad selezionato): trascina le linee di inizio e fine sulla forma d’onda, giralo <b>al contrario</b>, dai un <b>attacco</b> morbido, chiudi il <b>filtro</b> con la risonanza, passalo nell’<b>SP-12</b> a 12 bit. Il <b>choke</b> fa zittire a vicenda i pad dello stesso numero, come charleston aperto e chiuso.</li>
+            <li><b>Opzioni dello step</b> (Sequencer): clic destro su una casella, o tienila premuta sul telefono: <b>rullata</b> (2, 3 o 4 colpi dentro lo step) e <b>probabilità</b> (suona il 75, 50 o 25% delle volte, così il beat respira).</li>
+            <li><b>Progetto</b> (Mix, o <kbd>Ctrl</kbd>+<kbd>S</kbd>): salva pattern, canzone, pad, mix e i tuoi campioni in un file .mattone; «Apri progetto» lo riapre anche su un altro computer.</li>
+            <li><b>MIDI</b> (sotto i pad): collega un controller e suona i pad con la dinamica; in modalità Note una tastiera suona il suono scelto. Start e Stop di una drum machine fanno partire e fermare Mat.Tone.</li>
             <li>In alto a sinistra scegli la <b>scocca</b>: Cantina, Hi-Fi ’76, Surplus ’68 o Metro ’89.</li>
           </ol>
         </div>
@@ -2154,7 +2191,7 @@ function micUse() {
   if (!mic.buf) return;
   const name = micTakeName(), b = state.bank, p = state.pad;
   const id = addUserSound(name, MIC_KINDS[mic.take][1], mic.buf);
-  state.banks[b][p].sound = id; state.banks[b][p].gate = 0; state.banks[b][p].pitch = 0; save();
+  state.banks[b][p].sound = id; state.banks[b][p].gate = 0; state.banks[b][p].pitch = 0; resetForm(state.banks[b][p]); save();
   renderAll(); if (!$("drawer").hidden) renderLibrary();
   userSave(id, mic.buf).then(ok => msg("PAD " + padLabel(b, p) + ": " + name.toUpperCase() + (ok ? " · SALVATO" : " · SOLO PER ORA")));
   mic.buf = null; $("micName").value = "";
@@ -2854,18 +2891,25 @@ function playBuffer(soundId, pr, t, vel, note, tag) {
     buf = z.buf; root = z.root;
   }
   const rate = Math.pow(2, (root == null ? semis : s.home + semis - root) / 12) * (fxActive.has("lofi") ? 0.94 : 1);
+  // the pad's form: crunched or reversed copy, start and end, attack, low-pass
+  const f = formOf(pr);
+  if (f.sp || f.rv) buf = shapedBuf(soundId + ":" + root, buf, f.sp, f.rv);
+  const D = buf.duration, off = (f.rv ? 1 - f.en : f.st) * D, seg = Math.max(0.005, (f.en - f.st) * D);
   const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
-  const g = ctx.createGain(), level = pr.vol * vel, full = buf.duration / rate;
+  const g = ctx.createGain(), level = pr.vol * vel, full = seg / rate;
   const len = pr.gate > 0 ? Math.min(full, pr.gate * sixteenth()) : full;
-  g.gain.setValueAtTime(level, t);
-  if (len < full) { g.gain.setValueAtTime(level, t + Math.max(0.005, len - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.03); }
-  src.connect(g);
+  const att = Math.max(f.att, f.st > 0 || f.rv ? 0.002 : 0);
+  if (att > 0) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + Math.min(att, len)); } else g.gain.setValueAtTime(level, t);
+  if (len < full) { g.gain.setValueAtTime(level, t + Math.max(att, len - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.03); }
+  else if (f.en < 1) { g.gain.setValueAtTime(level, t + Math.max(att, full - 0.006)); g.gain.linearRampToValueAtTime(0, t + full); }
+  if (f.cut < 0.995) { const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = cutHz(f.cut); lp.Q.value = 0.7 + f.res * 14; src.connect(lp).connect(g); }
+  else src.connect(g);
   // through the strip of its group; kicks drive the sidechain, everything else is ducked by it
   const gi = /^(\d+):/.exec(tag || ""), dest = gi && N.grp ? N.grp[+gi[1]][s.kick ? 0 : 1].in : s.kick ? N.bus : N.duckV;
   if (ctx.createStereoPanner && pr.pan) { const pan = ctx.createStereoPanner(); pan.pan.value = pr.pan; g.connect(pan).connect(dest); } else g.connect(dest);
   if (pr.rev > 0) { const rs = ctx.createGain(); rs.gain.value = pr.rev * (gi ? state.geq[+gi[1]][3] : 1); g.connect(rs).connect(N.revIn); }   // the group level reaches the reverb too
-  src.start(t); src.stop(t + Math.min(full, len + 0.05) + 0.01);
-  const v = { src, g, tag, sound: soundId };
+  src.start(t, off, seg); src.stop(t + Math.min(full, len + 0.05) + 0.01);
+  const v = { src, g, tag, sound: soundId, ch: f.ch };
   voices.push(v);
   src.onended = () => { const i = voices.indexOf(v); if (i >= 0) voices.splice(i, 1); };
   return v;
@@ -2876,9 +2920,11 @@ function trigger(b, p, t, vel = 0.85, note = 0, live = false) {
   const pr = state.banks[b][p], s = SOUNDS.get(pr.sound);
   if (!s) return;
   const tag = b + ":" + p;
+  const ch = pr.ch || 0;
   for (const v of voices) {
     if (s.root != null && v.tag === tag) stopVoice(v, t);
     else if (/hat(?!_open)/.test(pr.sound) && /hat_open/.test(v.sound)) stopVoice(v, t);
+    else if (ch && v.ch === ch && v.tag && v.tag.split(":")[0] === String(b)) stopVoice(v, t);   // choke group: one cuts the other
   }
   if (!playBuffer(pr.sound, pr, t, vel, note, tag)) return;
   const wait = (t - ctx.currentTime) * 1000;
@@ -2966,9 +3012,11 @@ function schedule() {
       if (state.mutes[b]) continue;
       for (let p = 0; p < 12; p++) {
         const v = pat[b][p][s]; if (!v) continue;
+        if (v[3] != null && v[3] < 100 && Math.random() * 100 >= v[3]) continue;   // the step's chance
         // "mano umana": a few milliseconds early or late and a little softer or harder, never the same twice
         const h = state.human, tt = h ? t + (Math.random() * 2 - 1) * 0.011 * h * (s % cpb === 0 ? 0.4 : 1) : t;
-        trigger(b, p, Math.max(ctx.currentTime, tt), STEP_VEL[v[0]] * (h ? 1 + (Math.random() * 2 - 1) * 0.22 * h : 1), v[1]);
+        const vel = STEP_VEL[v[0]] * (h ? 1 + (Math.random() * 2 - 1) * 0.22 * h : 1), roll = v[2] > 1 ? v[2] : 1;
+        for (let r = 0; r < roll; r++) trigger(b, p, Math.max(ctx.currentTime, tt + r * stepDur() / roll), vel * (r ? 0.8 : 1), v[1]);   // a roll: the hits share the step
       }
     }
     if (metronome && !songEnded && step % cpb === 0) click(t, step % m.div === 0);
@@ -3417,7 +3465,7 @@ function chopUse() {
     for (let k = 0; k < fi; k++) o[k] *= k / fi;
     for (let k = 0; k < fo; k++) o[n - 1 - k] *= k / fo;
     const id = addUserSound(name + " · " + (i + 1), "Taglio di " + chop.name, out), q = chopPad(i);
-    const pr = state.banks[q.b][q.p]; pr.sound = id; pr.gate = 0; pr.pitch = chop.pitch;
+    const pr = state.banks[q.b][q.p]; pr.sound = id; pr.gate = 0; pr.pitch = chop.pitch; resetForm(pr);
     userSave(id, out);
     return a / sr;
   });
@@ -3932,7 +3980,11 @@ function build() {
   $("songAdd").addEventListener("click", songAdd);
   $("songRec").addEventListener("click", songRec);
   $("songClear").addEventListener("click", () => armed("songClear", "Sicuro?", () => { state.song = []; state.songOn = false; songFrom = 0; save(); renderSong(); msg("CANZONE SVUOTATA"); }));
-  bindChop();
+  bindChop(); bindForm();
+  $("projSave").addEventListener("click", saveProject);
+  $("projFile").addEventListener("change", e => { const f = e.target.files[0]; if (f) openProject(f); e.target.value = ""; });
+  $("midiBtn").addEventListener("click", () => midi ? midiOff() : midiConnect());
+  if (state.midi && location.protocol === "app:") midiConnect(true);   // the desktop app reconnects the controller by itself
   for (let i = 0; i < NPAT; i++) { const b = el("button"); b.type = "button"; b.textContent = i + 1; b.setAttribute("aria-label", "Pattern " + (i + 1)); b.addEventListener("click", () => selectPattern(i)); $("pats").appendChild(b); }
   BANKS.forEach((bk, bi) => { const b = el("button", null, '<span class="dot" style="background:var(--h' + bk.id + ')"></span>' + bk.id + ' <span class="nmfull">' + bk.name + "</span>"); b.type = "button"; b.addEventListener("click", () => selectBank(bi)); $("banks").appendChild(b); });
   PAD_KEYS.forEach((k, i) => {
@@ -4075,7 +4127,7 @@ function loadFile(file) {
   msg("CARICO " + file.name.toUpperCase() + "…");
   file.arrayBuffer().then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej))).then(buf => {
     const t = trimLead(buf), id = addUserSound(file.name.replace(/\.[^.]+$/, ""), "File tuo", t);
-    state.banks[b][p].sound = id; state.banks[b][p].gate = 0; save();
+    state.banks[b][p].sound = id; state.banks[b][p].gate = 0; resetForm(state.banks[b][p]); save();
     renderAll(); if (!$("drawer").hidden) renderLibrary();
     trigger(b, p, ctx.currentTime);
     const nm = SOUNDS.get(id).name.toUpperCase();
@@ -4086,7 +4138,7 @@ function loadFile(file) {
 function toggleCell(b, p, s) {
   const arr = state.patterns[state.pattern][b][p], v = arr[s];
   // each tap: normal -> accent -> ghost -> off
-  arr[s] = !v ? [1, 0] : v[0] === 1 ? [2, v[1]] : v[0] === 2 ? [3, v[1]] : 0;
+  arr[s] = !v ? [1, 0] : v[0] === 3 ? 0 : Object.assign(v.slice(), { 0: v[0] === 1 ? 2 : 3 });   // roll and chance stay
   if (arr[s] && !playing && initAudio()) trigger(b, p, ctx.currentTime, STEP_VEL[arr[s][0]], arr[s][1]);
   save(); renderPads(); renderEditor(); renderPatterns(); renderLeds();
 }
@@ -4186,14 +4238,14 @@ function closeLibrary() { $("drawer").hidden = true; $("scrim").hidden = true; $
 function preview(id) {
   if (!initAudio()) return;
   loadSound(id).then(() => {
-    const pr = Object.assign({}, curPr(), { pitch: 0, gate: 0 });
+    const pr = Object.assign({}, curPr(), FORM_DEF, { pitch: 0, gate: 0 });
     for (const v of voices) if (v.tag === "preview") stopVoice(v, ctx.currentTime);
     playBuffer(id, pr, ctx.currentTime, 0.9, 0, "preview");
   }, () => msg("SUONO NON DISPONIBILE"));
 }
 function assign(id) {
   const pr = curPr(), s = SOUNDS.get(id);
-  pr.sound = id; pr.pitch = 0; pr.gate = s.root != null && /Bassi|Synth/.test(s.cat) ? 2 : 0;
+  pr.sound = id; pr.pitch = 0; pr.gate = s.root != null && /Bassi|Synth/.test(s.cat) ? 2 : 0; resetForm(pr);
   state.recent = [id, ...state.recent.filter(x => x !== id)].slice(0, 10);
   save(); renderAll(); renderLibrary(); preview(id); msg("PAD " + padLabel(state.bank, state.pad) + ": " + s.name.toUpperCase());
 }
@@ -4330,12 +4382,14 @@ function onKeyDown(e) {
     const k = e.key.toLowerCase();
     if (k === "z") { e.preventDefault(); histGo(!e.shiftKey); return; }
     if (k === "y") { e.preventDefault(); histGo(false); return; }
+    if (k === "s") { e.preventDefault(); saveProject(); return; }
   }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const t = e.target, tag = (t && t.tagName) || "";
   if (!$("micBox").hidden) { if (e.key === "Escape") closeMic(); return; }   // the recorder takes the keyboard while open
   if ((tag === "INPUT" && t.type !== "range") || tag === "SELECT" || tag === "TEXTAREA") { if (e.key === "Escape") closeLibrary(); return; }
   const k = e.key.toLowerCase();
+  if (k === "escape" && stepPop) { closeStepPop(); return; }
   if (k === "escape" && curPage === "cust") { closeCustom(); return; }
   if (k === "escape" && !$("drawer").hidden) { closeLibrary(); return; }
   if (tag === "INPUT" && k.startsWith("arrow")) return;
@@ -4413,6 +4467,7 @@ function renderInspector() {
   $("insChips").innerHTML = s ? '<span class="chip">' + esc(s.cat) + "</span>" + (s.root != null ? '<span class="chip tuned">intonato · ' + noteName(s.home) + "</span>" : '<span class="chip">non intonato</span>') + '<span class="chip">' + esc(s.src) + "</span>" : "";
   knobs.forEach(k => k.draw());
   [...$("gate").children].forEach((b, i) => b.setAttribute("aria-pressed", GATES[i][1] === pr.gate));
+  renderForm();
 }
 function renderEditorHead() {
   const roll = state.view === "roll", s = curSound();
@@ -4435,7 +4490,7 @@ function cellsRow(grid, cls, onCell, meta) {
   const cpb = pm().div / 4;
   for (let beat = 0; beat < 4; beat++) {
     const wrap = el("div", "beat " + (cls || ""));
-    for (let k = 0; k < cpb; k++) { const r = beat * cpb + k, c = el("button", "cell"), o = Object.assign({ el: c, r, s: r }, meta); c.type = "button"; c.addEventListener("click", () => onCell(o.s)); wrap.appendChild(c); edCells.push(o); }
+    for (let k = 0; k < cpb; k++) { const r = beat * cpb + k, c = el("button", "cell"), o = Object.assign({ el: c, r, s: r }, meta); c.type = "button"; c.addEventListener("click", () => { if (longFired) { longFired = false; return; } onCell(o.s); }); cellExtras(c, o); wrap.appendChild(c); edCells.push(o); }
     grid.appendChild(wrap);
   }
 }
@@ -4472,7 +4527,7 @@ function renderEditor() {
   const pat = state.patterns[state.pattern][state.bank], base = edPage * pm().div;
   for (const c of edCells) c.s = base + c.r;
   if (state.view === "grid") {
-    for (const c of edCells) { const v = pat[c.p][c.s]; c.el.className = "cell" + (v ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") + (v[1] ? " pitched" : "") : ""); }
+    for (const c of edCells) { const v = pat[c.p][c.s]; c.el.className = "cell" + (v ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") + (v[1] ? " pitched" : "") + (v[2] > 1 ? " r" + v[2] : "") + (v[3] != null && v[3] < 100 ? " maybe" : "") : ""); }
     for (const l of edLabs) l.el.classList.toggle("sel", l.p === state.pad);
   } else {
     const arr = pat[state.pad];
@@ -5605,7 +5660,7 @@ function showPage(id) {
   document.querySelectorAll(".page").forEach(pg => { pg.hidden = pg.dataset.page !== id; });
   [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.page === id));
   if (id !== "cust" && state.page !== id) { state.page = id; save(); }
-  fitPages(); sizeCanvases(); placeTabGlow(); if (id === "mix") drawEq();
+  fitPages(); sizeCanvases(); placeTabGlow(); if (id === "mix") drawEq(); if (id === "suona") drawForm();
 }
 // the LED under the tabs glides to the page you pick
 function placeTabGlow() {
@@ -5733,6 +5788,253 @@ function buildStrips() {
     $("gstrips").appendChild(g);
   });
   renderGroups();
+}
+/* ---------- forma del suono: inizio e fine, al contrario, attacco, filtro, SP-12, choke ---------- */
+// every pad can be trimmed and shaped like on an MPC; the pad keeps these as fractions and seconds:
+// st/en (0–1 of the sample), rv (reversed), att (attack in s), cut (low-pass, 1 = open), res, sp (12-bit crunch), ch (choke group)
+const FORM_DEF = { st: 0, en: 1, rv: false, att: 0, cut: 1, res: 0, sp: false, ch: 0 };
+const formOf = pr => Object.assign({}, FORM_DEF, pr);
+const formFlat = pr => { const f = formOf(pr); return f.st <= 0 && f.en >= 1 && !f.rv && f.att <= 0 && f.cut >= 0.995 && !f.sp && !f.ch; };
+function resetForm(pr) { for (const k in FORM_DEF) delete pr[k]; }
+const shapedCache = new Map();
+// the reversed and/or crunched copy of a sample, made once
+function shapedBuf(key, buf, sp, rv) {
+  const k = key + "|" + (sp ? "s" : "") + (rv ? "r" : "");
+  let b = shapedCache.get(k);
+  if (b && b.src === buf) return b.out;
+  let out = sp ? crunch(buf, { rate: 26040, bits: 12, lp: 11500, drive: 1.4 }) : buf;
+  if (rv) {
+    const r = ctx.createBuffer(out.numberOfChannels, out.length, out.sampleRate);
+    for (let c = 0; c < out.numberOfChannels; c++) { const a = out.getChannelData(c), z = r.getChannelData(c), n = a.length; for (let i = 0; i < n; i++) z[i] = a[n - 1 - i]; }
+    out = r;
+  }
+  if (shapedCache.size > 200) shapedCache.clear();
+  shapedCache.set(k, { src: buf, out });
+  return out;
+}
+const cutHz = c => 120 * Math.pow(2, c * 7.4);   // 120 Hz … 20 kHz
+function drawForm() {
+  const cv = $("formCv"); if (!cv || !cv.offsetParent) return;
+  const W = cv.width, H = cv.height, c = cv.getContext("2d"), pr = curPr(), f = formOf(pr), buf = cache.get(pr.sound);
+  const st = getComputedStyle(document.documentElement), led = st.getPropertyValue("--led").trim() || "#ff9f2e";
+  c.fillStyle = "#070605"; c.fillRect(0, 0, W, H);
+  if (!buf) { c.fillStyle = "rgba(255,255,255,.3)"; c.font = "22px VT323, monospace"; c.textAlign = "center"; c.fillText(ctx ? "CARICO…" : "TOCCA UN PAD PER VEDERE IL SUONO", W / 2, H / 2 + 6); if (ctx) loadSound(pr.sound).then(drawForm, () => {}); return; }
+  const d = buf.getChannelData(0), per = d.length / W;
+  let gpk = 0.001; for (let i = 0; i < d.length; i += 7) gpk = Math.max(gpk, Math.abs(d[i]));
+  const x0 = f.st * W, x1 = f.en * W;
+  for (let x = 0; x < W; x++) {
+    // drawn the way it plays: right to left when reversed
+    const sx = f.rv ? W - 1 - x : x, inside = sx >= x0 && sx <= x1;
+    let mx = 0; const a = Math.floor(sx * per), b = Math.min(d.length, Math.floor((sx + 1) * per) + 1);
+    for (let i = a; i < b; i++) mx = Math.max(mx, Math.abs(d[i]));
+    const h = Math.max(1, mx / gpk * H * 0.42);
+    c.fillStyle = inside ? led : "rgba(255,255,255,.14)"; c.fillRect(x, H / 2 - h, 1, h * 2);
+  }
+  // the attack as a ramp over the start
+  const X = v => f.rv ? W - v * W : v * W, xs = X(f.st), xe = X(f.en);
+  if (f.att > 0) { const ax = Math.min(Math.abs(xe - xs), f.att / Math.max(0.01, buf.duration * (f.en - f.st)) * Math.abs(xe - xs)); c.strokeStyle = "#fff4e0"; c.lineWidth = 2; c.beginPath(); c.moveTo(Math.min(xs, xe) === xs ? xs : xs, H - 4); c.lineTo(xs + (xe > xs ? ax : -ax), 6); c.stroke(); }
+  c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(0, 0, Math.min(xs, xe), H); c.fillRect(Math.max(xs, xe), 0, W - Math.max(xs, xe), H);
+  [[xs, "INIZIO"], [xe, "FINE"]].forEach(([x, t], i) => {
+    c.fillStyle = hueColor || led; c.fillRect(x - 1.5, 0, 3, H);
+    c.beginPath(); c.moveTo(x - 9, 0); c.lineTo(x + 9, 0); c.lineTo(x, 12); c.fill();
+    c.font = "15px Silkscreen, monospace"; c.textAlign = (i === 0) !== f.rv ? "left" : "right"; c.fillText(t, x + ((i === 0) !== f.rv ? 6 : -6), H - 8);
+  });
+  if (f.rv) { c.fillStyle = "#fff4e0"; c.font = "18px VT323, monospace"; c.textAlign = "right"; c.fillText("◀ AL CONTRARIO", W - 8, 18); }
+}
+function renderForm() {
+  const pr = curPr(), f = formOf(pr);
+  $("formRev").classList.toggle("on", f.rv); $("formRev").setAttribute("aria-pressed", f.rv);
+  $("formSp").classList.toggle("on", f.sp); $("formSp").setAttribute("aria-pressed", f.sp);
+  $("formCh").value = String(f.ch);
+  $("formReset").disabled = formFlat(pr);
+  formKnobs.forEach(k => k.draw());
+  drawForm();
+}
+const formKnobs = [];
+function formSet(k, v, commit) {
+  const pr = curPr(); pr[k] = v; save(); renderForm();
+  if (commit && initAudio() && !playing) trigger(state.bank, state.pad, ctx.currentTime);
+}
+function bindForm() {
+  const host = $("formKnobs");
+  formKnobs.push(makeKnob(host, { label: "Attacco", min: 0, max: 0.3, get: () => formOf(curPr()).att, set: (v, c) => formSet("att", v < 0.003 ? 0 : v, c), fmt: v => Math.round(v * 1000) + " ms" }));
+  formKnobs.push(makeKnob(host, { label: "Filtro", min: 0, max: 1, def: 1, get: () => formOf(curPr()).cut, set: (v, c) => formSet("cut", v > 0.99 ? 1 : v, c), fmt: v => v >= 0.995 ? "aperto" : fmtHz(Math.round(cutHz(v) / 10) * 10) }));
+  formKnobs.push(makeKnob(host, { label: "Risonanza", min: 0, max: 1, get: () => formOf(curPr()).res, set: (v, c) => formSet("res", v < 0.02 ? 0 : v, c), fmt: v => Math.round(v * 100) }));
+  $("formRev").addEventListener("click", () => formSet("rv", !formOf(curPr()).rv, true));
+  $("formSp").addEventListener("click", () => formSet("sp", !formOf(curPr()).sp, true));
+  $("formCh").addEventListener("change", e => formSet("ch", +e.target.value, false));
+  $("formReset").addEventListener("click", () => { resetForm(curPr()); save(); renderForm(); if (initAudio()) trigger(state.bank, state.pad, ctx.currentTime); msg("PAD " + padLabel(state.bank, state.pad) + " COM’ERA"); });
+  // drag the start or the end line on the waveform
+  const cv = $("formCv");
+  let drag = null;
+  const pos = e => { const r = cv.getBoundingClientRect(), u = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); return formOf(curPr()).rv ? 1 - u : u; };
+  cv.addEventListener("pointerdown", e => {
+    if (!cache.get(curPr().sound)) return;
+    e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) { /* fine */ }
+    const f = formOf(curPr()), u = pos(e);
+    drag = Math.abs(u - f.st) <= Math.abs(u - f.en) ? "st" : "en";
+    move(e);
+  });
+  const move = e => {
+    if (!drag) return;
+    const f = formOf(curPr()), u = pos(e), pr = curPr();
+    if (drag === "st") pr.st = Math.max(0, Math.min(f.en - 0.01, u)); else pr.en = Math.min(1, Math.max(f.st + 0.01, u));
+    if (pr.st < 0.002) pr.st = 0; if (pr.en > 0.998) pr.en = 1;
+    renderForm();
+  };
+  cv.addEventListener("pointermove", move);
+  cv.addEventListener("pointerup", () => { if (!drag) return; drag = null; save(); if (initAudio() && !playing) trigger(state.bank, state.pad, ctx.currentTime); });
+  cv.addEventListener("pointercancel", () => { drag = null; });
+}
+
+/* ---------- step: rullata e probabilità ---------- */
+// a step holds [level, note, roll, chance]: roll = hits inside the step (1–4), chance = % of the times it plays
+let stepPop = null;
+function openStepPop(cellEl, b, p, s) {
+  closeStepPop();
+  const arr = state.patterns[state.pattern][b][p];
+  if (!arr[s]) { arr[s] = [1, 0]; save(); renderEditor(); renderPads(); renderLeds(); }
+  const pop = el("div", "steppop"); pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Opzioni dello step");
+  const v = () => arr[s] || [1, 0];
+  const row = (label, opts, get, setv) => {
+    const r = el("div", "sprow"); r.appendChild(el("span", "lbl", label));
+    const seg = el("div", "seg");
+    opts.forEach(([val, txt]) => { const b2 = el("button", null, txt); b2.type = "button"; b2.setAttribute("aria-pressed", get() === val); b2.addEventListener("click", () => { setv(val); [...seg.children].forEach(x => x.setAttribute("aria-pressed", x === b2)); save(); renderEditor(); if (initAudio()) trigger(b, p, ctx.currentTime, STEP_VEL[v()[0]], v()[1]); }); seg.appendChild(b2); });
+    r.appendChild(seg); pop.appendChild(r);
+  };
+  pop.appendChild(el("div", "sphd", "Step " + (s % pm().div + 1) + (pm().bars > 1 ? " · battuta " + (Math.floor(s / pm().div) + 1) : "") + " · " + padLabel(b, p)));
+  row("Colpo", [[1, "Normale"], [2, "Accento"], [3, "Fantasma"]], () => v()[0], x => { arr[s] = Object.assign(v().slice(), { 0: x }); });
+  row("Rullata", [[1, "1"], [2, "2"], [3, "3"], [4, "4"]], () => v()[2] || 1, x => { const n = v().slice(); n[2] = x; arr[s] = n; });
+  row("Probabilità", [[100, "100%"], [75, "75%"], [50, "50%"], [25, "25%"]], () => v()[3] == null ? 100 : v()[3], x => { const n = v().slice(); n[2] = n[2] || 1; n[3] = x; arr[s] = n; });
+  const acts = el("div", "spacts");
+  const del = el("button", "key small", "Togli il colpo"); del.type = "button"; del.addEventListener("click", () => { arr[s] = 0; save(); closeStepPop(); renderEditor(); renderPads(); renderLeds(); renderPatterns(); });
+  const ok = el("button", "key small on", "Fatto"); ok.type = "button"; ok.addEventListener("click", closeStepPop);
+  acts.append(del, ok); pop.appendChild(acts);
+  document.body.appendChild(pop);
+  const r = cellEl.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(innerWidth - pw - 8, r.left + r.width / 2 - pw / 2)) + "px";
+  pop.style.top = (r.bottom + ph + 12 < innerHeight ? r.bottom + 8 : Math.max(8, r.top - ph - 8)) + "px";
+  stepPop = pop;
+  setTimeout(() => document.addEventListener("pointerdown", popOutside, true), 0);
+}
+function popOutside(e) { if (stepPop && !stepPop.contains(e.target)) closeStepPop(); }
+function closeStepPop() { if (stepPop) { stepPop.remove(); stepPop = null; } document.removeEventListener("pointerdown", popOutside, true); }
+// right click, or a long press on touch screens, opens the options of a cell
+let longT = 0, longFired = false;
+function cellExtras(c, o) {
+  c.addEventListener("contextmenu", e => { e.preventDefault(); if (state.view === "grid") openStepPop(c, state.bank, o.p, o.s); });
+  c.addEventListener("pointerdown", e => { if (e.pointerType === "mouse" || state.view !== "grid") return; longFired = false; clearTimeout(longT); longT = setTimeout(() => { longFired = true; openStepPop(c, state.bank, o.p, o.s); }, 450); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(ev => c.addEventListener(ev, () => clearTimeout(longT)));
+}
+
+/* ---------- progetto: tutto in un file, campioni compresi ---------- */
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin"];
+function f32ToB64(d) {
+  const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
+  for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
+  let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+function b64ToF32(b) {
+  const s = atob(b), n = s.length >> 1, out = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let x = s.charCodeAt(2 * i) | (s.charCodeAt(2 * i + 1) << 8); if (x > 32767) x -= 65536; out[i] = x / 32767; }
+  return out;
+}
+async function saveProject() {
+  if (!initAudio()) return;
+  msg("PREPARO IL PROGETTO…");
+  const ids = [...new Set(state.banks.flat().map(p => p.sound))].filter(id => (SOUNDS.get(id) || {}).kind === "user");
+  const sounds = [];
+  for (const id of ids) {
+    try { const b = cache.get(id) || await loadSound(id), s = SOUNDS.get(id); sounds.push({ id, name: s.name, src: s.src, sr: b.sampleRate, data: f32ToB64(b.getChannelData(0)) }); }
+    catch (e) { /* a lost recording: the project still opens, with the group's sound on that pad */ }
+  }
+  const st = {}; PROJ_KEYS.forEach(k => { st[k] = state[k]; });
+  const proj = { app: "Mat.Tone", kind: "progetto", ver: 1, saved: new Date().toISOString(), state: st, sounds };
+  const d = new Date(), pad2 = n => String(n).padStart(2, "0");
+  const name = "mattone-progetto-" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + "-" + pad2(d.getHours()) + pad2(d.getMinutes()) + ".mattone";
+  const data = new TextEncoder().encode(JSON.stringify(proj));
+  const dl = await claude_use("downloads");
+  if (!dl) {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "application/json" })); a.download = name; a.click();
+    msg("PROGETTO SALVATO: " + name.toUpperCase() + (sounds.length ? " · CON " + sounds.length + (sounds.length > 1 ? " CAMPIONI TUOI" : " CAMPIONE TUO") : "")); return;
+  }
+  try { await dl.save({ filename: name.replace(/\.mattone$/, ".zip"), data: makeZip([{ name, data }]) }); msg("PROGETTO SALVATO IN UNO .ZIP · RIAPRILO COSÌ COM’È"); }
+  catch (err) { msg(err && err.code === "declined" ? "SALVATAGGIO ANNULLATO" : "QUI NON POSSO SALVARE FILE"); }
+}
+// a .zip made by Mat.Tone stores the project without compression: take the first file out of it
+function unzipFirst(u) {
+  const v = new DataView(u.buffer, u.byteOffset, u.byteLength);
+  if (v.getUint32(0, true) !== 0x04034b50 || v.getUint16(8, true) !== 0) throw new Error("zip");
+  const size = v.getUint32(18, true), nl = v.getUint16(26, true), xl = v.getUint16(28, true);
+  return u.subarray(30 + nl + xl, 30 + nl + xl + size);
+}
+function openProject(file) {
+  if (!initAudio()) return;
+  file.arrayBuffer().then(ab => {
+    let u = new Uint8Array(ab);
+    if (u[0] === 0x50 && u[1] === 0x4b) u = unzipFirst(u);
+    const proj = JSON.parse(new TextDecoder().decode(u));
+    if (!proj || proj.app !== "Mat.Tone" || !proj.state || !proj.state.banks) throw new Error("non è un progetto");
+    for (const s of proj.sounds || []) {
+      if (SOUNDS.has(s.id) && cache.has(s.id)) continue;
+      const d = b64ToF32(s.data), b = ctx.createBuffer(1, Math.max(1, d.length), s.sr || 44100); b.getChannelData(0).set(d);
+      SOUNDS.set(s.id, { id: s.id, name: s.name, cat: "I tuoi suoni", root: null, home: null, kind: "user", src: s.src || "Progetto" });
+      cache.set(s.id, b); userSave(s.id, b);
+    }
+    const st = proj.state; PROJ_KEYS.forEach(k => { if (st[k] !== undefined) state[k] = st[k]; });
+    state.banks.forEach((bk, bi) => bk.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
+    state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY, state.custom || {});
+    fixPatterns(); state.pattern = 0; edPage = 0;
+    setBpm(state.bpm); applyMaster(); save(); renderAll(); applySkin(state.skin); applyCustom();
+    state.banks.flat().forEach(pr => loadSound(pr.sound).catch(() => {}));
+    msg("PROGETTO APERTO: " + file.name.replace(/\.(mattone|zip|json)$/i, "").toUpperCase() + ((proj.sounds || []).length ? " · " + proj.sounds.length + (proj.sounds.length > 1 ? " CAMPIONI" : " CAMPIONE") : ""));
+  }).catch(() => msg("QUESTO FILE NON È UN PROGETTO DI MAT.TONE"));
+}
+
+/* ---------- controller MIDI ---------- */
+// pads on notes 36–47 (the usual first bank of pad controllers), 48 and up into the next groups;
+// in Note mode a keyboard plays the selected sound chromatically, middle C on its root
+let midi = null;
+function midiConnect(quiet) {
+  const pol = document.permissionsPolicy || document.featurePolicy;
+  if (!navigator.requestMIDIAccess || (pol && pol.allowsFeature && !pol.allowsFeature("midi"))) { if (!quiet) msg(navigator.requestMIDIAccess ? "QUI IL MIDI È BLOCCATO: USA L’APP PER PC O CHROME" : "QUESTO BROWSER NON HA IL MIDI: USA CHROME, EDGE O L’APP PER PC"); return; }
+  navigator.requestMIDIAccess({ sysex: false }).then(acc => {
+    midi = acc; state.midi = true; save();
+    const hook = () => { for (const inp of acc.inputs.values()) inp.onmidimessage = midiMsg; renderMidi(); };
+    acc.onstatechange = hook; hook();
+    const names = [...acc.inputs.values()].map(i => i.name);
+    msg(names.length ? "MIDI: " + names.join(", ").toUpperCase() : "MIDI ACCESO · COLLEGA UN CONTROLLER");
+  }).catch(() => { if (!quiet) msg("IL MIDI NON È PERMESSO QUI"); });
+}
+function midiOff() {
+  if (midi) for (const inp of midi.inputs.values()) inp.onmidimessage = null;
+  midi = null; state.midi = false; save(); renderMidi(); msg("MIDI SPENTO");
+}
+function renderMidi() {
+  const b = $("midiBtn"); if (!b) return;
+  const names = midi ? [...midi.inputs.values()].map(i => i.name) : [];
+  b.classList.toggle("on", !!midi); b.setAttribute("aria-pressed", !!midi);
+  b.lastChild.textContent = midi ? (names.length ? "MIDI · " + names[0].slice(0, 18) : "MIDI · nessuno") : "MIDI";
+}
+function midiMsg(e) {
+  const [st, d1, d2] = e.data, cmd = st & 0xf0;
+  if (st === 0xfa) { if (!playing) start(); return; }   // start and stop from a drum machine or a DAW
+  if (st === 0xfc) { if (playing) stop(); return; }
+  if (cmd === 0x90 && d2 > 0) midiNote(d1, d2);
+  else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) nrRelease("m" + d1);
+}
+function midiNote(note, velo) {
+  if (!initAudio()) return;
+  const vel = 0.25 + 0.75 * velo / 127;
+  if (state.mode === "note") {
+    const off = note - 60 + state.root + 12 * state.oct;
+    trigger(state.bank, state.pad, ctx.currentTime, vel, off, true); liveRecord(state.bank, state.pad, off); nrHold("m" + note, state.bank, state.pad, off);
+    return;
+  }
+  let rel = note - 36; if (rel < 0 || rel >= 48) rel = ((rel % 12) + 12) % 12;
+  const b = (state.bank + Math.floor(rel / 12)) % BANKS.length, p = rel % 12;
+  trigger(b, p, ctx.currentTime, vel, 0, true); liveRecord(b, p, 0); nrHold("m" + note, b, p, 0);
 }
 // the four groups on the Mix page: mute buttons and a meter that jumps on every hit
 const grpHit = [[], [], [], []];   // recent hits per group (the sequencer schedules them a little ahead)

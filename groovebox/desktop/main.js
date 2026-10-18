@@ -45,7 +45,7 @@ app.whenReady().then(() => {
   // exported beats: ask where to save, starting from the Music folder
   session.defaultSession.on("will-download", (_event, item) => {
     if (process.env.MATTONE_SAVE_DIR) item.setSavePath(path.join(process.env.MATTONE_SAVE_DIR, item.getFilename()));   // automated tests
-    else item.setSaveDialogOptions({ title: "Salva il beat", defaultPath: path.join(app.getPath("music"), item.getFilename()) });
+    else item.setSaveDialogOptions({ title: /\.mattone$/.test(item.getFilename()) ? "Salva il progetto" : "Salva il beat", defaultPath: path.join(app.getPath("music"), item.getFilename()) });
   });
   // "Audio del computer" in the sampler: the screen (never shown) with the system sound, which Windows can give;
   // elsewhere no audio arrives and the page suggests an input like BlackHole or the sound card's monitor
