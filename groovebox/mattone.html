@@ -1099,6 +1099,20 @@ html[data-vt="cat"]::view-transition-new(vt-cat) { animation: .34s cubic-bezier(
 .micwrap[hidden] { display: none; }
 .micbox { width: min(760px, 100%); display: grid; gap: 12px; animation: cardIn .35s cubic-bezier(.34, 1.4, .64, 1); }
 .micbox .hd { margin: 0; }
+.vidbox { width: min(1000px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; }
+.vidgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 18px; align-items: start; }
+.vidprev { display: grid; place-items: center; min-width: 0; }
+#vidCv, #vidOut { display: block; max-width: 100%; max-height: min(62vh, 640px); width: auto; height: auto; border-radius: 10px; box-shadow: 0 0 0 3px var(--edge), 0 14px 40px -10px rgba(0,0,0,.8); background: #000; }
+#vidCv { aspect-ratio: 1080 / 1920; height: min(62vh, 640px); }
+.vidopts { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.vidopts > div > .lbl { display: block; margin-bottom: 6px; }
+.vidnote { display: block; margin-top: 4px; font-size: 11px; color: var(--cream-3); }
+.vidfield { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; align-items: center; }
+.vidfield select { min-width: 0; }
+.vidstate { margin: 0; font-size: 13px; color: var(--cream-2); min-height: 2.6em; }
+.vidstate.bad { color: #ff7a6a; }
+#vidRec.on { animation: blink 1s steps(2) infinite; }
+@media (max-width: 760px) { .vidgrid { grid-template-columns: minmax(0, 1fr); } #vidCv { height: min(46vh, 520px); } #vidOut { max-height: 46vh; } }
 #micScope { width: 100%; height: auto; aspect-ratio: 720 / 170; border-radius: 8px; box-shadow: inset 0 2px 8px rgba(0,0,0,.8), 0 0 0 1px var(--edge); display: block; }
 .microw { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .mictime { font-family: var(--f-vfd); font-size: 28px; color: var(--led); min-width: 4.5ch; }
@@ -1470,6 +1484,7 @@ html.intro-on { overflow: hidden; }
             <button class="key small" id="recAgain" type="button" disabled>Salva di nuovo</button>
           </div>
           <audio id="recPlayer" controls hidden></audio>
+          <div class="projrow"><span class="lbl">Per i social</span><button class="key small vidopen" type="button" title="Un video verticale, quadrato o orizzontale col beat, lo schermo, gli effetti e il testo">🎬 Video per i social</button></div>
           <div class="projrow"><span class="lbl">Per il DAW</span><button class="key small" id="stemBtn" type="button" title="Un WAV per gruppo più effetti e piatto, dall’inizio, per le battute scelte sopra (o la canzone intera se è accesa)">Tracce separate (WAV)</button><button class="key small" id="midiExp" type="button" title="Le note del pattern, o della canzone se è accesa">File MIDI</button></div>
           <div class="projrow"><span class="lbl">Progetto</span><button class="key small" id="projSave" type="button" title="Ctrl+S">Salva progetto</button><label class="key small" for="projFile">Apri progetto</label><input type="file" id="projFile" accept=".mattone,.zip,.json,application/json,application/zip" hidden><span class="lbl projhint">pattern, canzone, pad, mix e i tuoi campioni in un solo file</span></div>
           <p class="rechint">Registra quello che esce dalle casse: sequencer, pad, scratch ed effetti. Con un numero di battute parte dall’inizio del pattern e si ferma da solo. Su claude.ai il file arriva dentro uno .zip (il visualizzatore non accetta .wav e .mp3 sciolti); nell’app per PC viene salvato direttamente.</p>
@@ -1510,7 +1525,7 @@ html.intro-on { overflow: hidden; }
           <button class="key small" id="vMic" type="button">🎤 Accendi il microfono</button>
           <select id="vDev" aria-label="Microfono"><option value="">Microfono predefinito</option></select>
           <canvas id="vMeter" width="180" height="14" aria-label="Livello del microfono"></canvas>
-          <label class="key small" for="vFile">Carica una voce</label><input type="file" id="vFile" accept="audio/*,.wav,.mp3,.m4a,.ogg,.aac" hidden>
+          <label class="key small" for="vFile">Carica una voce</label><button class="key small vidopen" type="button" title="Il beat con la voce e il testo, in un video per i social">🎬 Fai il video</button><input type="file" id="vFile" accept="audio/*,.wav,.mp3,.m4a,.ogg,.aac" hidden>
         </div>
         <div class="vtakes" id="vTakes"></div>
         <p class="cnote small">Premi <b>● Registra</b>: il beat riparte dall’inizio, una battuta di attacco col click, poi tocca a te; si ferma da solo alla fine delle battute scelte. Ogni presa resta, e scegli quale suona nel beat. Per correggere un pezzo trascina sulla forma d’onda le battute sbagliate e premi <b>↺ Rifai</b>: il beat riparte poco prima e ricanti solo lì, in una presa nuova. Il ritardo del microfono viene compensato da solo; se senti la voce in anticipo o in ritardo, usa <b>Sposta la presa</b>.</p>
@@ -1622,6 +1637,7 @@ html.intro-on { overflow: hidden; }
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
+            <li><b>🎬 Video per i social</b> (Mix o Voce): verticale per TikTok, Reels e Shorts, quadrato o orizzontale. Tre stili: <b>Strumento</b> (schermo, lancette e pad che si accendono), <b>Disco</b> (il vinile che gira con lo spettro intorno) e <b>Testo</b> (le barre grandi, a tempo). Titolo, nome d’arte, effetti FX e testo a tempo; il video si registra mentre suona e si salva in MP4.</li>
             <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
             <li><b>VIS</b> accanto allo schermo (o <kbd>B</kbd>) cambia la grafica a tempo: spettro, specchio, oscilloscopio, cerchio e cascata, più l’equalizzatore anni 80 a segmenti, il goniometro XY dello stereo, le colline, il tunnel, l’iperspazio, il fuoco, il radar che gira una volta a battuta e la pioggia digitale.</li>
             <li><b>FX</b> (o <kbd>J</kbd>) accende gli effetti visivi a tempo su tutta la stanza: <b>Club</b> (luci sul muro, laser, scintille, scossa), <b>VHS</b>, <b>Cinema</b>, <b>Glitch</b> e <b>Sogno</b>. In Personalizza → Luci e animazioni li combini come vuoi e ne regoli l’intensità.</li>
@@ -1680,6 +1696,25 @@ html.intro-on { overflow: hidden; }
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
+<div class="micwrap" id="vidBox" hidden role="dialog" aria-modal="true" aria-label="Video per i social">
+  <div class="unit micbox vidbox">
+    <div class="hd"><h2>Video per i social</h2><button class="key small" id="vidClose" type="button">✕ Chiudi</button></div>
+    <div class="vidgrid">
+      <div class="vidprev"><canvas id="vidCv" width="1080" height="1920" aria-label="Anteprima del video"></canvas><video id="vidOut" controls playsinline hidden></video></div>
+      <div class="vidopts">
+        <div><span class="lbl">Formato</span><div class="seg vseg" id="vidFmt" role="group" aria-label="Formato"></div><small class="vidnote" id="vidFmtNote"></small></div>
+        <div><span class="lbl">Stile</span><div class="seg vseg" id="vidLay" role="group" aria-label="Stile"></div><small class="vidnote" id="vidLayNote"></small></div>
+        <label class="vidfield"><span class="lbl">Titolo</span><input class="search" id="vidTitle" maxlength="40" autocomplete="off" placeholder="Il nome del pezzo"></label>
+        <label class="vidfield"><span class="lbl">Artista</span><input class="search" id="vidArtist" maxlength="40" autocomplete="off" placeholder="Il tuo nome d’arte"></label>
+        <label class="vidfield"><span class="lbl">Durata</span><select id="vidLen" aria-label="Durata del video"></select></label>
+        <div class="vrow"><button class="key small" id="vidFx" type="button" title="Gli effetti scelti col tasto FX"><span class="ledi"></span>Effetti FX</button><button class="key small" id="vidLyr" type="button" title="Il testo della pagina Voce, una riga per battuta"><span class="ledi"></span>Testo a tempo</button><button class="key small" id="vidLight" type="button" title="720p invece di 1080p: per i computer meno potenti, se il video viene a scatti"><span class="ledi"></span>Leggero 720p</button></div>
+        <div class="vrow"><button class="key small" id="vidPlay" type="button">▶ Prova col beat</button><button class="key rec2" id="vidRec" type="button">● Registra il video</button><button class="key small" id="vidAgain" type="button" disabled>Salva di nuovo</button><button class="key small" id="vidBack" type="button">Torna all’anteprima</button></div>
+        <p class="vidstate" id="vidState" aria-live="polite"></p>
+        <p class="cnote small">Il video si registra mentre suona, dall’inizio del beat: lo schermo, le lancette, i pad, la voce e gli effetti sono quelli veri. Su claude.ai il file arriva dentro uno .zip; nell’app per PC viene salvato direttamente.</p>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="micwrap" id="micBox" hidden role="dialog" aria-modal="true" aria-label="Campiona">
   <div class="unit micbox">
     <div class="hd"><h2>Campiona</h2><button class="key small" id="micClose" type="button">✕ Chiudi</button></div>
@@ -2601,6 +2636,8 @@ const VOICE_DEF = () => ({ takes: [], sel: null, count: 0, len: 8, preroll: true
   ch: { comp: 0.6, ess: 0.45, warm: 0.35, bri: 0.25, dbl: 0.15, echo: 0.1, rev: 0.16, filt: "no", vol: 0.9 } });
 function voiceFix() { const d = VOICE_DEF(); state.voice = Object.assign(d, state.voice || {}); state.voice.ch = Object.assign(VOICE_DEF().ch, state.voice.ch || {}); if (!Array.isArray(state.voice.takes)) state.voice.takes = []; }
 voiceFix();
+function videoFix() { state.video = Object.assign({ fmt: "v", layout: "strumento", len: "8", title: "", artist: "", fx: true, lyrics: true, light: false }, state.video || {}); }
+videoFix();
 // every pattern has its length and grid, every row as many steps as that; the song points only at patterns that exist
 function fixPatterns() {
   if (!Array.isArray(state.pmeta)) state.pmeta = [];
@@ -3248,6 +3285,7 @@ function playBuffer(soundId, pr, t, vel, note, tag) {
 function trigger(b, p, t, vel = 0.85, note = 0, live = false, keep = false) {
   if (!ctx) return;
   grpHit[b].push({ t, v: Math.min(1, vel * 1.1) }); if (grpHit[b].length > 8) grpHit[b].shift();
+  padHitT[b * 12 + p] = t; padHitV[b * 12 + p] = Math.min(1, vel * 1.1);
   const pr = state.banks[b][p], s = SOUNDS.get(pr.sound);
   if (!s) return;
   const tag = b + ":" + p;
@@ -4729,7 +4767,8 @@ function onKeyDown(e) {
   }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const t = e.target, tag = (t && t.tagName) || "";
-  if (!$("micBox").hidden) { if (e.key === "Escape") closeMic(); return; }   // the recorder takes the keyboard while open
+  if (!$("micBox").hidden) { if (e.key === "Escape") closeMic(); return; }
+  if (!$("vidBox").hidden) { if (e.key === "Escape") closeVideo(); return; }   // the recorder takes the keyboard while open
   if ((tag === "INPUT" && t.type !== "range") || tag === "SELECT" || tag === "TEXTAREA") { if (e.key === "Escape") closeLibrary(); return; }
   const k = e.key.toLowerCase();
   if (k === "escape" && stepPop) { closeStepPop(); return; }
@@ -5389,7 +5428,8 @@ const VFX_LIST = [
   ["scossa", "Scossa", "Lo strumento sobbalza su ogni cassa"],
 ];
 const VFX_PRESETS = [["spenti", "Spenti", []], ["club", "Club", ["muro", "laser", "scintille", "scossa"]], ["vhs", "VHS", ["vhs", "scossa"]], ["cinema", "Cinema", ["pellicola", "muro"]], ["glitch", "Glitch", ["glitch", "scintille", "scossa"]], ["sogno", "Sogno", ["aurora", "scintille"]]];
-const VX_ST = { on: new Set(), t: 0, last: 0, kickPrev: 0, midPrev: 0, parts: [], scratches: [], glitch: null, glitchAt: 0, playT0: 0, E: { bass: 0, mid: 0, high: 0 }, cache: {}, tf: "" };
+const vfxState = () => ({ on: new Set(), t: 0, last: 0, kickPrev: 0, midPrev: 0, parts: [], scratches: [], glitch: null, glitchAt: 0, playT0: 0, E: { bass: 0, mid: 0, high: 0 }, cache: {}, tf: "" });
+const VX_ST = vfxState();
 function vfxPresetOf(list) { const s = [...list].sort().join(); const p = VFX_PRESETS.find(x => [...x[2]].sort().join() === s); return p ? p[1] : "Su misura"; }
 function renderVfxBtn() { const b = $("vfxBtn"); if (b) { b.textContent = "FX · " + vfxPresetOf(state.custom.vfx || []); b.setAttribute("aria-pressed", (state.custom.vfx || []).length > 0); } }
 function setVfx(list) { state.custom.vfx = list; save(); applyVfx(); renderCustom(); }
@@ -5427,12 +5467,23 @@ function vfxFountain() {
   for (let i = 0; i < 26; i++) { const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.3, v = 260 + Math.random() * 380; VX_ST.parts.push({ x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.7 + Math.random() * 0.6, col: cols[i % 3], s: 1.2 + Math.random() * 1.4 }); }
 }
 function hues() { const cs = getComputedStyle($("app")); return ["--hA", "--hB", "--hC", "--hD"].map(v => cs.getPropertyValue(v).trim() || "#f2a43a"); }
+// the effects on the screen: three canvases the size of the window
+const VFX_IDS = { back: "vfxBack", add: "vfxAdd", ink: "vfxInk" };
+const VFX_SCREEN = { get W() { return innerWidth; }, get H() { return innerHeight; }, u: 1,
+  ctx: id => vfxCanvas(VFX_IDS[id], id === "back" ? 0.5 : 1), cv: id => $(VFX_IDS[id]),
+  off: id => { const cv = $(VFX_IDS[id]); if (cv.width) { cv.width = 0; cv.hidden = true; } }, fountain: () => vfxFountain() };
 function drawVfx(now) {
   const S = VX_ST;
   if (!S.on.size) return;
   if (lowMotion() || introRun || document.hidden) { vfxClear(); return; }
+  const { tx, ty, sc } = vfxPaint(S, VFX_SCREEN, now);
+  const tf = Math.abs(tx) + Math.abs(ty) + Math.abs(sc - 1) < 0.02 ? "" : tx.toFixed(1) + "px " + ty.toFixed(1) + "px|" + sc.toFixed(4);
+  if (tf !== S.tf) { const a = $("app").style, [t, s] = tf ? tf.split("|") : ["", ""]; a.translate = t; a.scale = s; S.tf = tf; }
+}
+// T is where they are drawn: its size, its three layers (behind, added light, ink on top) and where the fountain springs from
+function vfxPaint(S, T, now) {
   const dt = S.last ? Math.min(0.05, (now - S.last) / 1000) : 0.016; S.last = now; S.t += dt;
-  const amt = (state.custom.vfxAmt ?? 70) / 100, W = innerWidth, H = innerHeight, on = id => S.on.has(id);
+  const amt = (state.custom.vfxAmt ?? 70) / 100, W = T.W, H = T.H, u = T.u, on = id => S.on.has(id);
   // what the music is doing: smoothed bands and the kick
   const E = S.E, run = playing ? 1 : 0.25;
   E.bass += (bandAvg(0, 5) - E.bass) * 0.3; E.mid += (bandAvg(8, 18) - E.mid) * 0.3; E.high += (bandAvg(20, 32) - E.high) * 0.3;
@@ -5442,7 +5493,7 @@ function drawVfx(now) {
   if (!S.H || now - S.Hat > 1000) { S.H = hues(); S.Hat = now; }
   // ---- behind the instrument ----
   if (on("muro") || on("aurora")) {
-    const c = vfxCanvas("vfxBack", 0.5); c.globalCompositeOperation = "lighter";
+    const c = T.ctx("back"); c.globalCompositeOperation = "lighter";
     if (on("aurora")) for (let i = 0; i < 3; i++) {
       const x = W * (0.5 + 0.38 * Math.sin(S.t * (0.11 + i * 0.05) + i * 2.1)), y = H * (0.45 + 0.3 * Math.cos(S.t * (0.09 + i * 0.04) + i)), r = Math.max(W, H) * (0.32 + E.mid * 0.25 + i * 0.04);
       const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, withAlpha(S.H[(i + Math.floor(S.t / 8)) % 4], (0.16 + E.mid * 0.35) * amt)); g.addColorStop(1, "rgba(0,0,0,0)");
@@ -5457,15 +5508,14 @@ function drawVfx(now) {
       const lg = c.createLinearGradient(sx, 0, x, y); lg.addColorStop(0, withAlpha(col, a * 0.9)); lg.addColorStop(1, withAlpha(col, 0));
       c.fillStyle = lg; c.beginPath(); c.moveTo(sx - 6, -4); c.lineTo(sx + 6, -4); c.lineTo(x + r * 0.55, y); c.lineTo(x - r * 0.55, y); c.closePath(); c.fill();
     }
-  } else if ($("vfxBack").width) { $("vfxBack").width = 0; $("vfxBack").hidden = true; }
+  } else T.off("back");
   // ---- light in front of it (added to what is under) ----
   const useAdd = on("laser") || on("scintille") || on("glitch") || on("pellicola") || on("vhs") || on("muro") || on("aurora");
   const useInk = on("vhs") || on("pellicola") || on("glitch");
-  const ca = useAdd ? vfxCanvas("vfxAdd", 1) : null, ci = useInk ? vfxCanvas("vfxInk", 1) : null;
-  if (!useAdd && $("vfxAdd").width) { $("vfxAdd").width = 0; $("vfxAdd").hidden = true; }
-  if (!useInk && $("vfxInk").width) { $("vfxInk").width = 0; $("vfxInk").hidden = true; }
+  const ca = useAdd ? T.ctx("add") : null, ci = useInk ? T.ctx("ink") : null;
+  if (!useAdd) T.off("add"); if (!useInk) T.off("ink");
   // the coloured light also falls on the instrument, softer
-  if (on("muro") || on("aurora")) { ca.globalAlpha = 0.32; ca.drawImage($("vfxBack"), 0, 0, W, H); ca.globalAlpha = 1; }
+  if (on("muro") || on("aurora")) { ca.globalAlpha = 0.32; ca.drawImage(T.cv("back"), 0, 0, W, H); ca.globalAlpha = 1; }
   if (on("laser")) {
     const bar = 240 / state.bpm, cols = ["#3dff6e", "#ff2d55", "#35d6ff", "#ffd23f"], col = cols[Math.floor(S.t / bar / 2) % 4];
     const open = 0.35 + kick * 0.5 + E.bass * 0.3, a = (0.05 + (0.12 + kick * 0.32 + E.high * 0.12) * run) * amt;
@@ -5473,43 +5523,43 @@ function drawVfx(now) {
     for (const [sx, dir] of [[0, 1], [W, -1]]) for (let i = 0; i < 5; i++) {
       const ang = 0.22 + i / 4 * open + 0.22 * Math.sin(S.t * 0.8 + i * 0.4 + (dir < 0 ? 1.5 : 0)), L = Math.hypot(W, H);
       const ex = sx + dir * Math.cos(ang) * L, ey = Math.sin(ang) * L;
-      ca.strokeStyle = withAlpha(col, a * 0.35); ca.lineWidth = 6; ca.beginPath(); ca.moveTo(sx, -2); ca.lineTo(ex, ey); ca.stroke();
-      ca.strokeStyle = withAlpha(col, a); ca.lineWidth = 1.3; ca.beginPath(); ca.moveTo(sx, -2); ca.lineTo(ex, ey); ca.stroke();
+      ca.strokeStyle = withAlpha(col, a * 0.35); ca.lineWidth = 6 * u; ca.beginPath(); ca.moveTo(sx, -2); ca.lineTo(ex, ey); ca.stroke();
+      ca.strokeStyle = withAlpha(col, a); ca.lineWidth = 1.3 * u; ca.beginPath(); ca.moveTo(sx, -2); ca.lineTo(ex, ey); ca.stroke();
     }
     if (kick > 0.5) { const g = ca.createRadialGradient(W / 2, 0, 0, W / 2, 0, H * 0.5); g.addColorStop(0, withAlpha(col, 0.12 * kick * amt)); g.addColorStop(1, "rgba(0,0,0,0)"); ca.fillStyle = g; ca.fillRect(0, 0, W, H * 0.5); }
   }
   if (!on("scintille")) S.parts.length = 0;
   else {
-    if (kickHit) vfxFountain();
+    if (kickHit) T.fountain(S);
     ca.lineCap = "round";
     S.parts = S.parts.filter(p => {
       const px0 = p.x, py0 = p.y; p.vy += 520 * dt; p.vx *= 1 - 1.4 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
       if (p.life <= 0 || p.y > H + 10) return false;
-      ca.strokeStyle = withAlpha(p.col, Math.min(1, p.life * 1.6) * (0.5 + amt * 0.5)); ca.lineWidth = p.s;
+      ca.strokeStyle = withAlpha(p.col, Math.min(1, p.life * 1.6) * (0.5 + amt * 0.5)); ca.lineWidth = p.s * u;
       ca.beginPath(); ca.moveTo(px0, py0); ca.lineTo(p.x, p.y); ca.stroke(); return true;
     });
   }
   if (on("vhs")) {
     // scanlines, pre-drawn once per size
-    if (!S.cache.scan) { const p = document.createElement("canvas"); p.width = 4; p.height = 3; const g = p.getContext("2d"); g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 2, 4, 1); S.cache.scan = ci.createPattern(p, "repeat"); }
+    if (!S.cache.scan) { const p = document.createElement("canvas"), k = Math.max(1, Math.round(u)); p.width = 4; p.height = 3 * k; const g = p.getContext("2d"); g.fillStyle = "rgba(0,0,0,.55)"; g.fillRect(0, 2 * k, 4, k); S.cache.scan = ci.createPattern(p, "repeat"); }
     ci.globalAlpha = 0.35 * amt + 0.1; ci.fillStyle = S.cache.scan; ci.fillRect(0, 0, W, H); ci.globalAlpha = 1;
     // the tracking band that rolls down the picture
-    const bh = 34 + E.bass * 30, by = (S.t * 70) % (H + 200) - 100;
+    const bh = (34 + E.bass * 30) * u, by = (S.t * 70 * u) % (H + 200 * u) - 100 * u;
     ci.fillStyle = "rgba(0,0,0," + (0.12 * amt).toFixed(3) + ")"; ci.fillRect(0, by, W, bh);
-    for (let i = 0; i < 70 * amt + 10; i++) { const y = by + Math.random() * bh, x = Math.random() * W, l = 10 + Math.random() * 120; ca.fillStyle = "rgba(255,255,255," + (Math.random() * 0.35 * amt).toFixed(3) + ")"; ca.fillRect(x, y, l, 1); }
+    for (let i = 0; i < 70 * amt + 10; i++) { const y = by + Math.random() * bh, x = Math.random() * W, l = (10 + Math.random() * 120) * u; ca.fillStyle = "rgba(255,255,255," + (Math.random() * 0.35 * amt).toFixed(3) + ")"; ca.fillRect(x, y, l, u); }
     if (kickHit || Math.random() < 0.01) S.tear = { y: Math.random() * H, life: 0.12 };
     if (S.tear && (S.tear.life -= dt) > 0) { ca.fillStyle = "rgba(255,255,255,.25)"; ca.fillRect(0, S.tear.y, W, 2); ca.fillStyle = "rgba(80,220,255,.18)"; ca.fillRect(0, S.tear.y + 2, W, 3); }
     // colour that bleeds at the edges
     const eg = ca.createLinearGradient(0, 0, W, 0); eg.addColorStop(0, "rgba(255,0,90," + (0.07 * amt).toFixed(3) + ")"); eg.addColorStop(0.08, "rgba(0,0,0,0)"); eg.addColorStop(0.92, "rgba(0,0,0,0)"); eg.addColorStop(1, "rgba(0,180,255," + (0.07 * amt).toFixed(3) + ")");
     ca.fillStyle = eg; ca.fillRect(0, 0, W, H);
     // the on-screen text of the video recorder
-    const sec = S.playT0 ? Math.floor((now - S.playT0) / 1000) : 0, fs = Math.max(20, Math.min(30, W / 46));
+    const sec = S.playT0 ? Math.floor((now - S.playT0) / 1000) : 0, fs = T.osd || Math.max(20, Math.min(30, W / 46)), mx = 28 * u, my = 22 * u;
     const label = recording ? "● REC" : playing ? "PLAY ▶" : "STOP ■", count = Math.floor(sec / 3600) + ":" + String(Math.floor(sec / 60) % 60).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0");
     ci.font = fs + 'px "VT323", monospace'; ci.textBaseline = "top";
-    const osd = (t, x, y, align) => { ci.textAlign = align; ci.fillStyle = "rgba(255,0,80,.55)"; ci.fillText(t, x + 2, y); ci.fillStyle = "rgba(0,200,255,.55)"; ci.fillText(t, x - 2, y); ci.fillStyle = recording && t === label ? "#ff5a4a" : "rgba(255,255,255,.92)"; ci.fillText(t, x, y); };
-    if (!playing || S.t % 1.2 < 0.9 || !recording) osd(label, 28, 22, "left");
-    osd("SP", W - 28, 22, "right"); osd(count, 28, H - fs - 22, "left");
-    osd(String(state.bpm) + " BPM", W - 28, H - fs - 22, "right");
+    const osd = (t, x, y, align) => { ci.textAlign = align; ci.fillStyle = "rgba(255,0,80,.55)"; ci.fillText(t, x + 2 * u, y); ci.fillStyle = "rgba(0,200,255,.55)"; ci.fillText(t, x - 2 * u, y); ci.fillStyle = recording && t === label ? "#ff5a4a" : "rgba(255,255,255,.92)"; ci.fillText(t, x, y); };
+    if (!playing || S.t % 1.2 < 0.9 || !recording) osd(label, mx, my, "left");
+    osd("SP", W - mx, my, "right"); osd(count, mx, H - fs - my, "left");
+    osd(String(state.bpm) + " BPM", W - mx, H - fs - my, "right");
   }
   if (on("pellicola")) {
     // burnt edges
@@ -5517,22 +5567,22 @@ function drawVfx(now) {
     ci.globalAlpha = 0.35 + amt * 0.65; ci.fillStyle = S.cache.burn; ci.fillRect(0, 0, W, H); ci.globalAlpha = 1;
     // the projector light trembles (24 times a second)
     if (!S.f24 || now - S.f24 > 41) { S.f24 = now; S.flk = Math.random(); S.specks = []; const n = Math.floor(Math.random() * 7 * amt);
-      for (let i = 0; i < n; i++) S.specks.push({ x: Math.random() * W, y: Math.random() * H, r: 0.6 + Math.random() * 2.4, hair: Math.random() < 0.18, a: Math.random() * Math.PI });
+      for (let i = 0; i < n; i++) S.specks.push({ x: Math.random() * W, y: Math.random() * H, r: (0.6 + Math.random() * 2.4) * u, hair: Math.random() < 0.18, a: Math.random() * Math.PI });
       if (Math.random() < 0.06) S.scratches.push({ x: Math.random() * W, life: 0.4 + Math.random() * 1.6, v: (Math.random() - 0.5) * 30, a: 0.15 + Math.random() * 0.25 });
       S.weave = (Math.random() - 0.5) * 1.2; }
     ci.fillStyle = "rgba(0,0,0," + (S.flk * 0.08 * amt).toFixed(3) + ")"; ci.fillRect(0, 0, W, H);
     ca.fillStyle = "rgba(255,190,110," + ((1 - S.flk) * 0.04 * amt + kick * 0.03).toFixed(3) + ")"; ca.fillRect(0, 0, W, H);
     for (const s of S.specks) {
       ci.fillStyle = ci.strokeStyle = "rgba(10,6,2,.7)";
-      if (s.hair) { ci.lineWidth = 0.8; ci.beginPath(); ci.moveTo(s.x, s.y); ci.quadraticCurveTo(s.x + Math.cos(s.a) * 22, s.y + Math.sin(s.a) * 22 + 10, s.x + Math.cos(s.a) * 34, s.y + 30); ci.stroke(); }
+      if (s.hair) { ci.lineWidth = 0.8 * u; ci.beginPath(); ci.moveTo(s.x, s.y); ci.quadraticCurveTo(s.x + Math.cos(s.a) * 22 * u, s.y + (Math.sin(s.a) * 22 + 10) * u, s.x + Math.cos(s.a) * 34 * u, s.y + 30 * u); ci.stroke(); }
       else { ci.beginPath(); ci.arc(s.x, s.y, s.r, 0, Math.PI * 2); ci.fill(); }
     }
-    S.scratches = S.scratches.filter(s => { s.life -= dt; s.x += s.v * dt; if (s.life <= 0) return false; ca.fillStyle = "rgba(255,245,225," + (s.a * amt).toFixed(3) + ")"; ca.fillRect(s.x, 0, 1, H); return true; });
+    S.scratches = S.scratches.filter(s => { s.life -= dt; s.x += s.v * dt * u; if (s.life <= 0) return false; ca.fillStyle = "rgba(255,245,225," + (s.a * amt).toFixed(3) + ")"; ca.fillRect(s.x, 0, u, H); return true; });
   }
   if (on("glitch")) {
     if ((kickHit || midHit) && now - S.glitchAt > 260 && playing) {
       S.glitchAt = now; const bands = [];
-      for (let i = 0; i < 3 + Math.floor(Math.random() * 5 * amt); i++) bands.push({ y: Math.random() * H, h: 4 + Math.random() * 46, dx: (Math.random() - 0.5) * 60 * amt });
+      for (let i = 0; i < 3 + Math.floor(Math.random() * 5 * amt); i++) bands.push({ y: Math.random() * H, h: (4 + Math.random() * 46) * u, dx: (Math.random() - 0.5) * 60 * amt * u });
       S.glitch = { life: 0.1 + Math.random() * 0.12, bands };
     }
     if (S.glitch && (S.glitch.life -= dt) > 0) {
@@ -5540,17 +5590,16 @@ function drawVfx(now) {
         ca.fillStyle = "rgba(255,0,110,.22)"; ca.fillRect(b.dx, b.y, W, b.h);
         ca.fillStyle = "rgba(0,230,255,.22)"; ca.fillRect(-b.dx, b.y + 2, W, b.h);
         ci.fillStyle = "rgba(0,0,0,.35)"; ci.fillRect(0, b.y + b.h, W, 1);
-        for (let k = 0; k < 6; k++) { const s = 6 + Math.random() * 14; ca.fillStyle = ["rgba(255,255,255,.5)", "rgba(255,0,120,.5)", "rgba(0,255,200,.5)"][k % 3]; ca.fillRect(Math.random() * W, b.y + Math.random() * b.h, s, s * 0.6); }
+        for (let k = 0; k < 6; k++) { const s = (6 + Math.random() * 14) * u; ca.fillStyle = ["rgba(255,255,255,.5)", "rgba(255,0,120,.5)", "rgba(0,255,200,.5)"][k % 3]; ca.fillRect(Math.random() * W, b.y + Math.random() * b.h, s, s * 0.6); }
       }
     } else S.glitch = null;
   }
   // ---- the instrument itself: it jumps on the kick, shivers with the glitch, weaves like film ----
   let tx = 0, ty = 0, sc = 1;
   if (on("scossa")) { sc += kick * 0.012 * amt; ty += kick * 2.5 * amt; }
-  if (on("glitch") && S.glitch) tx += S.glitch.bands[0].dx * 0.15;
+  if (on("glitch") && S.glitch) tx += S.glitch.bands[0].dx * 0.15 / u;
   if (on("pellicola")) ty += (S.weave || 0) * amt;
-  const tf = Math.abs(tx) + Math.abs(ty) + Math.abs(sc - 1) < 0.02 ? "" : tx.toFixed(1) + "px " + ty.toFixed(1) + "px|" + sc.toFixed(4);
-  if (tf !== S.tf) { const a = $("app").style, [t, s] = tf ? tf.split("|") : ["", ""]; a.translate = t; a.scale = s; S.tf = tf; }
+  return { tx, ty, sc };
 }
 function buildVfxCustom() {
   VFX_PRESETS.forEach(([id, name, list]) => optButton($("cVfxPre"), id, name, null, () => setVfx(list.slice())));
@@ -6288,8 +6337,10 @@ function tick() {
   kickGlow *= 0.86; beatPulse *= 0.9;
   if (state.custom.pulse === "si") { const v = Math.min(1, kickGlow) * 0.9; if (Math.abs(v - beatLightV) > 0.008) { $("beatLight").style.opacity = v.toFixed(3); beatLightV = v; } }
   if (logoDot) logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
-  drawSpec(!ctx); drawVU(!ctx); drawDeck(false); drawVfx(performance.now());
+  drawSpec(!ctx); drawVU(!ctx); drawDeck(false);
+  if ($("vidBox").hidden) drawVfx(performance.now()); else if (VX_ST.tf || $("vfxAdd").width || $("vfxBack").width || $("vfxInk").width) vfxClear();   // behind the video box the screen effects rest
   if (curPage === "voce") voiceLive();
+  vidTick(performance.now());
   requestAnimationFrame(tick);
 }
 let beatLightV = 0, kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a";
@@ -6714,7 +6765,7 @@ function cellExtras(c, o) {
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
-const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice"];
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video"];
 function f32ToB64(d) {
   const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
   for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
@@ -6772,7 +6823,7 @@ function openProject(file) {
     }
     const st = proj.state; PROJ_KEYS.forEach(k => { if (st[k] !== undefined) state[k] = st[k]; });
     if (st.voice === undefined) state.voice = null;
-    voiceFix(); voiceSoloStop();
+    voiceFix(); videoFix(); voiceSoloStop();
     for (const t of proj.voices || []) { const b = voiceBufFrom(b64ToF32(t.data), t.sr || 44100); VO.bufs.set(t.id, b); VO.peaks.delete(t.id); voiceKeep(t.id, b); }
     state.voice.takes = state.voice.takes.filter(t => VO.bufs.has(t.id)); if (!vTake()) state.voice.sel = state.voice.takes.length ? state.voice.takes[0].id : null;
     state.banks.forEach((bk, bi) => bk.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
@@ -7316,6 +7367,365 @@ function buildVoice() {
   renderPrompt(); voiceRender();
 }
 
+/* ================= video per i social: il beat (e la voce) con lo schermo, gli effetti e il testo ================= */
+const VID_FMTS = [["v", "Verticale 9:16", 1080, 1920, "TikTok, Reels, Shorts"], ["q", "Quadrato 1:1", 1080, 1080, "post di Instagram"], ["o", "Orizzontale 16:9", 1920, 1080, "YouTube"]];
+const VID_LAYOUTS = [["strumento", "Strumento", "lo schermo, le lancette e i pad che si accendono"], ["disco", "Disco", "il vinile che gira con lo spettro intorno"], ["testo", "Testo", "le barre del testo grandi, a tempo"]];
+const VID_MAX = 180, VID_FPS = 30;
+const VID = { cv: null, c: null, W: 0, H: 0, rec: null, chunks: [], mime: "", stopAt: 0, last: 0, col: null, fx: null, logo: { x: 0, y: 0 }, blob: null, url: "", spin: 0, lastT: 0, cache: {}, cacheKey: "" };
+const padHitT = new Float64Array(48).fill(-9), padHitV = new Float32Array(48);
+function vidMime() {
+  const MR = window.MediaRecorder; if (!MR || !MR.isTypeSupported) return "";
+  // H.264 in MP4 goes everywhere; where the browser cannot make it, MP4 with VP9, then WebM
+  return ["video/mp4;codecs=avc1.42E01F,mp4a.40.2", "video/mp4;codecs=avc1.42E01F,opus", "video/mp4;codecs=avc1", "video/mp4;codecs=vp9,opus", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(t => MR.isTypeSupported(t)) || "";
+}
+// the colours of the body, read once (reading styles every frame would be slow)
+function vidColors() {
+  const cs = getComputedStyle($("app")), v = n => cs.getPropertyValue(n).trim();
+  VID.col = { room: v("--room"), glow: v("--room-glow"), ch1: v("--chassis-2"), ch2: v("--chassis"), edge: v("--edge"), cream: v("--cream"), cream3: v("--cream-3"), led: v("--led"), well: v("--well"),
+    rubber: v("--rubber"), rubberHi: v("--rubber-hi"), padInk: v("--pad-ink"), scrBg: v("--scr-bg"), scrInk: v("--scr-ink"), screw: v("--screw-1"), hues: ["--hA", "--hB", "--hC", "--hD"].map(v),
+    brand: (getComputedStyle($("app")).getPropertyValue("--f-brand").trim() || '"Bungee", "Arial Black", sans-serif') };
+}
+function vidLenOptions() {
+  const sel = $("vidLen"), cur = String(state.video.len), take = vTake(), song = state.songOn && state.song.length, opts = [["4", "4 battute"], ["8", "8 battute"], ["16", "16 battute"], ["32", "32 battute"]];
+  if (take) opts.push(["voce", "La presa di voce intera (" + (take.startBar + take.bars) + " battute)"]);
+  if (song) opts.push(["canzone", "La canzone (" + songBars() + " battute)"]);
+  sel.innerHTML = ""; opts.forEach(([v, t]) => sel.appendChild(new Option(t, v)));
+  sel.value = opts.some(o => o[0] === cur) ? cur : song ? "canzone" : "8";
+}
+function vidBars() {
+  const L = state.video.len, take = vTake();
+  if (L === "canzone" && state.songOn && state.song.length) return songBars();
+  if (L === "voce" && take) return take.startBar + take.bars;
+  return +L || 8;
+}
+function vidSize() {
+  const f = VID_FMTS.find(x => x[0] === state.video.fmt) || VID_FMTS[0], k = state.video.light ? 2 / 3 : 1, w = Math.round(f[2] * k), hh = Math.round(f[3] * k);
+  if (VID.W !== w || VID.H !== hh) {
+    VID.W = VID.cv.width = w; VID.H = VID.cv.height = hh;
+    VID.cv.style.aspectRatio = f[2] + " / " + f[3];
+    VID.fx = null;
+  }
+}
+// the effects of the FX button, drawn at the size of the video
+function vidFx() {
+  if (VID.fx) return VID.fx;
+  const W = VID.W, H = VID.H, mk = k => { const cv = document.createElement("canvas"); cv.width = Math.round(W * k); cv.height = Math.round(H * k); return { cv, c: cv.getContext("2d"), k, used: false }; };
+  const L = { back: mk(0.5), add: mk(0.5), ink: mk(1) };
+  const T = { W, H, u: Math.min(W, H) / 1080 * 1.6, osd: Math.min(W, H) / 22,
+    ctx: id => { const l = L[id]; l.used = true; l.c.setTransform(l.k, 0, 0, l.k, 0, 0); l.c.globalCompositeOperation = "source-over"; l.c.globalAlpha = 1; l.c.clearRect(0, 0, W, H); return l.c; },
+    cv: id => L[id].cv, off: id => { L[id].used = false; },
+    fountain: S => { const cols = [VID.col.led, hueColor, "#fff2d8"], u = T.u; for (let i = 0; i < 30; i++) { const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.3, v = (260 + Math.random() * 380) * u; S.parts.push({ x: VID.logo.x, y: VID.logo.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.7 + Math.random() * 0.6, col: cols[i % 3], s: 1.2 + Math.random() * 1.4 }); } } };
+  VID.fx = { S: vfxState(), T, L }; return VID.fx;
+}
+function rrect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function vidWrap(c, text, maxW) {
+  const words = text.split(/\s+/).filter(Boolean), out = []; let line = "";
+  for (const w of words) { const t = line ? line + " " + w : w; if (c.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; }
+  if (line) out.push(line); return out;
+}
+// which line of the lyrics is being sung: from the take on the beat, or from the top of the beat
+function vidLyricBar() {
+  if (!playing) return -1;
+  const take = vTake(), bar = vbar(), now = ctx.currentTime;
+  if (take && VO.ready && !state.voice.mute) { const a = voiceAnchor(take) + VOICE_LAT - (take.shift || 0) / 1000; return Math.floor((now - a) / bar); }
+  return Math.floor((now - gridOrigin) / bar);
+}
+function vidTitle() { return (state.video.title || "").trim() || "Senza titolo"; }
+function vidArtist() { return (state.video.artist || "").trim(); }
+// what does not move is drawn once into its own canvas, and copied every frame
+function vidLayer(key, w, h, draw) {
+  let cv = VID.cache[key]; if (cv) return cv;
+  cv = document.createElement("canvas"); cv.width = Math.ceil(w); cv.height = Math.ceil(h); draw(cv.getContext("2d")); VID.cache[key] = cv; return cv;
+}
+function vidCacheCheck() {
+  const st = state.video, b = state.bank, k = [VID.W, VID.H, st.layout, st.title, st.artist, state.bpm, state.skin, state.custom.logo, state.custom.font, state.custom.label, state.custom.vinyl, b, state.banks[b].map(p => p.sound + (p.col || "")).join()].join("|");
+  if (k !== VID.cacheKey) { VID.cacheKey = k; VID.cache = {}; }
+}
+function vidFrame(now) {
+  const c = VID.c, W = VID.W, H = VID.H, C = VID.col, u = Math.min(W, H) / 1080, vert = H > W * 1.2, wide = W > H * 1.2, lay = state.video.layout;
+  const kick = Math.min(1, kickGlow), bar = vbar(), t = ctx ? ctx.currentTime : 0;
+  vidCacheCheck();
+  const fx = state.video.fx && state.custom.vfx && state.custom.vfx.length ? vidFx() : null;
+  let tf = { tx: 0, ty: 0, sc: 1 };
+  if (fx) { fx.S.on = new Set(state.custom.vfx); tf = vfxPaint(fx.S, fx.T, now); }
+  // the room
+  c.globalCompositeOperation = "source-over"; c.globalAlpha = 1;
+  c.drawImage(vidLayer("bg", W, H, g => { const gr = g.createRadialGradient(W / 2, H * 0.35, 0, W / 2, H * 0.5, Math.max(W, H) * 0.75); gr.addColorStop(0, C.glow); gr.addColorStop(1, C.room); g.fillStyle = gr; g.fillRect(0, 0, W, H); }), 0, 0);
+  if (fx && fx.L.back.used) c.drawImage(fx.L.back.cv, 0, 0, W, H);
+  c.save();
+  c.translate(W / 2 + tf.tx * fx_u(), H / 2 + tf.ty * fx_u()); c.scale(tf.sc, tf.sc); c.translate(-W / 2, -H / 2);
+  if (lay === "disco") vidDisco(c, W, H, u, vert, wide, kick, t);
+  else if (lay === "testo") vidText(c, W, H, u, vert, wide, kick, t, bar);
+  else vidDevice(c, W, H, u, vert, wide, kick, t);
+  c.restore();
+  if (fx && fx.L.add.used) { c.globalCompositeOperation = "screen"; c.drawImage(fx.L.add.cv, 0, 0, W, H); c.globalCompositeOperation = "source-over"; }
+  if (fx && fx.L.ink.used) c.drawImage(fx.L.ink.cv, 0, 0, W, H);
+  c.drawImage(vidLayer("mark", W, H, g => { g.font = "400 " + Math.round(22 * u) + 'px "Silkscreen", monospace'; g.textAlign = "right"; g.textBaseline = "bottom"; g.fillStyle = withAlpha(C.cream, 0.45); g.fillText("FATTO CON MAT.TONE", W - 30 * u, H - 24 * u); }), 0, 0);
+}
+const fx_u = () => (VID.fx ? VID.fx.T.u : 1);
+// title, artist and tempo (drawn once, see vidLayer)
+function vidHeading(g, x, y, maxW, u, align, size) {
+  const C = VID.col;
+  g.textAlign = align; g.textBaseline = "alphabetic";
+  let fs = size * u; g.font = "400 " + fs + "px " + C.brand;
+  while (g.measureText(vidTitle()).width > maxW && fs > 30 * u) { fs -= 4 * u; g.font = "400 " + fs + "px " + C.brand; }
+  g.fillStyle = C.cream; g.shadowColor = "rgba(0,0,0,.6)"; g.shadowBlur = 18 * u; g.fillText(vidTitle(), x, y); g.shadowBlur = 0;
+  const sub = [vidArtist(), state.bpm + " BPM"].filter(Boolean).join("  ·  ");
+  g.font = "400 " + Math.round(30 * u) + 'px "Silkscreen", monospace'; g.fillStyle = C.led; g.fillText(sub.toUpperCase(), x, y + 52 * u);
+}
+// a caption with the line of the lyrics being sung
+function vidCaption(c, W, y, u, maxW) {
+  if (!state.video.lyrics) return;
+  const lines = (state.voice.lyrics || "").split("\n"), i = vidLyricBar();
+  if (!(state.voice.lyrics || "").trim() || i < 0 || i >= lines.length || !lines[i].trim()) return;
+  c.font = "400 " + Math.round(46 * u) + 'px "IBM Plex Sans Condensed", "Arial Narrow", sans-serif'; c.textAlign = "center"; c.textBaseline = "middle";
+  const rows = vidWrap(c, lines[i], maxW).slice(0, 2), lh = 58 * u, h = rows.length * lh + 26 * u, w = Math.min(maxW + 40 * u, Math.max(...rows.map(r => c.measureText(r).width)) + 60 * u);
+  c.fillStyle = "rgba(0,0,0,.62)"; rrect(c, W / 2 - w / 2, y - h / 2, w, h, 14 * u); c.fill();
+  c.fillStyle = "#fff"; rows.forEach((r, k) => c.fillText(r, W / 2, y - h / 2 + 13 * u + lh * (k + 0.5)));
+}
+function vidFit(c, s, w) { if (c.measureText(s).width <= w) return s; while (s.length > 1 && c.measureText(s + "…").width > w) s = s.slice(0, -1); return s + "…"; }
+// layout 1: the instrument, its screen, its meters and its pads
+function vidDevice(c, W, H, u, vert, wide, kick, t) {
+  const C = VID.col, room = vert ? H * 0.66 : H * 0.66;
+  // the panel is as wide as it can be while it still fits under the title
+  const fit = w => { const lw = w - 60 * u, lh = lw * 80 / 256, vw = (lw - 24 * u) / 2, vh = vw * 168 / 264, pd = wide ? 0 : lw * 0.62; return 120 * u + lh + 30 * u + vh + (wide ? 40 * u : 40 * u + pd + 30 * u); };
+  let pw = wide ? W * 0.62 : W * 0.86; if (fit(pw) > room) { let lo = 200 * u, hi = pw; for (let k = 0; k < 20; k++) { const m = (lo + hi) / 2; if (fit(m) > room) hi = m; else lo = m; } pw = lo; }
+  const px = (W - pw) / 2, lcdW = pw - 60 * u, lcdH = lcdW * 80 / 256, vuW = (lcdW - 24 * u) / 2, vuH = vuW * 168 / 264, padsH = wide ? 0 : lcdW * 0.62, ph = fit(pw);
+  const py = vert ? H * 0.2 : H * 0.17 + (H * 0.7 - ph) / 2;
+  const sx = px + 30 * u, sy = py + 120 * u, vy = sy + lcdH + 30 * u, gy = vy + vuH + 40 * u, cols = 4, gap = 16 * u, cw = (lcdW - gap * 3) / cols, chh = (padsH - gap * 2) / 3, b = state.bank;
+  const padXY = i => [sx + (i % cols) * (cw + gap), gy + Math.floor(i / cols) * (chh + gap)];
+  // the panel, its frames, the pads at rest and the title: all still
+  c.drawImage(vidLayer("dev", W, H, g => {
+    g.save(); g.shadowColor = "rgba(0,0,0,.7)"; g.shadowBlur = 60 * u; g.shadowOffsetY = 24 * u;
+    const pg = g.createLinearGradient(0, py, 0, py + ph); pg.addColorStop(0, C.ch1); pg.addColorStop(1, C.ch2);
+    g.fillStyle = pg; rrect(g, px, py, pw, ph, 26 * u); g.fill(); g.restore();
+    g.strokeStyle = C.edge; g.lineWidth = 3 * u; rrect(g, px, py, pw, ph, 26 * u); g.stroke();
+    for (const x of [px + 22 * u, px + pw - 22 * u]) { g.fillStyle = C.screw; g.beginPath(); g.arc(x, py + 22 * u, 8 * u, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = "#050403"; rrect(g, sx - 10 * u, sy - 10 * u, lcdW + 20 * u, lcdH + 20 * u, 14 * u); g.fill();
+    for (let k = 0; k < 2; k++) { const x = sx + k * (vuW + 24 * u); g.fillStyle = C.edge; rrect(g, x - 5 * u, vy - 5 * u, vuW + 10 * u, vuH + 10 * u, 12 * u); g.fill(); }
+    if (!wide) for (let i = 0; i < 12; i++) {
+      const [x, y] = padXY(i), pr = state.banks[b][i], s = SOUNDS.get(pr.sound);
+      const pg2 = g.createLinearGradient(0, y, 0, y + chh); pg2.addColorStop(0, C.rubberHi); pg2.addColorStop(1, C.rubber);
+      g.fillStyle = pg2; rrect(g, x, y, cw, chh, 14 * u); g.fill();
+      g.fillStyle = pr.col || C.hues[b]; g.fillRect(x + cw / 2 - 18 * u, y + 10 * u, 36 * u, 5 * u);
+      g.fillStyle = C.padInk; g.font = "400 " + Math.round(20 * u) + 'px "Silkscreen", monospace'; g.textAlign = "left"; g.textBaseline = "top"; g.fillText(BANKS[b].id + (i + 1), x + 12 * u, y + 10 * u);
+      g.font = "600 " + Math.round(22 * u) + 'px "IBM Plex Sans Condensed", sans-serif'; g.textBaseline = "bottom"; g.fillText(vidFit(g, s ? s.name : "", cw - 24 * u), x + 12 * u, y + chh - 10 * u);
+    }
+    if (vert) vidHeading(g, W / 2, py - 120 * u, W * 0.86, u, "center", 92);
+    else vidHeading(g, W / 2, H * 0.085, W * 0.8, u, "center", wide ? 62 : 56);
+  }), 0, 0);
+  // the name on the panel: its dot lights up on the kick
+  const logo = ((state.custom.logo || "").trim() || "MAT.TONE"), dot = logo.search(/[·.]/);
+  c.font = "400 " + Math.round(58 * u) + "px " + C.brand; c.textAlign = "left"; c.textBaseline = "middle";
+  const lx = px + 34 * u, ly = py + 66 * u;
+  if (dot >= 0) {
+    const a = logo.slice(0, dot), d = logo[dot], b2 = logo.slice(dot + 1), wa = c.measureText(a).width, wd = c.measureText(d).width;
+    c.fillStyle = C.cream; c.fillText(a, lx, ly); c.fillText(b2, lx + wa + wd, ly);
+    c.fillStyle = C.led; if (kick > 0.05) { c.shadowColor = C.led; c.shadowBlur = kick * 40 * u; } c.fillText(d, lx + wa, ly); c.shadowBlur = 0;
+    VID.logo = { x: lx + wa + wd / 2, y: ly };
+  } else { c.fillStyle = C.cream; c.fillText(logo, lx, ly); VID.logo = { x: lx + c.measureText(logo).width / 2, y: ly }; }
+  // the real screen and the real meters, copied as they are drawn
+  if (specCv && specCv.width) c.drawImage(specCv, sx, sy, lcdW, lcdH);
+  [$("vuL"), $("vuR")].forEach((cv, k) => { if (cv && cv.width) c.drawImage(cv, sx + k * (vuW + 24 * u), vy, vuW, vuH); });
+  // the pads light up on every hit
+  if (!wide) for (let i = 0; i < 12; i++) {
+    const ht = padHitT[b * 12 + i], lv = t >= ht ? padHitV[b * 12 + i] * Math.exp(-(t - ht) * 6) : 0;
+    if (lv < 0.03) continue;
+    const [x, y] = padXY(i), col = state.banks[b][i].col || C.hues[b];
+    c.save(); c.globalAlpha = Math.min(0.85, lv); c.fillStyle = col; c.shadowColor = col; c.shadowBlur = 40 * u; rrect(c, x, y, cw, chh, 14 * u); c.fill(); c.restore();
+  }
+  if (vert) vidCaption(c, W, py + ph + (H - py - ph) / 2, u, W * 0.84);
+  else vidCaption(c, W, H - 58 * u, u, W * (wide ? 0.6 : 0.8));
+}
+// layout 2: the record turning, the spectrum around it
+function vidDisco(c, W, H, u, vert, wide, kick, t) {
+  const C = VID.col, R = Math.min(W, H) * (vert ? 0.36 : wide ? 0.3 : 0.26), cx = wide ? W * 0.62 : W / 2, cy = vert ? H * 0.53 : wide ? H * 0.52 : H * 0.57;
+  const now = performance.now(); if (VID.lastT) VID.spin += (playing ? 0.555 : 0.04) * Math.PI * 2 * Math.min(0.1, (now - VID.lastT) / 1000); VID.lastT = now;
+  const pulse = 1 + kick * 0.025;
+  c.drawImage(vidLayer("discHead", W, H, g => {
+    if (vert) vidHeading(g, W / 2, H * 0.12, W * 0.86, u, "center", 96);
+    else if (wide) vidHeading(g, W * 0.06, H * 0.5, W * 0.3, u, "left", 70);
+    else vidHeading(g, W / 2, H * 0.09, W * 0.86, u, "center", 58);
+  }), 0, 0);
+  // the spectrum around, mirrored
+  const n = 72; c.save(); c.translate(cx, cy); c.lineWidth = 9 * u; c.lineCap = "round";
+  for (let i = 0; i < n; i++) {
+    const k = i < n / 2 ? i : n - 1 - i, v = specBins[Math.min(31, Math.floor(k / (n / 2) * 28) + 1)], a = i / n * Math.PI * 2 - Math.PI / 2, r0 = R * pulse + 22 * u, len = 10 * u + v * R * 0.42;
+    c.strokeStyle = i % 2 ? C.led : C.scrInk; c.globalAlpha = 0.5 + v * 0.5;
+    c.beginPath(); c.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); c.lineTo(Math.cos(a) * (r0 + len), Math.sin(a) * (r0 + len)); c.stroke();
+  }
+  c.globalAlpha = 1;
+  // the record with its label, drawn once, turned every frame; the shine stays still
+  const P = R + 60 * u, disc = vidLayer("disc", P * 2, P * 2, g => {
+    g.translate(P, P);
+    g.shadowColor = "rgba(0,0,0,.8)"; g.shadowBlur = 50 * u; g.fillStyle = "#0b0b0c"; g.beginPath(); g.arc(0, 0, R, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
+    for (let r = R * 0.38; r < R * 0.97; r += 3.2 * u) { g.strokeStyle = "rgba(255,255,255," + (0.025 + ((r * 7) % 3) * 0.012).toFixed(3) + ")"; g.lineWidth = 1.2 * u; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.stroke(); }
+    const vin = VINYLS.find(v => v[0] === state.custom.vinyl); if (vin && vin[0] !== "nero") { g.strokeStyle = withAlpha(vin[2], 0.55); g.lineWidth = 7 * u; g.beginPath(); g.arc(0, 0, R - 4 * u, 0, Math.PI * 2); g.stroke(); }
+    const lab = state.custom.label && state.custom.label !== "auto" ? state.custom.label : C.hues[state.bank];
+    g.fillStyle = lab; g.beginPath(); g.arc(0, 0, R * 0.34, 0, Math.PI * 2); g.fill();
+    g.fillStyle = labelInk(lab); g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = "400 " + Math.round(R * 0.075) + "px " + C.brand; g.fillText(vidFit(g, vidTitle().toUpperCase(), R * 0.56), 0, -R * 0.12);
+    g.font = "400 " + Math.round(R * 0.045) + 'px "Silkscreen", monospace'; g.fillText((vidArtist() || "MAT.TONE").toUpperCase(), 0, R * 0.1); g.fillText(state.bpm + " BPM · 33⅓", 0, R * 0.19);
+    g.fillStyle = "#050505"; g.beginPath(); g.arc(0, 0, R * 0.025, 0, Math.PI * 2); g.fill();
+  });
+  const shine = vidLayer("shine", R * 2, R * 2, g => {
+    const sh = g.createConicGradient(0.6, R, R); [0, 0.12, 0.25, 0.5, 0.62, 0.75, 1].forEach((s, i) => sh.addColorStop(s, i % 3 === 1 ? "rgba(255,255,255,.13)" : "rgba(255,255,255,0)"));
+    g.fillStyle = sh; g.beginPath(); g.arc(R, R, R * 0.97, 0, Math.PI * 2); g.arc(R, R, R * 0.36, 0, Math.PI * 2, true); g.fill("evenodd");
+  });
+  c.scale(pulse, pulse);
+  c.save(); c.rotate(VID.spin); c.drawImage(disc, -P, -P); c.restore();
+  c.drawImage(shine, -R, -R);
+  c.restore();
+  VID.logo = { x: cx, y: cy };
+  if (vert) vidCaption(c, W, H * 0.88, u, W * 0.84);
+  else if (wide) vidCaption(c, W * 0.42, H * 0.7, u, W * 0.32);
+  else vidCaption(c, W, H * 0.93, u, W * 0.84);
+}
+// layout 3: the lyrics, big, on the beat
+function vidText(c, W, H, u, vert, wide, kick, t, bar) {
+  const C = VID.col, lines = (state.voice.lyrics || "").split("\n"), has = (state.voice.lyrics || "").trim().length > 0, i = vidLyricBar();
+  const lw = wide ? W * 0.42 : W * 0.7, lh = lw * 80 / 256, lx = (W - lw) / 2, ly = vert ? H * 0.06 : H * 0.05;
+  c.drawImage(vidLayer("textStill", W, H, g => {
+    g.fillStyle = "#050403"; rrect(g, lx - 10 * u, ly - 10 * u, lw + 20 * u, lh + 20 * u, 14 * u); g.fill();
+    if (vert) vidHeading(g, W / 2, H * 0.9, W * 0.86, u, "center", 70);
+    else vidHeading(g, W / 2, H * 0.94, W * 0.8, u, "center", 54);
+  }), 0, 0);
+  if (specCv && specCv.width) c.drawImage(specCv, lx, ly, lw, lh);
+  VID.logo = { x: W / 2, y: ly + lh + 30 * u };
+  const midY = vert ? H * 0.5 : H * 0.54, maxW = W * (wide ? 0.72 : 0.84);
+  if (!has) {
+    c.textAlign = "center"; c.textBaseline = "middle"; const fs = 130 * u; c.font = "400 " + fs + "px " + C.brand;
+    const rows = vidWrap(c, vidTitle(), maxW).slice(0, 3);
+    rows.forEach((r, k) => { c.fillStyle = C.cream; if (kick > 0.05) { c.shadowColor = C.led; c.shadowBlur = kick * 50 * u; } c.fillText(r, W / 2, midY + (k - (rows.length - 1) / 2) * fs * 1.05); c.shadowBlur = 0; });
+  } else {
+    // the line of the bar, big; the one before and the ones after, faded
+    const cur = Math.max(0, Math.min(lines.length - 1, i));
+    const draw = (txt, y, fs, alpha, glow) => {
+      c.font = (glow ? "700 " : "400 ") + Math.round(fs) + 'px "IBM Plex Sans Condensed", "Arial Narrow", sans-serif'; c.textAlign = "center"; c.textBaseline = "middle";
+      const rows = vidWrap(c, txt || "·", maxW).slice(0, 3), lhh = fs * 1.12;
+      rows.forEach((r, k) => { c.globalAlpha = alpha; c.fillStyle = glow ? C.cream : C.cream3; if (glow) { c.shadowColor = C.led; c.shadowBlur = (12 + kick * 30) * u; } c.fillText(r, W / 2, y + (k - (rows.length - 1) / 2) * lhh); c.shadowBlur = 0; });
+      c.globalAlpha = 1; return rows.length * lhh;
+    };
+    const big = (wide ? 74 : 84) * u, small = big * 0.55;
+    const h0 = draw(i >= 0 ? lines[cur] : lines[0], midY, big, 1, i >= 0);
+    let y = midY + h0 / 2 + small * 1.2;
+    for (let k = 1; k <= 2 && cur + k < lines.length; k++) { const h = draw(lines[cur + k], y, small, 0.55 - k * 0.15, false); y += h + small * 0.5; }
+    if (cur > 0 && i >= 0) draw(lines[cur - 1], midY - h0 / 2 - small * 1.1, small, 0.3, false);
+    c.font = "400 " + Math.round(26 * u) + 'px "Silkscreen", monospace'; c.fillStyle = C.led; c.textAlign = "center";
+    if (i >= 0) c.fillText("BARRA " + (cur + 1) + " / " + lines.length, W / 2, midY - h0 / 2 - small * 2.4);
+  }
+  if (playing) {
+    const beat = ((ctx.currentTime - gridOrigin) / (bar / 4)) % 4, by = vert ? H * 0.8 : H * 0.84;
+    for (let k = 0; k < 4; k++) { const on = Math.floor(beat) === k; c.fillStyle = on ? C.led : withAlpha(C.cream, 0.18); c.beginPath(); c.arc(W / 2 + (k - 1.5) * 46 * u, by, (on ? 13 : 10) * u, 0, Math.PI * 2); c.fill(); }
+  }
+}
+
+/* ---------- the box and the recording ---------- */
+function vidStatus(t, bad) { const e = $("vidState"); e.textContent = t; e.classList.toggle("bad", !!bad); }
+function openVideo() {
+  initAudio();
+  VID.cv = $("vidCv"); VID.c = VID.cv.getContext("2d");
+  vidColors(); vidSize(); vidLenOptions(); renderVideo();
+  $("vidBox").hidden = false;
+  const m = vidMime();
+  vidStatus(!m ? "Questo browser non sa registrare video: usa Chrome, Edge o l’app per PC." : /avc1/.test(m) ? "Scegli formato e stile, prova col beat, poi premi Registra: il beat parte dall’inizio e il video si salva da solo in MP4." : /mp4/.test(m) ? "Qui il video esce in MP4 con codifica VP9: YouTube lo prende; se Instagram o TikTok non lo accettano, passalo da CapCut o da un convertitore." : "Qui il video esce in WebM: va bene per YouTube; per Instagram e TikTok convertilo in MP4 (o usa l’app per PC).", !m);
+  $("vidRec").disabled = !m;
+}
+function closeVideo() { if (VID.rec) vidStop(true); $("vidBox").hidden = true; }
+function renderVideo() {
+  const v = state.video;
+  [...$("vidFmt").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v.fmt));
+  [...$("vidLay").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v.layout));
+  [["vidFx", v.fx], ["vidLyr", v.lyrics], ["vidLight", v.light]].forEach(([id, on]) => { $(id).setAttribute("aria-pressed", on); $(id).classList.toggle("on", on); });
+  if (document.activeElement !== $("vidTitle")) $("vidTitle").value = v.title;
+  if (document.activeElement !== $("vidArtist")) $("vidArtist").value = v.artist;
+  $("vidRec").classList.toggle("on", !!VID.rec); $("vidRec").textContent = VID.rec ? "■ Ferma" : "● Registra il video";
+  $("vidPlay").textContent = playing && !VID.rec ? "■ Ferma la prova" : "▶ Prova col beat"; $("vidPlay").disabled = !!VID.rec;
+  [...$("vidBox").querySelectorAll(".vidopts .seg button, #vidLen")].forEach(x => { x.disabled = !!VID.rec; });
+  const f = VID_FMTS.find(x => x[0] === v.fmt), k = v.light ? 2 / 3 : 1; $("vidFmtNote").textContent = f ? Math.round(f[2] * k) + " × " + Math.round(f[3] * k) + " · " + f[4] : "";
+  const l = VID_LAYOUTS.find(x => x[0] === v.layout); $("vidLayNote").textContent = l ? l[2] : "";
+}
+function vidStart() {
+  if (VID.rec) { vidStop(); return; }
+  if (!initAudio()) return;
+  const mime = vidMime(); if (!mime) return;
+  const bars = vidBars(), secs = bars * vbar();
+  if (secs > VID_MAX) { vidStatus("Troppo lungo per un video: al massimo 3 minuti (scegli meno battute).", true); return; }
+  if (playing) stop();
+  if (recorder.on) { vidStatus("Ferma prima il registratore.", true); return; }
+  vidColors(); vidSize(); VID.fx = null;
+  const stream = VID.cv.captureStream(VID_FPS), dest = ctx.createMediaStreamDestination();
+  N.out.connect(dest); dest.stream.getAudioTracks().forEach(tr => stream.addTrack(tr));
+  let rec; try { rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 9e6, audioBitsPerSecond: 256000 }); } catch (e) { try { N.out.disconnect(dest); } catch (x) { /* gone */ } vidStatus("Non riesco a registrare il video qui.", true); return; }
+  VID.rec = rec; VID.chunks = []; VID.mime = mime; VID.dest = dest; VID.stream = stream;
+  rec.ondataavailable = e => { if (e.data && e.data.size) VID.chunks.push(e.data); };
+  rec.onstop = vidDone;
+  rec.start(1000);
+  $("vidOut").hidden = true; $("vidCv").hidden = false;
+  vidStatus("REGISTRO IL VIDEO: " + bars + (bars > 1 ? " battute" : " battuta") + " (" + fmtTime(secs) + "). Tieni questa finestra davanti fino alla fine.");
+  setTimeout(() => {
+    if (VID.rec !== rec) return;
+    const song = state.video.len === "canzone" && state.songOn && state.song.length;
+    if (song) { songFrom = 0; songOnce = true; }
+    start();
+    VID.stopAt = gridOrigin + secs + 1.2;   // the last hit rings out
+    playUntil = gridOrigin + secs - 0.001;
+    setTimeout(() => { if (VID.rec === rec) vidStop(); }, (secs + 2) * 1000);   // even if the window is hidden and stops drawing
+  }, 400);
+  renderVideo();
+}
+function vidStop(quiet) {
+  const rec = VID.rec; if (!rec) return;
+  VID.rec = null; VID.quiet = !!quiet; playUntil = Infinity; songOnce = false;
+  if (playing) stop();
+  try { rec.stop(); } catch (e) { /* stopped */ }
+  try { N.out.disconnect(VID.dest); } catch (e) { /* gone */ }
+  renderVideo();
+}
+async function vidDone() {
+  try { VID.stream.getTracks().forEach(t => t.stop()); } catch (e) { /* gone */ }
+  if (VID.quiet || !VID.chunks.length) { vidStatus(VID.quiet ? "Video annullato." : "Il video è vuoto.", !VID.quiet); return; }
+  const ext = /mp4/.test(VID.mime) ? "mp4" : "webm", blob = new Blob(VID.chunks, { type: VID.mime.split(";")[0] }); VID.chunks = [];
+  VID.blob = blob; if (VID.url) URL.revokeObjectURL(VID.url); VID.url = URL.createObjectURL(blob);
+  const d = new Date(), p2 = n => String(n).padStart(2, "0"), slug = vidTitle().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "video";
+  VID.name = "mattone-" + slug + "-" + state.bpm + "bpm-" + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "-" + p2(d.getHours()) + p2(d.getMinutes()) + "." + ext;
+  const out = $("vidOut"); out.src = VID.url; out.hidden = false; $("vidCv").hidden = true; $("vidAgain").disabled = false;
+  vidStatus("Fatto: " + (blob.size / 1048576).toFixed(1).replace(".", ",") + " MB, " + (/avc1/.test(VID.mime) ? "MP4 H.264" : /mp4/.test(VID.mime) ? "MP4 VP9" : "WebM") + ". Lo salvo…");
+  vidSave();
+}
+async function vidSave() {
+  if (!VID.blob) return;
+  const data = new Uint8Array(await VID.blob.arrayBuffer());
+  try { const n = await giveFiles([{ name: VID.name, data, type: VID.blob.type }], VID.name.replace(/\.(mp4|webm)$/, ".zip")); vidStatus("Salvato: " + n + ". Guardalo qui sopra; «Torna all’anteprima» per farne un altro."); msg("VIDEO SALVATO: " + n.toUpperCase()); }
+  catch (err) { vidStatus(err && err.code === "declined" ? "Salvataggio annullato: premi «Salva di nuovo»." : "Qui non posso salvare file.", true); }
+}
+// every frame while the box is open; 30 frames a second are plenty
+function vidTick(now) {
+  if ($("vidBox").hidden || !VID.c || $("vidCv").hidden) return;
+  if (now - VID.last < 1000 / VID_FPS - 2) return;
+  VID.last = now;
+  vidFrame(now);
+  if (VID.rec && VID.stopAt && ctx.currentTime >= VID.stopAt) vidStop();
+}
+function buildVideo() {
+  const v = state.video;
+  VID_FMTS.forEach(([id, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { v.fmt = id; save(); vidSize(); renderVideo(); }); $("vidFmt").appendChild(b); });
+  VID_LAYOUTS.forEach(([id, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { v.layout = id; save(); renderVideo(); }); $("vidLay").appendChild(b); });
+  $("vidTitle").addEventListener("input", e => { v.title = e.target.value.slice(0, 40); save(); });
+  $("vidArtist").addEventListener("input", e => { v.artist = e.target.value.slice(0, 40); save(); });
+  $("vidLen").addEventListener("change", e => { v.len = e.target.value; save(); });
+  $("vidFx").addEventListener("click", () => { v.fx = !v.fx; save(); renderVideo(); if (v.fx && !(state.custom.vfx || []).length) vidStatus("Gli effetti sono spenti: sceglili col tasto FX accanto allo schermo (Club, VHS, Cinema…)."); });
+  $("vidLyr").addEventListener("click", () => { v.lyrics = !v.lyrics; save(); renderVideo(); if (v.lyrics && !(state.voice.lyrics || "").trim()) vidStatus("Il testo si scrive nella pagina Voce, una riga per battuta."); });
+  $("vidLight").addEventListener("click", () => { v.light = !v.light; save(); vidSize(); renderVideo(); });
+  $("vidRec").addEventListener("click", vidStart);
+  $("vidPlay").addEventListener("click", () => { if (VID.rec) return; if (playing) stop(); else start(); renderVideo(); });
+  $("vidAgain").addEventListener("click", vidSave);
+  $("vidBack").addEventListener("click", () => { $("vidOut").hidden = true; $("vidOut").pause(); $("vidCv").hidden = false; vidStatus("Anteprima: cambia quello che vuoi e registra di nuovo."); });
+  $("vidClose").addEventListener("click", closeVideo);
+  $("vidBox").addEventListener("click", e => { if (e.target === $("vidBox") && !VID.rec) closeVideo(); });
+  document.querySelectorAll(".vidopen").forEach(b => b.addEventListener("click", openVideo));
+}
+
 /* ---------- per il DAW: tracce separate e file MIDI ---------- */
 let playUntil = Infinity;   // the scheduler goes quiet after this time (the tails of a bounce still ring out)
 async function giveFiles(files, zipName) {
@@ -7588,7 +7998,7 @@ function meterGroups() {
   });
 }
 function buildPages() {
-  buildStrips(); buildEq(); buildStudio(); buildVoice();
+  buildStrips(); buildEq(); buildStudio(); buildVoice(); buildVideo();
   $("stemBtn").addEventListener("click", exportStems);
   $("midiExp").addEventListener("click", exportMidi);
   const loop = () => { meterGroups(); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
