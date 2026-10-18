@@ -456,6 +456,76 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .pg-suona { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 14px; align-items: start; }
 .pg-suona .col { display: grid; gap: 14px; align-content: start; min-width: 0; }
 .pg-mix { display: grid; gap: 14px; align-content: start; }
+/* ---------- lato B ---------- */
+.app.sideb-on > .rack, .app.sideb-on > .tabs, .app.sideb-on > .pages { display: none !important; }
+.app.sideb-on { height: auto; }   /* the body is as tall as side B: in 3D the chassis fits it */
+.sideb { position: relative; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr); gap: 14px; align-items: start; }
+.sideb[hidden] { display: none; }
+.sbfoot { position: absolute; z-index: 3; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3a3835, #121110 70%); box-shadow: 0 3px 6px rgba(0,0,0,.7), inset 0 0 0 3px rgba(0,0,0,.4); pointer-events: none; }
+.sbfoot.tl { left: -10px; top: -10px; } .sbfoot.tr { right: -10px; top: -10px; } .sbfoot.bl { left: -10px; bottom: 18px; } .sbfoot.br { right: -10px; bottom: 18px; }
+.sbbar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 14px 24px; }
+.sbname b { display: block; font-family: var(--f-brand, var(--f-logo)); font-weight: 400; font-size: calc(24px * var(--brand-scale, 1)); line-height: 1; color: var(--cream); }
+.sbname b span { color: var(--led); }
+.sbname small { display: block; margin-top: 4px; font-family: var(--f-label); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--cream-3); }
+.sbstrip { flex: 1; min-width: 220px; display: flex; gap: 12px; align-items: center; padding: 8px 14px; border-radius: 8px; background: var(--scr-bg); color: var(--scr-ink); font: 400 20px/1 var(--f-vfd); box-shadow: inset 0 2px 8px rgba(0,0,0,.7), 0 0 0 2px var(--edge); overflow: hidden; white-space: nowrap; }
+.sbmsg { opacity: .6; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sbbeat { width: 10px; height: 10px; border-radius: 50%; background: var(--led-off); flex: none; }
+.sbbeat.on { background: var(--led); box-shadow: 0 0 10px var(--led); }
+.sbdeck { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 18px; align-items: start; padding: 20px; }
+.sbplatter { position: relative; width: 100%; max-width: min(74vh, 720px); aspect-ratio: 1 / 1; justify-self: center; border-radius: 10px; background: linear-gradient(145deg, var(--plate), var(--well)); box-shadow: inset 0 0 0 1px var(--edge), inset 0 3px 14px rgba(0,0,0,.6); }
+.sbplatter canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; display: block; }
+.sbplatter canvas:active { cursor: grabbing; }
+.sbside { display: grid; gap: 12px; align-content: start; }
+.sbstart { aspect-ratio: 1.25; border: 0; border-radius: 6px; background: linear-gradient(180deg, #ebe7dd, #a9a498); color: #1c1a16; font-family: var(--f-label); font-size: 13px; letter-spacing: .1em; display: grid; place-items: center; align-content: center; gap: 3px; box-shadow: 0 5px 0 #5d5a52, inset 0 1px 0 #fff, 0 8px 14px -6px rgba(0,0,0,.7); transition: transform .06s, box-shadow .06s; }
+.sbstart small { font-size: 9px; opacity: .55; }
+.sbstart.on { transform: translateY(4px); box-shadow: 0 1px 0 #5d5a52, inset 0 1px 0 #fff, 0 0 20px -4px var(--led); }
+.sbstart.on span { color: #c8102e; }
+.sbrpm { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sbrpmb { position: relative; height: 36px; border: 0; border-radius: 4px; background: var(--key-2); color: var(--key-ink); font-family: var(--f-label); font-size: 12px; box-shadow: 0 3px 0 var(--edge); }
+.sbrpmb.on::after { content: ""; position: absolute; top: 5px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 6px #ff3b30; }
+.sbpitch { display: grid; justify-items: center; gap: 6px; padding-top: 6px; }
+#sbPitch { writing-mode: vertical-lr; direction: rtl; height: min(260px, 32vh); width: 34px; accent-color: var(--led); }
+.sbpitch output { font-family: var(--f-label); font-size: 11px; color: var(--cream-2); }
+.sbmix { display: grid; gap: 18px; align-content: start; padding: 20px; }
+.sbsec { display: grid; gap: 8px; min-width: 0; }
+.sbsec > .lbl { text-transform: none; letter-spacing: .03em; }
+.sbsrcrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.sbsrcrow select { flex: 1; min-width: 0; }
+.sbcues { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sbcue { height: 48px; border: 0; border-radius: 6px; background: radial-gradient(120% 90% at 50% 0%, var(--rubber-hi), var(--rubber) 70%); color: var(--pad-ink); font: 400 18px var(--f-label); box-shadow: 0 3px 0 rgba(0,0,0,.5); }
+.sbcue.set { background: radial-gradient(120% 90% at 50% 0%, #ff6b5a, #c8102e 70%); color: #fff; box-shadow: 0 3px 0 #6b0716, 0 0 16px -4px #ff3b30; }
+.sbcue:active { transform: translateY(2px); }
+.sbpads { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.sbpad { min-height: 46px; padding: 4px; border: 0; border-radius: 6px; background: radial-gradient(120% 90% at 50% 0%, var(--rubber-hi), var(--rubber) 70%); color: var(--pad-ink); font-family: var(--f-label); font-size: 9px; letter-spacing: .02em; text-transform: uppercase; box-shadow: 0 3px 0 rgba(0,0,0,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sbpad[aria-pressed="true"] { background: var(--hue); color: #15120c; transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.5), 0 0 16px -2px var(--hue); }
+.sbrow { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; }
+.sbknobs { grid-template-columns: repeat(2, 70px); }
+.sbvol { display: grid; gap: 6px; } .sbvol input { width: 100%; accent-color: var(--led); }
+.sbxfhd { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sbxfrow { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 12px; align-items: stretch; }
+.sbxf { position: relative; height: 70px; border-radius: 8px; background: linear-gradient(180deg, color-mix(in srgb, var(--well) 80%, #000), var(--well)); box-shadow: inset 0 2px 8px rgba(0,0,0,.7), 0 0 0 1px var(--edge); touch-action: none; cursor: ew-resize; }
+.sbxfslot { position: absolute; left: 18px; right: 18px; top: 50%; height: 6px; margin-top: -3px; border-radius: 3px; background: #050403; box-shadow: inset 0 1px 2px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.06); }
+.sbxfl, .sbxfr { position: absolute; bottom: 4px; font-family: var(--f-label); font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: var(--well-ink); pointer-events: none; }
+.sbxfl { left: 12px; } .sbxfr { right: 12px; }
+.sbxf.ham .sbxfl { left: auto; right: 12px; } .sbxf.ham .sbxfr { right: auto; left: 12px; }
+.sbxfknob { position: absolute; top: 9px; bottom: 9px; width: 30px; margin-left: -15px; border-radius: 4px; background: linear-gradient(90deg, #2b2926, #5d5953 45%, #2b2926); box-shadow: 0 3px 8px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.22); pointer-events: none; transition: box-shadow .1s; }
+.sbxfknob::after { content: ""; position: absolute; left: 50%; top: 6px; bottom: 6px; width: 2px; margin-left: -1px; background: #ece8dd; border-radius: 1px; }
+.sbxf.open .sbxfknob::after { background: var(--led); box-shadow: 0 0 8px var(--led); }
+.sbcut { border: 0; border-radius: 8px; background: linear-gradient(180deg, var(--key-1), var(--key-2)); color: var(--key-ink); font-family: var(--f-label); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; box-shadow: 0 4px 0 var(--edge); touch-action: none; }
+.sbcut.on { transform: translateY(3px); background: var(--led); color: #15120c; box-shadow: 0 1px 0 var(--edge), 0 0 18px -4px var(--led); }
+.sbplate { grid-column: 1 / -1; justify-self: center; padding: 6px 18px; border-radius: 3px; font-family: var(--f-label); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--cream-3); border: 1px dashed var(--line); }
+.flipbtn { white-space: nowrap; }
+@media (max-width: 900px) {
+  .sideb { grid-template-columns: minmax(0, 1fr); }
+  .sbdeck { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .sbside { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; }
+  .sbstart { aspect-ratio: auto; height: 64px; }
+  .sbpitch { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+  #sbPitch { writing-mode: horizontal-tb; direction: ltr; height: auto; width: 100%; }
+  .sbmix { padding: 14px; }
+  .sbpads { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sbfoot { display: none; }
+}
 .pg-voce { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-content: start; }
 .pg-voce .vrec { grid-column: 1 / -1; display: grid; gap: 12px; }
 .pg-voce .hd { flex-wrap: wrap; }
@@ -1275,6 +1345,7 @@ html.intro-on { overflow: hidden; }
       <small id="skinTag">SP-88 · CAMPIONATORE DA CANTINA</small>
       <div class="skins" id="skins" role="group" aria-label="Scocca"></div>
       <button class="key small" id="openCust" type="button">✎ Personalizza</button>
+      <button class="key small flipbtn" type="button" title="Gira il Mat.Tone: sotto c’è il giradischi da battaglia (tasto O)">⟲ Lato B · scratch</button>
     </div>
     <div class="lcdwrap">
       <div class="lcdhead"><span class="lbl" id="lcdName">Schermo · OLED moderno</span><button class="updpill" id="updPill" type="button" hidden></button><span class="lcdbtns"><button class="key small" id="visBtn" type="button" title="Cambia visualizzatore (tasto B)">VIS · Spettro</button><button class="key small" id="vfxBtn" type="button" title="Effetti visivi a tempo (tasto J)">FX · Spenti</button></span></div>
@@ -1301,6 +1372,36 @@ html.intro-on { overflow: hidden; }
 
   <nav class="tabs" id="tabs" role="tablist" aria-label="Pagine"></nav>
 
+  <section class="sideb" id="sideB" hidden aria-label="Lato B: giradischi da battaglia">
+    <i class="sbfoot tl" aria-hidden="true"></i><i class="sbfoot tr" aria-hidden="true"></i><i class="sbfoot bl" aria-hidden="true"></i><i class="sbfoot br" aria-hidden="true"></i>
+    <div class="unit sbbar">
+      <button class="key" id="sbFlip" type="button" title="Torna al lato A (tasto O o Esc)">⟲ Lato A</button>
+      <div class="sbname"><b>MAT<span>.</span>TONE</b><small>Lato B · giradischi da battaglia</small></div>
+      <div class="sbstrip"><i class="sbbeat" id="sbBeat"></i><span id="sbPos">■ P01</span><span class="sbmsg" id="sbMsg"></span></div>
+      <button class="key" id="sbPlay" type="button">▶ Play</button>
+    </div>
+    <div class="unit sbdeck">
+      <div class="sbplatter" id="sbPlatter"></div>
+      <div class="sbside">
+        <button class="sbstart" id="sbMotor" type="button"><span>START</span><small>STOP</small></button>
+        <div class="sbrpm"><button class="sbrpmb" id="sb33" type="button">33</button><button class="sbrpmb" id="sb45" type="button">45</button></div>
+        <button class="key small" id="sbLever" type="button" title="Alza o abbassa la puntina (tasto L)">▼ Puntina giù</button>
+        <button class="key small" id="sbSpin" type="button">Spinback</button>
+        <div class="sbpitch"><span class="lbl">Pitch</span><input type="range" id="sbPitch" min="-16" max="16" step="1" value="0" aria-label="Pitch del piatto (doppio clic: zero)"><output id="sbPitchOut">0%</output></div>
+      </div>
+    </div>
+    <div class="unit sbmix">
+      <div class="sbsec"><span class="lbl">Disco sul piatto</span><div class="sbsrcrow"><select id="sbSrc" aria-label="Disco sul piatto"></select><button class="key small" id="sbGrab" type="button">Campiona il beat</button></div></div>
+      <div class="sbsec"><span class="lbl">Adesivi · tocca per attaccarlo dove sta la puntina, poi per tornarci · tieni premuto per toglierlo</span><div class="sbcues" id="sbCues"></div></div>
+      <div class="sbsec"><span class="lbl">Scratch a tempo · tocca il disco per riprenderlo</span><div class="sbpads" id="sbPads"></div></div>
+      <div class="sbsec sbrow"><div class="knobs sbknobs" id="sbKnobs"></div><label class="sbvol"><span class="lbl">Volume del piatto</span><input type="range" id="sbVol" min="0" max="150" value="100"></label></div>
+      <div class="sbsec">
+        <div class="sbxfhd"><span class="lbl">Crossfader</span><div class="seg" id="sbCurve" role="group" aria-label="Curva del crossfader"></div><button class="key small" id="sbHam" type="button" title="Inverte il verso del fader, come l’interruttore hamster"><span class="ledi"></span>Hamster</button></div>
+        <div class="sbxfrow"><div class="sbxf" id="sbXf" tabindex="0" role="slider" aria-label="Crossfader" aria-valuemin="0" aria-valuemax="100"><span class="sbxfslot"></span><span class="sbxfl">Disco</span><span class="sbxfr">Solo beat</span><span class="sbxfknob" id="sbXfKnob"></span></div><button class="sbcut" id="sbCut" type="button" title="Tieni premuto: apre e chiude il disco al volo (tasto G)">Taglio</button></div>
+      </div>
+    </div>
+    <div class="sbplate" aria-hidden="true">Mat.Tone · lato B · serie 88 · non aprire: rischio di scratch</div>
+  </section>
   <div class="pages" id="pages">
     <div class="page pg-suona" data-page="suona" role="tabpanel" aria-label="Suona">
       <section class="unit padunit" aria-label="Pad">
@@ -1371,7 +1472,7 @@ html.intro-on { overflow: hidden; }
     <div class="page pg-piatto" data-page="piatto" role="tabpanel" aria-label="Piatto" hidden>
       <section class="unit deckwrap" aria-label="Giradischi">
         <div class="hd" style="margin:0">
-          <h2>Piatto · scratch</h2>
+          <h2>Piatto · scratch</h2><button class="key small flipbtn" type="button" title="Il piatto grande col mixer da battaglia, sotto lo strumento (tasto O)">⟲ Gira sul lato B</button>
           <div class="seg" role="group" aria-label="Scratch automatico" id="autoSeg">
             <button type="button" data-auto="" aria-pressed="true">A mano</button>
             <button type="button" data-auto="baby" aria-pressed="false">Baby</button>
@@ -1649,6 +1750,7 @@ html.intro-on { overflow: hidden; }
             <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
             <li><b>VIS</b> accanto allo schermo (o <kbd>B</kbd>) cambia la grafica a tempo: spettro, specchio, oscilloscopio, cerchio e cascata, più l’equalizzatore anni 80 a segmenti, il goniometro XY dello stereo, le colline, il tunnel, l’iperspazio, il fuoco, il radar che gira una volta a battuta e la pioggia digitale.</li>
             <li><b>FX</b> (o <kbd>J</kbd>) accende gli effetti visivi a tempo su tutta la stanza: <b>Club</b> (luci sul muro, laser, scintille, scossa), <b>VHS</b>, <b>Cinema</b>, <b>Glitch</b> e <b>Sogno</b>. In Personalizza → Luci e animazioni li combini come vuoi e ne regoli l’intensità.</li>
+            <li><b>⟲ Lato B</b> (in alto o nel Piatto, tasto <kbd>O</kbd>): il Mat.Tone si gira e sotto c’è il giradischi da battaglia, grande. Start/Stop, 33 e 45 giri, pitch, la <b>leva della puntina</b> (<kbd>L</kbd>), tre <b>adesivi</b> per tornare al punto giusto del disco (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>, tieni premuto per toglierli), nove scratch a tempo, e il <b>crossfader</b> vero: si trascina, ha la curva a taglio netto o morbida e l’interruttore hamster; <b>Taglio</b> (<kbd>G</kbd>) lo apre e chiude al volo. Sul disco puoi mettere anche la tua voce. Il beat continua a suonare, e col tasto Play lo fermi o lo fai ripartire anche da qui.</li>
             <li>Il tasto <b>3D</b> accanto alle pagine (o <kbd>T</kbd>) cambia visuale: frontale, sul banco, di tre quarti da destra o da sinistra. Si suona anche in 3D.</li>
             <li><b>Reparto tekno</b>: nella libreria la categoria <b>Tekno</b> (casse 909, dure e col rimbombo, acid 303, hoover, accordi dub techno, loop 909 a 140 BPM). Per la free party ci sono la cassa hardtek, lo stab “mentasm”, l’acid che urla, le rullate e l’allarme. I kit <b>Tekno 140</b>, <b>Acid 140</b>, <b>Loop 909 · 140</b>, <b>Free party 170</b> e <b>Hardtek 180</b> portano il tempo dove serve e, se il pattern è vuoto, ci mettono un groove da cui partire.</li>
             <li><b>Campiona</b> (sotto il pad selezionato), come su una groovebox: dal <b>microfono o da un ingresso</b> (scheda audio, Missaggio stereo, BlackHole…), dall’<b>audio del computer</b> (una scheda con YouTube o Spotify: parte da sola quando arriva il suono) o dal <b>beat</b> che sta suonando (ricampiona le battute scelte, a tempo). Poi <b>✂ Taglia nei pad</b> lo spezza sui pad, oppure lo metti intero su un pad. Resta salvato tra «I tuoi suoni» (✕ nella libreria per eliminarlo).</li>
@@ -2647,6 +2749,8 @@ function voiceFix() { const d = VOICE_DEF(); state.voice = Object.assign(d, stat
 voiceFix();
 function videoFix() { state.video = Object.assign({ fmt: "v", layout: "strumento", len: "8", title: "", artist: "", fx: true, lyrics: true, light: false }, state.video || {}); }
 videoFix();
+function sidebFix() { state.sideb = Object.assign({ curve: "netta", hamster: false, xf: 0, cues: [null, null, null] }, state.sideb || {}); if (!Array.isArray(state.sideb.cues) || state.sideb.cues.length !== 3) state.sideb.cues = [null, null, null]; }
+sidebFix();
 // every pattern has its length and grid, every row as many steps as that; the song points only at patterns that exist
 function fixPatterns() {
   if (!Array.isArray(state.pmeta)) state.pmeta = [];
@@ -3916,6 +4020,7 @@ class DeckCore {
   }
   msg(m) {
     if (m.buf) { this.buf = m.buf; this.L = m.buf.length; this.bsr = m.sr; this.pos = this.target = this.anchor = this.prev = 0; this.rate = 0; }
+    if (m.seek != null) { this.pos = this.target = this.prev = this.anchor = m.seek; }
     if (m.set) Object.assign(this, m.set);
     if (m.touch === true) { this.touch = true; this.auto = ""; this.target = this.pos; }
     if (m.move) this.target += m.move * this.bsr;
@@ -3942,7 +4047,7 @@ class DeckCore {
     const buf = this.buf, L = this.L, sr = this.sr, step = this.bsr / sr, mstep = step * (1 + this.pitch / 100);
     const goal = this.motor ? 1 : 0, kUp = 1 / (0.09 * sr), kDn = 1 / (0.45 * sr);
     const follow = 1 - Math.exp(-1 / (0.0035 * sr));
-    const open = this.cut ? (this.xf > 0.5 ? 0 : 1) : this.xf;
+    const open = this.lever ? 0 : this.cut ? (this.xf > 0.5 ? 0 : 1) : this.xf;   // the cue lever lifts the needle off the record
     const hold = 1 + Math.floor(this.dirt * 3), q = Math.pow(2, 15 - this.dirt * 8), lpk = 0.85 - this.dirt * 0.45;
     const hpk = 1 - Math.exp(-2 * Math.PI * 35 / sr);
     let p = this.pos, g = this.g, amp = this.amp, prev = this.prev, held = this.held, hc = this.hc, lp = this.lp, hx = this.hpX, hy = this.hpY;
@@ -4022,7 +4127,7 @@ function initDeck() {
   N.deckDrive = ctx.createWaveShaper(); N.deckDrive.oversample = "2x";
   N.deckTone = ctx.createBiquadFilter(); N.deckTone.type = "lowpass"; N.deckTone.Q.value = 1.1;
   N.deckBody = ctx.createBiquadFilter(); N.deckBody.type = "lowshelf"; N.deckBody.frequency.value = 160; N.deckBody.gain.value = 7;
-  N.deckOut = ctx.createGain(); N.deckOut.gain.value = 0.39;   // the scratch sits just under the beat
+  N.deckOut = ctx.createGain(); N.deckOut.gain.value = 0.39 * (state.deckVol ?? 1);   // the scratch sits just under the beat
   N.deckDrive.connect(N.deckTone).connect(N.deckBody).connect(N.deckOut).connect(N.limit);
   applyDeckColor();
   const useSP = () => {
@@ -4062,7 +4167,7 @@ function deckAngle() { return (deck.pos / deck.sr) / (deck.rev || SEC_PER_REV) *
 function setAuto(mode) {
   if (!initAudio()) return;
   deck.auto = mode; deck.send({ auto: mode, origin: playing ? gridOrigin : ctx.currentTime, set: { six: sixteenth() } });
-  [...$("autoSeg").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.auto === mode));
+  document.querySelectorAll("[data-auto]").forEach(b => b.setAttribute("aria-pressed", b.dataset.auto === mode));
   const names = { baby: "BABY SCRATCH", chirp: "CHIRP", flare: "FLARE", tear: "TEAR", trans: "TRANSFORMER", scribble: "SCRIBBLE", crab: "CRAB", orbit: "ORBIT", stab: "STAB" };
   msg(mode ? names[mode] + " A TEMPO · TOCCA IL DISCO PER RIPRENDERLO" : "SCRATCH A MANO");
 }
@@ -4082,13 +4187,14 @@ function grabBeat() {
       $("grab").classList.remove("on");
       if (peak < 0.01) { msg("SILENZIO: PREMI PLAY E RIPROVA"); return; }
       deck.userBeat = { data, sr: SR };
-      deck.src = "beat"; renderDeckSrc(); setDeckBuffer(deck.userBeat, "il tuo beat · trascina il disco");
+      deck.src = "beat"; renderDeckSrc(); sbCuesReset(); setDeckBuffer(deck.userBeat, "il tuo beat · trascina il disco");
     }
   };
 }
 function setDeckSource(src) {
   if (!initAudio()) return;
-  deck.src = src;
+  deck.src = src; sbCuesReset();
+  if (src === "voce") { const t = vTake(), b = t && VO.bufs.get(t.id); if (b) return setDeckBuffer(toMono(b), t.name); }
   if (src === "beat" && deck.userBeat) return setDeckBuffer(deck.userBeat, "il tuo beat");
   if (src === "phrase") return setDeckBuffer(buildPhrase(), "frase scratch");
   if (src === "pad") {
@@ -4163,8 +4269,8 @@ function bindDeck() {
   $("dPitch").value = state.deckPitch; $("dPitchOut").textContent = (state.deckPitch > 0 ? "+" : "") + state.deckPitch;
   $("dPitch").addEventListener("input", e => { state.deckPitch = +e.target.value; $("dPitchOut").textContent = (state.deckPitch > 0 ? "+" : "") + state.deckPitch; deck.send({ set: { pitch: state.deckPitch } }); save(); });
   const cut = $("cut");
-  const cutOn = e => { if (e) e.preventDefault(); initAudio(); deck.cut = true; deck.send({ set: { cut: true } }); cut.classList.add("on"); };
-  const cutOff = () => { if (!deck.cut) return; deck.cut = false; deck.send({ set: { cut: false } }); cut.classList.remove("on"); };
+  const cutOn = e => { if (e) e.preventDefault(); initAudio(); deck.cut = true; deck.send({ set: { cut: true } }); cut.classList.add("on"); $("sbCut").classList.add("on"); };
+  const cutOff = () => { if (!deck.cut) return; deck.cut = false; deck.send({ set: { cut: false } }); cut.classList.remove("on"); $("sbCut").classList.remove("on"); };
   cut.addEventListener("pointerdown", e => { try { cut.setPointerCapture(e.pointerId); } catch (_) {} cutOn(e); });
   ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => cut.addEventListener(ev, cutOff));
   deck.cutOn = cutOn; deck.cutOff = cutOff;
@@ -4173,8 +4279,10 @@ function renderDeckSrc() {
   const sel = $("deckSrc"); sel.innerHTML = "";
   const opts = [["phrase", "Frase scratch"], ["sy_ahh", "Voce “aaah”"], ["sy_yeah", "Voce “yeah”"], ["sy_hey", "Voce “hey”"], ["gm_orchhit", "Orchestra hit"], ["gm_choir", "Coro “aah”"], ["gm_brass", "Stab di fiati"], ["sy_kick808", "Cassa 808"], ["gm_synthbass", "Basso synth"], ["sy_chord_m9", "Accordo"], ["pad", "Il pad selezionato"]];
   if (deck.userBeat) opts.unshift(["beat", "Il tuo beat"]);
+  const vt = vTake(); if (vt && VO.bufs.has(vt.id)) opts.unshift(["voce", "La tua voce · " + vt.name]);
   opts.forEach(([v, l]) => sel.appendChild(new Option(l, v)));
   sel.value = deck.src;
+  sbRender();
 }
 
 /* ================= registratore: esporta il beat in WAV ================= */
@@ -4808,12 +4916,16 @@ function onKeyDown(e) {
   if ((tag === "INPUT" && t.type !== "range") || tag === "SELECT" || tag === "TEXTAREA") { if (e.key === "Escape") closeLibrary(); return; }
   const k = e.key.toLowerCase();
   if (k === "escape" && stepPop) { closeStepPop(); return; }
+  if (k === "escape" && SB.on) { flipSide(false); return; }
   if (k === "escape" && curPage === "cust") { closeCustom(); return; }
   if (k === "escape" && !$("drawer").hidden) { closeLibrary(); return; }
   if (tag === "INPUT" && k.startsWith("arrow")) return;
   if (k === " ") { if (tag === "BUTTON") return; e.preventDefault(); playing ? stop() : start(); return; }
   if (k === "enter") { if (tag === "BUTTON" || tag === "LABEL") return; e.preventDefault(); toggleRec(); return; }
   if (e.repeat) return;
+  if (k === "o") { flipSide(!SB.on); return; }
+  if (SB.on && (k === "1" || k === "2" || k === "3")) { e.preventDefault(); sbCue(+k - 1, e.shiftKey); return; }
+  if (SB.on && k === "l") { sbLever(); return; }
   const pi = PAD_KEYS.indexOf(k); if (pi >= 0) { e.preventDefault(); padPress(pi); return; }
   const bi = BANK_KEYS.indexOf(k); if (bi >= 0) { e.preventDefault(); selectBank(bi); return; }
   if (k === "n") { setMode(state.mode === "note" ? "pad" : "note"); return; }
@@ -6006,7 +6118,7 @@ function drawDeck(force) {
   const w = deck.wave, t = w ? (((deck.pos / deck.sr) % w.dur) + w.dur) % w.dur : 0, goalR = grooveR(t, rr);
   const now = performance.now(), swapP = deckSwap.t0 ? Math.min(1, (now - deckSwap.t0) / 750) : 1;
   if (!armR) armR = goalR;
-  const liftGoal = swapP < 1 ? 1 : 0;
+  const liftGoal = swapP < 1 || deck.lever ? 1 : 0;
   const armMoving = Math.abs(goalR - armR) > S / 2000 || Math.abs(liftGoal - armLift) > 0.01;
   const glow = discId() === "glow";
   if (!force && lastDeckA !== null && Math.abs(a - lastDeckA) < 0.002 && !deck.touching && !armMoving && deckSpin < 0.001 && swapP >= 1 && !(glow && kickGlow > 0.02)) return;
@@ -6015,7 +6127,7 @@ function drawDeck(force) {
   lastDeckA = a; lastDeckT = now;
   armLift += (liftGoal - armLift) * 0.25;
   // while the arm is up it waits off the groove, then drops back on the right one
-  const armGoal = armLift > 0.5 ? rr * (G.out + 0.06) : goalR;
+  const armGoal = armLift > 0.5 && !deck.lever ? rr * (G.out + 0.06) : goalR;
   armR += (armGoal - armR) * (Math.abs(armGoal - armR) > rr * 0.2 ? 0.12 : 0.35);
   if (!deckBase) deckBase = buildDeckBase();
   const sk = discId() + (w ? w.id : "") + state.custom.vinyl;
@@ -6383,6 +6495,7 @@ function tick() {
   drawSpec(!ctx); drawVU(!ctx); drawDeck(false);
   if ($("vidBox").hidden) drawVfx(performance.now()); else if (VX_ST.tf || $("vfxAdd").width || $("vfxBack").width || $("vfxInk").width) vfxClear();   // behind the video box the screen effects rest
   if (curPage === "voce") voiceLive();
+  if (SB.on) sbTick();
   vidTick(performance.now());
   requestAnimationFrame(tick);
 }
@@ -6880,7 +6993,7 @@ function idea808() {
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
-const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video"];
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol"];
 function f32ToB64(d) {
   const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
   for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
@@ -6938,7 +7051,7 @@ function openProject(file) {
     }
     const st = proj.state; PROJ_KEYS.forEach(k => { if (st[k] !== undefined) state[k] = st[k]; });
     if (st.voice === undefined) state.voice = null;
-    voiceFix(); videoFix(); voiceSoloStop();
+    voiceFix(); videoFix(); sidebFix(); voiceSoloStop();
     for (const t of proj.voices || []) { const b = voiceBufFrom(b64ToF32(t.data), t.sr || 44100); VO.bufs.set(t.id, b); VO.peaks.delete(t.id); voiceKeep(t.id, b); }
     state.voice.takes = state.voice.takes.filter(t => VO.bufs.has(t.id)); if (!vTake()) state.voice.sel = state.voice.takes.length ? state.voice.takes[0].id : null;
     state.banks.forEach((bk, bi) => bk.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
@@ -7841,6 +7954,136 @@ function buildVideo() {
   document.querySelectorAll(".vidopen").forEach(b => b.addEventListener("click", openVideo));
 }
 
+/* ================= lato B: si gira il Mat.Tone e sotto c'è il giradischi da battaglia ================= */
+const SB = { on: false, busy: false, knobs: null, xfDrag: null, cueT: 0, lastPos: "", lastMsg: "" };
+const SB_AUTOS = [["", "A mano"], ["baby", "Baby"], ["chirp", "Chirp"], ["flare", "Flare"], ["tear", "Tear"], ["trans", "Transformer"], ["scribble", "Scribble"], ["crab", "Crab"], ["orbit", "Orbit"], ["stab", "Stab"]];
+// a little thump of the body landing on the table
+function sbThump() {
+  if (!ctx || !N.master) return;
+  const t = ctx.currentTime, n = Math.floor(SR * 0.18), b = ctx.createBuffer(1, n, SR), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) { const x = i / SR; d[i] = (Math.sin(TAU * 62 * x) * 0.8 + (Math.random() * 2 - 1) * 0.25 * Math.exp(-x * 60)) * Math.exp(-x * 22); }
+  const s = ctx.createBufferSource(), g = ctx.createGain(), lp = ctx.createBiquadFilter(); s.buffer = b; g.gain.value = 0.35; lp.type = "lowpass"; lp.frequency.value = 900;
+  s.connect(lp).connect(g).connect(N.master); s.start(t);
+}
+function flipSide(toB) {
+  if (SB.busy || toB === SB.on) return;
+  const app = $("app"), swap = () => {
+    SB.on = toB; app.classList.toggle("sideb-on", toB); $("sideB").hidden = !toB;
+    // the one record: it moves to the side that is up
+    const cv = $("deck"); (toB ? $("sbPlatter") : document.querySelector(".pg-piatto .platter")).appendChild(cv);
+    requestAnimationFrame(() => { sizeCanvases(); if (SB.knobs) SB.knobs.forEach(k => k.draw()); if (toB) sbSetXf(state.sideb.xf); sbRender(); });
+    if (!toB) { fitPages(); placeTabGlow(); }
+  };
+  const flat = !document.documentElement.classList.contains("v3d");
+  if (lowMotion() || !app.animate) { swap(); return; }
+  SB.busy = true;
+  const a1 = flat ? [{ transform: "perspective(1800px) rotateX(0deg) scale(1)" }, { transform: "perspective(1800px) rotateX(" + (toB ? -90 : 90) + "deg) scale(.9)" }] : [{ opacity: 1 }, { opacity: 0 }];
+  const a2 = flat ? [{ transform: "perspective(1800px) rotateX(" + (toB ? 90 : -90) + "deg) scale(.9)" }, { transform: "perspective(1800px) rotateX(0deg) scale(1)" }] : [{ opacity: 0 }, { opacity: 1 }];
+  app.animate(a1, { duration: 300, easing: "cubic-bezier(.55,0,.8,.3)" }).finished.then(() => {
+    swap();
+    return app.animate(a2, { duration: 420, easing: "cubic-bezier(.2,.9,.35,1.12)" }).finished;
+  }).then(() => { sbThump(); }).catch(() => {}).finally(() => { SB.busy = false; });
+  if (initAudio()) setTimeout(sbThump, 0);
+  msg(toB ? "LATO B · GIRADISCHI DA BATTAGLIA" : "LATO A");
+}
+// the crossfader: where the hand puts it, the curve (sharp cut or smooth) and the hamster switch decide how open the record is
+function sbXfGain(p) {
+  const st = state.sideb, d = st.hamster ? p : 1 - p;
+  return st.curve === "netta" ? (d > 0.06 ? 1 : d / 0.06 * 0.15) : d;
+}
+function sbSetXf(p) {
+  state.sideb.xf = Math.max(0, Math.min(1, p));
+  state.xf = sbXfGain(state.sideb.xf); deck.send({ set: { xf: state.xf } });
+  $("xf").value = Math.round(state.xf * 100);
+  sbXfDraw();
+}
+function sbXfDraw() {
+  const k = $("sbXfKnob"); if (!k) return;
+  k.style.left = "calc(18px + (100% - 36px) * " + state.sideb.xf.toFixed(4) + ")";
+  $("sbXf").classList.toggle("open", state.xf > 0.5); $("sbXf").classList.toggle("ham", !!state.sideb.hamster);
+  $("sbXf").setAttribute("aria-valuenow", Math.round(state.sideb.xf * 100));
+}
+// three stickers on the record: a touch puts one where the needle is, the next touch brings the record back to it
+function sbCue(i, clear) {
+  if (!initAudio()) return;
+  const st = state.sideb;
+  if (clear) { st.cues[i] = null; save(); sbRender(); msg("ADESIVO " + (i + 1) + " TOLTO"); return; }
+  if (st.cues[i] == null) { st.cues[i] = Math.round(deck.pos); save(); sbRender(); msg("ADESIVO " + (i + 1) + " ATTACCATO"); return; }
+  if (deck.auto) setAuto("");
+  deck.send({ seek: st.cues[i] }); deck.pos = st.cues[i]; lastDeckA = null;
+  msg("TORNO ALL’ADESIVO " + (i + 1));
+}
+function sbLever(up) {
+  if (!initAudio()) return;
+  deck.lever = up == null ? !deck.lever : up; deck.send({ set: { lever: deck.lever } }); lastDeckA = null;
+  sbRender(); msg(deck.lever ? "PUNTINA ALZATA" : "PUNTINA GIÙ");
+}
+function sbCuesReset() { state.sideb.cues = [null, null, null]; save(); sbRender(); }
+function sbRender() {
+  if (!$("sbPads")) return;
+  const st = state.sideb;
+  $("sbMotor").classList.toggle("on", deck.motor);
+  $("sb45").classList.toggle("on", deck.speed > 1.1); $("sb33").classList.toggle("on", !(deck.speed > 1.1));
+  $("sbLever").classList.toggle("on", !!deck.lever); $("sbLever").textContent = deck.lever ? "▲ Puntina su" : "▼ Puntina giù";
+  [...$("sbPads").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.auto === deck.auto));
+  [...$("sbCurve").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === st.curve));
+  $("sbHam").classList.toggle("on", st.hamster); $("sbHam").setAttribute("aria-pressed", st.hamster);
+  [...$("sbCues").children].forEach((b, i) => { b.classList.toggle("set", st.cues[i] != null); b.title = st.cues[i] == null ? "Attacca l’adesivo dove si trova la puntina (tasto " + (i + 1) + ")" : "Torna all’adesivo (tasto " + (i + 1) + ") · tieni premuto per toglierlo"; });
+  $("sbPitch").value = state.deckPitch; $("sbPitchOut").textContent = (state.deckPitch > 0 ? "+" : "") + state.deckPitch + "%";
+  $("sbVol").value = Math.round((state.deckVol ?? 1) * 100);
+  sbXfDraw();
+  const sel = $("sbSrc"); if (sel && $("deckSrc")) { sel.innerHTML = $("deckSrc").innerHTML; sel.value = $("deckSrc").value; }
+}
+// every frame while side B is up: the beat strip
+function sbTick() {
+  const pos = (playing ? "▶ " : "■ ") + "P" + String(state.pattern + 1).padStart(2, "0") + " · " + state.bpm + " BPM · " + $("vPos").textContent;
+  if (pos !== SB.lastPos) { SB.lastPos = pos; $("sbPos").textContent = pos; $("sbPlay").classList.toggle("on", playing); $("sbPlay").textContent = playing ? "■ Stop" : "▶ Play"; }
+  const m = $("msg").textContent; if (m !== SB.lastMsg) { SB.lastMsg = m; $("sbMsg").textContent = m; }
+  $("sbBeat").classList.toggle("on", kickGlow > 0.4);
+}
+function buildSideB() {
+  const st = state.sideb;
+  SB_AUTOS.forEach(([id, name]) => { const b = el("button", "sbpad", name); b.type = "button"; b.dataset.auto = id; b.addEventListener("click", () => { setAuto(id); sbRender(); }); $("sbPads").appendChild(b); });
+  [["netta", "Taglio netto"], ["morbida", "Morbida"]].forEach(([id, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { st.curve = id; save(); sbSetXf(st.xf); sbRender(); }); $("sbCurve").appendChild(b); });
+  $("sbHam").addEventListener("click", () => { st.hamster = !st.hamster; save(); sbSetXf(st.xf); sbRender(); msg(st.hamster ? "FADER INVERTITO (HAMSTER)" : "FADER NORMALE"); });
+  [0, 1, 2].forEach(i => {
+    const b = el("button", "sbcue", String(i + 1)); b.type = "button"; let t = 0, long = false;
+    b.addEventListener("pointerdown", e => { long = false; clearTimeout(t); t = setTimeout(() => { long = true; sbCue(i, true); }, 550); if (e.shiftKey) { long = true; clearTimeout(t); sbCue(i, true); } });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => clearTimeout(t)));
+    b.addEventListener("click", () => { if (!long) sbCue(i); });
+    $("sbCues").appendChild(b);
+  });
+  $("sbMotor").addEventListener("click", () => { $("motor").click(); sbRender(); });
+  $("sb33").addEventListener("click", () => { if (deck.speed > 1.1) $("rpm45").click(); sbRender(); });
+  $("sb45").addEventListener("click", () => { if (!(deck.speed > 1.1)) $("rpm45").click(); sbRender(); });
+  $("sbSpin").addEventListener("click", () => { $("spinback").click(); });
+  $("sbLever").addEventListener("click", () => sbLever());
+  $("sbGrab").addEventListener("click", () => { $("grab").click(); setTimeout(sbRender, 2500); });
+  $("sbSrc").addEventListener("change", e => { $("deckSrc").value = e.target.value; setDeckSource(e.target.value); });
+  $("sbPitch").addEventListener("input", e => { state.deckPitch = +e.target.value; $("dPitch").value = state.deckPitch; $("dPitchOut").textContent = (state.deckPitch > 0 ? "+" : "") + state.deckPitch; $("sbPitchOut").textContent = $("dPitchOut").textContent + "%"; deck.send({ set: { pitch: state.deckPitch } }); save(); });
+  $("sbPitch").addEventListener("dblclick", () => { state.deckPitch = 0; deck.send({ set: { pitch: 0 } }); $("dPitch").value = 0; $("dPitchOut").textContent = "0"; save(); sbRender(); });
+  $("sbVol").addEventListener("input", e => { state.deckVol = +e.target.value / 100; if (N.deckOut) N.deckOut.gain.setTargetAtTime(0.39 * state.deckVol, ctx.currentTime, 0.02); save(); });
+  $("sbPlay").addEventListener("click", () => { if (!initAudio()) return; if (playing) stop(); else start(); });
+  $("sbFlip").addEventListener("click", () => flipSide(false));
+  // the crossfader, dragged by its cap or anywhere along its slot
+  const xf = $("sbXf");
+  const at = e => { const r = xf.getBoundingClientRect(); return (e.clientX - r.left - 18) / Math.max(1, r.width - 36); };
+  xf.addEventListener("pointerdown", e => { if (!initAudio()) return; e.preventDefault(); try { xf.setPointerCapture(e.pointerId); } catch (_) {} SB.xfDrag = e.pointerId; sbSetXf(at(e)); });
+  xf.addEventListener("pointermove", e => { if (SB.xfDrag === e.pointerId) sbSetXf(at(e)); });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => xf.addEventListener(ev, e => { if (SB.xfDrag === e.pointerId) { SB.xfDrag = null; save(); } }));
+  xf.addEventListener("keydown", e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); sbSetXf(st.xf + (e.key === "ArrowRight" ? 0.1 : -0.1)); save(); } });
+  // the cut button: the record opens or closes for as long as it is held
+  const cut = $("sbCut");
+  cut.addEventListener("pointerdown", e => { try { cut.setPointerCapture(e.pointerId); } catch (_) {} if (deck.cutOn) deck.cutOn(e); cut.classList.add("on"); });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => cut.addEventListener(ev, () => { if (deck.cutOff) deck.cutOff(); cut.classList.remove("on"); }));
+  SB.knobs = [
+    makeKnob($("sbKnobs"), { label: "Tono", min: 0, max: 1, get: () => state.deckTone, set: v => { state.deckTone = v; applyDeckColor(); save(); }, fmt: v => Math.round(380 * Math.pow(2, v * 4.4) / 10) * 10 + " Hz" }),
+    makeKnob($("sbKnobs"), { label: "Sporco", min: 0, max: 1, get: () => state.deckDirt, set: v => { state.deckDirt = v; applyDeckColor(); save(); }, fmt: v => Math.round(v * 100) }),
+  ];
+  document.querySelectorAll(".flipbtn").forEach(b => b.addEventListener("click", () => flipSide(!SB.on)));
+  sbRender();
+}
+
 /* ---------- per il DAW: tracce separate e file MIDI ---------- */
 let playUntil = Infinity;   // the scheduler goes quiet after this time (the tails of a bounce still ring out)
 async function giveFiles(files, zipName) {
@@ -8114,7 +8357,7 @@ function meterGroups() {
   });
 }
 function buildPages() {
-  buildStrips(); buildEq(); buildStudio(); buildVoice(); buildVideo();
+  buildStrips(); buildEq(); buildStudio(); buildVoice(); buildVideo(); buildSideB();
   $("stemBtn").addEventListener("click", exportStems);
   $("midiExp").addEventListener("click", exportMidi);
   const loop = () => { meterGroups(); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
