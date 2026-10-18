@@ -313,6 +313,14 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .formtog { display: grid; gap: 6px; justify-items: stretch; }
 .formch { display: flex; align-items: center; gap: 6px; justify-content: space-between; }
 .formch select { background: var(--well); color: var(--well-text); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px; }
+.fxrack { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px 18px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.fxbox { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.fxbox .hd { margin: 0; }
+.fxseg { flex-wrap: wrap; }
+.fxseg button { padding: 5px 8px; font-size: 10px; }
+.fxk2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fxnote { grid-column: 1 / -1; margin: 0; }
+@media (max-width: 700px) { .fxrack { grid-template-columns: minmax(0, 1fr); } }
 .projrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 2px; }
 .projhint { text-transform: none; letter-spacing: .02em; }
 .cell.ghost { background: color-mix(in srgb, var(--hue) 22%, var(--cell)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hue) 55%, transparent); }
@@ -423,9 +431,10 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .gonair[aria-pressed="false"]::before { background: #3a342c; box-shadow: none; }
 .gbody { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; min-height: 0; }
 .gbody .gm i { left: 4px; right: 4px; }
-.gknobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 4px; }
+.gknobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 6px 4px; }
 .gknobs .knob canvas { width: 46px; height: 46px; }
 .gknobs .knob output { font-size: 16px; }
+.gknobs .knob .lbl { font-size: 8px; letter-spacing: .04em; white-space: nowrap; }
 .eq73 { display: grid; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--line); }
 .eq73 .hd { margin: 0; flex-wrap: wrap; gap: 8px; }
 #eqCv { width: 100%; height: auto; aspect-ratio: 760 / 230; border-radius: 10px; display: block; box-shadow: inset 0 2px 10px rgba(0,0,0,.9), 0 0 0 1px var(--edge), 0 0 0 5px #1a1612, 0 0 0 6px var(--edge); }
@@ -1185,7 +1194,7 @@ html.intro-on { overflow: hidden; }
     </div>
     <div class="page pg-mix" data-page="mix" role="tabpanel" aria-label="Mix e registratore" hidden>
       <section class="unit groups" aria-label="Canali">
-        <div class="hd"><h2>Banco · i quattro gruppi</h2><span class="lbl">Bassi, medi, alti e livello per gruppo · doppio clic su una manopola la rimette piatta</span></div>
+        <div class="hd"><h2>Banco · i quattro gruppi</h2><span class="lbl">Bassi, medi, alti, mandate di eco e riverbero, compressore e livello · doppio clic su una manopola la rimette a posto</span></div>
         <div class="gstrips" id="gstrips"></div>
       </section>
       <section class="unit mixer" aria-label="Master e registratore">
@@ -1196,6 +1205,11 @@ html.intro-on { overflow: hidden; }
             <canvas id="loudCv" width="640" height="150" aria-label="Misuratore di volume del master"></canvas>
             <div class="loudrow"><span class="lbl" id="loudInt">Media del pezzo: —</span><button class="key small" id="loudReset" type="button">Azzera misura</button></div>
             <p class="cnote small">Per Spotify e YouTube si punta a −14 LUFS, per il club a −9. Il limiter non lascia mai passare picchi sopra −1 dB.</p>
+          </div>
+          <div class="fxrack">
+            <div class="fxbox"><div class="hd"><h2>Eco a nastro</h2><span class="lbl">a tempo</span></div><div class="seg fxseg" id="echoTime" role="group" aria-label="Tempo dell’eco"></div><div class="knobs" id="echoKnobs"></div></div>
+            <div class="fxbox"><div class="hd"><h2>Riverbero</h2></div><div class="seg fxseg" id="revType" role="group" aria-label="Tipo di riverbero"></div><div class="knobs fxk2" id="revKnobs"></div></div>
+            <p class="cnote small fxnote">Ogni gruppo ci manda il suo con le manopole Eco e Riverbero sul banco qui sopra; il riverbero dei singoli pad resta nel pannello del pad.</p>
           </div>
         </div>
         <div>
@@ -1211,6 +1225,7 @@ html.intro-on { overflow: hidden; }
             <button class="key small" id="recAgain" type="button" disabled>Salva di nuovo</button>
           </div>
           <audio id="recPlayer" controls hidden></audio>
+          <div class="projrow"><span class="lbl">Per il DAW</span><button class="key small" id="stemBtn" type="button" title="Un WAV per gruppo più effetti e piatto, dall’inizio, per le battute scelte sopra (o la canzone intera se è accesa)">Tracce separate (WAV)</button><button class="key small" id="midiExp" type="button" title="Le note del pattern, o della canzone se è accesa">File MIDI</button></div>
           <div class="projrow"><span class="lbl">Progetto</span><button class="key small" id="projSave" type="button" title="Ctrl+S">Salva progetto</button><label class="key small" for="projFile">Apri progetto</label><input type="file" id="projFile" accept=".mattone,.zip,.json,application/json,application/zip" hidden><span class="lbl projhint">pattern, canzone, pad, mix e i tuoi campioni in un solo file</span></div>
           <p class="rechint">Registra quello che esce dalle casse: sequencer, pad, scratch ed effetti. Con un numero di battute parte dall’inizio del pattern e si ferma da solo. Su claude.ai il file arriva dentro uno .zip (il visualizzatore non accetta .wav e .mp3 sciolti); nell’app per PC viene salvato direttamente.</p>
         <div class="eq73">
@@ -1324,6 +1339,8 @@ html.intro-on { overflow: hidden; }
             <li><b>Equalizzatori</b> (Mix): ogni gruppo ha bassi, medi, alti e livello, come i canali di un banco; sul master c’è l’<b>EQ ’73</b> da console, con taglia-bassi, bassi e medi a frequenze fisse e alti a 12 kHz, più cinque suoni pronti (Bassi grassi, Polvere ’70, Radio AM, Aria). Doppio clic su una manopola la rimette piatta.</li>
             <li><b>Forma del suono</b> (sotto il pad selezionato): trascina le linee di inizio e fine sulla forma d’onda, giralo <b>al contrario</b>, dai un <b>attacco</b> morbido, chiudi il <b>filtro</b> con la risonanza, passalo nell’<b>SP-12</b> a 12 bit. Il <b>choke</b> fa zittire a vicenda i pad dello stesso numero, come charleston aperto e chiuso.</li>
             <li><b>Opzioni dello step</b> (Sequencer): clic destro su una casella, o tienila premuta sul telefono: <b>rullata</b> (2, 3 o 4 colpi dentro lo step) e <b>probabilità</b> (suona il 75, 50 o 25% delle volte, così il beat respira).</li>
+            <li><b>Eco a nastro e riverbero</b> (Mix): l’eco è a tempo (da 1/16 a 1/4 puntato) e ogni ripetizione si scurisce e ondeggia come su un nastro consumato; il riverbero può essere stanza, molla, piastra o cantina. Sul banco ogni gruppo ha le sue mandate <b>Eco</b> e <b>Riverbero</b> e un compressore, <b>Comp.</b>, per batterie piene e appiccicose.</li>
+            <li><b>Per il DAW</b> (Mix): <b>Tracce separate</b> registra un WAV per ogni gruppo più uno per effetti e piatto, dall’inizio, per le battute scelte o per tutta la canzone; <b>File MIDI</b> esporta le note del pattern o della canzone, una traccia per gruppo.</li>
             <li><b>Progetto</b> (Mix, o <kbd>Ctrl</kbd>+<kbd>S</kbd>): salva pattern, canzone, pad, mix e i tuoi campioni in un file .mattone; «Apri progetto» lo riapre anche su un altro computer.</li>
             <li><b>MIDI</b> (sotto i pad): collega un controller e suona i pad con la dinamica; in modalità Note una tastiera suona il suono scelto. Start e Stop di una drum machine fanno partire e fermare Mat.Tone.</li>
             <li>In alto a sinistra scegli la <b>scocca</b>: Cantina, Hi-Fi ’76, Surplus ’68 o Metro ’89.</li>
@@ -2260,7 +2277,8 @@ let state = {
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
   warmth: 0.35, volume: 0.85, dust: 0.25, wow: 0.25, glue: 0.35, pump: 0, push: 1.5, mpreset: "boombap", human: 0, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "cantina", ver: 4, custom: null,
   pmeta: defaultPmeta(), song: [{ p: 0, n: 3 }, { p: 1, n: 1 }], songOn: false, follow: true, nr: false, nrRate: 4,
-  meq: { hp: 0, lo: 0, loF: 60, mid: 0, midF: 1600, hi: 0 }, eqPreset: "piatto", geq: [[0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1]], favs: [], recent: [],
+  meq: { hp: 0, lo: 0, loF: 60, mid: 0, midF: 1600, hi: 0 }, eqPreset: "piatto", geq: [[0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0]], favs: [], recent: [],
+  echo: { time: "8d", fb: 0.4, tone: 0.45, wear: 0.35, ret: 0.8 }, rev: { type: "stanza", ret: 0.8, tone: 0.7 },
 };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("mattone-groovebox-v2") || "null");
@@ -2294,6 +2312,9 @@ function fixPatterns() {
   if (!NR_RATES.some(r => r[1] === state.nrRate)) state.nrRate = 4;
   state.meq = Object.assign({ hp: 0, lo: 0, loF: 60, mid: 0, midF: 1600, hi: 0 }, state.meq);
   if (!Array.isArray(state.geq) || state.geq.length !== 4) state.geq = [0, 1, 2, 3].map(() => [0, 0, 0, 1]);
+  state.geq.forEach(g => { while (g.length < 7) g.push(0); });   // echo send, reverb send, compression came later
+  state.echo = Object.assign({ time: "8d", fb: 0.4, tone: 0.45, wear: 0.35, ret: 0.8 }, state.echo);
+  state.rev = Object.assign({ type: "stanza", ret: 0.8, tone: 0.7 }, state.rev);
   if (!Array.isArray(state.favs)) state.favs = [];
   if (!Array.isArray(state.recent)) state.recent = [];
 }
@@ -2844,8 +2865,10 @@ function initAudio() {
   N.spec = ctx.createAnalyser(); N.spec.fftSize = 2048; N.spec.smoothingTimeConstant = 0.75; N.out.connect(N.spec);
   N.duckV.connect(N.bus);
   // the group strips: one for the kicks (they drive the pump) and one for the rest, with the same settings
-  N.grp = BANKS.map(() => [stripChain(N.bus), stripChain(N.duckV)]);
+  N.gTap = BANKS.map(() => ctx.createGain());   // each group's sound, for the stems
+  N.grp = BANKS.map((_, b) => [stripChain(N.bus, b), stripChain(N.duckV, b)]);
   initDeck();
+  initStudio();
   applyMaster(); updateDelayTime();
   preloadBanks();
   return true;
@@ -2875,7 +2898,7 @@ function preloadBanks() {
       msg(failed ? failed + " SUONI NON CARICATI" : "PRONTO · " + ids.length + " SUONI" + (lat ? " · LATENZA " + lat + " MS" : ""));
     });
 }
-function updateDelayTime() { if (ctx) N.delay.delayTime.setTargetAtTime(60 / state.bpm * 0.75, ctx.currentTime, 0.05); }
+function updateDelayTime() { if (ctx) { N.delay.delayTime.setTargetAtTime(60 / state.bpm * 0.75, ctx.currentTime, 0.05); applyStudio(); } }
 
 /* ================= voices ================= */
 const voices = [];
@@ -3008,7 +3031,7 @@ function schedule() {
     if (step % m.div === 0) { barT.push(nextTime); if (barT.length > 4) barT.shift(); }
     const s = repeatStep !== null ? Math.min(repeatStep, len - 1) : step;
     const pat = state.patterns[state.pattern];
-    for (let b = 0; b < BANKS.length && !songEnded; b++) {
+    for (let b = 0; b < BANKS.length && !songEnded && t < playUntil; b++) {
       if (state.mutes[b]) continue;
       for (let p = 0; p < 12; p++) {
         const v = pat[b][p][s]; if (!v) continue;
@@ -5695,17 +5718,27 @@ function eqSet(e, q, t) {
   const at = (p, v) => t == null ? (p.value = v) : p.setTargetAtTime(v, t, 0.03);
   at(e.hp.frequency, q.hp || 5); at(e.lo.frequency, q.loF); at(e.lo.gain, q.lo); at(e.mid.frequency, q.midF); at(e.mid.gain, q.mid); at(e.hi.gain, q.hi);
 }
-function stripChain(dest) {
-  const f = GEQ.map(([type, fr]) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = fr; if (type === "peaking") b.Q.value = 0.8; return b; });
-  const lvl = ctx.createGain();
-  f[0].connect(f[1]).connect(f[2]).connect(lvl).connect(dest);
-  return { f, lvl, in: f[0] };
+// a channel of the desk: three bands, a 70s style compressor with its make-up, the level, and the sends
+function stripChain(dest, b) {
+  const f = GEQ.map(([type, fr]) => { const q = ctx.createBiquadFilter(); q.type = type; q.frequency.value = fr; if (type === "peaking") q.Q.value = 0.8; return q; });
+  const comp = ctx.createDynamicsCompressor(); comp.knee.value = 6; comp.attack.value = 0.003; comp.release.value = 0.12; comp.threshold.value = 0; comp.ratio.value = 1;
+  const mk = ctx.createGain(), lvl = ctx.createGain(), se = ctx.createGain(), sr = ctx.createGain(); se.gain.value = sr.gain.value = 0;
+  f[0].connect(f[1]).connect(f[2]).connect(comp).connect(mk).connect(lvl).connect(dest);
+  lvl.connect(se); lvl.connect(sr); lvl.connect(N.gTap[b]);   // the sends reach the echo and the reverb once they exist
+  return { f, comp, mk, lvl, se, sr, in: f[0] };
 }
 function applyEq() {
   if (ctx && N.eq) {
     const t = ctx.currentTime;
     eqSet(N.eq, state.meq, t);
-    N.grp.forEach((pair, b) => { const g = state.geq[b]; for (const s of pair) { s.f.forEach((f, k) => f.gain.setTargetAtTime(g[k], t, 0.03)); s.lvl.gain.setTargetAtTime(g[3], t, 0.03); } });
+    N.grp.forEach((pair, b) => {
+      const g = state.geq[b], sq = g[6] || 0;
+      for (const s of pair) {
+        s.f.forEach((f, k) => f.gain.setTargetAtTime(g[k], t, 0.03)); s.lvl.gain.setTargetAtTime(g[3], t, 0.03);
+        s.comp.threshold.setTargetAtTime(-sq * 28, t, 0.03); s.comp.ratio.setTargetAtTime(1 + sq * 7, t, 0.03); s.mk.gain.setTargetAtTime(Math.pow(10, sq * 7 / 20), t, 0.03);
+        s.se.gain.setTargetAtTime((g[4] || 0) * 0.9, t, 0.03); s.sr.gain.setTargetAtTime((g[5] || 0) * 0.9, t, 0.03);
+      }
+    });
   }
   drawEq();
 }
@@ -5784,6 +5817,7 @@ function buildStrips() {
     g.querySelector(".gonair").addEventListener("click", () => { state.mutes[i] = !state.mutes[i]; save(); renderBanks(); renderEditorHead(); renderGroups(); msg("GRUPPO " + bk.id + (state.mutes[i] ? " MUTO" : " IN ONDA")); });
     const host = g.querySelector(".gknobs"), col = () => getComputedStyle(document.documentElement).getPropertyValue("--h" + bk.id).trim();
     ["Bassi", "Medi", "Alti"].forEach((label, k) => makeKnob(host, { label, min: -12, max: 12, center: true, col, get: () => state.geq[i][k], set: v => { state.geq[i][k] = Math.abs(v) < 0.3 ? 0 : Math.round(v * 2) / 2; save(); applyEq(); }, fmt: fmtG }));
+    [["Eco", 4], ["Riverb.", 5], ["Comp.", 6]].forEach(([label, k]) => makeKnob(host, { label, min: 0, max: 1, col, get: () => state.geq[i][k] || 0, set: v => { state.geq[i][k] = v < 0.02 ? 0 : v; save(); applyEq(); }, fmt: v => Math.round(v * 100) }));
     makeKnob(host, { label: "Livello", min: 0, max: 1.5, def: 1, col, get: () => state.geq[i][3], set: v => { state.geq[i][3] = Math.abs(v - 1) < 0.03 ? 1 : v; save(); applyEq(); }, fmt: v => v < 0.01 ? "−∞" : fmtG(20 * Math.log10(v)) });
     $("gstrips").appendChild(g);
   });
@@ -5928,7 +5962,7 @@ function cellExtras(c, o) {
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
-const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin"];
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin"];
 function f32ToB64(d) {
   const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
   for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
@@ -5986,7 +6020,7 @@ function openProject(file) {
     state.banks.forEach((bk, bi) => bk.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
     state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY, state.custom || {});
     fixPatterns(); state.pattern = 0; edPage = 0;
-    setBpm(state.bpm); applyMaster(); save(); renderAll(); applySkin(state.skin); applyCustom();
+    setBpm(state.bpm); applyMaster(); applyStudio(); save(); renderAll(); applySkin(state.skin); applyCustom(); renderStudio();
     state.banks.flat().forEach(pr => loadSound(pr.sound).catch(() => {}));
     msg("PROGETTO APERTO: " + file.name.replace(/\.(mattone|zip|json)$/i, "").toUpperCase() + ((proj.sounds || []).length ? " · " + proj.sounds.length + (proj.sounds.length > 1 ? " CAMPIONI" : " CAMPIONE") : ""));
   }).catch(() => msg("QUESTO FILE NON È UN PROGETTO DI MAT.TONE"));
@@ -6036,6 +6070,183 @@ function midiNote(note, velo) {
   const b = (state.bank + Math.floor(rel / 12)) % BANKS.length, p = rel % 12;
   trigger(b, p, ctx.currentTime, vel, 0, true); liveRecord(b, p, 0); nrHold("m" + note, b, p, 0);
 }
+/* ---------- effetti da studio: eco a nastro e quattro riverberi ---------- */
+// the echo is a tape loop: the repeats darken, saturate and wobble a little more each time round
+const ECHO_TIMES = [["16", "1/16", 0.25], ["8t", "1/8 T", 1 / 3], ["8", "1/8", 0.5], ["8d", "1/8 .", 0.75], ["4", "1/4", 1], ["4d", "1/4 .", 1.5]];
+const REV_TYPES = [["stanza", "Stanza"], ["molla", "Molla"], ["piastra", "Piastra"], ["cantina", "Cantina"]];
+const ECHO_DEF = { time: "8d", fb: 0.4, tone: 0.45, wear: 0.35, ret: 0.8 }, REV_DEF = { type: "stanza", ret: 0.8, tone: 0.7 };
+// impulse responses made on the spot: a room, a spring tank that drips and boings, a bright dense plate, a small dark cellar
+function makeImpulse(type) {
+  const spec = { stanza: [1.7, 3.0, 0.014, 7000], piastra: [2.9, 2.3, 0.004, 11000], cantina: [0.75, 2.4, 0.005, 2800], molla: [2.3, 2.1, 0.008, 5200] }[type] || [1.7, 3, 0.014, 7000];
+  const [sec, curve, pre, lp] = spec, n = Math.floor(SR * sec), b = ctx.createBuffer(2, n, SR), p0 = Math.floor(SR * pre);
+  for (let c = 0; c < 2; c++) {
+    const d = b.getChannelData(c); let y = 0;
+    for (let i = p0; i < n; i++) {
+      const u = (i - p0) / (n - p0), a = 1 - Math.exp(-2 * Math.PI * lp * (1 - 0.7 * u) / SR);   // the tail gets darker
+      y += a * (rnd() - y); d[i] = y * Math.pow(1 - u, curve) * (type === "molla" ? 0.55 : 1);
+    }
+    if (type === "molla") {   // the spring: a chirp that comes back every 30-odd ms, smeared a little more each time
+      for (let k = 0; k < 40; k++) {
+        const t0 = p0 + Math.floor(SR * (k * 0.0315 + (c ? 0.0021 : 0))), amp = 0.5 * Math.exp(-k * 0.11), len = Math.floor(SR * (0.018 + k * 0.0012));
+        let ph = 0;
+        for (let i = 0; i < len && t0 + i < n; i++) { const u = i / len; ph += 2 * Math.PI * (2600 * Math.pow(0.18, u)) / SR; d[t0 + i] += Math.sin(ph) * amp * Math.sin(Math.PI * u); }
+      }
+    }
+  }
+  return b;
+}
+function initStudio() {
+  // tape echo: in -> delay -> high-pass -> tone -> tape saturation -> out, and back round into the delay
+  N.echoIn = ctx.createGain(); N.echoDel = ctx.createDelay(3); N.echoFb = ctx.createGain(); N.echoOut = ctx.createGain();
+  N.echoHp = ctx.createBiquadFilter(); N.echoHp.type = "highpass"; N.echoHp.frequency.value = 140;
+  N.echoLp = ctx.createBiquadFilter(); N.echoLp.type = "lowpass";
+  N.echoSat = ctx.createWaveShaper(); N.echoSat.curve = (() => { const n = 1024, c = new Float32Array(n); for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(1.6 * x) / 1.6; } return c; })();   // unity gain when quiet: the loop always dies away
+  N.echoIn.connect(N.echoDel).connect(N.echoHp).connect(N.echoLp).connect(N.echoSat).connect(N.echoOut).connect(N.duckR);
+  N.echoSat.connect(N.echoFb).connect(N.echoDel);
+  N.echoLfo = ctx.createOscillator(); N.echoLfo.frequency.value = 0.63; N.echoWow = ctx.createGain();
+  N.echoLfo.connect(N.echoWow).connect(N.echoDel.delayTime); N.echoLfo.start();
+  // the reverb gets a tone control on its return
+  N.revLp = ctx.createBiquadFilter(); N.revLp.type = "lowpass";
+  N.revOut.disconnect(); N.revOut.connect(N.revLp).connect(N.duckR);
+  N.revType = null;
+  N.grp.forEach(pair => pair.forEach(s => { s.se.connect(N.echoIn); s.sr.connect(N.revIn); }));
+  // what goes into the "effects and turntable" stem
+  N.fxTap = ctx.createGain(); N.duckR.connect(N.fxTap); N.deckOut && N.deckOut.connect(N.fxTap);
+  applyStudio();
+}
+function echoSeconds() { const t = ECHO_TIMES.find(x => x[0] === state.echo.time) || ECHO_TIMES[3]; return Math.min(2.9, t[2] * 60 / state.bpm); }
+function applyStudio() {
+  if (!ctx || !N.echoIn) return;
+  const t = ctx.currentTime, e = state.echo, r = state.rev;
+  N.echoDel.delayTime.setTargetAtTime(echoSeconds(), t, 0.08);
+  N.echoFb.gain.setTargetAtTime(e.fb * 0.92, t, 0.05);
+  N.echoLp.frequency.setTargetAtTime(900 * Math.pow(2, e.tone * 3.6), t, 0.05);
+  N.echoWow.gain.setTargetAtTime(e.wear * 0.0028, t, 0.05); N.echoLfo.frequency.setTargetAtTime(0.4 + e.wear * 0.8, t, 0.1);
+  N.echoOut.gain.setTargetAtTime(e.ret, t, 0.05);
+  if (N.revType !== r.type) { N.conv.buffer = makeImpulse(r.type); N.revType = r.type; }
+  N.revOut.gain.setTargetAtTime(r.ret, t, 0.05);
+  N.revLp.frequency.setTargetAtTime(1500 * Math.pow(2, r.tone * 3.8), t, 0.05);
+}
+const studioKnobs = [];
+function renderStudio() {
+  [...$("echoTime").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state.echo.time));
+  [...$("revType").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state.rev.type));
+  studioKnobs.forEach(k => k.draw());
+}
+function buildStudio() {
+  ECHO_TIMES.forEach(([v, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = v; b.addEventListener("click", () => { state.echo.time = v; save(); applyStudio(); renderStudio(); }); $("echoTime").appendChild(b); });
+  REV_TYPES.forEach(([v, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = v; b.addEventListener("click", () => { initAudio(); state.rev.type = v; save(); applyStudio(); renderStudio(); msg("RIVERBERO: " + name.toUpperCase()); }); $("revType").appendChild(b); });
+  const kn = (host, label, obj, key, fmt, def) => studioKnobs.push(makeKnob($(host), { label, min: 0, max: 1, def, get: () => state[obj][key], set: v => { state[obj][key] = v; save(); applyStudio(); }, fmt: fmt || (v => Math.round(v * 100)) }));
+  kn("echoKnobs", "Ripetizioni", "echo", "fb"); kn("echoKnobs", "Tono", "echo", "tone"); kn("echoKnobs", "Usura nastro", "echo", "wear"); kn("echoKnobs", "Ritorno", "echo", "ret", null, 0.8);
+  kn("revKnobs", "Tono", "rev", "tone"); kn("revKnobs", "Ritorno", "rev", "ret", null, 0.8);
+  renderStudio();
+}
+
+/* ---------- per il DAW: tracce separate e file MIDI ---------- */
+let playUntil = Infinity;   // the scheduler goes quiet after this time (the tails of a bounce still ring out)
+async function giveFiles(files, zipName) {
+  const dl = await claude_use("downloads");
+  const zip = () => makeZip(files.map(f => ({ name: f.name, data: f.data })));
+  if (!dl) {
+    const one = files.length === 1 ? files[0] : { name: zipName, data: zip(), type: "application/zip" };
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([one.data], { type: one.type || "application/octet-stream" })); a.download = one.name; a.click();
+    return one.name;
+  }
+  await dl.save({ filename: zipName, data: zip() });
+  return zipName;
+}
+let stems = null;
+// each group, and the effects with the turntable, recorded at once from the top: dry of the master, ready for a DAW
+function exportStems() {
+  if (!initAudio()) return;
+  if (stems) { msg("STO GIÀ ESPORTANDO LE TRACCE…"); return; }
+  if (recorder.on) { msg("FERMA PRIMA IL REGISTRATORE"); return; }
+  const song = state.songOn && state.song.length, bars = song ? songBars() : (+$("recBars").value || 4), secs = bars * 240 / state.bpm, tail = 1.6;
+  if (secs > 240) { msg("TROPPO LUNGO PER LE TRACCE: MASSIMO 4 MINUTI"); return; }
+  if (playing) stop();
+  const names = [...BANKS.map(b => b.id + " " + b.name), "Effetti e piatto"], taps = [...N.grp.map((_, i) => N.gTap[i]), N.fxTap];
+  // one processor for all of them, so the tracks stay aligned to the sample: two channels per track, the gate last
+  const gate = ctx.createConstantSource(), nt = taps.length, merge = ctx.createChannelMerger(nt * 2 + 1), proc = ctx.createScriptProcessor(4096, nt * 2 + 1, 1), mute = ctx.createGain(); mute.gain.value = 0;
+  const parts = taps.map((tap, k) => { const split = ctx.createChannelSplitter(2); tap.connect(split); split.connect(merge, 0, 2 * k); split.connect(merge, 1, 2 * k + 1); return { name: names[k], tap, split, L: [], R: [] }; });
+  gate.connect(merge, 0, nt * 2); merge.connect(proc); proc.connect(mute).connect(ctx.destination);
+  stems = { gate, merge, proc, parts, open: false, closed: false };
+  proc.onaudioprocess = e => {
+    const st = stems; if (!st || st.closed) return;
+    const ib = e.inputBuffer, g = ib.getChannelData(nt * 2), n = g.length;
+    let a = 0; while (a < n && g[a] <= 0.5) a++;
+    if (a === n) { if (st.open) { st.closed = true; setTimeout(stemsDone, 0); } return; }
+    let z = a; while (z < n && g[z] > 0.5) z++;
+    st.open = true;
+    parts.forEach((p, k) => { p.L.push(ib.getChannelData(2 * k).slice(a, z)); p.R.push(ib.getChannelData(2 * k + 1).slice(a, z)); });
+    if (z < n) { st.closed = true; setTimeout(stemsDone, 0); }
+  };
+  msg("ESPORTO LE TRACCE: " + bars + (bars > 1 ? " BATTUTE" : " BATTUTA") + (song ? " (LA CANZONE)" : "") + "…");
+  $("stemBtn").classList.add("on");
+  setTimeout(() => {
+    if (!stems) return;
+    if (song) { songFrom = 0; songOnce = true; }
+    start();
+    playUntil = gridOrigin + secs - 0.001;
+    gate.start(gridOrigin); gate.stop(gridOrigin + secs + tail);
+  }, 300);
+}
+async function stemsDone() {
+  const s = stems; if (!s) return;
+  stems = null; playUntil = Infinity; songOnce = false; if (playing) stop();
+  $("stemBtn").classList.remove("on");
+  try { s.proc.onaudioprocess = null; s.proc.disconnect(); s.merge.disconnect(); for (const p of s.parts) p.tap.disconnect(p.split); } catch (e) { /* gone */ }
+  const join = list => { const n = list.reduce((a, c) => a + c.length, 0), out = new Float32Array(n); let o = 0; for (const c of list) { out.set(c, o); o += c.length; } return out; };
+  const tracks = s.parts.map(p => ({ name: p.name, L: join(p.L), R: join(p.R) }));
+  // one common gain for all, only if something would clip: the balance between the tracks stays as in the mix
+  let pk = 0; for (const t of tracks) for (const ch of [t.L, t.R]) for (let i = 0; i < ch.length; i++) pk = Math.max(pk, Math.abs(ch[i]));
+  const k = pk > 0.97 ? 0.97 / pk : 1;
+  if (k < 1) for (const t of tracks) for (const ch of [t.L, t.R]) for (let i = 0; i < ch.length; i++) ch[i] *= k;
+  const slug = x => x.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const files = tracks.filter(t => t.L.some(v => v !== 0)).map((t, i) => ({ name: String(i + 1).padStart(2, "0") + "-" + slug(t.name) + ".wav", data: new Uint8Array(encodeWav(t.L, t.R, SR)), type: "audio/wav" }));
+  if (!files.length) { msg("È TUTTO MUTO: METTI QUALCOSA NEL PATTERN"); return; }
+  const d = new Date(), p2 = n => String(n).padStart(2, "0");
+  try { const name = await giveFiles(files, "mattone-tracce-" + state.bpm + "bpm-" + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "-" + p2(d.getHours()) + p2(d.getMinutes()) + ".zip"); msg(files.length + " TRACCE SALVATE IN " + name.toUpperCase()); }
+  catch (err) { msg(err && err.code === "declined" ? "SALVATAGGIO ANNULLATO" : "QUI NON POSSO SALVARE FILE"); }
+}
+// the notes of the pattern (or of the whole song) as a standard MIDI file: one track per group's drums,
+// one per tuned pad; drum pads sit on the notes Mat.Tone answers to (36 + 12 per group)
+function exportMidi() {
+  const PPQ = 96, order = state.songOn && state.song.length ? state.song.flatMap(e => Array(e.n).fill(e.p)) : [state.pattern];
+  const tracks = new Map(); let tick0 = 0, nextCh = 0;
+  for (const pi of order) {
+    const m = pm(pi), P = state.patterns[pi], st = PPQ * 4 / m.div;
+    state.banks.forEach((bk, b) => bk.forEach((pr, p) => {
+      const s = SOUNDS.get(pr.sound), tuned = !!(s && s.root != null), key = tuned ? b + ":" + p : "d" + b;
+      P[b][p].forEach((v, i) => {
+        if (!v) return;
+        if (!tracks.has(key)) tracks.set(key, { name: tuned ? padLabel(b, p) + " " + (s ? s.name : "") : "Gruppo " + BANKS[b].id + " " + BANKS[b].name, ch: tuned ? (nextCh === 9 ? ++nextCh : nextCh++) % 16 : 9, ev: [] });
+        const tr = tracks.get(key), roll = v[2] > 1 ? v[2] : 1, vel = [0, 96, 120, 50][v[0]] || 96;
+        const t = tick0 + i * st + (m.div === 16 && i % 2 ? Math.round(st * state.swing / 100) : 0);
+        const note = Math.max(0, Math.min(127, tuned ? (s.home || 60) + pr.pitch + v[1] : 36 + b * 12 + p));
+        for (let r = 0; r < roll; r++) { const on = Math.round(t + r * st / roll); tr.ev.push([on, 1, 0x90 | tr.ch, note, r ? Math.round(vel * 0.8) : vel], [on + Math.max(1, Math.round(st / roll * 0.9)), 0, 0x80 | tr.ch, note, 0]); }
+      });
+    }));
+    tick0 += m.bars * PPQ * 4;
+  }
+  if (!tracks.size) { msg("IL PATTERN È VUOTO: NIENTE DA ESPORTARE"); return; }
+  const vlq = n => { const b = [n & 0x7f]; while ((n >>= 7)) b.unshift((n & 0x7f) | 0x80); return b; };
+  const text = s => [...new TextEncoder().encode(s)].slice(0, 120);
+  const chunk = (id, body) => [...id].map(c => c.charCodeAt(0)).concat([(body.length >>> 24) & 255, (body.length >>> 16) & 255, (body.length >>> 8) & 255, body.length & 255], body);
+  const us = Math.round(60e6 / state.bpm), nm = text("Mat.Tone · " + state.bpm + " BPM");
+  const tempo = [0, 0xff, 0x03, ...vlq(nm.length), ...nm, 0, 0xff, 0x51, 3, (us >> 16) & 255, (us >> 8) & 255, us & 255, 0, 0xff, 0x58, 4, 4, 2, 24, 8, ...vlq(tick0), 0xff, 0x2f, 0];
+  const out = chunk("MThd", [0, 1, 0, tracks.size + 1, 0, PPQ]).concat(chunk("MTrk", tempo));
+  for (const tr of tracks.values()) {
+    tr.ev.sort((a, b) => a[0] - b[0] || a[1] - b[1]);   // note-offs first when they share a tick
+    const tn = text(tr.name), body = [0, 0xff, 0x03, ...vlq(tn.length), ...tn];
+    let last = 0; for (const [t, , s, n, v] of tr.ev) { body.push(...vlq(t - last), s, n, v); last = t; }
+    body.push(...vlq(Math.max(0, tick0 - last)), 0xff, 0x2f, 0);
+    out.push(...chunk("MTrk", body));
+  }
+  const d = new Date(), p2 = n => String(n).padStart(2, "0"), name = "mattone-" + (order.length > 1 ? "canzone" : "pattern-" + (state.pattern + 1)) + "-" + state.bpm + "bpm-" + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "-" + p2(d.getHours()) + p2(d.getMinutes()) + ".mid";
+  giveFiles([{ name, data: new Uint8Array(out), type: "audio/midi" }], name.replace(/\.mid$/, ".zip"))
+    .then(n => msg("MIDI SALVATO: " + n.toUpperCase() + " · " + tracks.size + (tracks.size > 1 ? " TRACCE" : " TRACCIA")))
+    .catch(err => msg(err && err.code === "declined" ? "SALVATAGGIO ANNULLATO" : "QUI NON POSSO SALVARE FILE"));
+}
 // the four groups on the Mix page: mute buttons and a meter that jumps on every hit
 const grpHit = [[], [], [], []];   // recent hits per group (the sequencer schedules them a little ahead)
 function renderGroups() {
@@ -6051,7 +6262,9 @@ function meterGroups() {
   });
 }
 function buildPages() {
-  buildStrips(); buildEq();
+  buildStrips(); buildEq(); buildStudio();
+  $("stemBtn").addEventListener("click", exportStems);
+  $("midiExp").addEventListener("click", exportMidi);
   const loop = () => { meterGroups(); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
   PAGES.forEach(([id, name]) => {
     const b = el("button", "", "<i></i>" + esc(name));
