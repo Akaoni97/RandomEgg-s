@@ -17,7 +17,6 @@ const js = order.map((f) => {
 
 const css = fs.readFileSync(path.join(pub, 'styles.css'), 'utf8');
 const html = `<title>Virtual-Italy</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
