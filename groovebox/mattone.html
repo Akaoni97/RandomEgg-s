@@ -110,7 +110,7 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 .updpill { margin-left: auto; padding: 4px 10px; border: 0; border-radius: 999px; font-family: var(--f-label); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--cream); background: color-mix(in srgb, var(--led) 16%, var(--well)); box-shadow: inset 0 0 0 1px var(--led); }
 .updpill.ok { color: #160d02; background: var(--led); box-shadow: 0 0 12px -2px var(--led); }
 .lcd { position: relative; border-radius: 9px; padding: 7px; min-width: 0; background: linear-gradient(180deg, #050505, #161616); box-shadow: inset 0 2px 7px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px var(--edge); }
-.lcd canvas { display: block; width: 100%; max-width: 100%; aspect-ratio: 256 / 72; border-radius: 4px; cursor: pointer; }
+.lcd canvas { display: block; width: 100%; max-width: 100%; aspect-ratio: 256 / 80; border-radius: 4px; cursor: pointer; }
 .lcd::after { content: ""; position: absolute; inset: 7px; border-radius: 4px; pointer-events: none; background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,0) 30%); box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
 .steps16 { display: grid; grid-template-columns: repeat(var(--n, 16), minmax(0,1fr)); gap: 3px; justify-items: center; }
 .steps16.n24 { gap: 2px; }
@@ -310,7 +310,57 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
   padding: calc(18px + env(safe-area-inset-top, 0px)) calc(18px + env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) 18px;
   box-shadow: -30px 0 60px -20px rgba(0,0,0,.9);
 }
-#drawer { grid-template-rows: auto auto auto auto minmax(0,1fr) auto; }
+#drawer { grid-template-rows: auto auto auto auto minmax(0,1fr) auto; width: min(480px, 100%); background: linear-gradient(180deg, var(--chassis-2), var(--chassis) 140px); }
+#drawer > [hidden] { display: none; }
+.libnow { min-width: 0; display: grid; gap: 4px; }
+.libnow h3 { font-size: 22px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--led); text-shadow: 0 0 12px color-mix(in srgb, var(--led) 40%, transparent); }
+.libnowacts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.libnowacts .key { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.libtabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 8px; background: var(--well); box-shadow: inset 0 2px 6px rgba(0,0,0,.6); }
+.libtabs button { position: relative; border: 0; border-radius: 6px; background: transparent; color: var(--cream-3); font-family: var(--f-label); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 9px 4px; cursor: pointer; }
+.libtabs button[aria-selected="true"] { background: linear-gradient(180deg, var(--on-1), var(--on-2)); color: var(--on-ink); box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 2px 6px rgba(0,0,0,.4); }
+.libtabs em { font-style: normal; margin-left: 4px; opacity: .7; }
+.libsearch { position: relative; display: flex; gap: 6px; }
+.libcrumb { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.libcrumb b { font-family: var(--f-logo); font-weight: 400; font-size: 16px; color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list .grp small { display: block; margin-top: 2px; font-family: var(--f-body, inherit); font-size: 11px; text-transform: none; letter-spacing: 0; color: var(--cream-3); opacity: .8; }
+.libempty { color: var(--cream-2); font-size: 13px; line-height: 1.5; padding: 14px 6px; margin: 0; }
+.libacts { display: flex; gap: 8px; padding: 6px; }
+.crates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 2px 0 6px; }
+.crate { --c: var(--hA); position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; align-content: start; min-height: 74px; padding: 10px 12px 10px 16px; text-align: left; border: 0; border-radius: 8px; cursor: pointer; color: var(--cream);
+  background: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 14px), linear-gradient(160deg, color-mix(in srgb, var(--c) 22%, #2a211a), #18130f);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 -3px 0 rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.35); transition: transform .12s, box-shadow .12s; }
+.crate::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 0 3px 3px 0; background: var(--c); box-shadow: 0 0 10px var(--c); }
+.crate:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -3px 0 rgba(0,0,0,.35), 0 6px 14px rgba(0,0,0,.45); }
+.crate.has { box-shadow: inset 0 0 0 2px var(--c), 0 2px 6px rgba(0,0,0,.35); }
+.crate b { font-family: var(--f-logo); font-weight: 400; font-size: 15px; line-height: 1.15; }
+.crate em { font-style: normal; font-family: var(--f-vfd); font-size: 20px; line-height: 1; color: var(--c); }
+.crate small { grid-column: 1 / -1; font-size: 11px; color: var(--cream-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crate.f1 { --c: var(--hB); } .crate.f2 { --c: var(--hC); } .crate.f3 { --c: var(--hD); }
+.recent { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 6px; }
+.rchip { border: 1px solid var(--line); border-radius: 999px; background: rgba(0,0,0,.2); color: var(--cream-2); font-size: 12px; padding: 5px 10px; cursor: pointer; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rchip.cur { border-color: var(--led); color: var(--led); }
+.kitcard { display: grid; gap: 4px; text-align: left; border: 0; border-radius: 8px; padding: 12px 14px; margin-bottom: 6px; cursor: pointer; color: var(--cream); background: linear-gradient(160deg, #2a221b, #17120e); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 6px rgba(0,0,0,.35); position: relative; }
+.kitcard:hover { box-shadow: inset 0 0 0 1px var(--led), 0 2px 6px rgba(0,0,0,.35); }
+.kitcard b { font-family: var(--f-logo); font-weight: 400; font-size: 16px; padding-right: 96px; }
+.kitcard b em { font-style: normal; font-family: var(--f-vfd); font-size: 16px; color: var(--led); margin-left: 6px; }
+.kitcard small { font-size: 11px; color: var(--cream-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kitcard .kgo { position: absolute; right: 12px; top: 12px; font-family: var(--f-label); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--on-ink); background: var(--led); border-radius: 4px; padding: 4px 7px; }
+#drawer .item { grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; padding: 3px 4px 3px 6px; }
+#drawer .item .tx { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: center; cursor: pointer; padding: 3px 0; color: inherit; }
+.item .tx span { min-width: 0; }
+.item .tx small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pvi, .eqi { width: 32px; height: 32px; border-radius: 6px; background: var(--vfd-bg); display: grid; place-items: center; color: var(--vfd); }
+.pvi svg { width: 11px; height: 11px; fill: currentColor; }
+.item:hover .pvi { color: var(--led); box-shadow: inset 0 0 0 1px var(--led); }
+.eqi { display: flex; align-items: flex-end; justify-content: center; gap: 3px; padding-bottom: 8px; box-sizing: border-box; background: color-mix(in srgb, var(--led) 18%, var(--vfd-bg)); }
+.eqi b { width: 4px; height: 14px; border-radius: 1px; background: var(--led); animation: eqb .8s ease-in-out infinite alternate; transform-origin: bottom; }
+.eqi b:nth-child(2) { animation-delay: -.3s; } .eqi b:nth-child(3) { animation-delay: -.55s; }
+@keyframes eqb { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+.lowmotion .eqi b { animation: none; }
+.item .fav { border: 0; background: transparent; color: var(--cream-3); font-size: 17px; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; }
+.item .fav:hover { color: var(--led); background: rgba(255,255,255,.05); }
+.item .fav.on { color: #ffcc4d; text-shadow: 0 0 8px rgba(255,204,77,.5); }
 .kitrow { display: grid; gap: 6px; }
 .drawer h3 { margin: 0; font-family: var(--f-logo); font-weight: 400; font-size: 18px; }
 .drawer .dh { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
@@ -344,10 +394,46 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .pg-suona { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 14px; align-items: start; }
 .pg-suona .col { display: grid; gap: 14px; align-content: start; min-width: 0; }
 .pg-mix { display: grid; gap: 14px; align-content: start; }
-.pg-mix .mixer { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 28px; align-items: start; }
+.pg-mix .mixer { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 28px; align-items: start; }
 .groups { display: grid; grid-template-rows: auto minmax(0, 1fr); }
 .gstrips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; min-height: 0; }
-.gstrip { position: relative; display: grid; grid-template-rows: auto minmax(40px, 1fr) auto; gap: 10px; padding: 14px; border: 0; border-radius: 10px; text-align: left; color: var(--cream); background: var(--well); box-shadow: inset 0 2px 8px rgba(0,0,0,.6), inset 0 3px 0 var(--g); }
+.gtop { display: flex; align-items: baseline; gap: 8px; }
+.gtop .gn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gonair { border: 0; border-radius: 999px; padding: 5px 10px 5px 22px; position: relative; font-family: var(--f-label); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cream-2); background: rgba(0,0,0,.35); cursor: pointer; }
+.gonair::before { content: ""; position: absolute; left: 9px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--g); box-shadow: 0 0 8px var(--g); }
+.gonair[aria-pressed="false"]::before { background: #3a342c; box-shadow: none; }
+.gbody { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; min-height: 0; }
+.gbody .gm i { left: 4px; right: 4px; }
+.gknobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 4px; }
+.gknobs .knob canvas { width: 46px; height: 46px; }
+.gknobs .knob output { font-size: 16px; }
+.eq73 { display: grid; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.eq73 .hd { margin: 0; flex-wrap: wrap; gap: 8px; }
+#eqCv { width: 100%; height: auto; aspect-ratio: 760 / 230; border-radius: 10px; display: block; box-shadow: inset 0 2px 10px rgba(0,0,0,.9), 0 0 0 1px var(--edge), 0 0 0 5px #1a1612, 0 0 0 6px var(--edge); }
+.eqbands { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: start; }
+.eqband { display: grid; gap: 8px; justify-items: center; text-align: center; }
+.eqband .lbl { text-transform: none; letter-spacing: .02em; }
+.eqf { flex-wrap: wrap; justify-content: center; }
+.eqf button { padding: 5px 7px; font-size: 10px; }
+.eq73, .eq73 > * { min-width: 0; }
+#eqPresets { flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .gstrips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .eqbands { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 18px; }
+}
+.gstrip, .gstrip > * { min-width: 0; }
+@media (max-width: 520px) {
+  .gstrip { padding: 10px; gap: 8px; }
+  .gtop { flex-wrap: wrap; row-gap: 6px; }
+  .gonair { padding: 4px 8px 4px 20px; order: 3; }
+  .gtop .gn { flex: 1 1 0; }
+  .gtop::after { content: ""; flex-basis: 100%; order: 2; }
+  .gbody { grid-template-columns: 10px minmax(0, 1fr); gap: 6px; }
+  .gbody .gm i { left: 2px; right: 2px; }
+  .gknobs .knob canvas { width: 40px; height: 40px; }
+  .gknobs .knob .lbl { font-size: 8px; }
+}
+.gstrip { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; padding: 14px; border: 0; border-radius: 10px; text-align: left; color: var(--cream); background: var(--well); box-shadow: inset 0 2px 8px rgba(0,0,0,.6), inset 0 3px 0 var(--g); }
 .gstrip b { font-family: var(--f-logo); font-weight: 400; font-size: 34px; line-height: 1; color: var(--g); }
 .gstrip .gn { display: block; margin-top: 4px; font-family: var(--f-label); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cream-2); }
 .gstrip .gm { position: relative; border-radius: 6px; background: rgba(0,0,0,.35); overflow: hidden; }
@@ -369,7 +455,6 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
   .pg-piatto .deckwrap > .hd { grid-column: 1 / -1; }
   .pg-piatto .deckbody { grid-template-columns: auto 46px; }
   .pg-piatto .platter { width: clamp(240px, calc(var(--pg-h, 640px) - 118px), 620px); }
-  .pg-mix { height: 100%; grid-template-rows: minmax(0, 1fr) auto; }
   .pg-cust > .unit { height: 100%; }
   .pg-piatto .pitchf input { height: clamp(140px, calc(var(--pg-h, 640px) - 190px), 560px); }
 }
@@ -1067,8 +1152,8 @@ html.intro-on { overflow: hidden; }
       </section>
     </div>
     <div class="page pg-mix" data-page="mix" role="tabpanel" aria-label="Mix e registratore" hidden>
-      <section class="unit groups" aria-label="Gruppi">
-        <div class="hd"><h2>Gruppi · accendi e spegni</h2><span class="lbl">Toccane uno per silenziarlo nel beat</span></div>
+      <section class="unit groups" aria-label="Canali">
+        <div class="hd"><h2>Banco · i quattro gruppi</h2><span class="lbl">Bassi, medi, alti e livello per gruppo · doppio clic su una manopola la rimette piatta</span></div>
         <div class="gstrips" id="gstrips"></div>
       </section>
       <section class="unit mixer" aria-label="Master e registratore">
@@ -1095,6 +1180,16 @@ html.intro-on { overflow: hidden; }
           </div>
           <audio id="recPlayer" controls hidden></audio>
           <p class="rechint">Registra quello che esce dalle casse: sequencer, pad, scratch ed effetti. Con un numero di battute parte dall’inizio del pattern e si ferma da solo. Su claude.ai il file arriva dentro uno .zip (il visualizzatore non accetta .wav e .mp3 sciolti); nell’app per PC viene salvato direttamente.</p>
+        <div class="eq73">
+          <div class="hd"><h2>EQ ’73 · equalizzatore da banco</h2><div class="seg" id="eqPresets" role="group" aria-label="Suono dell’EQ"></div></div>
+          <canvas id="eqCv" width="760" height="230" aria-label="Curva dell’equalizzatore del master"></canvas>
+          <div class="eqbands">
+            <div class="eqband"><span class="lbl">Taglia bassi</span><div class="seg eqf" id="eqHp" role="group" aria-label="Filtro passa-alto"></div></div>
+            <div class="eqband"><div class="eqk" id="eqLoK"></div><div class="seg eqf" id="eqLoF" role="group" aria-label="Frequenza dei bassi"></div></div>
+            <div class="eqband"><div class="eqk" id="eqMidK"></div><div class="seg eqf" id="eqMidF" role="group" aria-label="Frequenza dei medi"></div></div>
+            <div class="eqband"><div class="eqk" id="eqHiK"></div><span class="lbl">Scaffale fisso a 12 kHz, come sul banco</span></div>
+          </div>
+        </div>
         </div>
       </section>
     </div>
@@ -1192,6 +1287,8 @@ html.intro-on { overflow: hidden; }
             <li><b>Canzone</b> (sotto il sequencer): metti in fila i pattern, ognuno ripetuto quante volte vuoi, accendi «Suona la canzone» e premi Play. «Registra la canzone» la esporta tutta.</li>
             <li><b>Note repeat</b> (sotto i pad, tasto <kbd>H</kbd>): tieni premuto un pad e viene ripetuto a tempo, da 1/4 a 1/32, anche a terzine. Con il REC acceso le ripetizioni finiscono nel pattern: perfetto per charleston e rullate.</li>
             <li><b>✂ Taglia in pezzi</b> (sotto il pad selezionato): apre il suono del pad, trova da solo i colpi di un loop o di un break e lo divide fino a 48 pezzi: 12 per gruppo, poi continua nei gruppi successivi. Può scrivere il pattern che li risuona al loro posto e portare il tempo a quello del loop: poi li rimescoli come vuoi.</li>
+            <li><b>Libreria</b> (Cambia suono): le casse sono divise per famiglia (generi, batteria, strumenti, synth). Tocca un suono e lo senti già sul pad; con ↑ ↓ li sfogli, «↺ Rimetti» torna a quello di prima, ☆ lo tiene tra i <b>Preferiti</b>. In alto anche <b>Kit pronti</b> e <b>I tuoi</b> suoni.</li>
+            <li><b>Equalizzatori</b> (Mix): ogni gruppo ha bassi, medi, alti e livello, come i canali di un banco; sul master c’è l’<b>EQ ’73</b> da console, con taglia-bassi, bassi e medi a frequenze fisse e alti a 12 kHz, più cinque suoni pronti (Bassi grassi, Polvere ’70, Radio AM, Aria). Doppio clic su una manopola la rimette piatta.</li>
             <li>In alto a sinistra scegli la <b>scocca</b>: Cantina, Hi-Fi ’76, Surplus ’68 o Metro ’89.</li>
           </ol>
         </div>
@@ -1266,13 +1363,22 @@ html.intro-on { overflow: hidden; }
     <p class="cnote small">Tocca un pezzo per sentirlo (o i tasti dei pad, spazio per tutto). Trascina una linea per spostare il taglio; doppio tocco per aggiungerne o toglierne uno. Ogni gruppo ha 12 pad: oltre il 12° pezzo si continua nel gruppo dopo (fino a 48, tutti e 4 i gruppi). I pezzi restano tra «I tuoi suoni».</p>
   </div>
 </div>
-<aside class="drawer" id="drawer" hidden aria-label="Libreria suoni">
-  <div class="dh"><div><h3>Casse di dischi</h3><p id="libFor">Scegli un suono per il pad A1</p></div><button class="key on" id="closeLib" type="button">Fatto</button></div>
-  <input class="search" id="search" type="search" placeholder="Cerca: piano, conga, basso…" aria-label="Cerca un suono" autocomplete="off">
-  <div class="cats" id="cats"></div>
-  <div class="kitrow"><span class="lbl">Kit pronti · caricano 12 suoni nel gruppo</span><div class="opts" id="kits"></div></div>
+<aside class="drawer lib" id="drawer" hidden aria-label="Libreria suoni">
+  <div class="dh">
+    <div class="libnow">
+      <span class="lbl" id="libFor">Pad A1</span>
+      <h3 id="libNow">—</h3>
+      <div class="libnowacts"><button class="key small" id="libPlay" type="button">▶ Ascolta</button><button class="key small" id="libUndo" type="button" hidden>↺ Rimetti</button></div>
+    </div>
+    <button class="key on" id="closeLib" type="button">Fatto</button>
+  </div>
+  <div class="libtabs" id="libTabs" role="tablist" aria-label="Sezioni della libreria">
+    <button type="button" role="tab" data-t="suoni">Suoni<em></em></button><button type="button" role="tab" data-t="kit">Kit pronti<em></em></button><button type="button" role="tab" data-t="fav">★ Preferiti<em></em></button><button type="button" role="tab" data-t="tuoi">I tuoi<em></em></button>
+  </div>
+  <div class="libsearch" id="libSearchRow"><input class="search" id="search" type="search" placeholder="Cerca in tutta la libreria: cassa, piano, conga, voce…" aria-label="Cerca un suono" autocomplete="off"><button class="key small" id="searchX" type="button" hidden aria-label="Cancella la ricerca">✕</button></div>
+  <div class="libcrumb" id="libCrumb" hidden><button class="key small" id="libBack" type="button">← Tutte le casse</button><b id="libCrumbName"></b></div>
   <div class="list" id="list"></div>
-  <div class="foot"><small>Tocca un nome per metterlo sul pad · ▶ per ascoltarlo.</small><label class="key small" for="file">Carica file</label></div>
+  <div class="foot"><small>Tocca un suono: lo senti ed è subito sul pad. Con ↑ ↓ sfogli, ☆ lo tieni tra i preferiti.</small><label class="key small" for="file">Carica file</label></div>
 </aside>
 <script>
 (() => {
@@ -2117,6 +2223,7 @@ let state = {
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
   warmth: 0.35, volume: 0.85, dust: 0.25, wow: 0.25, glue: 0.35, pump: 0, push: 1.5, mpreset: "boombap", human: 0, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "cantina", ver: 4, custom: null,
   pmeta: defaultPmeta(), song: [{ p: 0, n: 3 }, { p: 1, n: 1 }], songOn: false, follow: true, nr: false, nrRate: 4,
+  meq: { hp: 0, lo: 0, loF: 60, mid: 0, midF: 1600, hi: 0 }, eqPreset: "piatto", geq: [[0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1]], favs: [], recent: [],
 };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("mattone-groovebox-v2") || "null");
@@ -2148,6 +2255,10 @@ function fixPatterns() {
   state.song = state.song.filter(e => e && e.p >= 0 && e.p < NPAT).map(e => ({ p: e.p | 0, n: Math.max(1, Math.min(16, e.n | 0)) })).slice(0, 64);
   if (!state.song.length) state.songOn = false;
   if (!NR_RATES.some(r => r[1] === state.nrRate)) state.nrRate = 4;
+  state.meq = Object.assign({ hp: 0, lo: 0, loF: 60, mid: 0, midF: 1600, hi: 0 }, state.meq);
+  if (!Array.isArray(state.geq) || state.geq.length !== 4) state.geq = [0, 1, 2, 3].map(() => [0, 0, 0, 1]);
+  if (!Array.isArray(state.favs)) state.favs = [];
+  if (!Array.isArray(state.recent)) state.recent = [];
 }
 fixPatterns();
 let saveTimer = 0;
@@ -2663,7 +2774,8 @@ function initAudio() {
   N.drive = ctx.createGain();
   N.limit = ctx.createGain();                       // everything that wants to be limited goes in here (the deck and the dust too)
   N.out = ctx.createGain();
-  N.master.connect(N.comp).connect(N.wow).connect(N.satIn).connect(N.sat).connect(N.tone).connect(N.clean).connect(N.drive).connect(N.limit);
+  N.eq = eqChain(ctx, state.meq);   // EQ '73 between the glue and the tape
+  N.master.connect(N.comp).connect(N.eq.input); N.eq.output.connect(N.wow).connect(N.satIn).connect(N.sat).connect(N.tone).connect(N.clean).connect(N.drive).connect(N.limit);
   // until the look-ahead limiter is loaded (or if the browser cannot run it) a fast compressor and a clipper hold the peaks
   N.limFB = ctx.createDynamicsCompressor(); N.limFB.threshold.value = -2; N.limFB.knee.value = 0; N.limFB.ratio.value = 20; N.limFB.attack.value = 0.001; N.limFB.release.value = 0.08;
   N.limClip = ctx.createWaveShaper(); N.limClip.curve = limitCurve();
@@ -2694,6 +2806,8 @@ function initAudio() {
   N.split.connect(N.anL, 0); N.split.connect(N.anR, 1);
   N.spec = ctx.createAnalyser(); N.spec.fftSize = 2048; N.spec.smoothingTimeConstant = 0.75; N.out.connect(N.spec);
   N.duckV.connect(N.bus);
+  // the group strips: one for the kicks (they drive the pump) and one for the rest, with the same settings
+  N.grp = BANKS.map(() => [stripChain(N.bus), stripChain(N.duckV)]);
   initDeck();
   applyMaster(); updateDelayTime();
   preloadBanks();
@@ -2712,6 +2826,7 @@ function applyMaster() {
   N.drive.gain.setTargetAtTime(Math.pow(10, (state.push + gl * 4) / 20), t, 0.05);
   N.out.gain.setTargetAtTime(state.volume, t, 0.03);
   N.dustGain.gain.setTargetAtTime(state.dust * 0.22, t, 0.05);
+  applyEq();
 }
 function preloadBanks() {
   const ids = [...new Set(state.banks.flat().map(p => p.sound))];
@@ -2745,9 +2860,10 @@ function playBuffer(soundId, pr, t, vel, note, tag) {
   g.gain.setValueAtTime(level, t);
   if (len < full) { g.gain.setValueAtTime(level, t + Math.max(0.005, len - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.03); }
   src.connect(g);
-  const dest = s.kick ? N.bus : N.duckV;   // kicks drive the sidechain, everything else is ducked by it
+  // through the strip of its group; kicks drive the sidechain, everything else is ducked by it
+  const gi = /^(\d+):/.exec(tag || ""), dest = gi && N.grp ? N.grp[+gi[1]][s.kick ? 0 : 1].in : s.kick ? N.bus : N.duckV;
   if (ctx.createStereoPanner && pr.pan) { const pan = ctx.createStereoPanner(); pan.pan.value = pr.pan; g.connect(pan).connect(dest); } else g.connect(dest);
-  if (pr.rev > 0) { const rs = ctx.createGain(); rs.gain.value = pr.rev; g.connect(rs).connect(N.revIn); }
+  if (pr.rev > 0) { const rs = ctx.createGain(); rs.gain.value = pr.rev * (gi ? state.geq[+gi[1]][3] : 1); g.connect(rs).connect(N.revIn); }   // the group level reaches the reverb too
   src.start(t); src.stop(t + Math.min(full, len + 0.05) + 0.01);
   const v = { src, g, tag, sound: soundId };
   voices.push(v);
@@ -3759,7 +3875,7 @@ const pad3 = n => String(n).padStart(3, "0");
 
 /* ================= knobs ================= */
 const knobs = [];
-function makeKnob(host, { label, min, max, get, set, fmt, center }) {
+function makeKnob(host, { label, min, max, get, set, fmt, center, col, def }) {
   const wrap = el("div", "knob"), cv = el("canvas"), out = el("output"), lab = el("span", "lbl", label);
   cv.width = 116; cv.height = 116; cv.tabIndex = 0; cv.setAttribute("role", "slider"); cv.setAttribute("aria-label", label);
   wrap.append(cv, out, lab); host.appendChild(wrap);
@@ -3770,7 +3886,7 @@ function makeKnob(host, { label, min, max, get, set, fmt, center }) {
     c.lineWidth = 6; c.lineCap = "round";
     c.strokeStyle = SK.well; c.beginPath(); c.arc(58, 58, 50, a0, a1); c.stroke();
     const from = center ? a0 + (a1 - a0) * ((0 - min) / (max - min)) : a0;
-    c.strokeStyle = hueColor;
+    c.strokeStyle = (col && col()) || hueColor;
     c.beginPath(); c.arc(58, 58, 50, Math.min(from, a), Math.max(from, a)); c.stroke();
     drawKnobCap(c, state.custom.knob || "skin", a);
     out.textContent = fmt(v); cv.setAttribute("aria-valuetext", fmt(v));
@@ -3779,7 +3895,7 @@ function makeKnob(host, { label, min, max, get, set, fmt, center }) {
   cv.addEventListener("pointerdown", e => { e.preventDefault(); drag = true; startY = e.clientY; startV = get(); try { cv.setPointerCapture(e.pointerId); } catch (_) {} });
   cv.addEventListener("pointermove", e => { if (!drag) return; const d = (startY - e.clientY) / 160 * (max - min); set(Math.max(min, Math.min(max, startV + d))); k.draw(); });
   cv.addEventListener("pointerup", () => { drag = false; set(get(), true); });
-  cv.addEventListener("dblclick", () => { set(center ? 0 : get(), true); k.draw(); });
+  cv.addEventListener("dblclick", () => { set(def != null ? def : center ? 0 : get(), true); k.draw(); });   // back to flat
   cv.addEventListener("wheel", e => { e.preventDefault(); set(Math.max(min, Math.min(max, get() - Math.sign(e.deltaY) * (max - min) / 40)), true); k.draw(); }, { passive: false });
   cv.addEventListener("keydown", e => {
     const d = (max - min) / 40;
@@ -3842,7 +3958,7 @@ function build() {
     $("fx").appendChild(b);
   });
   GATES.forEach(([label, v]) => { const b = el("button", null, label); b.type = "button"; b.addEventListener("click", () => { curPr().gate = v; save(); renderInspector(); }); $("gate").appendChild(b); });
-  ["Tutti", ...CATS].forEach(c => { const b = el("button", null, c); b.type = "button"; b.addEventListener("click", () => { libCat = c; renderLibrary(); }); $("cats").appendChild(b); });
+  bindLibrary();
 
   const preview = commit => { if (commit && initAudio() && !playing) trigger(state.bank, state.pad, ctx.currentTime); };
   makeKnob($("knobs"), { label: "Tono", min: -24, max: 24, center: true, get: () => curPr().pitch, set: (v, c) => { curPr().pitch = Math.round(v); save(); preview(c); }, fmt: v => (v > 0 ? "+" : "") + Math.round(v) });
@@ -3893,7 +4009,7 @@ function build() {
   bindDeck(); renderDeckSrc(); buildCustom();
   $("recBtn").addEventListener("click", () => recorder.on ? recStop() : recStart(+$("recBars").value));
   $("recAgain").addEventListener("click", saveTake);
-  KITS.forEach(([id, name]) => { $("kitSel").appendChild(new Option(name, id)); optButton($("kits"), id, name, null, v => loadKit(v)); });
+  KITS.forEach(([id, name]) => $("kitSel").appendChild(new Option(name, id)));
   $("kitSel").addEventListener("change", e => { if (e.target.value) loadKit(e.target.value); e.target.value = ""; });
   $("visBtn").addEventListener("click", () => cycleVis(1));
   $("spec").addEventListener("click", () => cycleVis(1));
@@ -4046,11 +4162,25 @@ function loadKit(id) {
 }
 
 /* ================= library ================= */
-let libCat = "Tutti";
+// The library: crates grouped in families, a tab for the ready kits, the favourites and your own sounds.
+// Touching a sound puts it on the pad and plays it at once, as when you scroll the sounds on a sampler;
+// the sound the pad had when the library opened can always be put back.
+const LIB_FAM = [
+  ["Generi", "Suoni scelti per stile", ["Boom bap", "Old school", "Lo-fi", "808", "Trap", "Tekno", "FX hip hop"]],
+  ["Batteria", "Colpi singoli e percussioni", ["Batteria", "Percussioni", "Percussioni intonate"]],
+  ["Strumenti", "Intonati: si suonano anche in modalità Note", ["Strumenti singoli", "Melodie", "Tastiere", "Corde", "Archi", "Fiati", "Voci", "Bassi"]],
+  ["Synth ed effetti", "Elettronici, accordi, rumori e scratch", ["Synth", "Accordi", "Effetti"]],
+];
+let libCat = "Tutti", libTab = "suoni", libStart = null;
+const EQ_ICON = '<i class="eqi"><b></b><b></b><b></b></i>';
 function openLibrary() {
   initAudio(); $("drawer").hidden = false; $("scrim").hidden = false; libCat = "Tutti"; $("search").value = "";
+  const pr = curPr(); libStart = { b: state.bank, p: state.pad, sound: pr.sound, pitch: pr.pitch, gate: pr.gate };
+  // straight into the crate of the sound on the pad, so the neighbours are one touch away
+  const s = SOUNDS.get(pr.sound); if (s && s.kind !== "user" && CATS.includes(s.cat)) libCat = s.cat;
+  libTab = s && s.kind === "user" ? "tuoi" : "suoni";
   renderLibrary(); const cur = $("list").querySelector(".item.cur"); if (cur) cur.scrollIntoView({ block: "center" });
-  setTimeout(() => $("search").focus({ preventScroll: true }), 50);
+  setTimeout(() => $("closeLib").focus({ preventScroll: true }), 50);
 }
 function closeLibrary() { $("drawer").hidden = true; $("scrim").hidden = true; $("openLib").focus({ preventScroll: true }); }
 function preview(id) {
@@ -4064,35 +4194,132 @@ function preview(id) {
 function assign(id) {
   const pr = curPr(), s = SOUNDS.get(id);
   pr.sound = id; pr.pitch = 0; pr.gate = s.root != null && /Bassi|Synth/.test(s.cat) ? 2 : 0;
+  state.recent = [id, ...state.recent.filter(x => x !== id)].slice(0, 10);
   save(); renderAll(); renderLibrary(); preview(id); msg("PAD " + padLabel(state.bank, state.pad) + ": " + s.name.toUpperCase());
 }
-function renderLibrary() {
-  const q = $("search").value.trim().toLowerCase();
-  [...$("cats").children].forEach(b => b.setAttribute("aria-pressed", b.textContent === libCat));
-  $("libFor").textContent = "Scegli un suono per il pad " + padLabel(state.bank, state.pad);
-  const list = $("list"); list.innerHTML = ""; const cur = curPr().sound; let count = 0;
-  for (const c of CATS) {
-    if (libCat !== "Tutti" && c !== libCat) continue;
-    const items = [...SOUNDS.values()].filter(s => s.cat === c && (!q || s.name.toLowerCase().includes(q) || c.toLowerCase().includes(q)));
-    if (!items.length) continue;
-    list.appendChild(el("div", "grp", esc(c) + " · " + items.length));
-    for (const s of items) {
-      count++;
-      const row = el("div", "item" + (s.id === cur ? " cur" : ""));
-      const pv = el("button", "pv", PV_ICON); pv.type = "button"; pv.setAttribute("aria-label", "Ascolta " + s.name); pv.addEventListener("click", () => preview(s.id));
-      const tx = el("button", "tx", "<b>" + esc(s.name) + "</b><small>" + (s.root != null ? "intonato · " : "") + esc(s.src) + "</small>"); tx.type = "button"; tx.addEventListener("click", () => assign(s.id));
-      const tag = el("span", "chip" + (s.id === cur ? " tuned" : ""), s.id === cur ? "sul pad" : "usa"); tag.style.cursor = "pointer"; tag.addEventListener("click", () => assign(s.id));
-      row.append(pv, tx, tag);
-      if (s.kind === "user") {
-        // two taps to delete, so a slip does not lose a recording
-        const del = el("button", "del", "✕"); del.type = "button"; del.title = "Elimina questo suono"; del.setAttribute("aria-label", "Elimina " + s.name);
-        del.addEventListener("click", () => { if (del.classList.contains("sure")) userDelete(s.id); else { del.classList.add("sure"); del.textContent = "Elimina?"; setTimeout(() => { del.classList.remove("sure"); del.textContent = "✕"; }, 2500); } });
-        row.appendChild(del);
-      }
-      list.appendChild(row);
-    }
+function libRevert() {
+  const st = libStart; if (!st) return;
+  const pr = state.banks[st.b][st.p]; Object.assign(pr, { sound: st.sound, pitch: st.pitch, gate: st.gate });
+  save(); renderAll(); renderLibrary(); preview(st.sound); msg("RIMESSO " + (SOUNDS.get(st.sound) || { name: "" }).name.toUpperCase());
+}
+function toggleFav(id) {
+  state.favs = state.favs.includes(id) ? state.favs.filter(x => x !== id) : [id, ...state.favs];
+  save(); renderLibrary();
+}
+function soundRow(s, cur, showCat) {
+  const row = el("div", "item" + (s.id === cur ? " cur" : ""));
+  const tx = el("button", "tx", (s.id === cur ? EQ_ICON : '<i class="pvi">' + PV_ICON + "</i>") + "<span><b>" + esc(s.name) + "</b><small>" + (showCat ? esc(s.cat) + " · " : "") + (s.root != null ? "intonato · " : "") + esc(s.src) + "</small></span>");
+  tx.type = "button"; tx.dataset.id = s.id; tx.setAttribute("aria-label", s.name + (s.id === cur ? ", sul pad" : ", mettilo sul pad"));
+  tx.addEventListener("click", () => assign(s.id));
+  const fav = el("button", "fav" + (state.favs.includes(s.id) ? " on" : ""), state.favs.includes(s.id) ? "★" : "☆"); fav.type = "button";
+  fav.setAttribute("aria-label", (state.favs.includes(s.id) ? "Togli dai preferiti " : "Aggiungi ai preferiti ") + s.name); fav.addEventListener("click", () => toggleFav(s.id));
+  row.append(tx, fav);
+  if (s.id === cur) row.appendChild(el("span", "chip tuned", "sul pad"));
+  if (s.kind === "user") {
+    // two taps to delete, so a slip does not lose a recording
+    const del = el("button", "del", "✕"); del.type = "button"; del.title = "Elimina questo suono"; del.setAttribute("aria-label", "Elimina " + s.name);
+    del.addEventListener("click", () => { if (del.classList.contains("sure")) userDelete(s.id); else { del.classList.add("sure"); del.textContent = "Elimina?"; setTimeout(() => { del.classList.remove("sure"); del.textContent = "✕"; }, 2500); } });
+    row.appendChild(del);
   }
-  if (!count) list.appendChild(el("p", "lbl", "Nessun suono per “" + esc(q) + "”."));
+  return row;
+}
+function renderLibrary() {
+  const q = $("search").value.trim().toLowerCase(), list = $("list"), pr = curPr(), cur = pr.sound, now = SOUNDS.get(cur);
+  const all = [...SOUNDS.values()], users = all.filter(s => s.kind === "user");
+  $("libFor").textContent = "Pad " + padLabel(state.bank, state.pad) + " · " + BANKS[state.bank].name;
+  $("libNow").textContent = now ? now.name : "—";
+  const changed = libStart && libStart.b === state.bank && libStart.p === state.pad && libStart.sound !== cur;
+  $("libUndo").hidden = !changed; if (changed) $("libUndo").textContent = "↺ Rimetti " + (SOUNDS.get(libStart.sound) || { name: "" }).name;
+  [...$("libTabs").children].forEach(b => {
+    b.setAttribute("aria-selected", b.dataset.t === libTab);
+    const n = b.dataset.t === "fav" ? state.favs.length : b.dataset.t === "tuoi" ? users.length : 0;
+    b.querySelector("em").textContent = n ? n : "";
+  });
+  $("searchX").hidden = !q;
+  const inCrate = libTab === "suoni" && !q && libCat !== "Tutti";
+  $("libCrumb").hidden = !inCrate; if (inCrate) $("libCrumbName").textContent = libCat;
+  $("libSearchRow").hidden = libTab === "kit";
+  list.innerHTML = ""; list.scrollTop = 0;
+  const head = (t, sub) => list.appendChild(el("div", "grp", esc(t) + (sub ? "<small>" + esc(sub) + "</small>" : "")));
+  if (q) {   // search everything, in every tab
+    let count = 0;
+    for (const c of CATS) {
+      const items = all.filter(s => s.cat === c && (s.name.toLowerCase().includes(q) || c.toLowerCase().includes(q) || (s.src || "").toLowerCase().includes(q)));
+      if (!items.length) continue;
+      head(c + " · " + items.length); items.forEach(s => list.appendChild(soundRow(s, cur))); count += items.length;
+    }
+    if (!count) list.appendChild(el("p", "libempty", "Nessun suono per “" + esc(q) + "”. Prova con parole come cassa, rullante, piano, basso, voce."));
+    return;
+  }
+  if (libTab === "kit") {
+    head("Kit pronti", "Caricano 12 suoni nel gruppo " + BANKS[state.bank].id + " · " + BANKS[state.bank].name);
+    KITS.forEach(([id, name, sounds]) => {
+      const card = el("button", "kitcard");
+      card.type = "button";
+      card.innerHTML = "<b>" + esc(name) + (TEKNO_BPM[id] ? " <em>" + TEKNO_BPM[id] + " BPM</em>" : "") + "</b><small>" + esc(sounds.slice(0, 5).map(x => (SOUNDS.get(x) || { name: x }).name).join(" · ")) + " …</small><span class=\"kgo\">Carica in " + BANKS[state.bank].id + "</span>";
+      card.addEventListener("click", () => loadKit(id));
+      list.appendChild(card);
+    });
+    return;
+  }
+  if (libTab === "fav") {
+    const favs = state.favs.map(id => SOUNDS.get(id)).filter(Boolean);
+    if (!favs.length) list.appendChild(el("p", "libempty", "Ancora nessun preferito. Tocca ☆ accanto a un suono per tenerlo qui a portata di mano."));
+    else { head("Preferiti · " + favs.length); favs.forEach(s => list.appendChild(soundRow(s, cur, true))); }
+    return;
+  }
+  if (libTab === "tuoi") {
+    const acts = el("div", "libacts");
+    const rec = el("button", "key small", "● Campiona"); rec.type = "button"; rec.addEventListener("click", () => { closeLibrary(); openMic(); });
+    const file = el("label", "key small", "Carica un file"); file.htmlFor = "file";
+    acts.append(rec, file); list.appendChild(acts);
+    if (!users.length) list.appendChild(el("p", "libempty", "Qui finiscono i suoni che registri o carichi: dal microfono, dall’audio del computer, dal beat, o i pezzi tagliati con ✂."));
+    else { head("I tuoi suoni · " + users.length, "Salvati su questo dispositivo"); users.slice().reverse().forEach(s => list.appendChild(soundRow(s, cur))); }
+    return;
+  }
+  if (libCat !== "Tutti") {   // inside a crate
+    const items = all.filter(s => s.cat === libCat);
+    items.forEach(s => list.appendChild(soundRow(s, cur)));
+    return;
+  }
+  // the crates
+  const recent = state.recent.map(id => SOUNDS.get(id)).filter(Boolean);
+  if (recent.length) {
+    head("Usati di recente");
+    const strip = el("div", "recent");
+    recent.forEach(s => { const b = el("button", "rchip" + (s.id === cur ? " cur" : ""), esc(s.name)); b.type = "button"; b.addEventListener("click", () => assign(s.id)); strip.appendChild(b); });
+    list.appendChild(strip);
+  }
+  LIB_FAM.forEach(([fam, sub, cats], fi) => {
+    head(fam, sub);
+    const grid = el("div", "crates");
+    cats.forEach(c => {
+      const items = all.filter(s => s.cat === c); if (!items.length) return;
+      const has = items.some(s => s.id === cur);
+      const b = el("button", "crate f" + fi + (has ? " has" : ""), "<b>" + esc(c) + "</b><em>" + items.length + "</em><small>" + esc(items.slice(0, 3).map(s => s.name).join(" · ")) + "</small>");
+      b.type = "button"; b.addEventListener("click", () => { libCat = c; renderLibrary(); });
+      grid.appendChild(b);
+    });
+    list.appendChild(grid);
+  });
+}
+// arrows browse the open list: each step puts the sound on the pad and plays it
+function libKey(e) {
+  if ($("drawer").hidden) return;
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  const rows = [...$("list").querySelectorAll(".item .tx")]; if (!rows.length) return;
+  e.preventDefault(); e.stopPropagation();
+  const i = rows.findIndex(r => r.dataset.id === curPr().sound), j = Math.max(0, Math.min(rows.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
+  const id = rows[i < 0 ? 0 : j].dataset.id; assign(id);
+  const cur = $("list").querySelector(".item.cur"); if (cur) cur.scrollIntoView({ block: "nearest" });
+}
+function bindLibrary() {
+  [...$("libTabs").children].forEach(b => b.addEventListener("click", () => { libTab = b.dataset.t; libCat = "Tutti"; $("search").value = ""; renderLibrary(); }));
+  $("libBack").addEventListener("click", () => { libCat = "Tutti"; renderLibrary(); });
+  $("libUndo").addEventListener("click", libRevert);
+  $("libPlay").addEventListener("click", () => preview(curPr().sound));
+  $("searchX").addEventListener("click", () => { $("search").value = ""; renderLibrary(); $("search").focus(); });
+  $("drawer").addEventListener("keydown", libKey, true);
 }
 
 /* ================= keyboard ================= */
@@ -4296,8 +4523,9 @@ function sizeCanvases() {
   if (size !== deckSize) { deckSize = size; deckCv.width = deckCv.height = size; deckBase = null; recordCv = null; sheenCv = null; labelCv = null; armR = 0; }
   drawDeck(true); drawSpec(true); drawVU(true);
 }
-/* ---------- display a matrice di punti, stile OLED moderno (256 × 72) ---------- */
-const LCD_W = 256, LCD_H = 72, VX = 62, VY = 11, VW = LCD_W - VX, VH = 49;
+/* ---------- display a matrice di punti, stile OLED moderno (256 × 80) ---------- */
+// a two-dot margin all around, like the bezel of a real screen; the visualizer has its own window
+const LCD_W = 256, LCD_H = 80, VX = 64, VY = 14, VW = LCD_W - VX - 2, VH = 51;
 const lcdBuf = new Uint8Array(LCD_W * LCD_H);   // 0 spento, 1 colore principale, 2 accento
 const FONT = {
   "0":[62,81,73,69,62],"1":[0,66,127,64,0],"2":[66,97,81,73,70],"3":[33,65,69,75,49],"4":[24,20,18,127,16],"5":[39,69,69,69,57],"6":[60,74,73,73,48],"7":[1,113,9,5,3],"8":[54,73,73,73,54],"9":[6,73,73,41,30],
@@ -4308,7 +4536,66 @@ const FONT = {
 };
 const LCD_MAP = { "→": ">", "♯": "#", "♭": "B", "“": "\"", "”": "\"", "’": "'", "×": "X", "↔": "-", "…": "." };
 function lcdNorm(s) { return String(s).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/./g, ch => LCD_MAP[ch] || (FONT[ch] ? ch : " ")); }
-const px = (x, y, v = 1) => { x |= 0; y |= 0; if (x >= 0 && x < LCD_W && y >= 0 && y < LCD_H) lcdBuf[y * LCD_W + x] = v; };
+let clipL = 0, clipR = LCD_W;   // columns that text may light (the scrolling message stays inside the bezel)
+const px = (x, y, v = 1) => { x |= 0; y |= 0; if (x >= clipL && x < clipR && y >= 0 && y < LCD_H) lcdBuf[y * LCD_W + x] = v; };
+// a 3 × 5 font for the small printed labels, as on the panels of the old samplers
+const TINY = {
+  "A": ".#.#.#####.##.#",
+  "B": "##.#.###.#.###.",
+  "C": ".###..#..#...##",
+  "D": "##.#.##.##.###.",
+  "E": "####..##.#..###",
+  "F": "####..##.#..#..",
+  "G": ".###..#.##.#.##",
+  "H": "#.##.#####.##.#",
+  "I": "###.#..#..#.###",
+  "J": "..#..#..##.#.#.",
+  "K": "#.##.###.#.##.#",
+  "L": "#..#..#..#..###",
+  "M": "#.########.##.#",
+  "N": "##.#.##.##.##.#",
+  "O": ".#.#.##.##.#.#.",
+  "P": "##.#.###.#..#..",
+  "Q": ".#.#.##.###..##",
+  "R": "##.#.###.#.##.#",
+  "S": ".###...#...###.",
+  "T": "###.#..#..#..#.",
+  "U": "#.##.##.##.####",
+  "V": "#.##.##.##.#.#.",
+  "W": "#.##.########.#",
+  "X": "#.##.#.#.#.##.#",
+  "Y": "#.##.#.#..#..#.",
+  "Z": "###..#.#.#..###",
+  "0": "####.##.##.####",
+  "1": ".#.##..#..#.###",
+  "2": "##...#.#.#..###",
+  "3": "##...#.#...###.",
+  "4": "#.##.####..#..#",
+  "5": "####..##...###.",
+  "6": ".###..####.####",
+  "7": "###..#.#..#..#.",
+  "8": "####.#####.####",
+  "9": "####.####..###.",
+  " ": "...............",
+  ".": ".............#.",
+  ":": "....#.....#....",
+  "-": "......###......",
+  "/": "..#..#.#.#..#..",
+  "%": "#.#..#.#.#..#.#",
+};
+function tinyText(s, x, y, v = 1) {
+  for (const ch of lcdNorm(s)) { const g = TINY[ch] || TINY[" "]; for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) if (g[r * 3 + c] === "#") px(x + c, y + r, v); x += 4; }
+  return x;
+}
+// a framed label, for the pattern number
+function chipText(s, x, y, v = 1) {
+  const w = s.length * 6 + 3;
+  for (let a = 1; a < w - 1; a++) { px(x - 2 + a, y - 2, v); px(x - 2 + a, y + 8, v); }
+  for (let b = -1; b < 8; b++) { px(x - 2, y + b, v); px(x - 2 + w - 1, y + b, v); }
+  lcdText(s, x, y, 1, v);
+  return x - 2 + w;
+}
+const dotLine = (x0, x1, y) => { for (let x = x0; x < x1; x += 2) px(x, y); };
 function lcdText(s, x, y, sc = 1, v = 1) {
   for (const ch of s) { const g = FONT[ch]; if (g) for (let c = 0; c < 5; c++) for (let r = 0; r < 7; r++) if (g[c] >> r & 1) for (let a = 0; a < sc; a++) for (let b = 0; b < sc; b++) px(x + c * sc + a, y + r * sc + b, v); x += 6 * sc; }
   return x;
@@ -4442,45 +4729,48 @@ function readBins(idle) {
 function drawSpec(idle) {
   if (!specCv) return;
   readBins(idle);
-  lcdBuf.fill(0);
-  // top bar
-  lcdText("PAT", 0, 0); lcdText(String(state.pattern + 1).padStart(2, "0"), 20, 0, 1, 2);
-  const st = recording ? "● REC" : playing ? "▶ PLAY" : "■ STOP";
-  lcdText(st, 46, 0, 1, recording ? 2 : 1);
-  const bank = BANKS[state.bank];
-  lcdText("GRP " + bank.id + " " + lcdNorm(bank.name), 96, 0);
-  const vn = VIS[state.vis || 0][2]; lcdText(vn, LCD_W - vn.length * 6 + 1, 0, 1, 2);
-  for (let i = 0; i < LCD_W; i++) px(i, 8);
-  // left panel: tempo and position in big digits
-  lcdText("BPM", 0, 11); lcdText(pad3(state.bpm), 0, 19, 2, 1);
-  lcdText("BAR", 0, 37); lcdText($("vPos").textContent.slice(0, 3), 0, 45, 2, playing ? 2 : 1);
-  for (let y = 11; y < 61; y += 2) px(57, y);
+  lcdBuf.fill(0); clipL = 0; clipR = LCD_W;
+  // top bar: pattern in a lit box, transport, group, visualizer
+  let tx = chipText("P" + String(state.pattern + 1).padStart(2, "0"), 4, 2, 2);
+  tx = lcdText(recording ? "● REC" : playing ? "▶ PLAY" : "■ STOP", tx + 6, 2, 1, recording ? 2 : 1);
+  const vn = VIS[state.vis || 0][2], vx = LCD_W - 2 - vn.length * 6 + 1, bank = BANKS[state.bank];
+  let gname = bank.id + "·" + lcdNorm(bank.name);
+  const room = Math.floor((vx - 8 - (tx + 10)) / 6); if (gname.length > room) gname = gname.slice(0, Math.max(1, room - 1)) + ".";
+  lcdText(gname, tx + 10, 2); lcdText(vn, vx, 2, 1, 2);
+  dotLine(2, LCD_W - 2, 11);
+  // left panel: tempo and position, small printed labels over big digits
+  tinyText("BPM", 2, 14); tinyText(state.swing ? "SW " + state.swing + "%" : "", 30, 14);
+  lcdText(pad3(state.bpm), 2, 21, 2, 1);
+  tinyText("BAR.BEAT", 2, 38); if (pm().bars > 1) tinyText("/" + pm().bars, 40, 38);
+  lcdText($("vPos").textContent.slice(0, 3), 2, 45, 2, playing ? 2 : 1);
+  for (let y = 14; y < 66; y += 2) px(60, y);
   // step strip under the left panel
   const pat = state.patterns[state.pattern], sm = pm(), sb = edPage * sm.div;
   for (let s = 0; s < 16; s++) {
     // sixteen dots for the bar shown, whatever its grid: each one lights for the steps that fall under it
-    const x0 = 1 + s * 3 + Math.floor(s / 4), a = sb + Math.ceil(s * sm.div / 16), z = sb + Math.ceil((s + 1) * sm.div / 16);
+    const x0 = 2 + s * 3 + Math.floor(s / 4) * 2, a = sb + Math.ceil(s * sm.div / 16), z = sb + Math.ceil((s + 1) * sm.div / 16);
     let on = false; for (let q = a; q < z && !on; q++) on = pat.some(b => b.some(p => p[q]));
     const now = playing && shownStep >= a && shownStep < z;
-    for (let k = 0; k < 2; k++) { px(x0 + k, 60, now ? 2 : on ? 1 : 0); if (now) px(x0 + k, 59, 2); }
+    for (let k = 0; k < 2; k++) { px(x0 + k, 64, now ? 2 : on ? 1 : 0); if (now) px(x0 + k, 63, 2); else if (on) px(x0 + k, 63, 1); }
   }
   // visualizer area: fixed size, only its contents move
   const mode = VIS[state.vis || 0][0], x0 = VX, y0 = VY, w = VW, h = VH;
   if (mode === "spec") {
     for (let b = 0; b < 32; b++) {
-      const top = Math.round(specBins[b] * (h - 1)), pk = Math.round(specPeak[b] * (h - 1)), bx = x0 + b * 6;
-      for (let k = 0; k < top; k++) for (let c = 0; c < 5; c++) px(bx + c, y0 + h - 1 - k, 1);
-      if (pk > 1) for (let c = 0; c < 5; c++) px(bx + c, y0 + h - 1 - pk, 2);
+      const top = Math.round(specBins[b] * (h - 1)), pk = Math.round(specPeak[b] * (h - 1)), bx = x0 + Math.floor(b * w / 32), bw = Math.floor(w / 32) - 1;
+      for (let k = 0; k < top; k++) for (let c = 0; c < bw; c++) px(bx + c, y0 + h - 1 - k, 1);
+      if (pk > 1) for (let c = 0; c < bw; c++) px(bx + c, y0 + h - 1 - pk, 2);
     }
   } else if (mode === "mirror") {
     const mid = y0 + Math.floor(h / 2), cx = x0 + w / 2;
     for (let b = 0; b < 16; b++) {
       const v = Math.pow(specBins[b * 2], 1.3), hh = Math.round(v * (h / 2 - 1));
-      for (const bx of [cx + b * 6, cx - (b + 1) * 6]) for (let k = -hh; k <= hh; k++) for (let c = 1; c < 6; c++) px(bx + c, mid + k, Math.abs(k) === hh && hh > 2 ? 2 : 1);
+      const pitch = Math.floor(w / 32);
+      for (const bx of [cx + b * pitch, cx - (b + 1) * pitch]) for (let k = -hh; k <= hh; k++) for (let c = 1; c < pitch; c++) px(bx + c, mid + k, Math.abs(k) === hh && hh > 2 ? 2 : 1);
     }
   } else if (mode === "scope") {
     const mid = y0 + Math.floor(h / 2);
-    for (let x = x0; x < LCD_W; x += 4) px(x, mid); for (let y = y0; y < y0 + h; y += 4) for (let gx = 1; gx < 4; gx++) px(x0 + Math.round(w * gx / 4), y);
+    for (let x = x0; x < x0 + w; x += 4) px(x, mid); for (let y = y0; y < y0 + h; y += 4) for (let gx = 1; gx < 4; gx++) px(x0 + Math.round(w * gx / 4), y);
     if (ctx && N.spec && !idle) {
       if (!sbuf) sbuf = new Float32Array(N.spec.fftSize);
       N.spec.getFloatTimeDomainData(sbuf);
@@ -4501,7 +4791,7 @@ function drawSpec(idle) {
     }
     const bands = [[0, 8], [8, 20], [20, 32]].map(([a, z]) => { let s = 0; for (let b = a; b < z; b++) s += specBins[b]; return s / (z - a); });
     bands.forEach((v, k) => {
-      const yy = y0 + 8 + k * 13, len = Math.round(v * 66);
+      const yy = y0 + 8 + k * 13, len = Math.round(v * (w / 2 - 34));
       for (let q = 0; q < len; q += 2) for (let r = 0; r < 6; r++) { px(cx - 30 - q, yy + r); px(cx + 30 + q, yy + r); }
     });
   } else if (mode === "fall") {
@@ -4514,10 +4804,15 @@ function drawSpec(idle) {
     for (let r = 0; r < h; r++) for (let x = 0; x < w; x++) { const v = fallBuf[r * w + x]; if (v * 1.3 > (BAYER[(x & 3) + (r & 3) * 4] + 0.5) / 16) px(x0 + x, y0 + r, v > 0.72 ? 2 : 1); }
   }
   // message line, scrolling when it does not fit
-  for (let i = 0; i < LCD_W; i++) px(i, 62);
-  const m = lcdNorm($("msg").textContent), maxC = Math.floor(LCD_W / 6);
-  if (m.length <= maxC) lcdText(m, 0, 65);
-  else { const full = m + "   ·   ", off = Math.floor(performance.now() / 140) % full.length; lcdText((full + full).slice(off, off + maxC + 1), 0, 65); }
+  dotLine(2, LCD_W - 2, 68);
+  const m = lcdNorm($("msg").textContent), maxC = Math.floor((LCD_W - 4) / 6);
+  clipL = 2; clipR = LCD_W - 2;
+  if (m.length <= maxC) lcdText(m, 2, 71);
+  else {   // too long: it glides by, one dot at a time, and stays inside the frame
+    const full = m + "   ·   ", span = full.length * 6, off = Math.floor(performance.now() / 24) % span;
+    lcdText(full + full, 2 - off, 71);
+  }
+  clipL = 0; clipR = LCD_W;
   lcdRender();
 }
 const VIS = [["spec", "Spettro", "SPETTRO"], ["mirror", "Specchio", "SPECCHIO"], ["scope", "Oscilloscopio", "OSCILLO"], ["ring", "Cerchio", "CERCHIO"], ["fall", "Cascata", "CASCATA"]];
@@ -5310,7 +5605,7 @@ function showPage(id) {
   document.querySelectorAll(".page").forEach(pg => { pg.hidden = pg.dataset.page !== id; });
   [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.page === id));
   if (id !== "cust" && state.page !== id) { state.page = id; save(); }
-  fitPages(); sizeCanvases(); placeTabGlow();
+  fitPages(); sizeCanvases(); placeTabGlow(); if (id === "mix") drawEq();
 }
 // the LED under the tabs glides to the page you pick
 function placeTabGlow() {
@@ -5319,10 +5614,130 @@ function placeTabGlow() {
   if (!b) { g.style.opacity = 0; return; }
   g.style.opacity = 1; g.style.width = (b.offsetWidth - 28) + "px"; g.style.transform = "translateX(" + (b.offsetLeft + 14) + "px)";
 }
+/* ---------- equalizzatori: EQ '73 da banco sul master, tre bande e livello su ogni gruppo ---------- */
+// The master EQ follows the British console of the early 70s: high-pass, low shelf and mid bell on stepped
+// frequencies, high shelf fixed at 12 kHz. Every group has its own strip, like the channels of an old desk.
+const EQ_HP = [0, 50, 80, 160, 300], EQ_LO = [35, 60, 110, 220], EQ_MID = [360, 700, 1600, 3200, 4800, 7200];
+const EQ_FLAT = { hp: 0, lo: 0, loF: 60, mid: 0, midF: 1600, hi: 0 };
+const EQ_PRESETS = [
+  ["piatto", "Piatto", EQ_FLAT],
+  ["grassi", "Bassi grassi", { hp: 0, lo: 4, loF: 60, mid: -2.5, midF: 360, hi: 1.5 }],
+  ["polvere", "Polvere ’70", { hp: 50, lo: 2, loF: 110, mid: 1.5, midF: 1600, hi: -5 }],
+  ["radio", "Radio AM", { hp: 300, lo: -6, loF: 220, mid: 7, midF: 1600, hi: -12 }],
+  ["aria", "Aria", { hp: 50, lo: 0, loF: 60, mid: -1.5, midF: 700, hi: 4 }],
+];
+const GEQ = [["lowshelf", 110], ["peaking", 1200], ["highshelf", 7500]];   // group strip: bassi, medi, alti
+const fmtDb = v => (v > 0.05 ? "+" : "") + (Math.abs(v) < 0.05 ? "0" : v.toFixed(1)) + " dB";
+const fmtG = v => (v > 0.05 ? "+" : "") + (Math.abs(v) < 0.05 ? "0" : String(Math.round(v * 2) / 2).replace(".", ","));
+const fmtHz = f => f >= 1000 ? (f / 1000).toString().replace(".", ",") + "k" : String(f);
+function eqChain(c, q, out) {   // master EQ on any context (the live one, or the silent one that draws the curve)
+  const hp = c.createBiquadFilter(), lo = c.createBiquadFilter(), mid = c.createBiquadFilter(), hi = c.createBiquadFilter();
+  hp.type = "highpass"; hp.Q.value = 0.7; lo.type = "lowshelf"; mid.type = "peaking"; mid.Q.value = 0.9; hi.type = "highshelf"; hi.frequency.value = 12000;
+  hp.connect(lo).connect(mid).connect(hi); if (out) hi.connect(out);
+  return { hp, lo, mid, hi, input: hp, output: hi };
+}
+function eqSet(e, q, t) {
+  const at = (p, v) => t == null ? (p.value = v) : p.setTargetAtTime(v, t, 0.03);
+  at(e.hp.frequency, q.hp || 5); at(e.lo.frequency, q.loF); at(e.lo.gain, q.lo); at(e.mid.frequency, q.midF); at(e.mid.gain, q.mid); at(e.hi.gain, q.hi);
+}
+function stripChain(dest) {
+  const f = GEQ.map(([type, fr]) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = fr; if (type === "peaking") b.Q.value = 0.8; return b; });
+  const lvl = ctx.createGain();
+  f[0].connect(f[1]).connect(f[2]).connect(lvl).connect(dest);
+  return { f, lvl, in: f[0] };
+}
+function applyEq() {
+  if (ctx && N.eq) {
+    const t = ctx.currentTime;
+    eqSet(N.eq, state.meq, t);
+    N.grp.forEach((pair, b) => { const g = state.geq[b]; for (const s of pair) { s.f.forEach((f, k) => f.gain.setTargetAtTime(g[k], t, 0.03)); s.lvl.gain.setTargetAtTime(g[3], t, 0.03); } });
+  }
+  drawEq();
+}
+function setEqPreset(id) {
+  const p = EQ_PRESETS.find(x => x[0] === id); if (!p) return;
+  state.meq = Object.assign({}, p[2]); state.eqPreset = id; save(); applyEq(); renderEq();
+  msg("EQ ’73: " + p[1].toUpperCase());
+}
+function eqTouch() { state.eqPreset = ""; save(); applyEq(); renderEq(false); }
+function renderEq(knobsToo = true) {
+  const q = state.meq;
+  [...$("eqPresets").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state.eqPreset));
+  [["eqHp", "hp"], ["eqLoF", "loF"], ["eqMidF", "midF"]].forEach(([id, k]) => [...$(id).children].forEach(b => b.setAttribute("aria-pressed", +b.dataset.v === q[k])));
+  if (knobsToo) eqKnobs.forEach(k => k.draw());
+  drawEq();
+}
+// the curve, on a little amber screen: the master in full, each group as a faint line in its colour
+let eqOff = null, eqFreqs = null;
+function drawEq() {
+  const cv = $("eqCv"); if (!cv || !cv.offsetParent) return;
+  const W = cv.width, H = cv.height, c = cv.getContext("2d"), n = 200;
+  if (!eqOff) {
+    try { eqOff = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 128, 48000); } catch (e) { return; }
+    eqFreqs = new Float32Array(n); for (let i = 0; i < n; i++) eqFreqs[i] = 20 * Math.pow(1000, i / (n - 1));
+    eqOff.m = eqChain(eqOff, EQ_FLAT);
+    eqOff.g = GEQ.map(([type, fr]) => { const b = eqOff.createBiquadFilter(); b.type = type; b.frequency.value = fr; if (type === "peaking") b.Q.value = 0.8; return b; });
+  }
+  const mag = new Float32Array(n), ph = new Float32Array(n), resp = (filters) => {
+    const db = new Float32Array(n);
+    for (const f of filters) { f.getFrequencyResponse(eqFreqs, mag, ph); for (let i = 0; i < n; i++) db[i] += 20 * Math.log10(Math.max(1e-6, mag[i])); }
+    return db;
+  };
+  const st = getComputedStyle(document.documentElement), led = st.getPropertyValue("--led").trim() || "#ff9f2e";
+  const pad = 26, X = i => pad + (W - pad - 8) * i / (n - 1), Y = db => H / 2 - db / 15 * (H / 2 - 12);
+  c.fillStyle = "#0b0805"; c.fillRect(0, 0, W, H);
+  // grid: decades and the dB lines, printed like the scale behind a meter
+  c.font = "18px VT323, monospace"; c.textBaseline = "middle";
+  c.strokeStyle = "rgba(255,190,120,.08)"; c.lineWidth = 1; c.fillStyle = "rgba(255,200,140,.35)";
+  for (const f of [30, 50, 100, 200, 500, 1000, 2000, 5000, 10000]) { const x = pad + (W - pad - 8) * Math.log(f / 20) / Math.log(1000); c.beginPath(); c.moveTo(x, 6); c.lineTo(x, H - 18); c.stroke(); if ([30, 100, 1000, 10000].includes(f)) { c.textAlign = "center"; c.fillText(fmtHz(f), x, H - 8); } }
+  for (const db of [-12, -6, 0, 6, 12]) { const y = Y(db); c.strokeStyle = db ? "rgba(255,190,120,.08)" : "rgba(255,190,120,.22)"; c.beginPath(); c.moveTo(pad, y); c.lineTo(W - 8, y); c.stroke(); c.textAlign = "right"; c.fillText((db > 0 ? "+" : "") + db, pad - 4, y); }
+  // the groups, faint
+  state.geq.forEach((g, b) => {
+    if (!g[0] && !g[1] && !g[2]) return;
+    eqOff.g.forEach((f, k) => { f.gain.value = g[k]; });
+    const db = resp(eqOff.g);
+    c.strokeStyle = st.getPropertyValue("--h" + BANKS[b].id).trim() || led; c.globalAlpha = 0.55; c.lineWidth = 1.5;
+    c.beginPath(); for (let i = 0; i < n; i++) i ? c.lineTo(X(i), Y(db[i])) : c.moveTo(X(i), Y(db[i])); c.stroke(); c.globalAlpha = 1;
+  });
+  // the master, with a glow and the area under it
+  eqSet(eqOff.m, state.meq);
+  const db = resp([eqOff.m.hp, eqOff.m.lo, eqOff.m.mid, eqOff.m.hi]);
+  c.beginPath(); for (let i = 0; i < n; i++) i ? c.lineTo(X(i), Y(Math.max(-15, db[i]))) : c.moveTo(X(i), Y(Math.max(-15, db[i])));
+  c.lineTo(X(n - 1), Y(0)); c.lineTo(X(0), Y(0)); c.closePath();
+  c.fillStyle = led; c.globalAlpha = 0.12; c.fill(); c.globalAlpha = 1;
+  c.beginPath(); for (let i = 0; i < n; i++) i ? c.lineTo(X(i), Y(Math.max(-15, db[i]))) : c.moveTo(X(i), Y(Math.max(-15, db[i])));
+  c.strokeStyle = led; c.lineWidth = 2.5; c.shadowColor = led; c.shadowBlur = 10; c.stroke(); c.shadowBlur = 0;
+  // scan lines and a curved-glass sheen
+  c.fillStyle = "rgba(0,0,0,.18)"; for (let y = 0; y < H; y += 3) c.fillRect(0, y, W, 1);
+  const g = c.createRadialGradient(W * 0.3, -H * 0.2, 10, W * 0.3, -H * 0.2, W); g.addColorStop(0, "rgba(255,255,255,.06)"); g.addColorStop(1, "rgba(255,255,255,0)"); c.fillStyle = g; c.fillRect(0, 0, W, H);
+}
+const eqKnobs = [];
+function buildEq() {
+  EQ_PRESETS.forEach(([id, name]) => { const b = el("button", null, esc(name)); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { initAudio(); setEqPreset(id); }); $("eqPresets").appendChild(b); });
+  const seg = (host, list, key, fmt) => list.forEach(v => { const b = el("button", null, fmt(v)); b.type = "button"; b.dataset.v = v; b.addEventListener("click", () => { state.meq[key] = v; eqTouch(); }); $(host).appendChild(b); });
+  seg("eqHp", EQ_HP, "hp", v => v ? fmtHz(v) : "Off"); seg("eqLoF", EQ_LO, "loF", fmtHz); seg("eqMidF", EQ_MID, "midF", fmtHz);
+  const kn = (host, label, key) => eqKnobs.push(makeKnob($(host), { label, min: -12, max: 12, center: true, get: () => state.meq[key], set: v => { state.meq[key] = Math.abs(v) < 0.3 ? 0 : Math.round(v * 2) / 2; eqTouch(); }, fmt: fmtDb }));
+  kn("eqLoK", "Bassi", "lo"); kn("eqMidK", "Medi", "mid"); kn("eqHiK", "Alti 12k", "hi");
+  renderEq();
+}
+// group strips on the Mix page: name, meter, on-air switch, and the three bands with the level
+function buildStrips() {
+  BANKS.forEach((bk, i) => {
+    const g = el("div", "gstrip");
+    g.style.setProperty("--g", "var(--h" + bk.id + ")");
+    g.innerHTML = '<div class="gtop"><b>' + bk.id + '</b><span class="gn">' + esc(bk.name) + '</span><button class="gonair" type="button"></button></div><div class="gbody"><span class="gm"><i></i></span><div class="gknobs"></div></div>';
+    g.querySelector(".gonair").addEventListener("click", () => { state.mutes[i] = !state.mutes[i]; save(); renderBanks(); renderEditorHead(); renderGroups(); msg("GRUPPO " + bk.id + (state.mutes[i] ? " MUTO" : " IN ONDA")); });
+    const host = g.querySelector(".gknobs"), col = () => getComputedStyle(document.documentElement).getPropertyValue("--h" + bk.id).trim();
+    ["Bassi", "Medi", "Alti"].forEach((label, k) => makeKnob(host, { label, min: -12, max: 12, center: true, col, get: () => state.geq[i][k], set: v => { state.geq[i][k] = Math.abs(v) < 0.3 ? 0 : Math.round(v * 2) / 2; save(); applyEq(); }, fmt: fmtG }));
+    makeKnob(host, { label: "Livello", min: 0, max: 1.5, def: 1, col, get: () => state.geq[i][3], set: v => { state.geq[i][3] = Math.abs(v - 1) < 0.03 ? 1 : v; save(); applyEq(); }, fmt: v => v < 0.01 ? "−∞" : fmtG(20 * Math.log10(v)) });
+    $("gstrips").appendChild(g);
+  });
+  renderGroups();
+}
 // the four groups on the Mix page: mute buttons and a meter that jumps on every hit
 const grpHit = [[], [], [], []];   // recent hits per group (the sequencer schedules them a little ahead)
 function renderGroups() {
-  [...$("gstrips").children].forEach((g, i) => { g.classList.toggle("muted", state.mutes[i]); g.setAttribute("aria-pressed", state.mutes[i]); g.querySelector(".gs").textContent = state.mutes[i] ? "Muto · tocca per riattivare" : "In onda"; });
+  [...$("gstrips").children].forEach((g, i) => { g.classList.toggle("muted", state.mutes[i]); const b = g.querySelector(".gonair"); b.setAttribute("aria-pressed", !state.mutes[i]); b.textContent = state.mutes[i] ? "Muto" : "In onda"; });
 }
 function meterGroups() {
   if (!$("gstrips").offsetParent) return;
@@ -5334,13 +5749,7 @@ function meterGroups() {
   });
 }
 function buildPages() {
-  BANKS.forEach((bk, i) => {
-    const g = el("button", "gstrip", '<span><b>' + bk.id + '</b><span class="gn">' + esc(bk.name) + '</span></span><span class="gm"><i></i></span><span class="gs"></span>');
-    g.type = "button"; g.style.setProperty("--g", "var(--h" + bk.id + ")");
-    g.addEventListener("click", () => { state.mutes[i] = !state.mutes[i]; save(); renderBanks(); renderEditorHead(); renderGroups(); msg("GRUPPO " + bk.id + (state.mutes[i] ? " MUTO" : " IN ONDA")); });
-    $("gstrips").appendChild(g);
-  });
-  renderGroups();
+  buildStrips(); buildEq();
   const loop = () => { meterGroups(); requestAnimationFrame(loop); }; requestAnimationFrame(loop);
   PAGES.forEach(([id, name]) => {
     const b = el("button", "", "<i></i>" + esc(name));
