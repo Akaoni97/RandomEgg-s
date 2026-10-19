@@ -34,6 +34,9 @@ export const DISTRICTS = [
     walls: ['#f5f3ee', '#dbe8f1', '#f7efe0', '#e5eef0'] },
 ];
 export const isStreet = (x, y) => x % STREET === 0 || y % STREET === 0;
+// Il canale scende dalla collina al mare tra Borgo Ovest e il Centro; le vie lo passano sui ponti.
+export const CANAL = { x0: 26, x1: 28, y0: 8 };
+export const isCanal = (x, y) => x >= CANAL.x0 && x <= CANAL.x1 && y >= CANAL.y0 && y <= SEA_Y;
 // Posizione dentro l'isolato (1..4): i lotti sono gli angoli che guardano a sud o a est.
 const LOT_SPOTS = ['4,1', '1,4', '4,4'];
 
@@ -186,7 +189,7 @@ export const PLAN = (() => {
       if (!d || y >= SEA_Y) continue;
       district[y * W + x] = d.id;
       const k = key(x, y);
-      if (isStreet(x, y) || y === MAIN_Y || inPiazza(x, y) || futureRoads.has(k) || shopAt(x, y)) continue;
+      if (isStreet(x, y) || y === MAIN_Y || inPiazza(x, y) || futureRoads.has(k) || shopAt(x, y) || isCanal(x, y)) continue;
       const bx = x % STREET, by = y % STREET;
       // L'isolato deve stare tutto nel quartiere (e sopra la spiaggia)
       const [rx0, ry0, rx1, ry1] = d.rect;
@@ -250,7 +253,7 @@ function routeFrom(lotKey, net, openDistricts) {
         return { path: path.reverse(), reach: nk };
       }
       const dId = districtAt(nx, ny);
-      if (!dId || dId > openDistricts || PLAN.lots.has(nk) || shopAt(nx, ny)) continue;
+      if (!dId || dId > openDistricts || PLAN.lots.has(nk) || shopAt(nx, ny) || isCanal(nx, ny)) continue;
       prev.set(nk, key(x, y));
       queue.push([nx, ny]);
     }
@@ -290,6 +293,12 @@ export function canReach(lotKey, houses, openDistricts) {
 // 2 Collina Nord e prime alture, 3 montagne in fondo alla mappa.
 export function levelAt(x, y, openDistricts) {
   if (y > SEA_Y) return -1;
+  // Acqua del canale, tranne dove passa un ponte (statale e vie dei quartieri aperti)
+  if (isCanal(x, y)) {
+    const d0 = districtAt(x, y);
+    const bridge = y === MAIN_Y || (y % STREET === 0 && d0 && d0 <= openDistricts && y < SEA_Y);
+    if (!bridge) return -1;
+  }
   if (y === SEA_Y) return 0;
   const d = districtAt(x, y);
   if (d === 4 && y < 15) return 2;
@@ -305,7 +314,8 @@ export function levelAt(x, y, openDistricts) {
 // Dove si può camminare: ovunque sulla terraferma tranne dentro le case.
 // Si cambia livello solo su strade, vialetti e piazza, dove ci sono le scale.
 export function walkable(s, x, y) {
-  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)] && !shopAt(x, y) && !PIAZZA_BLOCKED.has(key(x, y));
+  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)] && !shopAt(x, y) && !PIAZZA_BLOCKED.has(key(x, y))
+    && !(isCanal(x, y) && !s.roads[key(x, y)]);
 }
 export function canStep(s, ax, ay, bx, by) {
   if (!walkable(s, bx, by)) return false;
