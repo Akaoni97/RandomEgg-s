@@ -66,6 +66,34 @@ export const DECOS = [
 ];
 export const SHAPES = ['casa', 'villetta', 'torretta'];
 
+// Editor del personaggio: ogni scelta è un indice (colori) o un id (pettinatura, accessorio).
+export const LOOK = {
+  skin: ['#f6dcc6', '#f3d2b3', '#e8b98f', '#c98d63', '#a8714a', '#8d5b3d', '#5e3b26'],
+  hair: ['#1f1a17', '#3b2a1e', '#6b4226', '#a4532e', '#d9a441', '#efd9a0', '#8a8a8a', '#e86b8a', '#3f6aa1'],
+  style: [{ id: 'corti', label: 'Corti' }, { id: 'lunghi', label: 'Lunghi' }, { id: 'coda', label: 'Coda' }, { id: 'ricci', label: 'Ricci' }],
+  shirt: ['#d9442f', '#e88a3a', '#e0a92a', '#2f7d4f', '#4fb3c8', '#3f6aa1', '#7a4a6b', '#e86b8a', '#f1ede4', '#2d2d2d'],
+  pants: ['#2d3a4a', '#2f4f6f', '#4b4f56', '#6b4a2f', '#c9b48f', '#2d2d2d'],
+  extra: [{ id: 'nessuno', label: 'Niente' }, { id: 'cappellino', label: 'Cappellino' }, { id: 'occhiali', label: 'Occhiali' }, { id: 'fiore', label: 'Fiore' }],
+};
+// Aspetto di partenza, uguale per sempre per lo stesso nome finché l'abitante non sceglie il suo.
+export function defaultLook(name) {
+  const h = hash(String(name));
+  return {
+    skin: h % LOOK.skin.length, hair: (h >>> 3) % 6, style: LOOK.style[(h >>> 14) % 2].id,
+    shirt: (h >>> 6) % LOOK.shirt.length, pants: (h >>> 9) % 4, extra: (h >>> 12) % 3 === 0 ? 'cappellino' : 'nessuno',
+  };
+}
+export function cleanLook(raw, name) {
+  const base = defaultLook(name);
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const idx = (v, list, fb) => (Number.isInteger(v) && v >= 0 && v < list.length ? v : fb);
+  const id = (v, list, fb) => (list.some((o) => o.id === v) ? v : fb);
+  return {
+    skin: idx(r.skin, LOOK.skin, base.skin), hair: idx(r.hair, LOOK.hair, base.hair), style: id(r.style, LOOK.style, base.style),
+    shirt: idx(r.shirt, LOOK.shirt, base.shirt), pants: idx(r.pants, LOOK.pants, base.pants), extra: id(r.extra, LOOK.extra, base.extra),
+  };
+}
+
 export class DomainError extends Error {
   constructor(code, message) {
     super(message);
@@ -471,6 +499,12 @@ const OPS = {
     const h = residentHouse(s, r.id);
     if (!h) throw invalid('Non hai ancora una casa.');
     h.style = makeStyle(h.slot, { ...h.style, ...op.style });
+    return { ok: true };
+  },
+
+  look(s, op, ctx) {
+    const r = needResident(s, ctx);
+    r.look = cleanLook(op.look, r.username);
     return { ok: true };
   },
 

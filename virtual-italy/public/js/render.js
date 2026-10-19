@@ -4,7 +4,7 @@
 // sopra, uno strato leggero anima onde, fontana, barche e automobili.
 import {
   W, H, MAIN_Y, SEA_Y, PIAZZA, DISTRICTS, PLAN, ROOFS, DOORS, FOUNTAIN_AT,
-  key, parseKey, districtAt, districtById, inPiazza, builtCount, isFounder, formatNews, CITY, PAPER, levelAt, hash, walkPath,
+  key, parseKey, districtAt, districtById, inPiazza, builtCount, isFounder, formatNews, CITY, PAPER, levelAt, hash, walkPath, LOOK, cleanLook,
 } from './core.js';
 
 export const T = 32; // lato di una casella in unità del mondo
@@ -1295,15 +1295,10 @@ export function drawAmbient(g, city, view, o, t) {
 
 /* Abitanti a passeggio ------------------------------------------------------ */
 
-const SKINS = ['#f3d2b3', '#e8b98f', '#c98d63', '#8d5b3d', '#f6dcc6'];
-const HAIRS = ['#3b2a1e', '#6b4226', '#d9a441', '#1f1a17', '#a4532e', '#8a8a8a'];
-const SHIRTS = ['#d9442f', '#3f6aa1', '#2f7d4f', '#e0a92a', '#7a4a6b', '#e86b8a', '#4fb3c8', '#f1ede4'];
-export function avatarLook(name) {
-  const h = hash(String(name));
-  return {
-    skin: SKINS[h % SKINS.length], hair: HAIRS[(h >>> 3) % HAIRS.length], shirt: SHIRTS[(h >>> 6) % SHIRTS.length],
-    pants: ['#2d3a4a', '#4b4f56', '#6b4a2f', '#2f4f6f'][(h >>> 9) % 4], cap: (h >>> 12) % 3 === 0, long: (h >>> 14) % 2 === 0,
-  };
+// Colori e forme dell'omino: le scelte dell'abitante, oppure l'aspetto di partenza legato al nome.
+export function avatarLook(name, chosen) {
+  const l = cleanLook(chosen, name);
+  return { skin: LOOK.skin[l.skin], hair: LOOK.hair[l.hair], shirt: LOOK.shirt[l.shirt], pants: LOOK.pants[l.pants], style: l.style, extra: l.extra };
 }
 
 // L'omino in stile Pokémon: testa grande, quattro direzioni, due pose di camminata.
@@ -1330,25 +1325,48 @@ export function drawAvatar(g, x, y, dir, step, look, { me = false, night = false
   if (!side) { g.fillRect(-5.6, -7, 1.6, 1.4); g.fillRect(4, -7, 1.6, 1.4); }
   // Testa
   const hy = -18.4 + bob;
+  const st = look.style;
+  // Coda e capelli lunghi dietro la testa (si vedono di spalle e di lato)
+  g.fillStyle = look.hair;
+  if (st === 'lunghi' && dir !== 'N') { g.fillRect(-5.6, hy - 1, 2, 6.4); if (!side) g.fillRect(3.6, hy - 1, 2, 6.4); }
+  if (st === 'coda' && dir !== 'S') { g.beginPath(); g.ellipse(side ? -5.6 : 0, hy + (side ? 0.5 : 2.5), 1.9, 3.6, side ? 0.5 : 0, 0, 7); g.fill(); }
   g.fillStyle = look.skin; g.beginPath(); g.arc(0, hy, 5.4, 0, 7); g.fill();
   g.fillStyle = look.hair;
-  if (dir === 'N') { g.beginPath(); g.arc(0, hy, 5.6, 0, 7); g.fill(); if (look.long) g.fillRect(-4.6, hy, 9.2, 5); }
-  else {
+  if (dir === 'N') {
+    g.beginPath(); g.arc(0, hy, 5.6, 0, 7); g.fill();
+    if (st === 'lunghi') g.fillRect(-4.6, hy, 9.2, 5.6);
+    if (st === 'coda') { g.fillStyle = '#e85d75'; g.fillRect(-1.2, hy + 1.4, 2.4, 1.2); g.fillStyle = look.hair; g.beginPath(); g.ellipse(0, hy + 4.6, 1.8, 3, 0, 0, 7); g.fill(); }
+  } else {
     g.beginPath(); g.arc(0, hy - 0.6, 5.6, Math.PI * 1.05, Math.PI * 1.95); g.lineTo(5.4, hy - 0.5); g.lineTo(-5.4, hy - 0.5); g.closePath(); g.fill();
-    if (look.long) { g.fillRect(-5.6, hy - 1, 2, 6); if (!side) g.fillRect(3.6, hy - 1, 2, 6); }
     g.fillStyle = '#1f1f1f';
     if (side) g.fillRect(2.4, hy + 0.2, 1.1, 1.8);
     else { g.fillRect(-2.4, hy + 0.2, 1.1, 1.8); g.fillRect(1.3, hy + 0.2, 1.1, 1.8); }
     g.fillStyle = 'rgba(230,110,110,0.35)';
     if (!side) { g.fillRect(-3.8, hy + 2.2, 1.4, 0.8); g.fillRect(2.4, hy + 2.2, 1.4, 0.8); }
   }
-  if (look.cap) {
+  if (st === 'ricci') {
+    g.fillStyle = look.hair;
+    for (const [cx, cy, r] of [[-4.2, -2.6, 2.2], [-1.8, -4.6, 2.4], [1.2, -4.8, 2.4], [3.9, -3, 2.2], [-5, 0, 1.7], [5, 0, 1.7]]) {
+      if (side && cx > 3) continue;
+      g.beginPath(); g.arc(cx, hy + cy, r, 0, 7); g.fill();
+    }
+  }
+  if (look.extra === 'cappellino') {
     g.fillStyle = shade(look.shirt, -0.05);
-    g.beginPath(); g.arc(0, hy - 1.4, 5.7, Math.PI, 0); g.closePath(); g.fill();
+    g.beginPath(); g.arc(0, hy - 1.4, 5.8, Math.PI, 0); g.closePath(); g.fill();
     g.fillStyle = '#ffffff'; g.fillRect(-1.4, hy - 6, 2.8, 1.6);
     g.fillStyle = shade(look.shirt, -0.25);
     if (side) g.fillRect(2, hy - 2, 5, 1.4);
     else if (dir === 'S') g.fillRect(-5, hy - 1.6, 10, 1.5);
+  } else if (look.extra === 'occhiali' && dir !== 'N') {
+    g.strokeStyle = '#1f1f1f'; g.lineWidth = 0.6;
+    if (side) { g.strokeRect(1.8, hy - 0.2, 2.4, 2.2); g.beginPath(); g.moveTo(1.8, hy + 0.6); g.lineTo(-2, hy); g.stroke(); }
+    else { g.strokeRect(-3.2, hy - 0.2, 2.6, 2.2); g.strokeRect(0.6, hy - 0.2, 2.6, 2.2); g.beginPath(); g.moveTo(-0.6, hy + 0.6); g.lineTo(0.6, hy + 0.6); g.stroke(); }
+  } else if (look.extra === 'fiore') {
+    const fx = side ? -3 : dir === 'N' ? 3.4 : -3.6, fy = hy - 4;
+    g.fillStyle = '#f6d84a'; g.beginPath(); g.arc(fx, fy, 0.9, 0, 7); g.fill();
+    g.fillStyle = '#e85d75';
+    for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; g.beginPath(); g.arc(fx + Math.cos(a) * 1.6, fy + Math.sin(a) * 1.6, 1, 0, 7); g.fill(); }
   }
   g.restore();
   if (me) {
@@ -1452,8 +1470,8 @@ export class CityMap {
     for (const id of this.avatars.keys()) if (!ids.has(id)) this.avatars.delete(id);
     for (const a of list) {
       const cur = this.avatars.get(a.id);
-      if (cur) { cur.name = a.name; cur.me = a.me; continue; }
-      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], path: [], dir: 'S', look: avatarLook(a.name), name: a.name, me: a.me, walked: 0 });
+      if (cur) { cur.name = a.name; cur.me = a.me; cur.look = avatarLook(a.name, a.look); continue; }
+      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], path: [], dir: 'S', look: avatarLook(a.name, a.look), name: a.name, me: a.me, walked: 0 });
     }
     this.avatarsDirty = true;
   }

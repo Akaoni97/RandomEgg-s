@@ -3,9 +3,9 @@
 import {
   CITY, PAPER, ROOFS, DOORS, GARDENS, DECOS, PLAN, FOUNDERS, RESERVE_MS, UNLOCK_RATIO,
   districtAt, districtById, parseKey, makeStyle, residentHouse, builtCount, isFounder, areFriends, friendsOf,
-  formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint,
+  formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook,
 } from './core.js';
-import { CityMap, drawPreview, renderPoster } from './render.js';
+import { CityMap, drawPreview, renderPoster, drawAvatar, avatarLook } from './render.js';
 import { RemoteStore, LocalStore } from './store.js';
 
 const DEMO = window.__VI_MODE === 'demo' || new URLSearchParams(location.search).has('demo');
@@ -311,7 +311,7 @@ function openRegister() {
         devLinkToast(r);
         closeSheet();
         toast(`Account creato. Ti abbiamo mandato un'email per confermare.`);
-        startChoosing();
+        openCharacter({ first: true });
       } catch (ex) { showError(err, ex); }
     });
   });
@@ -467,6 +467,68 @@ function openBuild(slot, { restyle = false } = {}) {
     h('div', { class: 'stack' }, groups, btn)), { wide: true });
 }
 
+/* Editor del personaggio ------------------------------------------------- */
+
+function openCharacter({ first = false } = {}) {
+  const r = myResident();
+  if (!r) return openLogin();
+  const look = cleanLook(r.look, r.username);
+  const preview = h('canvas', { class: 'avatar-preview', width: 360, height: 360, 'aria-label': 'Anteprima del tuo personaggio' });
+  const groups = h('div', { class: 'stack' });
+  // L'omino cammina sul posto e si gira nelle quattro direzioni.
+  const dirs = ['S', 'E', 'N', 'W'];
+  const t0 = performance.now();
+  const animate = (t) => {
+    if (!preview.isConnected) return;
+    const g = preview.getContext('2d');
+    const k = (t - t0) / 1000;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, 360, 360);
+    const sky = g.createRadialGradient(180, 230, 20, 180, 230, 200);
+    sky.addColorStop(0, '#d9ecbf'); sky.addColorStop(1, '#a9cf7f');
+    g.fillStyle = sky; g.beginPath(); g.ellipse(180, 270, 150, 60, 0, 0, 7); g.fill();
+    g.setTransform(7.2, 0, 0, 7.2, 180, 282);
+    drawAvatar(g, 0, 0, dirs[Math.floor(k / 1.4) % 4], (Math.floor(k * 4.5) % 2) + 1, avatarLook(r.username, look), { bob: 0 });
+    requestAnimationFrame(animate);
+  };
+  const colorRow = (label, key, list) => h('div', {}, h('p', { class: 'field-label' }, label),
+    h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': label }, list.map((c, i) => h('button', {
+      type: 'button', class: 'swatch color' + (look[key] === i ? ' on' : ''), style: `--sw:${c}`, role: 'radio',
+      'aria-checked': String(look[key] === i), 'aria-label': `${label} ${i + 1}`, onclick: () => { look[key] = i; paint(); },
+    }))));
+  const idRow = (label, key, list) => h('div', {}, h('p', { class: 'field-label' }, label),
+    h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': label }, list.map((o) => h('button', {
+      type: 'button', class: 'swatch' + (look[key] === o.id ? ' on' : ''), role: 'radio', 'aria-checked': String(look[key] === o.id),
+      onclick: () => { look[key] = o.id; paint(); },
+    }, o.label))));
+  const paint = () => groups.replaceChildren(
+    colorRow('Carnagione', 'skin', LOOK.skin),
+    idRow('Pettinatura', 'style', LOOK.style),
+    colorRow('Colore dei capelli', 'hair', LOOK.hair),
+    colorRow('Maglietta', 'shirt', LOOK.shirt),
+    colorRow('Pantaloni', 'pants', LOOK.pants),
+    idRow('Accessorio', 'extra', LOOK.extra));
+  const shuffle = () => {
+    const pick = (n) => Math.floor(Math.random() * n);
+    Object.assign(look, { skin: pick(LOOK.skin.length), hair: pick(LOOK.hair.length), style: LOOK.style[pick(LOOK.style.length)].id,
+      shirt: pick(LOOK.shirt.length), pants: pick(LOOK.pants.length), extra: LOOK.extra[pick(LOOK.extra.length)].id });
+    paint();
+  };
+  paint();
+  const save = h('button', { class: 'btn primary big', onclick: (e) => run(e.currentTarget, async () => {
+    await store.op({ type: 'look', look });
+    if (first) { toast('Che stile! Ora scegli dove costruire casa.'); startChoosing(); }
+    else { closeSheet(); toast('Personaggio aggiornato'); }
+  }) }, first ? 'Avanti: scegli il lotto' : 'Salva il personaggio');
+  openSheet(first ? 'Come sei?' : 'Il mio personaggio', h('div', { class: 'stack' },
+    h('div', { class: 'avatar-head' }, preview,
+      h('div', { class: 'stack' },
+        h('p', { class: 'small' }, first ? `Questo è ${r.username}: così ti vedranno gli altri abitanti mentre passeggi.` : 'Così ti vedono gli altri abitanti mentre passeggi.'),
+        h('button', { class: 'btn small', onclick: shuffle }, 'A caso'))),
+    groups, save), { wide: true, onClose: first ? () => { if (!myHouse() && ui.mode !== 'choose') startChoosing(); } : undefined });
+  requestAnimationFrame(animate);
+}
+
 /* Case e abitanti -------------------------------------------------------- */
 
 function openHouse(slot) {
@@ -600,6 +662,7 @@ function openProfile() {
     h('h3', {}, 'Account'),
     h('p', { class: 'small' }, `Email: ${mine.email}`),
     h('div', { class: 'row-wrap' },
+      h('button', { class: 'btn', onclick: () => openCharacter() }, icon('user'), 'Il mio personaggio'),
       mine.admin ? h('button', { class: 'btn', onclick: openRedazione }, icon('desk'), 'Redazione') : null,
       h('button', { class: 'btn', onclick: (e) => run(e.currentTarget, async () => showExport(await store.exportData())) }, 'Scarica i miei dati'),
       h('button', { class: 'btn', onclick: (e) => run(e.currentTarget, async () => { await store.logout(); closeSheet(); toast('Sei uscito. A presto!'); }) }, 'Esci'),
@@ -778,7 +841,7 @@ function syncAvatars() {
   const ids = new Set([...store.online].filter((id) => city.residents[id]));
   if (me() && city.residents[me().id]) ids.add(me().id);
   map.setAvatars([...ids].map((id) => ({
-    id, name: city.residents[id].username, me: id === me()?.id,
+    id, name: city.residents[id].username, me: id === me()?.id, look: city.residents[id].look,
     pos: store.avatars?.[id] || spawnPoint(city, id),
   })));
 }

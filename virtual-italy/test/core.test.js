@@ -197,3 +197,16 @@ test('livelli del terreno e passeggiate: si cambia livello solo dalle strade', a
   assert.equal(walkPath(s, home, [40, 55]), null, 'nel mare non si cammina');
   assert.deepEqual(walkPath(s, home, home), []);
 });
+
+test("editor del personaggio: valori controllati, aspetto di partenza stabile", async () => {
+  const { cleanLook, defaultLook, LOOK } = await import('../public/js/core.js');
+  let s = join(emptyState(0), 'a', 'anna.b');
+  assert.deepEqual(cleanLook(undefined, 'anna.b'), defaultLook('anna.b'));
+  s = applyOp(s, { type: 'look', look: { skin: 2, hair: 4, style: 'ricci', shirt: 1, pants: 0, extra: 'occhiali' } }, as('a')).state;
+  assert.deepEqual(s.residents.a.look, { skin: 2, hair: 4, style: 'ricci', shirt: 1, pants: 0, extra: 'occhiali' });
+  s = applyOp(s, { type: 'look', look: { skin: 99, hair: -1, style: '<script>', shirt: 'rosso', extra: 'corona' } }, as('a')).state;
+  const d = defaultLook('anna.b');
+  assert.deepEqual(s.residents.a.look, { skin: d.skin, hair: d.hair, style: d.style, shirt: d.shirt, pants: d.pants, extra: d.extra }, 'valori sbagliati tornano a quelli di partenza');
+  assert.ok(d.skin < LOOK.skin.length && LOOK.style.some((o) => o.id === d.style));
+  assert.throws(() => applyOp(s, { type: 'look', look: {} }, as('nessuno')), { code: 'auth' });
+});
