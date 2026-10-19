@@ -42,6 +42,8 @@ const ICONS = {
   desk: '<path d="M4 6h16v10H4zM9 20h6M12 16v4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
+  turnL: '<path d="M8 4 4 8l4 4"/><path d="M4 8h9a6 6 0 0 1 0 12H9"/>',
+  turnR: '<path d="m16 4 4 4-4 4"/><path d="M20 8h-9a6 6 0 0 0 0 12h4"/>',
   fountain: '<path d="M4 15h16M6 15c0 3 2.7 5 6 5s6-2 6-5M12 15V8M12 8c-2 0-3.5 1.2-4 3M12 8c2 0 3.5 1.2 4 3M12 5v1"/>',
   flask: '<path d="M10 3h4M10.5 3v5.5L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5.5-9.5V3M7.5 14h9"/>',
   pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
@@ -107,13 +109,16 @@ function shell() {
       h('div', { class: 'notice', id: 'notice', hidden: true })),
     h('div', { class: 'zoom' },
       h('button', { class: 'tab', onclick: () => map.zoomStep(1), 'aria-label': 'Ingrandisci' }, icon('plus')),
-      h('button', { class: 'tab', onclick: () => map.zoomStep(-1), 'aria-label': 'Rimpicciolisci' }, icon('minus'))),
+      h('button', { class: 'tab', onclick: () => map.zoomStep(-1), 'aria-label': 'Rimpicciolisci' }, icon('minus')),
+      h('button', { class: 'tab turn', onclick: () => map.rotate(-1), 'aria-label': 'Gira la città a sinistra' }, icon('turnL')),
+      h('button', { class: 'tab turn', onclick: () => map.rotate(1), 'aria-label': 'Gira la città a destra' }, icon('turnR'))),
     h('footer', { class: 'bottom', id: 'bottom' }),
     h('div', { class: 'scrim', id: 'scrim', hidden: true, onclick: closeSheet }),
     h('section', { class: 'sheet', id: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'true' }),
     h('div', { class: 'toasts', id: 'toasts' }),
   );
   map = new CityMap($('#map'), { onTap });
+  if (!map.t3) for (const b of document.querySelectorAll('.zoom .turn')) b.hidden = true;
   window.__virtualItaly = { store, map }; // comodo per il debug dalla console
 }
 

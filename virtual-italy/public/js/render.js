@@ -10,6 +10,7 @@ import { shade, ih, clamp01, poly, add, lerp, blob, glow } from './art.js';
 import {
   TILE, townCenter, TOWN_WORLD, townElev, surfaceOf, drawTown, drawTownLights, drawTownAmbient, townTileAt, drawHouse3, townVisible, warmLight,
 } from './town.js';
+import { Town3D, has3D, renderHouseStill, renderTownStill } from './town3d.js';
 
 
 /* Geometria isometrica --------------------------------------------------- */
@@ -745,6 +746,16 @@ export class CityMap {
     this.interactUntil = 0;
     this.pointers = new Map();
     this.still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // La città in 3D sta in una tela sotto questa; qui sopra restano nomi, nuvolette e stanze.
+    // Senza WebGL si resta alla vista piatta di sempre.
+    this.t3 = null;
+    if (has3D()) {
+      const gl = document.createElement('canvas');
+      gl.className = 'map3d'; gl.setAttribute('aria-hidden', 'true');
+      canvas.parentNode.insertBefore(gl, canvas);
+      try { this.t3 = new Town3D(gl); this.gl = gl; } catch { gl.remove(); this.t3 = null; }
+    }
+    this.cityDirty = true;
     this.bind();
     this.resize();
     new ResizeObserver(() => this.resize()).observe(canvas);
@@ -754,17 +765,19 @@ export class CityMap {
       this.now = t;
       const interacting = this.pointers.size > 0 || t < this.interactUntil;
       if (!interacting && this.needSnap) { this.needSnap = false; this.snapZoom(); }
+      if (this.turning(t)) this.dirty = true;
       const growing = this.animating(t);
       const walking = this.tickAvatars(t);
       if ((this.dirty || growing) && interacting && this.layerCam && !this.stale()) this.fast();
       else if (this.dirty || growing) { this.dirty = false; this.render(t, true); this.lastAmbient = t; }
       else if ((walking || this.bubbling(t) || this.acting(t)) && t - this.lastAmbient > 33) { this.render(t, false); this.lastAmbient = t; }
-      else if (this.avatarsDirty || (!this.still && t - this.lastAmbient > 66)) { this.avatarsDirty = false; this.render(t, false); this.lastAmbient = t; }
+      else if (this.avatarsDirty || (!this.still && t - this.lastAmbient > (this.is3d() ? 33 : 66))) { this.avatarsDirty = false; this.render(t, false); this.lastAmbient = t; }
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
   }
 
+  is3d() { return !!this.t3 && !this.scene; }
   levelOf(x, y) { return this.city ? levelAt(Math.round(x), Math.round(y), this.city.openDistricts) : 0; }
 
   /* Omini */
@@ -818,6 +831,7 @@ export class CityMap {
   enterRoom(ownerId) {
     if (!this.scene) this.townCam = { ...this.cam };
     this.scene = ownerId;
+    if (this.gl) this.gl.hidden = true;
     this.roomUI = {};
     // La stanza riempie la larghezza dello schermo e sta nella metà alta, sopra i comandi.
     this.cam.z = Math.max(1, Math.round((Math.min(this.vw, this.vh * 1.2) * this.dpr) / 450)) / this.dpr;
@@ -847,13 +861,21 @@ export class CityMap {
       while (left > 0 && a.path.length) {
         const [nx, ny] = a.path[0];
         const dx = nx - a.x, dy = ny - a.y, d = Math.hypot(dx, dy);
-        if (d > 0.001) a.dir = a.room ? DIR_OF(dx, dy) : DIR_TOWN(dx, dy);
+        if (d > 0.001) { a.dir = a.room ? DIR_OF(dx, dy) : DIR_TOWN(dx, dy); if (!a.room) a.mv = [dx, dy]; }
         if (d <= left) { a.x = nx; a.y = ny; a.path.shift(); left -= d; } else { a.x += (dx / d) * left; a.y += (dy / d) * left; left = 0; }
       }
       if (!a.path.length) this.settle(a);
       a.walked += dt * speed;
       // La telecamera segue il proprio omino quando esce dal centro dello schermo.
-      if (a.me && !this.scene && !this.pointers.size) {
+      if (a.me && this.is3d() && !this.pointers.size) {
+        const v = this.t3.view, h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
+        const [sx, sy] = this.t3.project(a.x + 0.5, a.y + 0.5, h);
+        if (Math.abs(sx - this.vw / 2) > this.vw * 0.26 || Math.abs(sy - this.vh / 2) > this.vh * 0.2) {
+          v.x += (a.x + 0.5 - v.x) * 0.05; v.y += (a.y + 0.5 - v.y) * 0.05;
+          this.interactUntil = t + 200;
+          this.dirty = true;
+        }
+      } else if (a.me && !this.scene && !this.pointers.size) {
         const [wx, wy] = this.avatarScreen(a);
         const sx = (wx - this.cam.x) * this.cam.z, sy = (wy - 24 - this.cam.y) * this.cam.z;
         const mx = this.vw * 0.28, my = this.vh * 0.2;
@@ -919,6 +941,8 @@ export class CityMap {
   }
 
   setCity(city, { animateNew = true } = {}) {
+    this.cityAnimate = !!this.city && animateNew;
+    this.cityDirty = true;
     if (this.city && animateNew) {
       for (const slot of Object.keys(city.houses)) {
         const was = this.city.houses[slot];
@@ -928,7 +952,10 @@ export class CityMap {
     this.city = city;
     this.dirty = true;
   }
-  set(opts) { Object.assign(this.opts, opts); this.dirty = true; }
+  set(opts) {
+    if (('meId' in opts && opts.meId !== this.opts.meId) || ('friends' in opts && opts.friends !== this.opts.friends)) this.cityDirty = true;
+    Object.assign(this.opts, opts); this.dirty = true;
+  }
   animating(t) {
     for (const [slot, t0] of this.born) { if (t - t0 < 1400) return true; this.born.delete(slot); }
     return false;
@@ -942,11 +969,13 @@ export class CityMap {
     this.vh = Math.max(1, r.height);
     this.cv.width = Math.round(this.vw * this.dpr);
     this.cv.height = Math.round(this.vh * this.dpr);
+    this.t3?.resize(this.vw, this.vh, Math.min(this.dpr, 1.5));
     if (!this.fitted && this.vw > 50) { this.fitted = true; this.fitCentro(); }
     this.clamp();
     this.dirty = true;
   }
   fitCentro({ wide = false } = {}) {
+    if (this.t3) Object.assign(this.t3.view, { x: wide ? 42.5 : 40.5, y: wide ? 28.5 : 27.5, dist: wide ? Math.max(40, this.t3.distForWidth(27)) : Math.max(26, Math.min(56, this.t3.distForWidth(12))) });
     // A grandezza naturale: due pixel dello schermo (o più) per pixel d'arte, centrati sulla piazza.
     // Per scegliere il lotto si guarda tutto il Centro dall'alto.
     this.cam.z = wide ? Math.max(1, Math.round((this.vw * this.dpr) / 700)) / this.dpr : Math.max(2, Math.round((this.vw * this.dpr) / 420)) / this.dpr;
@@ -956,6 +985,7 @@ export class CityMap {
   }
   focus(slotOrXY) {
     const [x, y] = typeof slotOrXY === 'string' ? parseKey(slotOrXY) : slotOrXY;
+    if (this.t3) { const v = this.t3.view; v.x = x + 0.5; v.y = y + 0.3; v.dist = Math.min(v.dist, 24); this.t3.clampView(); }
     [this.cam.x, this.cam.y] = townCenter(x, y, this.levelOf(x, y));
     this.cam.y -= 16;
     if (this.cam.z * this.dpr < 2) this.cam.z = 2 / this.dpr;
@@ -967,6 +997,7 @@ export class CityMap {
     return [minZ, Math.min(4 / this.dpr, 3)];
   }
   clamp() {
+    if (this.is3d()) { this.t3.clampView(); this.onCamera?.(this.cam); return; }
     if (this.scene) {
       this.cam.z = Math.max(0.5 / this.dpr, Math.min(4 / this.dpr, this.cam.z));
       const [cx, cy] = roomCenter(ROOM / 2 - 0.5, ROOM / 2 - 0.5);
@@ -983,6 +1014,7 @@ export class CityMap {
   }
   // Lo zoom si ferma su multipli interi dei pixel dello schermo: pixel d'arte nitidi, come in Habbo.
   snapZoom() {
+    if (this.is3d()) return;
     const n = this.cam.z * this.dpr;
     if (n >= 0.85) this.cam.z = Math.max(1, Math.round(n)) / this.dpr;
     else if (n >= 0.4) this.cam.z = 0.5 / this.dpr;
@@ -990,6 +1022,7 @@ export class CityMap {
     this.dirty = true;
   }
   zoomStep(dir) {
+    if (this.is3d()) { this.t3.view.dist *= dir > 0 ? 0.72 : 1.38; this.t3.clampView(); this.dirty = true; return; }
     const steps = [0.25, 0.5, 1, 2, 3, 4];
     const n = this.cam.z * this.dpr;
     let i = steps.findIndex((s) => s >= n - 0.01);
@@ -1002,6 +1035,7 @@ export class CityMap {
   toWorld(sx, sy) { return [(sx - this.vw / 2) / this.cam.z + this.cam.x, (sy - this.vh / 2) / this.cam.z + this.cam.y]; }
   zoomAt(sx, sy, factor) {
     this.interactUntil = performance.now() + 160;
+    if (this.is3d()) { this.t3.view.dist /= factor; this.t3.clampView(); this.dirty = true; return; }
     this.needSnap = true;
     const [wx, wy] = this.toWorld(sx, sy);
     this.cam.z *= factor;
@@ -1012,6 +1046,20 @@ export class CityMap {
     this.dirty = true;
   }
 
+  // Gira la città di un quarto di giro (dir = +1 o -1), con un movimento morbido.
+  rotate(dir) {
+    if (!this.is3d()) return;
+    const v = this.t3.view;
+    this.turn = { from: v.az, to: Math.round((this.turn?.to ?? v.az) / (Math.PI / 2) + dir) * (Math.PI / 2), t0: performance.now() };
+    this.dirty = true;
+  }
+  turning(t) {
+    if (!this.turn || !this.t3) return false;
+    const p = Math.min(1, (t - this.turn.t0) / 450), e = 1 - Math.pow(1 - p, 3);
+    this.t3.view.az = this.turn.from + (this.turn.to - this.turn.from) * e;
+    if (p >= 1) this.turn = null;
+    return true;
+  }
   bind() {
     const cv = this.cv;
     cv.style.touchAction = 'none';
@@ -1026,6 +1074,15 @@ export class CityMap {
       this.pointers.set(e.pointerId, { x: e.offsetX, y: e.offsetY });
       if (this.pinch && this.pointers.size === 2) {
         const p = this.pinchInfo();
+        if (this.is3d()) {
+          // Due dita: avvicina o allontana, sposta, e girando le dita gira la città
+          this.t3.view.dist *= this.pinch.d / p.d;
+          let da = p.a - this.pinch.a; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI;
+          this.t3.view.az -= da; this.turn = null;
+          this.t3.pan(p.cx - this.pinch.cx, p.cy - this.pinch.cy);
+          this.pinch = p; this.dirty = true; this.interactUntil = performance.now() + 160;
+          return;
+        }
         this.zoomAt(p.cx, p.cy, p.d / this.pinch.d);
         this.cam.x -= (p.cx - this.pinch.cx) / this.cam.z;
         this.cam.y -= (p.cy - this.pinch.cy) / this.cam.z;
@@ -1034,7 +1091,8 @@ export class CityMap {
       } else if (this.drag) {
         const dx = e.offsetX - this.drag.x, dy = e.offsetY - this.drag.y;
         this.drag.moved += Math.abs(dx) + Math.abs(dy);
-        this.cam.x -= dx / this.cam.z; this.cam.y -= dy / this.cam.z;
+        if (this.is3d()) this.t3.pan(dx, dy);
+        else { this.cam.x -= dx / this.cam.z; this.cam.y -= dy / this.cam.z; }
         this.drag.x = e.offsetX; this.drag.y = e.offsetY;
         this.clamp();
       }
@@ -1053,12 +1111,13 @@ export class CityMap {
   }
   pinchInfo() {
     const [a, b] = [...this.pointers.values()];
-    return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+    return { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, a: Math.atan2(b.y - a.y, b.x - a.x) };
   }
 
   // Dal punto toccato alla cosa: prima gli omini, poi le case, poi il terreno più vicino a chi guarda.
   tap(sx, sy) {
     if (!this.city) return;
+    if (this.is3d()) return this.tap3d(sx, sy);
     const [wx, wy] = this.toWorld(sx, sy);
     let best = null;
     const ks = this.avatarScale();
@@ -1092,7 +1151,28 @@ export class CityMap {
       return this.onTap?.({ kind: 'house', slot: house.slot, house: this.city.houses[house.slot], x, y });
     }
     if (!tile) return this.onTap?.({ kind: 'none' });
-    const [x, y] = tile;
+    this.tapTile(...tile);
+  }
+  tap3d(sx, sy) {
+    const t3 = this.t3;
+    let best = null;
+    for (const a of this.visibleAvatars()) {
+      const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
+      const [fx, fy, fz] = t3.project(a.x + 0.5, a.y + 0.5, h);
+      const [, hy] = t3.project(a.x + 0.5, a.y + 0.5, h + 0.85);
+      const hw = Math.max(8, (fy - hy) * 0.35);
+      if (sx > fx - hw && sx < fx + hw && sy > hy - 6 && sy < fy + 4 && (!best || fz < best.d)) best = { d: fz, id: a.id };
+    }
+    if (best) return this.onTap?.({ kind: 'avatar', id: best.id });
+    const hit = t3.pick(sx, sy);
+    if (!hit) return this.onTap?.({ kind: 'none' });
+    if (hit.kind === 'house') return this.onTap?.({ kind: 'house', slot: hit.slot, house: this.city.houses[hit.slot], x: hit.x, y: hit.y });
+    if (hit.kind === 'shop') return this.onTap?.({ kind: 'shop', shop: hit.shop });
+    if (hit.kind === 'giornale' || hit.kind === 'muro') return this.onTap?.({ kind: hit.kind, x: hit.x, y: hit.y });
+    if (hit.x < 0 || hit.y < 0 || hit.x >= W || hit.y >= H) return this.onTap?.({ kind: 'none' });
+    this.tapTile(hit.x, hit.y);
+  }
+  tapTile(x, y) {
     const k = key(x, y);
     const at = { x, y };
     if (this.city.houses[k]) return this.onTap?.({ kind: 'house', slot: k, house: this.city.houses[k], ...at });
@@ -1126,7 +1206,7 @@ export class CityMap {
     return { q, s: n / q };
   }
   fast() {
-    if (this.scene) return this.render(this.now, true);
+    if (this.scene || this.t3) return this.render(this.now, true);
     const L = this.layerCam, c = this.cam, d = this.dpr;
     const s = c.z / L.z;
     const g = this.g;
@@ -1210,6 +1290,7 @@ export class CityMap {
   render(t, full) {
     if (!this.city) return;
     if (this.scene) return this.renderRoom(t);
+    if (this.t3) return this.render3d(t);
     const { q, s } = this.pixelScale();
     const bw = Math.ceil(this.cv.width / q), bh = Math.ceil(this.cv.height / q);
     for (const cv of [this.layer, this.frame]) if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; full = true; }
@@ -1283,6 +1364,92 @@ export class CityMap {
     g.drawImage(this.frame, 0, 0, bw * q, bh * q);
     this.overlay(g, t, o);
     drawClouds(g, this.cam, this.vw, this.vh, this.dpr, this.still ? 0 : t, o.night);
+  }
+
+  /* Città in 3D */
+  render3d(t) {
+    const t3 = this.t3, o = this.opts;
+    if (this.gl.hidden) this.gl.hidden = false;
+    let rebuilt = false;
+    if (this.cityDirty) { t3.setCity(this.city, { meId: o.meId, friends: o.friends, animateNew: this.cityAnimate }); this.cityDirty = false; rebuilt = true; }
+    if (rebuilt || o.night !== this.lit3 || o.online !== this.online3) { t3.setNight(o.night, o.online); this.lit3 = o.night; this.online3 = o.online; }
+    if (rebuilt || o.selected !== this.sel3) { t3.setSelected(o.selected); this.sel3 = o.selected; }
+    const choose = o.mode === 'choose';
+    if (rebuilt || choose !== this.choose3) { t3.setChoose(choose); this.choose3 = choose; }
+    t3.updateCamera();
+    this.syncAvatars3d(t);
+    t3.render(this.still ? 0 : t, { choosePulse: choose });
+    const g = this.g;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, this.cv.width, this.cv.height);
+    this.overlay3d(g, t);
+  }
+  // Ogni omino è un piccolo disegno in pixel che si ridisegna solo quando cambia posa o passo.
+  syncAvatars3d(t) {
+    const t3 = this.t3, night = !!this.opts.night;
+    const az = t3.view.az;
+    for (const a of this.visibleAvatars()) {
+      const step = a.path.length ? (Math.floor(a.walked * 2.6) % 2) + 1 : 0;
+      const at = (this.now || 0) - (a.act?.t0 || 0);
+      const kind = a.act && at < ACT_MS[a.act.kind] ? a.act.kind : null;
+      let lift = 0, pose = null;
+      if (a.sit && !a.path.length) { pose = 'sit'; lift = a.sit.h / 0.62 - 15; }
+      else if (kind === 'salta') lift = Math.abs(Math.sin((at / 800) * Math.PI)) * 9;
+      else if (kind === 'balla') { pose = 'dance'; lift = Math.floor(at / 260) % 2 ? 1 : 0; }
+      else if (kind === 'saluta') pose = 'wave';
+      // Verso dello sguardo rispetto alla telecamera: di fronte o di spalle, a destra o a sinistra
+      const [mx, my] = a.mv || ({ SE: [0.3, 1], SW: [-0.3, 1], NE: [0.3, -1], NW: [-0.3, -1] })[a.dir] || [0, 1];
+      const sx = mx * Math.cos(az) - my * Math.sin(az), sd = mx * Math.sin(az) + my * Math.cos(az);
+      const dir = Math.abs(sx) > Math.abs(sd) * 1.2 ? (sx > 0 ? 'SE' : 'SW') : sd > 0 ? (sx >= 0 ? 'SE' : 'SW') : (sx >= 0 ? 'NE' : 'NW');
+      const ride = a.sit ? null : a.ride;
+      const tt = pose === 'dance' || pose === 'wave' ? Math.floor(at / 130) : 0;
+      const k = [dir, step, pose, Math.round(lift), ride, tt, JSON.stringify(a.look)].join('|');
+      if (!a.cv) { a.cv = document.createElement('canvas'); a.cv.width = 96; a.cv.height = 112; }
+      const changed = k !== a.cvKey;
+      if (changed) {
+        a.cvKey = k;
+        const g = a.cv.getContext('2d');
+        g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 96, 112);
+        g.translate(48, 96 - Math.round(lift));
+        drawAvatar(g, 0, 0, dir, step, a.look, { pose, t: at, ride, flatRide: true });
+      }
+      const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
+      t3.setAvatar(a.id, { x: a.x + 0.5, y: a.y + 0.5, h, cv: a.cv, changed, me: a.me, night });
+    }
+    t3.sweepAvatars();
+  }
+  overlay3d(g, t) {
+    const t3 = this.t3, o = this.opts;
+    g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    const screen = { L: 0, R: this.vw, T: 0, B: this.vh };
+    const near = t3.view.dist < 22;
+    if (o.selected && this.city.houses[o.selected]) {
+      const b = t3.houses.get(o.selected), r = this.city.residents[this.city.houses[o.selected].residentId];
+      if (b && r) { const p = b.group.position; const [x, y, z] = t3.project(p.x, p.z + 0.35, p.y); if (z < 1) label(g, x, y + 10, r.username, this.city.houses[o.selected].residentId === o.meId, 1); }
+    }
+    for (const a of this.visibleAvatars()) {
+      const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
+      const [x, y, z] = t3.project(a.x + 0.5, a.y + 0.5, h);
+      if (z > 1 || x < -60 || x > this.vw + 60 || y < -60 || y > this.vh + 80) continue;
+      const [, head] = t3.project(a.x + 0.5, a.y + 0.5, h + 0.86);
+      if (a.me) {
+        const bob = Math.sin(t / 300) * 1.5;
+        g.fillStyle = '#ffd34d'; g.strokeStyle = 'rgba(60,40,0,0.6)'; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(x - 5, head - 12 + bob); g.lineTo(x + 5, head - 12 + bob); g.lineTo(x, head - 4 + bob); g.closePath(); g.fill(); g.stroke();
+      }
+      if (a.name && (a.me || near)) label(g, x, y + 10, a.name, a.me, 1);
+      if (a.bubble) {
+        const age = t - a.bubble.t0;
+        if (age > 6500) { a.bubble = null; continue; }
+        bubble(g, x, head - 16 - Math.min(age / 900, 1) * 4, a.name, a.bubble.text, 1, age > 5800 ? 1 - (age - 5800) / 700 : 1, screen);
+      }
+    }
+    for (const [slot, t0] of this.born) {
+      const b = t3.houses.get(slot);
+      if (!b || t - t0 >= 1400) continue;
+      const p = b.group.position, [x, y, z] = t3.project(p.x, p.z - 1, p.y + 1.5);
+      if (z < 1) sparkle(g, x, y, t - t0);
+    }
   }
 
   // Etichette, selezione, nuvolette e scintille: a piena risoluzione, sopra i pixel.
@@ -1375,6 +1542,7 @@ function easeOutBack(p) { const c = 1.7; return 1 + (c + 1) * Math.pow(p - 1, 3)
 /* Anteprima della casa e cartoline per Instagram -------------------------- */
 
 export function drawPreview(canvas, style, { cantiere = false } = {}) {
+  if (has3D()) { try { return renderHouseStill(canvas, style, { cantiere }); } catch { /* si ripiega sul disegno piatto */ } }
   const g = canvas.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0);
   const sky = g.createLinearGradient(0, 0, 0, canvas.height);
@@ -1410,6 +1578,12 @@ export async function renderPoster(city, news, format = 'post') {
   g.fillRect(70, top + 190, Wp - 140, 2);
   const mapY = top + 220, mapH = format === 'story' ? 900 : 640, mapX = 70, mapW = Wp - 140;
   const [fx, fy] = news.slot ? parseKey(news.slot) : PIAZZA_DECOR.fountain;
+  if (has3D()) {
+    try {
+      g.drawImage(renderTownStill(city, fx, fy, mapW, mapH), mapX, mapY);
+      return finishPoster(g, city, news, format, { Wp, Hp, ink, red, mapY, mapH });
+    } catch { /* si ripiega sulla mappa piatta */ }
+  }
   const z = 2;
   const [cx, cy] = townCenter(fx, fy, levelAt(fx, fy, city.openDistricts));
   g.save();
@@ -1423,18 +1597,22 @@ export async function renderPoster(city, news, format = 'post') {
   drawTown(g, city, view, o);
   drawTownAmbient(g, city, view, o, 4200);
   g.restore();
+  return finishPoster(g, city, news, format, { Wp, Hp, ink, red, mapY, mapH });
+}
+function finishPoster(g, city, news, format, { Wp, Hp, ink, red, mapY, mapH }) {
+  const mapX = 70, mapW = Wp - 140;
   g.strokeStyle = ink; g.lineWidth = 4; g.strokeRect(mapX, mapY, mapW, mapH);
   const f = formatNews(news, city);
   g.textAlign = 'left'; g.fillStyle = ink;
   g.font = '400 64px "Abril Fatface", Georgia, serif';
   let y = wrap(g, f.title, 70, mapY + mapH + 100, Wp - 140, 74);
   g.font = '600 36px Nunito, sans-serif'; g.fillStyle = '#3b4642';
-  y = wrap(g, f.text, 70, y + 30, Wp - 140, 50);
+  y = wrap(g, f.text, 70, y + 64, Wp - 140, 50);
   g.fillStyle = red; g.fillRect(0, Hp - (format === 'story' ? 210 : 110), Wp, format === 'story' ? 210 : 110);
   g.fillStyle = '#fff'; g.textAlign = 'center';
   g.font = '700 38px Fredoka, Nunito, sans-serif';
   g.fillText('Vieni ad abitare qui · link in bio', Wp / 2, Hp - (format === 'story' ? 130 : 45));
-  return cv;
+  return g.canvas;
 }
 function wrap(g, text, x, y, maxW, lh) {
   const words = text.split(' ');

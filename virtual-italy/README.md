@@ -40,7 +40,7 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 
 ## Cosa c'è in questa versione
 
-- **Città in pixel art vista dall'alto di tre quarti** (facciate di fronte, tetti a coppi, persiane, fiori alle finestre, buganvillee, luce calda), con trascinamento, pizzico e zoom a scatti nitidi. Il terreno è a gradoni (pianura, paese, collina, montagne) con muretti e scale; dove una via cambia livello c'è una rampa che seguono anche auto e bici. Un canale con il ponte, le ninfee e un cigno scende fino al mare. Gli interni delle case restano stanze isometriche come in Habbo.
+- **Città in 3D** che si gira: due dita (o i tasti ↺ ↻) ruotano la veduta, così niente resta nascosto dietro le case. Terreno, strade, piazza e campi portano la pixel art di sempre come texture; case e negozi sono solidi con le facciate dipinte in pixel (persiane, fiori alle finestre, buganvillee), tetti a coppi, ombre vere e luce calda; di notte si accendono finestre, vetrine e lampioni. Il terreno è a gradoni con muretti e rampe che seguono anche auto e bici; un canale con il ponte e un cigno scende fino al mare. Gli abitanti restano omini in pixel. Senza WebGL si torna alla vista piatta di tre quarti. Gli interni delle case restano stanze isometriche come in Habbo.
 - **Piano della città con respiro:** vie in sampietrini ogni 5 caselle, collegate alla strada principale e alle dorsali dei quartieri; in ogni isolato due lotti affacciati sulla via a sud, separati da un giardino, con il cortile alberato dietro. La **piazza** è grande (9×9): lastre di pietra con cornice in cotto, fontana al centro (l'acqua arriva a 25 abitanti), campanile, edicola del giornale, Muro dei Fondatori, panchine, lampioni e i tavolini del bar con gli ombrelloni.
 - **Traffico e passanti:** utilitarie, berline, furgoni, Ape e autobus girano sulla corsia di destra di statale, vie del Centro e dorsali, coperti da case e alberi che stanno davanti. Qualche passante passeggia, si siede in piazza e saluta, così la città è viva anche con pochi abitanti.
 - **Ciclofficina Ruota Libera:** a piedi si va a passo d'uomo; skateboard, bicicletta e monopattino elettrico fanno girare la città più svelti. Si sale e si scende dal pannello dei gesti.
@@ -65,12 +65,14 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 
 ```
 public/js/core.js    regole: piano regolatore, strade, lotti, abitanti, amicizie, notizie (browser e server)
-public/js/town.js    la città vista di tre quarti: terreno, strade, case, negozi, piazza, traffico, notte
+public/js/town3d.js  la città in 3D (three.js): terreno a gradoni, case, negozi, piazza, alberi, acqua, traffico, notte
+public/js/town.js    la pixel art della città (texture del terreno, facciate) e la vista piatta di riserva
 public/js/render.js  mappa (telecamera, tocchi, omini), stanze isometriche e mobili, cartoline per Instagram
 public/js/art.js     attrezzi di disegno in comune
 public/js/store.js   collegamento al server (RemoteStore) e demo nel browser (LocalStore)
 public/js/app.js     interfaccia
 public/js/seed.js    abitanti dimostrativi
+public/vendor/       three.js r128 (licenza MIT, three.LICENSE.txt), incluso così funziona anche senza rete
 server/server.js     HTTP + SQLite + account + email + tempo reale, nessuna dipendenza
 test/                prove delle regole e del server
 ```

@@ -16,8 +16,8 @@ const EL = townElev;
 // Punto a terra al centro di una casella (anche frazionaria), alla sua quota.
 export function townCenter(x, y, L = 0) { return [(x + 0.5) * T, (y + 0.5) * T - EL(L)]; }
 export const TOWN_WORLD = { x0: -2 * T, x1: (W + 2) * T, y0: -4 * T, y1: (H + 1) * T };
-const roofOf = (id) => (ROOFS.find((r) => r.id === id) || ROOFS[0]).color;
-const doorOf = (id) => (DOORS.find((r) => r.id === id) || DOORS[0]).color;
+export const roofOf = (id) => (ROOFS.find((r) => r.id === id) || ROOFS[0]).color;
+export const doorOf = (id) => (DOORS.find((r) => r.id === id) || DOORS[0]).color;
 
 /* Terreno ---------------------------------------------------------------- */
 
@@ -133,7 +133,7 @@ function dots(g, X, Y, seed, n, colors, w = 2, h = 1) {
 const isRoad = (city, x, y) => !!city.roads[key(x, y)];
 
 // Il piano di una casella: (X, Y) è l'angolo in alto a sinistra sullo schermo.
-function tileTop(g, city, G, x, y, X, Y, det) {
+export function tileTop(g, city, G, x, y, X, Y, det) {
   const i = y * W + x;
   const k = G.kind[i];
   const road = city.roads[key(x, y)];
@@ -379,7 +379,7 @@ function drawTree(g, t, cx, cy) {
   }
 }
 // Vaso di terracotta con fiori (con il contorno, come tutto il resto)
-function pot(g, x, y, seed = 0) {
+export function pot(g, x, y, seed = 0) {
   const flowers = [['#e85d75', '#f6d84a'], ['#b46ad6', '#ffffff'], ['#f08a3c', '#e85d75'], ['#ffffff', '#f2a7c3']][seed % 4];
   g.fillStyle = 'rgba(30,30,20,0.25)'; g.beginPath(); g.ellipse(x + 3, y + 1, 7, 2.5, 0, 0, 7); g.fill();
   poly(g, [[x - 5, y - 8], [x + 5, y - 8], [x + 4, y], [x - 4, y]]); g.fillStyle = '#c66a3c'; g.fill(); g.strokeStyle = '#6e3a1f'; g.lineWidth = 1; g.stroke();
@@ -391,7 +391,7 @@ function pot(g, x, y, seed = 0) {
   g.fillStyle = '#4c973d'; g.fillRect(x + 4, y - 8, 1, 4); g.fillRect(x + 5, y - 5, 1, 2);
 }
 // Buganvillea su un muro: grappoli fucsia e viola tra le foglie, nel riquadro (x0, y0)–(x1, y1)
-function bougainvillea(g, x0, y0, x1, y1, seed, n = 30) {
+export function bougainvillea(g, x0, y0, x1, y1, seed, n = 30) {
   const cols = ['#c2367a', '#e0559a', '#9b3fb0', '#f28cbf', '#d94e93'];
   for (let k = 0; k < n; k++) {
     const px = x0 + ih(seed, k, 11) * (x1 - x0), py = y0 + ih(seed, k, 12) * (y1 - y0);
@@ -438,7 +438,7 @@ function lampPost(g, x, y, banner = false) {
     g.fillStyle = '#f4efe3'; g.fillRect(x + 5.5, y - 31, 1, 8); g.fillRect(x + 4, y - 29, 1, 1); g.fillRect(x + 7, y - 28, 1, 1); g.fillRect(x + 4, y - 26, 1, 1); g.fillRect(x + 7, y - 25, 1, 1);
   }
 }
-function chalkboard(g, x, y) {
+export function chalkboard(g, x, y) {
   poly(g, [[x - 5, y], [x - 3, y - 14], [x + 3, y - 14], [x + 5, y]]); g.fillStyle = '#7a5a3a'; g.fill();
   g.fillStyle = '#2b2f2c'; g.fillRect(x - 3, y - 12, 6, 9);
   g.fillStyle = '#f4efe3'; g.fillRect(x - 2, y - 10, 4, 1); g.fillRect(x - 1, y - 8, 3, 1); g.fillRect(x - 2, y - 6, 3, 1);
@@ -478,7 +478,7 @@ function umbrella(g, x, y, seed) {
 /* Case viste di fronte ---------------------------------------------------- */
 
 // Intonaco con grana, un filo di luce a sinistra (il sole viene da lì) e ombra a destra, bordo scuro
-function plaster(g, x, y, w, h, color, seed, det) {
+export function plaster(g, x, y, w, h, color, seed, det) {
   g.fillStyle = shade(color, -0.32); g.fillRect(x - 1, y - 1, w + 2, h + 1);
   g.fillStyle = color; g.fillRect(x, y, w, h);
   g.fillStyle = shade(color, 0.07); g.fillRect(x, y, 3, h);
@@ -496,7 +496,7 @@ function plaster(g, x, y, w, h, color, seed, det) {
   }
 }
 // Finestra con cornice di pietra, persiane a stecche del colore della porta, davanzale e fioriera
-function window3(g, x, y, w, h, o, { box = true, shut = true } = {}) {
+export function window3(g, x, y, w, h, o, { box = true, shut = true } = {}) {
   const sh = o.door === '#f1ede4' ? '#d9d3c4' : o.door;
   const sw = Math.round(w / 2);
   if (shut) for (const sx of [x - sw - 1, x + w + 1]) {
@@ -529,7 +529,7 @@ function window3(g, x, y, w, h, o, { box = true, shut = true } = {}) {
   o.wins.push([[x, y], [x + w, y], [x + w, y + h], [x, y + h]]);
 }
 // Porta ad arco in pietra, a due battenti, con il gradino
-function door3(g, x, y, w, h, color) {
+export function door3(g, x, y, w, h, color) {
   g.fillStyle = '#7d6f5a'; g.fillRect(x - 4, y - 3, w + 8, h + 3);
   g.beginPath(); g.ellipse(x + w / 2, y - 2, w / 2 + 4, 6, 0, Math.PI, 0); g.fill();
   g.fillStyle = '#e6dcc6'; g.fillRect(x - 3, y - 2, w + 6, h + 2);
@@ -546,7 +546,7 @@ function door3(g, x, y, w, h, color) {
   g.fillStyle = '#cfc3a8'; g.fillRect(x - 5, y + h, w + 10, 3); g.fillStyle = '#9c8a66'; g.fillRect(x - 5, y + h + 2, w + 10, 1);
 }
 // Tetto a falde visto dall'alto: file di coppi dalla gronda al colmo, con ombre e luci
-function tiledRoof(g, x0, x1, yEave, yRidge, color, det, clip) {
+export function tiledRoof(g, x0, x1, yEave, yRidge, color, det, clip) {
   g.save();
   if (clip) { poly(g, clip); g.clip(); }
   g.fillStyle = color; g.fillRect(x0, yRidge, x1 - x0, yEave - yRidge);
@@ -724,7 +724,7 @@ function drawGarden3(g, garden, x0, x1, by, seed, det) {
     for (let k = 0; k < 8; k++) { g.fillStyle = k % 2 ? '#3f8634' : '#5fae43'; g.fillRect(x0 + 2 + ih(seed, k, 5) * (x1 - x0 - 4), by - 2, 1, 2); }
   }
 }
-function drawDeco3(g, deco, x, y) {
+export function drawDeco3(g, deco, x, y) {
   if (deco === 'vespa') {
     g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x - 7, y, 15, 2);
     g.fillStyle = '#1f1f1f'; g.beginPath(); g.arc(x - 5, y - 2, 2.5, 0, 7); g.arc(x + 5, y - 2, 2.5, 0, 7); g.fill();
@@ -747,12 +747,12 @@ function drawDeco3(g, deco, x, y) {
 
 /* Negozi ------------------------------------------------------------------- */
 
-const SHOP_LOOK = {
+export const SHOP_LOOK = {
   mobili: { wall: '#e6cfa3', trim: '#8a5a36', awning: ['#2f6b4f', '#f6efe0'], sign: '#2f4f3f', ink: '#f6e7b8' },
   moda: { wall: '#f1dcd8', trim: '#3b3f45', awning: ['#2d2d2d', '#f6efe0'], sign: '#2d2d2d', ink: '#e2bf4f' },
   bici: { wall: '#d7e6ef', trim: '#2f6b9f', awning: ['#e0a92a', '#2f6b9f'], sign: '#2f6b9f', ink: '#f6efe0' },
 };
-function vitrine3(g, x, y, w, h, kind, night, seed, wins) {
+export function vitrine3(g, x, y, w, h, kind, night, seed, wins) {
   g.fillStyle = '#5a4a38'; g.fillRect(x - 2, y - 2, w + 4, h + 4);
   g.fillStyle = '#e9e1cf'; g.fillRect(x - 1, y - 1, w + 2, h + 2);
   const gr = g.createLinearGradient(0, y, 0, y + h);
@@ -1135,7 +1135,7 @@ export function drawTownLights(g, lights, lamps) {
 
 const CAR_PALETTE = ['#e8c95a', '#d9442f', '#6fb3c8', '#f1ede4', '#3f6aa1', '#4f8a72', '#c7c2b8', '#e88a3a', '#2d2d2d'];
 // Misure in pixel: lunghezza, altezza del fianco, larghezza vista di fronte
-const CAR_MODELS = {
+export const CAR_MODELS = {
   utilitaria: { len: 28, hgt: 15, wid: 18 },
   berlina: { len: 34, hgt: 14, wid: 20 },
   furgone: { len: 36, hgt: 22, wid: 20 },
@@ -1164,11 +1164,11 @@ function trafficList(city) {
   return out;
 }
 let trafficCache = { rev: -1, list: [] };
-function traffic(city) {
+export function traffic(city) {
   if (trafficCache.rev !== city.rev) trafficCache = { rev: city.rev, list: trafficList(city) };
   return trafficCache.list;
 }
-function carAt(v, s) {
+export function carAt(v, s) {
   const span = v.to - v.from;
   let p = (s * v.speed + v.offset) % span;
   if (v.dir < 0) p = span - p;
@@ -1356,7 +1356,7 @@ function canopy(g, cx, cy, r, cols, seed) {
 }
 
 // Edera che sale lungo un muro dal basso, più fitta in basso e più rada in alto
-function ivy(g, x0, x1, yTop, yBot, seed) {
+export function ivy(g, x0, x1, yTop, yBot, seed) {
   for (let k = 0; k < 46; k++) {
     const f = Math.pow(ih(seed, k, 15), 0.6);
     const py = yBot - f * (yBot - yTop), px = x0 + ih(seed, k, 16) * (x1 - x0);
