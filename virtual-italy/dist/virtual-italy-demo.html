@@ -181,6 +181,12 @@ a { color: var(--brand); font-weight: 700; }
 }
 .catalog-item canvas { width: 56px; height: 56px; image-rendering: auto; }
 .catalog-item:hover { border-color: var(--brand); }
+.catalog-item .price { padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--live) 16%, var(--bg)); color: var(--live); font-size: 0.66rem; }
+.catalog-item .owned { color: var(--muted); font-size: 0.66rem; }
+.catalog-item.shop-link { align-content: center; border-style: dashed; color: var(--brand); }
+.shop-ico { font-size: 1.9rem; line-height: 56px; height: 56px; }
+.empty-inv { flex: none; width: 190px; align-self: center; margin: 0; }
+.price { display: inline-block; justify-self: start; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--live) 16%, var(--bg)); color: var(--live); font-size: 0.8rem; font-weight: 800; }
 .chat { display: flex; gap: 6px; grid-column: 1 / -1; }
 .chat-input {
   flex: 1; min-width: 0; min-height: 40px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--line);
@@ -332,6 +338,8 @@ a { color: var(--brand); font-weight: 700; }
 
 /* Avvisi */
 .toasts { position: absolute; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 170px); display: grid; gap: 8px; width: min(440px, calc(100% - 24px)); pointer-events: none; }
+/* Dentro casa e nei negozi il pannello in basso è alto: gli avvisi passano sotto la testata. */
+body.in-room .toasts { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 124px); }
 .toast { background: var(--ink); color: var(--bg); padding: 12px 14px; border-radius: 12px; font-weight: 700; box-shadow: var(--shadow); animation: rise 0.2s ease-out; transition: opacity 0.4s; }
 .toast.err { background: var(--red); color: #fff; }
 .toast.out { opacity: 0; }
@@ -425,6 +433,16 @@ const DECOS = [
 ];
 const SHAPES = ['casa', 'villetta', 'torretta'];
 
+// I negozi sono edifici veri ai lati della piazza, con la vetrina sulla strada principale.
+// Occupano un blocco 2×2 (x0..x0+1, y0..y0+1) e la porta dà sulla casella `front`.
+const SHOPS = [
+  { id: 'mobili', name: 'Mobilificio Bottega', sign: 'MOBILI', kind: 'furni', x0: 34, y0: 28, keeper: 'Gino' },
+  { id: 'moda', name: 'Sartoria Moda', sign: 'MODA', kind: 'wear', x0: 46, y0: 28, keeper: 'Rosa' },
+].map((sh) => ({ ...sh, room: 'shop:' + sh.id, front: [sh.x0, MAIN_Y] }));
+const shopById = (id) => SHOPS.find((sh) => sh.id === id || sh.room === id) || null;
+const shopAt = (x, y) => SHOPS.find((sh) => x >= sh.x0 && x <= sh.x0 + 1 && y >= sh.y0 && y <= sh.y0 + 1) || null;
+const isShopRoom = (room) => typeof room === 'string' && room.startsWith('shop:') && !!shopById(room);
+
 // Editor del personaggio: ogni scelta è un indice (colori) o un id (pettinatura, accessorio).
 const LOOK = {
   skin: ['#f6dcc6', '#f3d2b3', '#e8b98f', '#c98d63', '#a8714a', '#8d5b3d', '#5e3b26'],
@@ -434,12 +452,39 @@ const LOOK = {
   pants: ['#2d3a4a', '#2f4f6f', '#4b4f56', '#6b4a2f', '#c9b48f', '#2d2d2d'],
   extra: [{ id: 'nessuno', label: 'Niente' }, { id: 'cappellino', label: 'Cappellino' }, { id: 'occhiali', label: 'Occhiali' }, { id: 'fiore', label: 'Fiore' }],
 };
+// Vestiti: i capi base li hanno tutti, gli altri si prendono alla Sartoria Moda.
+// `price` è già pronto per la moneta della città: finché non c'è, tutto è gratis.
+const WEAR = [
+  { id: 'maglietta', slot: 'top', label: 'Maglietta', base: true },
+  { id: 'camicia', slot: 'top', label: 'Camicia', price: 40 },
+  { id: 'righe', slot: 'top', label: 'Maglia a righe', price: 35 },
+  { id: 'felpa', slot: 'top', label: 'Felpa', price: 45 },
+  { id: 'giacca', slot: 'top', label: 'Giacca', price: 80 },
+  { id: 'canotta', slot: 'top', label: 'Canottiera', price: 20 },
+  { id: 'pantaloni', slot: 'bottom', label: 'Pantaloni', base: true },
+  { id: 'pantaloncini', slot: 'bottom', label: 'Pantaloncini', price: 25 },
+  { id: 'gonna', slot: 'bottom', label: 'Gonna', price: 30 },
+  { id: 'nessuno', slot: 'extra', label: 'Niente', base: true },
+  { id: 'cappellino', slot: 'extra', label: 'Cappellino', base: true },
+  { id: 'occhiali', slot: 'extra', label: 'Occhiali', base: true },
+  { id: 'fiore', slot: 'extra', label: 'Fiore', base: true },
+  { id: 'paglia', slot: 'extra', label: 'Cappello di paglia', price: 30 },
+  { id: 'coppola', slot: 'extra', label: 'Coppola', price: 35 },
+  { id: 'basco', slot: 'extra', label: 'Basco', price: 30 },
+  { id: 'cuffie', slot: 'extra', label: 'Cuffie', price: 50 },
+  { id: 'sciarpa', slot: 'extra', label: 'Sciarpa', price: 25 },
+  { id: 'corona', slot: 'extra', label: 'Corona', price: 200 },
+];
+const WEAR_SLOTS = [{ id: 'top', label: 'Maglie' }, { id: 'bottom', label: 'Sotto' }, { id: 'extra', label: 'Accessori' }];
+const wearById = (id) => WEAR.find((w) => w.id === id) || null;
+const wearOf = (slot) => WEAR.filter((w) => w.slot === slot);
 // Aspetto di partenza, uguale per sempre per lo stesso nome finché l'abitante non sceglie il suo.
 function defaultLook(name) {
   const h = hash(String(name));
   return {
     skin: h % LOOK.skin.length, hair: (h >>> 3) % 6, style: LOOK.style[(h >>> 14) % 2].id,
     shirt: (h >>> 6) % LOOK.shirt.length, pants: (h >>> 9) % 4, extra: (h >>> 12) % 3 === 0 ? 'cappellino' : 'nessuno',
+    top: 'maglietta', bottom: 'pantaloni',
   };
 }
 function cleanLook(raw, name) {
@@ -449,7 +494,8 @@ function cleanLook(raw, name) {
   const id = (v, list, fb) => (list.some((o) => o.id === v) ? v : fb);
   return {
     skin: idx(r.skin, LOOK.skin, base.skin), hair: idx(r.hair, LOOK.hair, base.hair), style: id(r.style, LOOK.style, base.style),
-    shirt: idx(r.shirt, LOOK.shirt, base.shirt), pants: idx(r.pants, LOOK.pants, base.pants), extra: id(r.extra, LOOK.extra, base.extra),
+    shirt: idx(r.shirt, LOOK.shirt, base.shirt), pants: idx(r.pants, LOOK.pants, base.pants), extra: id(r.extra, wearOf('extra'), base.extra),
+    top: id(r.top, wearOf('top'), base.top), bottom: id(r.bottom, wearOf('bottom'), base.bottom),
   };
 }
 
@@ -494,7 +540,7 @@ const PLAN = (() => {
       if (!d || y >= SEA_Y) continue;
       district[y * W + x] = d.id;
       const k = key(x, y);
-      if (x % 3 === 0 || y % 3 === 0 || y === MAIN_Y || inPiazza(x, y) || futureRoads.has(k)) continue;
+      if (x % 3 === 0 || y % 3 === 0 || y === MAIN_Y || inPiazza(x, y) || futureRoads.has(k) || shopAt(x, y)) continue;
       lots.add(k);
       lotsByDistrict.get(d.id).push(k);
     }
@@ -547,7 +593,7 @@ function routeFrom(lotKey, net, openDistricts) {
         return { path: path.reverse(), reach: nk };
       }
       const dId = districtAt(nx, ny);
-      if (!dId || dId > openDistricts || PLAN.lots.has(nk)) continue;
+      if (!dId || dId > openDistricts || PLAN.lots.has(nk) || shopAt(nx, ny)) continue;
       prev.set(nk, key(x, y));
       queue.push([nx, ny]);
     }
@@ -599,7 +645,7 @@ function levelAt(x, y, openDistricts) {
 // Dove si può camminare: ovunque sulla terraferma tranne dentro le case.
 // Si cambia livello solo su strade, vialetti e piazza, dove ci sono le scale.
 function walkable(s, x, y) {
-  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)];
+  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)] && !shopAt(x, y);
 }
 function canStep(s, ax, ay, bx, by) {
   if (!walkable(s, bx, by)) return false;
@@ -659,29 +705,71 @@ const FLOORS = [
 const WALLS = ['#efe6d2', '#f3d6c3', '#d7e6ef', '#dcebd2', '#f4e7b8', '#d9d0e8', '#c9b8a6', '#5b6b7a'];
 const FURNI_COLORS = ['#c0392b', '#2f6b9f', '#2f7d4f', '#e0a92a', '#7a4a6b', '#e86b8a', '#6b4a2f', '#4b4f56'];
 // w lungo x e d lungo y con rotazione 0; con rotazione 1 si scambiano. `rug` si può calpestare.
+// `cat` è il reparto del Mobilificio, `price` il prezzo per quando la città avrà la sua moneta.
 const FURNI = [
-  { id: 'sedia', label: 'Sedia', w: 1, d: 1, color: true },
-  { id: 'poltrona', label: 'Poltrona', w: 1, d: 1, color: true },
-  { id: 'divano', label: 'Divano', w: 2, d: 1, color: true },
-  { id: 'tavolino', label: 'Tavolino', w: 1, d: 1 },
-  { id: 'tavolo', label: 'Tavolo', w: 2, d: 1 },
-  { id: 'letto', label: 'Letto', w: 1, d: 2, color: true },
-  { id: 'tappeto', label: 'Tappeto', w: 2, d: 2, color: true, rug: true },
-  { id: 'lampada', label: 'Lampada', w: 1, d: 1 },
-  { id: 'pianta', label: 'Pianta', w: 1, d: 1 },
-  { id: 'libreria', label: 'Libreria', w: 1, d: 1 },
-  { id: 'tv', label: 'Televisore', w: 1, d: 1 },
-  { id: 'frigo', label: 'Frigorifero', w: 1, d: 1 },
-  { id: 'cucina', label: 'Cucina', w: 2, d: 1 },
-  { id: 'armadio', label: 'Armadio', w: 1, d: 1 },
-  { id: 'scrivania', label: 'Scrivania', w: 2, d: 1 },
-  { id: 'camino', label: 'Camino', w: 2, d: 1 },
-  { id: 'acquario', label: 'Acquario', w: 1, d: 1 },
+  { id: 'sedia', label: 'Sedia', w: 1, d: 1, color: true, cat: 'mobili', price: 20 },
+  { id: 'poltrona', label: 'Poltrona', w: 1, d: 1, color: true, cat: 'mobili', price: 45 },
+  { id: 'divano', label: 'Divano', w: 2, d: 1, color: true, cat: 'mobili', price: 90 },
+  { id: 'pouf', label: 'Pouf', w: 1, d: 1, color: true, cat: 'mobili', price: 15 },
+  { id: 'tavolino', label: 'Tavolino', w: 1, d: 1, cat: 'mobili', price: 25 },
+  { id: 'tavolo', label: 'Tavolo', w: 2, d: 1, cat: 'mobili', price: 60 },
+  { id: 'letto', label: 'Letto', w: 1, d: 2, color: true, cat: 'mobili', price: 80 },
+  { id: 'libreria', label: 'Libreria', w: 1, d: 1, cat: 'mobili', price: 50 },
+  { id: 'armadio', label: 'Armadio', w: 1, d: 1, cat: 'mobili', price: 70 },
+  { id: 'scrivania', label: 'Scrivania', w: 2, d: 1, cat: 'mobili', price: 55 },
+  { id: 'bancone', label: 'Bancone', w: 2, d: 1, color: true, cat: 'mobili', price: 75 },
+  { id: 'cucina', label: 'Cucina', w: 2, d: 1, cat: 'mobili', price: 120 },
+  { id: 'frigo', label: 'Frigorifero', w: 1, d: 1, cat: 'mobili', price: 90 },
+  { id: 'tv', label: 'Televisore', w: 1, d: 1, cat: 'mobili', price: 110 },
+  { id: 'camino', label: 'Camino', w: 2, d: 1, cat: 'mobili', price: 150 },
+  { id: 'tappeto', label: 'Tappeto', w: 2, d: 2, color: true, rug: true, cat: 'deco', price: 30 },
+  { id: 'lampada', label: 'Lampada', w: 1, d: 1, cat: 'deco', price: 25 },
+  { id: 'pianta', label: 'Pianta', w: 1, d: 1, cat: 'deco', price: 15 },
+  { id: 'vaso', label: 'Vaso di fiori', w: 1, d: 1, color: true, cat: 'deco', price: 15 },
+  { id: 'specchio', label: 'Specchio', w: 1, d: 1, cat: 'deco', price: 35 },
+  { id: 'pendolo', label: 'Orologio a pendolo', w: 1, d: 1, cat: 'deco', price: 85 },
+  { id: 'jukebox', label: 'Jukebox', w: 1, d: 1, cat: 'deco', price: 140 },
+  { id: 'statua', label: 'Busto romano', w: 1, d: 1, cat: 'deco', price: 160 },
+  { id: 'acquario', label: 'Acquario', w: 1, d: 1, cat: 'deco', price: 100 },
+  { id: 'stender', label: 'Appendiabiti', w: 2, d: 1, color: true, cat: 'deco', price: 40 },
 ];
+const FURNI_CATS = [{ id: 'mobili', label: 'Mobili' }, { id: 'deco', label: 'Decorazioni' }];
+// Chi costruisce casa trova dentro un piccolo kit di benvenuto, da sistemare come vuole.
+const STARTER_KIT = { letto: 1, sedia: 1, tavolino: 1, lampada: 1, pianta: 1 };
+const MAX_STOCK = 20;          // pezzi uguali tenuti da parte nell'inventario
 const ACCESS = [{ id: 'tutti', label: 'Tutti' }, { id: 'amici', label: 'Solo amici' }, { id: 'nessuno', label: 'Solo io' }];
 const furniById = (id) => FURNI.find((f) => f.id === id);
 const defaultRoom = () => ({ floor: 'parquet', wall: WALLS[0], access: 'tutti', items: [] });
-const roomOf = (s, ownerId) => s.rooms?.[ownerId] || defaultRoom();
+const roomOf = (s, ownerId) => (isShopRoom(ownerId) ? shopRoom(ownerId) : s.rooms?.[ownerId] || defaultRoom());
+
+// L'interno dei negozi è fisso: la merce in esposizione si tocca per comprarla.
+const SHOP_ROOMS = {
+  'shop:mobili': { floor: 'marmo', wall: '#f4e7b8', access: 'tutti', items: [
+    ['bancone', 4, 1, 0, 6], ['libreria', 2, 0], ['armadio', 3, 0], ['pendolo', 6, 0], ['statua', 7, 0], ['lampada', 0, 0],
+    ['divano', 1, 2, 0, 1], ['tappeto', 1, 3, 0, 4], ['poltrona', 3, 3, 1, 0], ['tavolino', 2, 4], ['pouf', 1, 4, 0, 3],
+    ['letto', 7, 3, 0, 1], ['tv', 5, 4], ['jukebox', 7, 6], ['acquario', 4, 7], ['pianta', 0, 7], ['vaso', 2, 7, 0, 5],
+  ] },
+  'shop:moda': { floor: 'parquet', wall: '#d9d0e8', access: 'tutti', items: [
+    ['bancone', 4, 1, 0, 7], ['specchio', 2, 0], ['specchio', 3, 0], ['stender', 6, 3, 1, 0], ['stender', 6, 6, 1, 5],
+    ['tappeto', 2, 3, 0, 5], ['pouf', 3, 4, 0, 1], ['pianta', 0, 0], ['pianta', 7, 7], ['vaso', 0, 7, 0, 3], ['lampada', 7, 0],
+  ] },
+};
+for (const [id, room] of Object.entries(SHOP_ROOMS)) room.items = room.items.map(([t, x, y, r = 0, c = 0], i) => ({ uid: `${id}:${i}`, t, x, y, r, c }));
+const shopRoom = (id) => SHOP_ROOMS[shopById(id)?.room] || defaultRoom();
+// Dove stanno il commesso (dietro al bancone) e i manichini della Sartoria.
+const SHOP_KEEPER_AT = [5, 0];
+const MANNEQUINS = [
+  { at: [1, 5], look: { top: 'camicia', bottom: 'pantaloni', extra: 'coppola', shirt: 8, pants: 0 } },
+  { at: [3, 6], look: { top: 'righe', bottom: 'gonna', extra: 'paglia', shirt: 5, pants: 4 } },
+  { at: [5, 6], look: { top: 'giacca', bottom: 'pantaloni', extra: 'occhiali', shirt: 9, pants: 5 } },
+  { at: [4, 3], look: { top: 'felpa', bottom: 'pantaloncini', extra: 'cuffie', shirt: 7, pants: 1 } },
+];
+
+// Inventario: mobili tenuti da parte (non ancora in casa) e vestiti posseduti.
+const invOf = (s, id) => s.inv?.[id] || { furni: {}, wear: [] };
+const ownsWear = (s, id, wearId) => !!wearById(wearId)?.base || invOf(s, id).wear.includes(wearId);
+// Qui si pagherà con la moneta della città: per ora i negozi regalano tutto.
+function pay(s, r, price) { void s; void r; void price; }
 function footprint(it) {
   const f = furniById(it.t);
   const [w, d] = it.r ? [f.d, f.w] : [f.w, f.d];
@@ -708,7 +796,7 @@ function checkPlace(room, it, ignoreUid) {
   }
 }
 function canVisit(s, visitorId, ownerId) {
-  if (visitorId === ownerId) return true;
+  if (visitorId === ownerId || isShopRoom(ownerId)) return true;
   const access = roomOf(s, ownerId).access;
   if (access === 'tutti') return true;
   if (access === 'amici') return !!visitorId && areFriends(s, visitorId, ownerId);
@@ -852,6 +940,7 @@ function emptyState(now = Date.now()) {
     news: [],          // { id, kind, at, residentId?, n?, district?, slot? }
     milestones: [],
     rooms: {},         // id abitante → { floor, wall, access, items: [{ uid, t, x, y, r, c }] }
+    inv: {},           // id abitante → { furni: { tipo: quanti }, wear: [id dei vestiti presi] }
   };
   addNews(s, { kind: 'founding', at: now });
   return refresh(s);
@@ -951,6 +1040,9 @@ const OPS = {
     if (s.houses[slot]) throw new DomainError('conflict', 'Qualcuno ha appena preso questo lotto: scegline un altro.');
     const h = { slot, residentId: r.id, style: makeStyle(slot, op.style), status: 'cantiere', reservedAt: now, builtAt: null };
     s.houses[slot] = h;
+    s.inv ||= {};
+    const inv = (s.inv[r.id] ||= { furni: {}, wear: [] });
+    for (const [t, n] of Object.entries(STARTER_KIT)) inv.furni[t] = (inv.furni[t] || 0) + n;
     if (r.confirmed) finishHouse(s, r, h, now);
     refresh(s, now);
     return { slot, status: h.status };
@@ -966,8 +1058,37 @@ const OPS = {
 
   look(s, op, ctx) {
     const r = needResident(s, ctx);
-    r.look = cleanLook(op.look, r.username);
+    const look = cleanLook(op.look, r.username);
+    for (const slot of ['top', 'bottom', 'extra']) {
+      if (!ownsWear(s, r.id, look[slot])) throw invalid(`${wearById(look[slot]).label}: prima prendilo alla Sartoria Moda.`);
+    }
+    r.look = look;
     return { ok: true };
+  },
+
+  // Negozi: un mobile finisce nell'inventario, un vestito nell'armadio (e volendo addosso).
+  buy(s, op, ctx) {
+    const r = needResident(s, ctx);
+    s.inv ||= {};
+    const inv = (s.inv[r.id] ||= { furni: {}, wear: [] });
+    if (op.kind === 'furni') {
+      const f = furniById(op.t);
+      if (!f) throw invalid('Articolo sconosciuto.');
+      if ((inv.furni[f.id] || 0) >= MAX_STOCK) throw invalid(`Ne hai già ${MAX_STOCK} da parte: sistemane qualcuno in casa.`);
+      pay(s, r, f.price);
+      inv.furni[f.id] = (inv.furni[f.id] || 0) + 1;
+      return { have: inv.furni[f.id] };
+    }
+    if (op.kind === 'wear') {
+      const w = wearById(op.id);
+      if (!w) throw invalid('Articolo sconosciuto.');
+      if (w.base || inv.wear.includes(w.id)) return { already: true };
+      pay(s, r, w.price);
+      inv.wear.push(w.id);
+      if (op.wear) r.look = { ...cleanLook(r.look, r.username), [w.slot]: w.id };
+      return { ok: true };
+    }
+    throw invalid('Articolo sconosciuto.');
   },
 
   // Stile della stanza: pavimento, colore delle pareti, chi può entrare.
@@ -989,18 +1110,26 @@ const OPS = {
     s.rooms ||= {};
     const room = (s.rooms[r.id] ||= defaultRoom());
     const int = (v) => Number.isInteger(v) ? v : NaN;
+    s.inv ||= {};
+    const inv = (s.inv[r.id] ||= { furni: {}, wear: [] });
     if (op.act === 'add') {
       const f = furniById(op.t);
       if (!f) throw invalid('Mobile sconosciuto.');
+      if (!inv.furni[f.id]) throw invalid(`Non hai ${f.label.toLowerCase()} da parte: passa dal Mobilificio.`);
       if (room.items.length >= ROOM_MAX_ITEMS) throw invalid(`In casa ci stanno al massimo ${ROOM_MAX_ITEMS} mobili.`);
       const it = { uid: uid('f'), t: f.id, x: int(op.x), y: int(op.y), r: op.r ? 1 : 0, c: f.color ? (Number.isInteger(op.c) && op.c >= 0 && op.c < FURNI_COLORS.length ? op.c : 0) : 0 };
       checkPlace(room, it);
       room.items.push(it);
+      if (--inv.furni[f.id] <= 0) delete inv.furni[f.id];
       return { uid: it.uid };
     }
     const it = room.items.find((o) => o.uid === op.uid);
     if (!it) throw new DomainError('notfound', 'Mobile non trovato.');
-    if (op.act === 'remove') { room.items = room.items.filter((o) => o !== it); return { ok: true }; }
+    if (op.act === 'remove') {
+      room.items = room.items.filter((o) => o !== it);
+      inv.furni[it.t] = (inv.furni[it.t] || 0) + 1;
+      return { ok: true };
+    }
     if (op.act === 'color') { if (furniById(it.t).color) it.c = (it.c + 1) % FURNI_COLORS.length; return { ok: true }; }
     const next = { ...it };
     if (op.act === 'move') { next.x = int(op.x); next.y = int(op.y); }
@@ -1072,6 +1201,7 @@ const OPS = {
     s.friendships = s.friendships.filter((f) => f.a !== id && f.b !== id);
     delete s.sentLog[id];
     if (s.rooms) delete s.rooms[id];
+    if (s.inv) delete s.inv[id];
     refresh(s, now);
     return { ok: true };
   },
@@ -1117,6 +1247,7 @@ function publicView(s, viewerId, admin = false) {
   const v = {
     rev: s.rev, createdAt: s.createdAt, openDistricts: s.openDistricts, residents, houses: s.houses,
     roads: s.roads, doors: s.doors, news: s.news.slice(0, 120), milestones: s.milestones, rooms: s.rooms || {},
+    inv: viewerId && s.inv?.[viewerId] ? { [viewerId]: s.inv[viewerId] } : {},
     requests: viewerId ? s.requests.filter((q) => q.from === viewerId || q.to === viewerId) : [],
     friendships: viewerId ? s.friendships.filter((f) => f.a === viewerId || f.b === viewerId) : [],
     reports: [],
@@ -1664,6 +1795,107 @@ function drawHouse(g, style, sx, sy, { lit = false, night = false, founder = fal
   return { wins, top };
 }
 
+/* Negozi ---------------------------------------------------------------------- */
+
+const SHOP_STYLE = {
+  mobili: { wall: '#e6cfa3', trim: '#8a5a36', awning: ['#2f6b4f', '#f6efe0'], sign: '#2f4f3f', ink: '#f6e7b8' },
+  moda: { wall: '#f1dcd8', trim: '#3b3f45', awning: ['#2d2d2d', '#f6efe0'], sign: '#2d2d2d', ink: '#e2bf4f' },
+};
+// Merce in vetrina: sagome di mobili o vestiti appesi, dietro al vetro.
+function vitrine(g, f, u0, u1, kind, night, seed) {
+  poly(g, quadOn(f, u0 - 0.015, u1 + 0.015, 3, 31)); g.fillStyle = '#e9e1cf'; g.fill();
+  const glass = quadOn(f, u0, u1, 5, 29);
+  poly(g, glass); g.fillStyle = night ? '#f4cf7a' : '#bfe0ee'; g.fill();
+  const cols = ['#c0392b', '#2f6b9f', '#e0a92a', '#2f7d4f', '#7a4a6b', '#e86b8a'];
+  const n = 3, span = (u1 - u0) / n;
+  for (let k = 0; k < n; k++) {
+    const c = cols[(seed + k * 2) % cols.length], u = u0 + span * (k + 0.5);
+    if (kind === 'wear') {
+      // Maglie sulle grucce
+      poly(g, quadOn(f, u - span * 0.08, u + span * 0.08, 24, 25)); g.fillStyle = '#6b6b6b'; g.fill();
+      poly(g, quadOn(f, u - span * 0.32, u + span * 0.32, 18, 23)); g.fillStyle = c; g.fill();
+      poly(g, quadOn(f, u - span * 0.2, u + span * 0.2, 9, 18)); g.fill();
+    } else {
+      // Poltroncine e lampade
+      poly(g, quadOn(f, u - span * 0.3, u + span * 0.3, 5, 11)); g.fillStyle = c; g.fill();
+      poly(g, quadOn(f, u - span * 0.3, u - span * 0.12, 11, 18)); g.fill();
+      if (k === 1) { poly(g, quadOn(f, u + span * 0.32, u + span * 0.36, 5, 22)); g.fillStyle = '#3b3f45'; g.fill(); poly(g, quadOn(f, u + span * 0.22, u + span * 0.46, 22, 27)); g.fillStyle = '#f3e2b8'; g.fill(); }
+    }
+  }
+  // Riflesso sul vetro
+  const r0 = f(u0 + (u1 - u0) * 0.1, 27), r1 = f(u0 + (u1 - u0) * 0.35, 12);
+  g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 1; g.beginPath(); g.moveTo(r0[0], r0[1]); g.lineTo(r1[0], r1[1]); g.stroke();
+  return glass;
+}
+// Scritta dipinta su una parete isometrica (che sale verso destra di mezzo pixel per pixel).
+function wallText(g, f, u, hh, text, color, size, slope) {
+  const [x, y] = f(u, hh);
+  g.save(); g.translate(x, y); g.transform(1, slope, 0, 1, 0, 0);
+  g.fillStyle = color; g.font = `800 ${size}px Nunito, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, 0, 0);
+  g.restore();
+}
+// Il negozio occupa un blocco 2×2: (sx, sy) è l'angolo in alto della casella posteriore.
+// La vetrina con l'insegna e la tenda guarda la strada principale (parete sinistra).
+function drawShop(g, shop, sx, sy, { night = false, detail = true } = {}) {
+  const st = SHOP_STYLE[shop.id];
+  const wins = [];
+  const k = 0.08;
+  const T0 = P(sx, sy, k, k), R0 = P(sx, sy, 2 - k, k), B0 = P(sx, sy, 2 - k, 2 - k), L0 = P(sx, sy, k, 2 - k);
+  const hw = 68;
+  // Marciapiede davanti e ombra
+  g.fillStyle = '#d6cfc0'; poly(g, [P(sx, sy, 0, 0), P(sx, sy, 2, 0), P(sx, sy, 2, 2), P(sx, sy, 0, 2)]); g.fill();
+  g.fillStyle = 'rgba(25,40,15,0.22)'; poly(g, [P(sx, sy, k, k), P(sx, sy, 2.2, -0.1), P(sx, sy, 2.1, 1.9), P(sx, sy, 2 - k, 2 - k)]); g.fill();
+  drawWall(g, L0, B0, hw, st.wall);
+  drawWall(g, B0, R0, hw, shade(st.wall, -0.13));
+  const fl = wallFace(L0, B0), fr = wallFace(B0, R0);
+  // Zoccolo scuro sotto le vetrine
+  for (const [f, c] of [[fl, st.trim], [fr, shade(st.trim, -0.1)]]) { poly(g, quadOn(f, 0, 1, 0, 4)); g.fillStyle = c; g.fill(); }
+  wins.push(vitrine(g, fl, 0.06, 0.38, shop.kind, night, 0));
+  wins.push(vitrine(g, fl, 0.62, 0.94, shop.kind, night, 3));
+  wins.push(vitrine(g, fr, 0.14, 0.86, shop.kind, night, 1));
+  // Porta a vetri al centro della vetrina
+  poly(g, quadOn(fl, 0.42, 0.58, 0, 32)); g.fillStyle = st.trim; g.fill();
+  poly(g, quadOn(fl, 0.445, 0.555, 0, 29)); g.fillStyle = night ? '#f4cf7a' : '#9fcbe0'; g.fill();
+  poly(g, quadOn(fl, 0.495, 0.505, 0, 29)); g.fillStyle = st.trim; g.fill();
+  if (detail) {
+    // Cartello "Aperto" appeso alla porta
+    poly(g, quadOn(fl, 0.455, 0.49, 17, 21)); g.fillStyle = '#f6efe0'; g.fill();
+    poly(g, quadOn(fl, 0.46, 0.485, 18, 20)); g.fillStyle = '#2f7d4f'; g.fill();
+  }
+  // Tenda a strisce che sporge sulla strada
+  const out = (p, d) => add(p, -32 * d, 16 * d);
+  const N = 10;
+  for (let i = 0; i < N; i++) {
+    const a = fl(i / N, 42), b = fl((i + 1) / N, 42);
+    poly(g, [a, b, add(out(b, 0.3), 0, 5), add(out(a, 0.3), 0, 5)]);
+    g.fillStyle = st.awning[i % 2]; g.fill();
+    g.strokeStyle = shade(st.awning[0], -0.3); g.lineWidth = 0.5; g.stroke();
+    // Bordo a festoni
+    const m = lerp(add(out(a, 0.3), 0, 5), add(out(b, 0.3), 0, 5), 0.5);
+    poly(g, [add(out(a, 0.3), 0, 5), add(out(b, 0.3), 0, 5), add(m, 0, 3)]); g.fill();
+  }
+  // Insegna
+  poly(g, quadOn(fl, 0.12, 0.88, 47, 61)); g.fillStyle = st.sign; g.fill(); g.strokeStyle = shade(st.sign, 0.25); g.lineWidth = 1; g.stroke();
+  wallText(g, fl, 0.5, 54, shop.sign, st.ink, 10, 0.5);
+  // Finestrella e insegnina a bandiera sul lato
+  if (detail) {
+    windowOn(g, fr, 0.3, 0.7, 46, 60, { lit: night, night, door: st.trim, detail, wins }, true);
+    const p = fl(0.99, 38);
+    g.fillStyle = '#3b3f45'; g.fillRect(Math.round(p[0]) - 9, Math.round(p[1]) - 1, 10, 1);
+    poly(g, [add(p, -9, 0), add(p, -1, 4), add(p, -1, 16), add(p, -9, 12)]); g.fillStyle = st.sign; g.fill();
+    g.fillStyle = st.ink; g.fillRect(Math.round(p[0]) - 6, Math.round(p[1]) + 6, 3, 3);
+  }
+  // Tetto piano con parapetto
+  const e = (q) => add(q, 0, -hw);
+  poly(g, [e(T0), e(R0), e(B0), e(L0)]); g.fillStyle = shade(st.wall, -0.28); g.fill();
+  const inn = (q) => lerp(lerp(e(T0), e(B0), 0.5), e(q), 0.88);
+  poly(g, [inn(T0), inn(R0), inn(B0), inn(L0)]); g.fillStyle = '#8f8a80'; g.fill();
+  g.strokeStyle = shade(st.wall, -0.4); g.lineWidth = 1; poly(g, [e(T0), e(R0), e(B0), e(L0)]); g.stroke();
+  if (detail) { const c = lerp(inn(T0), inn(R0), 0.5); box(g, add(c, 6, 10), 0.22, 0.22, 8, '#c9c3b5', '#a9a396', '#8f8a80'); }
+  return { wins, top: sy - hw - 8 };
+}
+
 function drawYard(g, garden, sx, sy, det) {
   if (garden === 'nessuno') { g.fillStyle = '#ddcfab'; diamond(g, sx, sy, 2); g.fill(); if (det) speck(g, sx, sy, sx + sy, 8, ['rgba(150,120,70,0.4)', 'rgba(255,255,255,0.5)']); }
   else if (garden === 'prato') { g.fillStyle = 'rgba(200,240,150,0.35)'; diamond(g, sx, sy, 2); g.fill(); }
@@ -1901,6 +2133,17 @@ function drawWorld(g, city, view, o) {
       if (r) labels.push({ x: sx, y: sy + 34, text: r.username, me: h.residentId === o.meId, slot: k });
       continue;
     }
+    const shop = shopAt(x, y);
+    if (shop) {
+      // Il negozio si disegna una volta, sulla sua casella più vicina a chi guarda.
+      if (x !== shop.x0 + 1 || y !== shop.y0 + 1) continue;
+      const bx = isoX(shop.x0, shop.y0), by = isoY(shop.x0, shop.y0) - elev(L);
+      const draw = (gg) => drawShop(gg, shop, bx, by, { night, detail: det });
+      const res = draw(g);
+      if (night) lights.push(...res.wins);
+      objects.push({ type: 'shop', shop: shop.id, depth: d, box: [bx - 64, res.top, bx + 64, by + 64], draw });
+      continue;
+    }
     const tree = G.trees.get(k);
     const road = city.roads[k];
     const dd = districtAt(x, y);
@@ -2037,7 +2280,7 @@ function drawAmbient(g, city, view, o, t) {
 
 function avatarLook(name, chosen) {
   const l = cleanLook(chosen, name);
-  return { skin: LOOK.skin[l.skin], hair: LOOK.hair[l.hair], shirt: LOOK.shirt[l.shirt], pants: LOOK.pants[l.pants], style: l.style, extra: l.extra };
+  return { skin: LOOK.skin[l.skin], hair: LOOK.hair[l.hair], shirt: LOOK.shirt[l.shirt], pants: LOOK.pants[l.pants], style: l.style, extra: l.extra, top: l.top, bottom: l.bottom };
 }
 function rectO(g, x, y, w, h, fill, line) {
   g.fillStyle = fill; g.fillRect(x, y, w, h);
@@ -2055,17 +2298,46 @@ function drawAvatar(g, x, y, dir, step, look, { night = false } = {}) {
   g.fillStyle = 'rgba(20,30,15,0.3)'; g.beginPath(); g.ellipse(0, 0, 9, 4, 0, 0, 7); g.fill();
   if (mirror) g.scale(-1, 1);
   const a = step === 1 ? 1 : 0, b = step === 2 ? 1 : 0;
-  // Gambe e scarpe
-  rectO(g, -5, -14 + a, 4, 12 - a, look.pants, ol);
-  rectO(g, 1, -14 + b, 4, 12 - b, shade(look.pants, -0.1), ol);
+  // Gambe e scarpe (con pantaloncini e gonna si vede la pelle sotto il ginocchio)
+  const top = look.top || 'maglietta', bottom = look.bottom || 'pantaloni';
+  const legCol = bottom === 'pantaloni' ? look.pants : look.skin;
+  rectO(g, -5, -14 + a, 4, 12 - a, legCol, ol);
+  rectO(g, 1, -14 + b, 4, 12 - b, shade(legCol, -0.1), ol);
+  if (bottom === 'pantaloncini') { rectO(g, -5, -14 + a, 4, 6, look.pants, ol); rectO(g, 1, -14 + b, 4, 6, shade(look.pants, -0.1), ol); }
   rectO(g, -6 + a, -3, 6, 3, '#2b2b2b');
   rectO(g, 1 - b, -3 - b, 6, 3, '#1f1f1f');
+  if (bottom === 'gonna') {
+    g.fillStyle = look.pants; poly(g, [[-7, -15], [7, -15], [9, -6], [-9, -6]]); g.fill(); g.strokeStyle = ol; g.lineWidth = 1; g.stroke();
+    g.fillStyle = shade(look.pants, -0.15); g.fillRect(1, -14, 6, 7);
+  }
   // Braccio dietro, busto, braccio davanti
-  rectO(g, 6, -27 + b, 3, 11, shade(look.shirt, -0.22), ol);
+  const armCol = top === 'canotta' ? look.skin : null;
+  rectO(g, 6, -27 + b, 3, 11, armCol ? shade(armCol, -0.12) : shade(look.shirt, -0.22), ol);
   rectO(g, -7, -28, 14, 15, look.shirt, ol);
   g.fillStyle = shade(look.shirt, back ? 0.08 : -0.14); g.fillRect(back ? -6 : 1, -27, 5, 13);
-  if (!back) { g.fillStyle = shade(look.shirt, 0.18); g.fillRect(-3, -27, 6, 2); }
-  rectO(g, -9, -27 + a, 3, 11, shade(look.shirt, -0.05), ol);
+  if (!back && top !== 'giacca') { g.fillStyle = shade(look.shirt, 0.18); g.fillRect(-3, -27, 6, 2); }
+  const light = rgb(look.shirt).reduce((x, y) => x + y) > 600;
+  if (top === 'righe') {
+    g.fillStyle = light ? '#2f4f7f' : '#f4f1ea';
+    for (const yy of [-25, -21, -17]) g.fillRect(-6, yy, 12, 2);
+  } else if (top === 'camicia' && !back) {
+    g.fillStyle = light ? '#d9d3c4' : '#f4f1ea'; g.fillRect(-4, -28, 3, 3); g.fillRect(1, -28, 3, 3);
+    g.fillStyle = shade(look.shirt, -0.35); for (const yy of [-24, -20, -16]) g.fillRect(0, yy, 1, 1);
+  } else if (top === 'felpa') {
+    g.fillStyle = shade(look.shirt, -0.2);
+    if (back) g.fillRect(-6, -29, 12, 6); else { g.fillRect(-5, -19, 10, 4); g.fillStyle = '#f4f1ea'; g.fillRect(-2, -27, 1, 5); g.fillRect(2, -27, 1, 5); }
+  } else if (top === 'giacca') {
+    if (back) { g.fillStyle = shade(look.shirt, -0.2); g.fillRect(0, -27, 1, 13); }
+    else {
+      g.fillStyle = '#f4f1ea'; poly(g, [[-3, -28], [3, -28], [0, -19]]); g.fill();
+      g.fillStyle = '#c0392b'; g.fillRect(-0.5, -26, 1, 5);
+      g.fillStyle = shade(look.shirt, 0.15); poly(g, [[-4, -28], [-1, -21], [-3, -21]]); g.fill();
+      g.fillStyle = '#e2bf4f'; g.fillRect(-1, -17, 1, 1);
+    }
+  } else if (top === 'canotta') {
+    g.fillStyle = look.skin; g.fillRect(-7, -28, 3, 4); g.fillRect(4, -28, 3, 4);
+  }
+  rectO(g, -9, -27 + a, 3, 11, armCol || shade(look.shirt, -0.05), ol);
   rectO(g, -9, -17 + a, 3, 3, look.skin);
   // Testa
   rectO(g, -2, -31, 4, 3, look.skin);
@@ -2102,6 +2374,29 @@ function drawAvatar(g, x, y, dir, step, look, { night = false } = {}) {
     const fx = back ? 4 : -5, fy = -45;
     g.fillStyle = '#e85d75'; g.fillRect(fx - 2, fy, 2, 2); g.fillRect(fx + 2, fy, 2, 2); g.fillRect(fx, fy - 2, 2, 2); g.fillRect(fx, fy + 2, 2, 2);
     g.fillStyle = '#f6d84a'; g.fillRect(fx, fy, 2, 2);
+  } else if (look.extra === 'paglia') {
+    g.fillStyle = '#c9a94a'; g.beginPath(); g.ellipse(0, -44, 13, 4, 0, 0, 7); g.fill();
+    g.fillStyle = '#e8cf7a'; g.beginPath(); g.ellipse(0, -45, 12, 3.5, 0, 0, 7); g.fill();
+    g.beginPath(); g.roundRect(-6.5, -52, 13, 8, 3); g.fill();
+    g.fillStyle = '#c0392b'; g.fillRect(-6.5, -47, 13, 2);
+  } else if (look.extra === 'coppola') {
+    g.fillStyle = '#6b6156'; g.beginPath(); g.roundRect(-8, -48, 16, 5, 2.5); g.fill();
+    g.fillStyle = '#7d7266'; g.fillRect(-6, -47, 3, 1); g.fillRect(1, -47, 3, 1);
+    if (!back) { g.fillStyle = '#574e44'; g.fillRect(3, -44, 8, 2); }
+  } else if (look.extra === 'basco') {
+    g.fillStyle = '#2d2d2d'; g.beginPath(); g.ellipse(-1, -46, 9, 3.6, -0.15, 0, 7); g.fill();
+    g.fillRect(-1, -51, 2, 2);
+  } else if (look.extra === 'cuffie') {
+    g.strokeStyle = '#2b2b2b'; g.lineWidth = 2; g.beginPath(); g.arc(0, -40, 8.5, Math.PI * 1.05, Math.PI * 1.95); g.stroke();
+    rectO(g, back ? 5 : -10, -41, 4, 6, '#e85d4a', ol);
+  } else if (look.extra === 'sciarpa') {
+    g.fillStyle = '#c0392b'; g.fillRect(-7, -31, 14, 4);
+    g.fillStyle = '#e85d4a'; g.fillRect(-7, -31, 14, 1);
+    if (!back) { g.fillStyle = '#c0392b'; g.fillRect(-5, -28, 3, 9); g.fillStyle = '#f4f1ea'; g.fillRect(-5, -21, 3, 1); }
+  } else if (look.extra === 'corona') {
+    g.fillStyle = '#e2bf4f'; g.fillRect(-6, -49, 12, 4);
+    for (const dx of [-6, -1, 4]) { poly(g, [[dx, -49], [dx + 1, -54], [dx + 2, -49]]); g.fill(); }
+    g.fillStyle = '#c0392b'; g.fillRect(-1, -48, 2, 2);
   }
   g.restore();
 }
@@ -2117,6 +2412,16 @@ function drawAvatarPreview(canvas, look, t) {
   g.setTransform(s, 0, 0, s, canvas.width / 2, canvas.height * 0.86);
   diamond(g, 0, -16); g.fillStyle = '#9fcf6c'; g.fill(); g.strokeStyle = '#6f9f4a'; g.lineWidth = 1; g.stroke();
   drawAvatar(g, 0, 0, dirs[Math.floor(k / 1.4) % 4], (Math.floor(k * 4.5) % 2) + 1, look);
+}
+
+// Figurina ferma per i cataloghi (vestiti dei negozi).
+function drawAvatarIcon(canvas, look) {
+  const g = canvas.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const s = canvas.height / 62;
+  g.setTransform(s, 0, 0, s, canvas.width / 2, canvas.height - 5 * s);
+  drawAvatar(g, 0, 0, 'SE', 0, look);
 }
 
 /* Nuvole ------------------------------------------------------------------ */
@@ -2338,6 +2643,98 @@ function drawFurni(g, it, { night = false } = {}) {
       g.fillStyle = '#f2a33a'; g.fillRect(c[0] - 6, c[1] - 26, 4, 2); g.fillStyle = '#e85d75'; g.fillRect(c[0] + 2, c[1] - 21, 4, 2);
       break;
     }
+    case 'pouf': {
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      g.fillStyle = 'rgba(0,0,0,0.22)'; g.beginPath(); g.ellipse(c[0], c[1], 13, 6.5, 0, 0, 7); g.fill();
+      g.fillStyle = shade(col, -0.12); g.beginPath(); g.ellipse(c[0], c[1] - 3, 12, 6, 0, 0, Math.PI); g.lineTo(c[0] - 12, c[1] - 13); g.ellipse(c[0], c[1] - 13, 12, 6, 0, Math.PI, 0, true); g.closePath(); g.fill();
+      g.strokeStyle = shade(col, -0.4); g.lineWidth = 1; g.stroke();
+      g.fillStyle = shade(col, 0.1); g.beginPath(); g.ellipse(c[0], c[1] - 13, 12, 6, 0, 0, 7); g.fill(); g.stroke();
+      g.fillStyle = shade(col, -0.25); g.fillRect(c[0] - 1, c[1] - 14, 2, 2);
+      break;
+    }
+    case 'bancone': {
+      const [a, b] = ins(x0, x1, 0.04), [c, d] = ins(y0, y1, 0.16);
+      box3(g, a, c, b, d, 0, 28, WOOD, { top: '#e9e1cf' });
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0, 1, 20, 24)); g.fillStyle = col; g.fill();
+      for (const u of [0.25, 0.5, 0.75]) { poly(g, quadOn(ff, u - 0.005, u + 0.005, 2, 20)); g.fillStyle = WOOD_D; g.fill(); }
+      // Registratore di cassa
+      const m = r ? [(a + b) / 2, c + 0.3] : [a + 0.3, (c + d) / 2];
+      box3(g, m[0] - 0.14, m[1] - 0.12, m[0] + 0.14, m[1] + 0.12, 28, 36, '#4b4f56');
+      box3(g, m[0] - 0.1, m[1] - 0.08, m[0] + 0.02, m[1] + 0.08, 36, 41, '#2f3338', { top: '#7cc6a0' });
+      break;
+    }
+    case 'vaso': {
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      g.fillStyle = 'rgba(0,0,0,0.22)'; g.beginPath(); g.ellipse(c[0], c[1], 8, 4, 0, 0, 7); g.fill();
+      poly(g, [[c[0] - 5, c[1]], [c[0] + 5, c[1]], [c[0] + 7, c[1] - 12], [c[0] + 3, c[1] - 16], [c[0] - 3, c[1] - 16], [c[0] - 7, c[1] - 12]]);
+      g.fillStyle = col; g.fill(); g.strokeStyle = shade(col, -0.4); g.lineWidth = 1; g.stroke();
+      g.fillStyle = shade(col, 0.25); g.fillRect(c[0] - 5, c[1] - 11, 2, 6);
+      g.strokeStyle = '#3f7d34'; g.beginPath();
+      for (const dx of [-5, -1, 3, 6]) { g.moveTo(c[0] + dx / 3, c[1] - 16); g.lineTo(c[0] + dx, c[1] - 26 - Math.abs(dx)); }
+      g.stroke();
+      for (const [dx, dy, fc] of [[-5, -31, '#f6d84a'], [-1, -27, '#ffffff'], [3, -29, '#e85d75'], [6, -32, '#f6d84a']]) { g.fillStyle = fc; g.fillRect(c[0] + dx - 1.5, c[1] + dy - 1.5, 3, 3); }
+      break;
+    }
+    case 'specchio': {
+      const [a, b, c, d] = r ? [x0 + 0.2, x0 + 0.32, y0 + 0.15, y1 - 0.15] : [x0 + 0.15, x1 - 0.15, y0 + 0.2, y0 + 0.32];
+      box3(g, a - 0.05, c - 0.05, b + 0.05, d + 0.05, 0, 3, WOOD_D);
+      box3(g, a, c, b, d, 3, 58, '#e2bf4f');
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.1, 0.9, 7, 54)); g.fillStyle = night ? '#4a5a7a' : '#cfe6ef'; g.fill();
+      poly(g, quadOn(ff, 0.2, 0.32, 30, 50)); g.fillStyle = 'rgba(255,255,255,0.7)'; g.fill();
+      break;
+    }
+    case 'pendolo': {
+      const [a, b, c, d] = r ? [x0 + 0.25, x0 + 0.65, y0 + 0.22, y1 - 0.22] : [x0 + 0.22, x1 - 0.22, y0 + 0.25, y0 + 0.65];
+      box3(g, a, c, b, d, 0, 64, WOOD_D);
+      box3(g, a - 0.03, c - 0.03, b + 0.03, d + 0.03, 64, 68, WOOD);
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.15, 0.85, 42, 58)); g.fillStyle = '#f4efe3'; g.fill();
+      const ce = ff(0.5, 50);
+      g.strokeStyle = '#2b2b2b'; g.lineWidth = 1; g.beginPath(); g.moveTo(ce[0], ce[1]); g.lineTo(ce[0], ce[1] - 5); g.moveTo(ce[0], ce[1]); g.lineTo(ce[0] + 3, ce[1] + 1); g.stroke();
+      poly(g, quadOn(ff, 0.25, 0.75, 8, 36)); g.fillStyle = '#3a2a1c'; g.fill();
+      const pe = ff(0.5, 14); g.fillStyle = '#e2bf4f'; g.beginPath(); g.arc(pe[0], pe[1], 3, 0, 7); g.fill();
+      g.fillRect(Math.round(pe[0]) - 0.5, Math.round(pe[1]) - 20, 1, 20);
+      break;
+    }
+    case 'jukebox': {
+      const [a, b] = ins(x0, x1, 0.18), [c, d] = ins(y0, y1, 0.22);
+      box3(g, a, c, b, d, 0, 44, '#c0392b', { top: '#e85d4a' });
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.12, 0.88, 26, 42)); g.fillStyle = night ? '#ffe39a' : '#f6d84a'; g.fill();
+      const bands = ['#e85d75', '#4fb3c8', '#7fc25e'];
+      for (let i = 0; i < 3; i++) { poly(g, quadOn(ff, 0.12, 0.88, 6 + i * 6, 9 + i * 6)); g.fillStyle = bands[i]; g.fill(); }
+      poly(g, quadOn(ff, 0.3, 0.7, 30, 38)); g.fillStyle = '#2b2b2b'; g.fill();
+      if (night) { g.save(); g.globalCompositeOperation = 'lighter'; const q = ff(0.5, 32); glow(g, q[0], q[1], 26, 0.3, '255,140,180'); g.restore(); }
+      break;
+    }
+    case 'statua': {
+      box3(g, x0 + 0.24, y0 + 0.24, x1 - 0.24, y1 - 0.24, 0, 30, '#e6e2da', { side: '#c9c3b5' });
+      box3(g, x0 + 0.2, y0 + 0.2, x1 - 0.2, y1 - 0.2, 30, 33, '#f4f2ee');
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      g.fillStyle = '#ece8df'; g.strokeStyle = '#a9a396'; g.lineWidth = 1;
+      poly(g, [[c[0] - 10, c[1] - 33], [c[0] + 10, c[1] - 33], [c[0] + 8, c[1] - 42], [c[0] - 8, c[1] - 42]]); g.fill(); g.stroke();
+      g.fillRect(c[0] - 2, c[1] - 46, 4, 5);
+      g.beginPath(); g.roundRect(c[0] - 5.5, c[1] - 57, 11, 12, 4); g.fill(); g.stroke();
+      // Corona d'alloro
+      g.fillStyle = '#9ab36a'; for (const dx of [-5, -3, -1, 1, 3, 5]) g.fillRect(c[0] + dx - 1, c[1] - 56 + Math.abs(dx) * 0.3, 2, 2);
+      g.fillStyle = '#a9a396'; g.fillRect(c[0] + 1, c[1] - 52, 1.5, 1.5);
+      break;
+    }
+    case 'stender': {
+      const [a, b] = ins(x0, x1, 0.1), [c, d] = ins(y0, y1, 0.35);
+      for (const [p, q] of r ? [[a, c], [a, d - 0.06]] : [[a, c], [b - 0.06, c]]) box3(g, p, q, p + 0.06, q + 0.06, 0, 46, '#4b4f56');
+      if (r) box3(g, a, c, a + 0.06, d, 44, 46, '#4b4f56'); else box3(g, a, c, b, c + 0.06, 44, 46, '#4b4f56');
+      const cols = [col, '#f1ede4', shade(col, 0.3), '#2d2d2d', col];
+      for (let i = 0; i < 5; i++) {
+        const t = 0.12 + i * 0.19;
+        const p = r ? gp(a + 0.03, c + (d - c) * t) : gp(a + (b - a) * t, c + 0.03);
+        poly(g, [[p[0] - 6, p[1] - 40], [p[0] + 6, p[1] - 40], [p[0] + 5, p[1] - 18], [p[0] - 5, p[1] - 18]]);
+        g.fillStyle = cols[i]; g.fill(); g.strokeStyle = shade(cols[i] === '#2d2d2d' ? '#666' : cols[i], -0.35); g.lineWidth = 1; g.stroke();
+      }
+      break;
+    }
   }
 }
 
@@ -2504,12 +2901,13 @@ class CityMap {
     for (const a of list) {
       const cur = this.avatars.get(a.id);
       const room = a.pos[2] ?? null;
+      const look = a.colors || avatarLook(a.name, a.look);
       if (cur) {
-        cur.name = a.name; cur.me = a.me; cur.look = avatarLook(a.name, a.look);
+        cur.name = a.name; cur.me = a.me; cur.look = look;
         if (cur.room !== room) Object.assign(cur, { room, x: a.pos[0], y: a.pos[1], path: [] });
         continue;
       }
-      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], room, path: [], dir: 'SE', look: avatarLook(a.name, a.look), name: a.name, me: a.me, walked: 0, bubble: null });
+      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], room, path: [], dir: a.dir || 'SE', look, name: a.name, me: a.me, walked: 0, bubble: null });
     }
     this.avatarsDirty = true;
   }
@@ -2784,7 +3182,7 @@ class CityMap {
     }
     let house = null;
     for (const ob of this.objects) {
-      if (ob.type !== 'house') continue;
+      if (ob.type !== 'house' && ob.type !== 'shop') continue;
       const [x0, y0, x1, y1] = ob.box;
       if (wx >= x0 && wx <= x1 && wy >= y0 && wy <= y1 && (!house || ob.depth > house.depth)) house = ob;
     }
@@ -2797,6 +3195,7 @@ class CityMap {
       if (!tile || tx + ty > tile[0] + tile[1]) tile = [tx, ty];
     }
     if (house && (!tile || house.depth >= tile[0] + tile[1] - 1)) {
+      if (house.type === 'shop') return this.onTap?.({ kind: 'shop', shop: house.shop });
       const [x, y] = parseKey(house.slot);
       return this.onTap?.({ kind: 'house', slot: house.slot, house: this.city.houses[house.slot], x, y });
     }
@@ -2805,6 +3204,7 @@ class CityMap {
     const k = key(x, y);
     const at = { x, y };
     if (this.city.houses[k]) return this.onTap?.({ kind: 'house', slot: k, house: this.city.houses[k], ...at });
+    if (shopAt(x, y)) return this.onTap?.({ kind: 'shop', shop: shopAt(x, y).id, ...at });
     if (inPiazza(x, y)) {
       const [ex, ey] = PIAZZA_SPOTS.edicola;
       if (x === ex && y === ey) return this.onTap?.({ kind: 'giornale', ...at });
@@ -2939,11 +3339,11 @@ class CityMap {
         g.fillStyle = '#ffd34d'; g.strokeStyle = 'rgba(60,40,0,0.6)'; g.lineWidth = 1 / z;
         g.beginPath(); g.moveTo(x - 4 * s, head - 8 * s + bob); g.lineTo(x + 4 * s, head - 8 * s + bob); g.lineTo(x, head - 2 * s + bob); g.closePath(); g.fill(); g.stroke();
       }
-      if (a.me || this.scene || z * this.dpr >= 3) label(g, x, y + 8 * k, a.name, a.me, z);
+      if (a.name && (a.me || this.scene || z * this.dpr >= 3)) label(g, x, y + 8 * k, a.name, a.me, z);
       if (a.bubble) {
         const age = t - a.bubble.t0;
         if (age > 6500) { a.bubble = null; continue; }
-        bubble(g, x, head - 12 * k - Math.min(age / 900, 1) * 4, a.name, a.bubble.text, z, age > 5800 ? 1 - (age - 5800) / 700 : 1);
+        bubble(g, x, head - 12 * k - Math.min(age / 900, 1) * 4, a.name, a.bubble.text, z, age > 5800 ? 1 - (age - 5800) / 700 : 1, this.view());
       }
     }
     for (const [slot, t0] of this.born) {
@@ -2970,7 +3370,7 @@ function label(g, x, y, text, mine, z = 1) {
   g.restore();
 }
 // Nuvoletta alla Habbo: riquadro bianco con bordo nero, nome in grassetto e messaggio.
-function bubble(g, x, y, name, text, z, alpha) {
+function bubble(g, x, y, name, text, z, alpha, view) {
   g.save();
   g.globalAlpha = Math.max(0, alpha);
   const fs = 12 / z;
@@ -2978,10 +3378,11 @@ function bubble(g, x, y, name, text, z, alpha) {
   const nw = g.measureText(name + ': ').width;
   g.font = `600 ${fs}px Nunito, sans-serif`;
   let t = text;
-  const maxW = 220 / z;
+  const maxW = Math.min(220 / z, view ? view.R - view.L - 16 / z : Infinity);
   if (nw + g.measureText(t).width > maxW) { while (t.length > 2 && nw + g.measureText(t + '…').width > maxW) t = t.slice(0, -1); t += '…'; }
   const w = nw + g.measureText(t).width + fs * 1.4, hgt = fs * 2;
-  const bx = x - w / 2, by = y - hgt;
+  // La nuvoletta resta dentro lo schermo; la punta continua a indicare chi parla.
+  const bx = view ? Math.max(view.L + 8 / z, Math.min(view.R - 8 / z - w, x - w / 2)) : x - w / 2, by = y - hgt;
   g.fillStyle = '#ffffff'; g.strokeStyle = '#1f1f1f'; g.lineWidth = 1.5 / z;
   g.beginPath(); g.roundRect(bx, by, w, hgt, 5 / z); g.fill(); g.stroke();
   g.beginPath(); g.moveTo(x - 4 / z, by + hgt - 0.8 / z); g.lineTo(x, by + hgt + 6 / z); g.lineTo(x + 4 / z, by + hgt - 0.8 / z); g.closePath(); g.fill();
@@ -3555,6 +3956,7 @@ function update() {
   } else notice.hidden = true;
 
   // Barra in basso (non si tocca mentre si sta scrivendo un messaggio).
+  document.body.classList.toggle('in-room', !!ui.room);
   const bottom = $('#bottom');
   if (document.activeElement?.id === 'chat-input') return;
   if (ui.room) { bottom.replaceChildren(roomBar()); return; }
@@ -3893,17 +4295,23 @@ function openCharacter({ first = false } = {}) {
       type: 'button', class: 'swatch' + (look[key] === o.id ? ' on' : ''), role: 'radio', 'aria-checked': String(look[key] === o.id),
       onclick: () => { look[key] = o.id; paint(); },
     }, o.label))));
+  // Nei vestiti compare solo quello che si ha: i capi base più quelli presi alla Sartoria.
+  const owned = (slot) => WEAR.filter((w) => w.slot === slot && ownsWear(store.city, r.id, w.id));
   const paint = () => groups.replaceChildren(
     colorRow('Carnagione', 'skin', LOOK.skin),
     idRow('Pettinatura', 'style', LOOK.style),
     colorRow('Colore dei capelli', 'hair', LOOK.hair),
-    colorRow('Maglietta', 'shirt', LOOK.shirt),
-    colorRow('Pantaloni', 'pants', LOOK.pants),
-    idRow('Accessorio', 'extra', LOOK.extra));
+    idRow('Maglia', 'top', owned('top')),
+    colorRow('Colore della maglia', 'shirt', LOOK.shirt),
+    idRow('Sotto', 'bottom', owned('bottom')),
+    colorRow('Colore di pantaloni e gonne', 'pants', LOOK.pants),
+    idRow('Accessorio', 'extra', owned('extra')),
+    WEAR.some((w) => !ownsWear(store.city, r.id, w.id)) ? h('p', { class: 'small' }, 'Altri vestiti e accessori ti aspettano alla Sartoria Moda, accanto alla piazza.') : null);
   const shuffle = () => {
     const pick = (n) => Math.floor(Math.random() * n);
+    const any = (list) => list[pick(list.length)].id;
     Object.assign(look, { skin: pick(LOOK.skin.length), hair: pick(LOOK.hair.length), style: LOOK.style[pick(LOOK.style.length)].id,
-      shirt: pick(LOOK.shirt.length), pants: pick(LOOK.pants.length), extra: LOOK.extra[pick(LOOK.extra.length)].id });
+      shirt: pick(LOOK.shirt.length), pants: pick(LOOK.pants.length), extra: any(owned('extra')), top: any(owned('top')), bottom: any(owned('bottom')) });
     paint();
   };
   paint();
@@ -4211,11 +4619,13 @@ function onTap(t) {
     if (t.kind === 'house') return toast('Questo lotto è già occupato.', 'err');
     return;
   }
+  if (t.kind === 'avatar' && t.id.startsWith('npc:')) return onNpcTap(t.id);
   if (t.kind === 'avatar') return openSay(t.id);
   if (ui.room) return onRoomTap(t);
   // Con il proprio omino in città, ogni tocco è anche una passeggiata.
   const walker = me() && map.avatarOf(me().id);
   const go = (x, y) => walker && walkTo(x, y);
+  if (t.kind === 'shop') { const sh = shopById(t.shop); go(...sh.front); return openShop(sh); }
   if (t.kind === 'house') { go(...frontOf(store.city, t.slot)); return openHouse(t.slot); }
   if (t.kind === 'lot') { go(t.x, t.y); return openLot(t.slot); }
   if (t.kind === 'giornale') { go(t.x, t.y + 1); return openGiornale(); }
@@ -4235,6 +4645,7 @@ function walkTo(x, y) {
 
 /* Dentro casa ---------------------------------------------------------------- */
 
+// Si entra in una casa (id del padrone) o in un negozio ('shop:…'): stessa stanza isometrica.
 function enterHouse(ownerId) {
   const mine = me();
   if (!mine) return openLogin();
@@ -4243,28 +4654,132 @@ function enterHouse(ownerId) {
   if (!map.avatarOf(mine.id)) syncAvatars();
   closeSheet();
   ui.room = ownerId;
-  ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null;
+  ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null; ui.shopTab = null;
   map.walk(mine.id, ...ROOM_DOOR, ownerId);
   store.move(...ROOM_DOOR, ownerId);
   map.enterRoom(ownerId);
+  const shop = shopById(ownerId);
+  if (shop) setTimeout(() => map.say('npc:' + shop.id, shop.kind === 'wear' ? `Ciao ${mine.username}! Tocca un manichino o il catalogo.` : `Benvenuto ${mine.username}! Tocca un mobile per prenderlo.`), 350);
   update();
 }
 function exitHouse() {
   const owner = ui.room;
   ui.room = null; ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null;
-  const house = residentHouse(store.city, owner);
-  const [x, y] = house ? frontOf(store.city, house.slot) : spawnPoint(store.city, me().id);
+  const shop = shopById(owner);
+  const house = shop ? null : residentHouse(store.city, owner);
+  const [x, y] = shop ? shop.front : house ? frontOf(store.city, house.slot) : spawnPoint(store.city, me().id);
   map.walk(me().id, x, y, null);
   store.move(x, y, null);
   map.exitRoom();
   if (house) map.focus(house.slot);
+  if (shop) map.focus([shop.x0 + 1, shop.y0 + 1]);
   update();
+}
+// Dalla stanza al Mobilificio: si esce e si va a piedi fino alla sua porta.
+function goToShop(id) {
+  const shop = shopById(id);
+  if (ui.room) exitHouse();
+  map.focus([shop.x0 + 1, shop.y0 + 1]);
+  if (me() && map.avatarOf(me().id)) walkTo(...shop.front);
+  openShop(shop);
+}
+
+/* Negozi ------------------------------------------------------------------- */
+
+function openShop(shop) {
+  map.set({ selected: null });
+  const what = shop.kind === 'wear' ? 'Maglie, gonne, cappelli e accessori per il tuo omino.' : 'Mobili e decorazioni da portare a casa e sistemare come vuoi.';
+  openSheet(shop.name, h('div', { class: 'stack' },
+    h('div', { class: 'badges' }, h('span', { class: 'tag live' }, 'Aperto'), h('span', { class: 'tag gold' }, 'Inaugurazione: tutto gratis')),
+    h('p', {}, what),
+    h('p', { class: 'small' }, `Dietro al bancone c'è ${shop.keeper}. Presto in città arriverà la moneta di ${CITY}: i prezzi sono già pronti.`),
+    me() ? h('button', { class: 'btn primary big', onclick: () => enterHouse(shop.room) }, 'Entra nel negozio')
+      : h('button', { class: 'btn primary', onclick: openRegister }, 'Iscriviti per fare acquisti')));
+}
+// Il cartellino del prezzo: per ora tutto gratis, il numero servirà con la moneta.
+const priceTag = () => h('span', { class: 'price' }, 'Gratis');
+async function buyFurni(t) {
+  const f = furniById(t);
+  const res = await run(null, () => store.op({ type: 'buy', kind: 'furni', t }));
+  if (res) toast(`${f.label}: nell'inventario (${res.have} da sistemare)`);
+  update();
+}
+function openWear(w) {
+  const r = myResident();
+  if (!r) return openLogin();
+  const has = ownsWear(store.city, r.id, w.id);
+  const look = { ...cleanLook(r.look, r.username), [w.slot]: w.id };
+  const cv = h('canvas', { class: 'avatar-preview', width: 300, height: 300, 'aria-label': `Tu con ${w.label.toLowerCase()}` });
+  const t0 = performance.now();
+  const anim = (t) => { if (!cv.isConnected) return; drawAvatarPreview(cv, avatarLook(r.username, look), t - t0); requestAnimationFrame(anim); };
+  const wearNow = (e) => run(e.currentTarget, async () => {
+    if (has) await store.op({ type: 'look', look });
+    else await store.op({ type: 'buy', kind: 'wear', id: w.id, wear: true });
+    closeSheet(); syncAvatars();
+    toast(has ? `Ora indossi: ${w.label.toLowerCase()}` : `${w.label}: preso! Ti sta benissimo.`);
+  });
+  openSheet(w.label, h('div', { class: 'stack' },
+    h('div', { class: 'avatar-head' }, cv, h('div', { class: 'stack' },
+      h('p', { class: 'small' }, has ? 'È già nel tuo armadio.' : 'Ecco come ti starebbe. Il colore lo cambi quando vuoi dal tuo personaggio.'),
+      has ? null : priceTag())),
+    h('button', { class: 'btn primary big', onclick: wearNow }, has ? 'Indossa' : 'Prendi e indossa'),
+    has ? null : h('button', { class: 'btn', onclick: (e) => run(e.currentTarget, async () => { await store.op({ type: 'buy', kind: 'wear', id: w.id }); closeSheet(); toast(`${w.label}: nel tuo armadio`); }) }, 'Prendi e tienilo da parte')), { wide: true });
+  requestAnimationFrame(anim);
+}
+function onNpcTap(id) {
+  const shop = shopById(ui.room);
+  if (!shop) return;
+  const m = /^npc:man:(\d+)$/.exec(id);
+  if (m) {
+    // Il manichino mostra un capo in vendita: si apre la prova di quello.
+    const look = MANNEQUINS[+m[1]].look;
+    return openWear(['extra', 'top', 'bottom'].map((k) => wearById(look[k])).find((w) => w && !w.base));
+  }
+  map.say(id, shop.kind === 'wear' ? 'Prova quello che vuoi, oggi è tutto gratis!' : 'Scegli pure: oggi è tutto gratis!');
+}
+// Barra in basso dentro un negozio: il catalogo completo, diviso per reparto.
+function shopBar(shop) {
+  const head = h('div', { class: 'room-head' },
+    h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, 'Sei in negozio'), h('strong', {}, shop.name)),
+    h('span', { class: 'row-actions' }, h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
+  const r = myResident();
+  const tabsList = shop.kind === 'wear' ? WEAR_SLOTS : FURNI_CATS;
+  const tab = ui.shopTab || tabsList[0].id;
+  const tabs = h('div', { class: 'seg', role: 'tablist' }, tabsList.map((o) =>
+    h('button', { class: 'seg-btn' + (tab === o.id ? ' on' : ''), role: 'tab', 'aria-selected': String(tab === o.id), onclick: () => { ui.shopTab = o.id; update(); } }, o.label)));
+  let items;
+  if (shop.kind === 'wear') {
+    const base = r ? cleanLook(r.look, r.username) : null;
+    items = WEAR.filter((w) => w.slot === tab && !w.base).map((w) => {
+      const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
+      drawAvatarIcon(cv, avatarLook(r?.username || 'ospite', { ...base, [w.slot]: w.id }));
+      const has = r && ownsWear(store.city, r.id, w.id);
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => openWear(w) }, cv, h('span', {}, w.label), has ? h('span', { class: 'owned' }, 'Già tuo') : priceTag());
+    });
+  } else {
+    const inv = r ? invOf(store.city, r.id).furni : {};
+    items = FURNI.filter((f) => f.cat === tab).map((f) => {
+      const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
+      drawFurniIcon(cv, f.id, 0);
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => buyFurni(f.id) }, cv, h('span', {}, f.label), inv[f.id] ? h('span', { class: 'owned' }, `Ne hai ${inv[f.id]}`) : priceTag());
+    });
+  }
+  const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'Catalogo del negozio' }, items);
+  const hint = h('p', { class: 'small' }, shop.kind === 'wear' ? 'Tocca un capo per provarlo addosso.' : 'Tocca un articolo per prenderlo: lo trovi in casa, nel pannello Arreda.');
+  return h('div', { class: 'bar room-bar editing' }, head, tabs, strip, hint);
 }
 const isMyRoom = () => me() && ui.room === me().id;
 
 async function onRoomTap(t) {
   if (t.kind === 'door') return exitHouse();
   const room = roomOf(store.city, ui.room);
+  const shop = shopById(ui.room);
+  if (shop && t.kind === 'furni') {
+    // In negozio la merce esposta si compra; appendiabiti e bancone aprono il reparto vestiti.
+    const it = room.items.find((x) => x.uid === t.uid);
+    if (shop.kind === 'furni' && it) return buyFurni(it.t);
+    if (it && (it.t === 'stender' || it.t === 'specchio')) { ui.shopTab = it.t === 'specchio' ? 'extra' : 'top'; return update(); }
+  }
   if (ui.edit && isMyRoom()) {
     if (t.kind === 'floor' && ui.placing) {
       const p = ui.placing;
@@ -4293,6 +4808,7 @@ async function onRoomTap(t) {
 
 function roomBar() {
   const city = store.city;
+  if (isShopRoom(ui.room)) return shopBar(shopById(ui.room));
   const owner = city.residents[ui.room];
   const mine = isMyRoom();
   const room = roomOf(city, ui.room);
@@ -4314,7 +4830,7 @@ function roomBar() {
         h('button', { class: 'btn small', onclick: act({ act: 'rotate' }) }, 'Ruota'),
         f.color ? h('button', { class: 'btn small', onclick: act({ act: 'color' }) }, 'Colore') : null,
         h('button', { class: 'btn small' + (ui.moving ? ' primary' : ''), onclick: () => { ui.moving = ui.moving ? null : it.uid; update(); } }, 'Sposta'),
-        h('button', { class: 'btn small danger', onclick: act({ act: 'remove' }, () => { ui.sel = null; map.setRoomUI({ selectedUid: null }); }) }, 'Togli'),
+        h('button', { class: 'btn small danger', onclick: act({ act: 'remove' }, () => { ui.sel = null; map.setRoomUI({ selectedUid: null }); toast(`${f.label}: rimesso nell'inventario`); }) }, 'Metti via'),
         h('button', { class: 'btn small ghost', onclick: () => { ui.sel = null; ui.moving = null; map.setRoomUI({ selectedUid: null }); update(); } }, 'Chiudi')));
   } else if (ui.placing) {
     const f = furniById(ui.placing.t);
@@ -4325,11 +4841,16 @@ function roomBar() {
         f.color ? h('button', { class: 'btn small', onclick: () => { ui.placing.c = (ui.placing.c + 1) % 8; update(); } }, 'Colore') : null,
         h('button', { class: 'btn small ghost', onclick: () => { ui.placing = null; update(); } }, 'Annulla')));
   } else {
-    const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'Catalogo dei mobili' }, FURNI.map((f) => {
+    // Si sistema solo quello che si ha nell'inventario; il resto si prende al Mobilificio.
+    const inv = invOf(city, me().id).furni;
+    const have = FURNI.filter((f) => inv[f.id] > 0);
+    const shopBtn = h('button', { class: 'catalog-item shop-link', role: 'listitem', onclick: () => goToShop('mobili') }, h('span', { class: 'shop-ico', 'aria-hidden': 'true' }, '🛋️'), h('span', {}, 'Vai al Mobilificio'));
+    const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'I tuoi mobili da sistemare' }, have.map((f) => {
       const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
       drawFurniIcon(cv, f.id, 0);
-      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => { ui.placing = { t: f.id, r: 0, c: 0 }; update(); } }, cv, h('span', {}, f.label));
-    }));
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => { ui.placing = { t: f.id, r: 0, c: 0 }; update(); } }, cv, h('span', {}, f.label), h('span', { class: 'owned' }, `× ${inv[f.id]}`));
+    }), shopBtn);
+    if (!have.length) strip.prepend(h('p', { class: 'small empty-inv' }, 'Hai sistemato tutto. Per altri mobili e decorazioni passa dal Mobilificio, accanto alla piazza.'));
     const chips = (list, value, onPick) => h('div', { class: 'swatches' }, list.map((o) => h('button', { class: 'swatch' + (o.id === value ? ' on' : ''), onclick: () => onPick(o.id) }, o.label)));
     const style = (op) => run(null, async () => { await store.op({ type: 'roomStyle', ...op }); update(); });
     // Una scheda alla volta, così la stanza resta visibile sopra il pannello.
@@ -4351,10 +4872,21 @@ function syncAvatars() {
   if (!city) return;
   const ids = new Set([...store.online].filter((id) => city.residents[id]));
   if (me() && city.residents[me().id]) ids.add(me().id);
-  map.setAvatars([...ids].map((id) => ({
+  map.setAvatars([...[...ids].map((id) => ({
     id, name: city.residents[id].username, me: id === me()?.id, look: city.residents[id].look,
     pos: store.avatars?.[id] || spawnPoint(city, id),
-  })));
+  })), ...shopPeople()]);
+}
+// Commessi e manichini dei negozi: esistono solo sullo schermo, stanno fermi al loro posto.
+const KEEPER_LOOKS = { mobili: { skin: 2, hair: 6, style: 'corti', shirt: 3, pants: 3, top: 'camicia', bottom: 'pantaloni', extra: 'occhiali' },
+  moda: { skin: 1, hair: 0, style: 'coda', shirt: 9, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'nessuno' } };
+function shopPeople() {
+  const out = SHOPS.map((sh) => ({ id: 'npc:' + sh.id, name: sh.keeper, look: KEEPER_LOOKS[sh.id], pos: [...SHOP_KEEPER_AT, sh.room], dir: 'SW' }));
+  MANNEQUINS.forEach((m, i) => {
+    const colors = { ...avatarLook('manichino', m.look), skin: '#e9e4da', hair: '#e9e4da', style: 'corti' };
+    out.push({ id: 'npc:man:' + i, name: '', colors, pos: [...m.at, 'shop:moda'], dir: i % 2 ? 'SW' : 'SE' });
+  });
+  return out;
 }
 
 /* Avvio ------------------------------------------------------------------- */

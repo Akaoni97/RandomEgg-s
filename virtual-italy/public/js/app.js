@@ -5,8 +5,9 @@ import {
   districtAt, districtById, parseKey, makeStyle, residentHouse, builtCount, isFounder, areFriends, friendsOf,
   formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook, SAY_PRESETS, SAY_MAX,
   FURNI, FLOORS, WALLS, ACCESS, ROOM_DOOR, furniById, roomOf, canVisit,
+  SHOPS, shopById, isShopRoom, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
 } from './core.js';
-import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook, drawFurniIcon } from './render.js';
+import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook, drawFurniIcon, drawAvatarIcon } from './render.js';
 import { RemoteStore, LocalStore } from './store.js';
 
 const DEMO = window.__VI_MODE === 'demo' || new URLSearchParams(location.search).has('demo');
@@ -189,6 +190,7 @@ function update() {
   } else notice.hidden = true;
 
   // Barra in basso (non si tocca mentre si sta scrivendo un messaggio).
+  document.body.classList.toggle('in-room', !!ui.room);
   const bottom = $('#bottom');
   if (document.activeElement?.id === 'chat-input') return;
   if (ui.room) { bottom.replaceChildren(roomBar()); return; }
@@ -527,17 +529,23 @@ function openCharacter({ first = false } = {}) {
       type: 'button', class: 'swatch' + (look[key] === o.id ? ' on' : ''), role: 'radio', 'aria-checked': String(look[key] === o.id),
       onclick: () => { look[key] = o.id; paint(); },
     }, o.label))));
+  // Nei vestiti compare solo quello che si ha: i capi base più quelli presi alla Sartoria.
+  const owned = (slot) => WEAR.filter((w) => w.slot === slot && ownsWear(store.city, r.id, w.id));
   const paint = () => groups.replaceChildren(
     colorRow('Carnagione', 'skin', LOOK.skin),
     idRow('Pettinatura', 'style', LOOK.style),
     colorRow('Colore dei capelli', 'hair', LOOK.hair),
-    colorRow('Maglietta', 'shirt', LOOK.shirt),
-    colorRow('Pantaloni', 'pants', LOOK.pants),
-    idRow('Accessorio', 'extra', LOOK.extra));
+    idRow('Maglia', 'top', owned('top')),
+    colorRow('Colore della maglia', 'shirt', LOOK.shirt),
+    idRow('Sotto', 'bottom', owned('bottom')),
+    colorRow('Colore di pantaloni e gonne', 'pants', LOOK.pants),
+    idRow('Accessorio', 'extra', owned('extra')),
+    WEAR.some((w) => !ownsWear(store.city, r.id, w.id)) ? h('p', { class: 'small' }, 'Altri vestiti e accessori ti aspettano alla Sartoria Moda, accanto alla piazza.') : null);
   const shuffle = () => {
     const pick = (n) => Math.floor(Math.random() * n);
+    const any = (list) => list[pick(list.length)].id;
     Object.assign(look, { skin: pick(LOOK.skin.length), hair: pick(LOOK.hair.length), style: LOOK.style[pick(LOOK.style.length)].id,
-      shirt: pick(LOOK.shirt.length), pants: pick(LOOK.pants.length), extra: LOOK.extra[pick(LOOK.extra.length)].id });
+      shirt: pick(LOOK.shirt.length), pants: pick(LOOK.pants.length), extra: any(owned('extra')), top: any(owned('top')), bottom: any(owned('bottom')) });
     paint();
   };
   paint();
@@ -845,11 +853,13 @@ function onTap(t) {
     if (t.kind === 'house') return toast('Questo lotto è già occupato.', 'err');
     return;
   }
+  if (t.kind === 'avatar' && t.id.startsWith('npc:')) return onNpcTap(t.id);
   if (t.kind === 'avatar') return openSay(t.id);
   if (ui.room) return onRoomTap(t);
   // Con il proprio omino in città, ogni tocco è anche una passeggiata.
   const walker = me() && map.avatarOf(me().id);
   const go = (x, y) => walker && walkTo(x, y);
+  if (t.kind === 'shop') { const sh = shopById(t.shop); go(...sh.front); return openShop(sh); }
   if (t.kind === 'house') { go(...frontOf(store.city, t.slot)); return openHouse(t.slot); }
   if (t.kind === 'lot') { go(t.x, t.y); return openLot(t.slot); }
   if (t.kind === 'giornale') { go(t.x, t.y + 1); return openGiornale(); }
@@ -869,6 +879,7 @@ function walkTo(x, y) {
 
 /* Dentro casa ---------------------------------------------------------------- */
 
+// Si entra in una casa (id del padrone) o in un negozio ('shop:…'): stessa stanza isometrica.
 function enterHouse(ownerId) {
   const mine = me();
   if (!mine) return openLogin();
@@ -877,28 +888,132 @@ function enterHouse(ownerId) {
   if (!map.avatarOf(mine.id)) syncAvatars();
   closeSheet();
   ui.room = ownerId;
-  ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null;
+  ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null; ui.shopTab = null;
   map.walk(mine.id, ...ROOM_DOOR, ownerId);
   store.move(...ROOM_DOOR, ownerId);
   map.enterRoom(ownerId);
+  const shop = shopById(ownerId);
+  if (shop) setTimeout(() => map.say('npc:' + shop.id, shop.kind === 'wear' ? `Ciao ${mine.username}! Tocca un manichino o il catalogo.` : `Benvenuto ${mine.username}! Tocca un mobile per prenderlo.`), 350);
   update();
 }
 function exitHouse() {
   const owner = ui.room;
   ui.room = null; ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null;
-  const house = residentHouse(store.city, owner);
-  const [x, y] = house ? frontOf(store.city, house.slot) : spawnPoint(store.city, me().id);
+  const shop = shopById(owner);
+  const house = shop ? null : residentHouse(store.city, owner);
+  const [x, y] = shop ? shop.front : house ? frontOf(store.city, house.slot) : spawnPoint(store.city, me().id);
   map.walk(me().id, x, y, null);
   store.move(x, y, null);
   map.exitRoom();
   if (house) map.focus(house.slot);
+  if (shop) map.focus([shop.x0 + 1, shop.y0 + 1]);
   update();
+}
+// Dalla stanza al Mobilificio: si esce e si va a piedi fino alla sua porta.
+function goToShop(id) {
+  const shop = shopById(id);
+  if (ui.room) exitHouse();
+  map.focus([shop.x0 + 1, shop.y0 + 1]);
+  if (me() && map.avatarOf(me().id)) walkTo(...shop.front);
+  openShop(shop);
+}
+
+/* Negozi ------------------------------------------------------------------- */
+
+function openShop(shop) {
+  map.set({ selected: null });
+  const what = shop.kind === 'wear' ? 'Maglie, gonne, cappelli e accessori per il tuo omino.' : 'Mobili e decorazioni da portare a casa e sistemare come vuoi.';
+  openSheet(shop.name, h('div', { class: 'stack' },
+    h('div', { class: 'badges' }, h('span', { class: 'tag live' }, 'Aperto'), h('span', { class: 'tag gold' }, 'Inaugurazione: tutto gratis')),
+    h('p', {}, what),
+    h('p', { class: 'small' }, `Dietro al bancone c'è ${shop.keeper}. Presto in città arriverà la moneta di ${CITY}: i prezzi sono già pronti.`),
+    me() ? h('button', { class: 'btn primary big', onclick: () => enterHouse(shop.room) }, 'Entra nel negozio')
+      : h('button', { class: 'btn primary', onclick: openRegister }, 'Iscriviti per fare acquisti')));
+}
+// Il cartellino del prezzo: per ora tutto gratis, il numero servirà con la moneta.
+const priceTag = () => h('span', { class: 'price' }, 'Gratis');
+async function buyFurni(t) {
+  const f = furniById(t);
+  const res = await run(null, () => store.op({ type: 'buy', kind: 'furni', t }));
+  if (res) toast(`${f.label}: nell'inventario (${res.have} da sistemare)`);
+  update();
+}
+function openWear(w) {
+  const r = myResident();
+  if (!r) return openLogin();
+  const has = ownsWear(store.city, r.id, w.id);
+  const look = { ...cleanLook(r.look, r.username), [w.slot]: w.id };
+  const cv = h('canvas', { class: 'avatar-preview', width: 300, height: 300, 'aria-label': `Tu con ${w.label.toLowerCase()}` });
+  const t0 = performance.now();
+  const anim = (t) => { if (!cv.isConnected) return; drawAvatarPreview(cv, avatarLook(r.username, look), t - t0); requestAnimationFrame(anim); };
+  const wearNow = (e) => run(e.currentTarget, async () => {
+    if (has) await store.op({ type: 'look', look });
+    else await store.op({ type: 'buy', kind: 'wear', id: w.id, wear: true });
+    closeSheet(); syncAvatars();
+    toast(has ? `Ora indossi: ${w.label.toLowerCase()}` : `${w.label}: preso! Ti sta benissimo.`);
+  });
+  openSheet(w.label, h('div', { class: 'stack' },
+    h('div', { class: 'avatar-head' }, cv, h('div', { class: 'stack' },
+      h('p', { class: 'small' }, has ? 'È già nel tuo armadio.' : 'Ecco come ti starebbe. Il colore lo cambi quando vuoi dal tuo personaggio.'),
+      has ? null : priceTag())),
+    h('button', { class: 'btn primary big', onclick: wearNow }, has ? 'Indossa' : 'Prendi e indossa'),
+    has ? null : h('button', { class: 'btn', onclick: (e) => run(e.currentTarget, async () => { await store.op({ type: 'buy', kind: 'wear', id: w.id }); closeSheet(); toast(`${w.label}: nel tuo armadio`); }) }, 'Prendi e tienilo da parte')), { wide: true });
+  requestAnimationFrame(anim);
+}
+function onNpcTap(id) {
+  const shop = shopById(ui.room);
+  if (!shop) return;
+  const m = /^npc:man:(\d+)$/.exec(id);
+  if (m) {
+    // Il manichino mostra un capo in vendita: si apre la prova di quello.
+    const look = MANNEQUINS[+m[1]].look;
+    return openWear(['extra', 'top', 'bottom'].map((k) => wearById(look[k])).find((w) => w && !w.base));
+  }
+  map.say(id, shop.kind === 'wear' ? 'Prova quello che vuoi, oggi è tutto gratis!' : 'Scegli pure: oggi è tutto gratis!');
+}
+// Barra in basso dentro un negozio: il catalogo completo, diviso per reparto.
+function shopBar(shop) {
+  const head = h('div', { class: 'room-head' },
+    h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, 'Sei in negozio'), h('strong', {}, shop.name)),
+    h('span', { class: 'row-actions' }, h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
+  const r = myResident();
+  const tabsList = shop.kind === 'wear' ? WEAR_SLOTS : FURNI_CATS;
+  const tab = ui.shopTab || tabsList[0].id;
+  const tabs = h('div', { class: 'seg', role: 'tablist' }, tabsList.map((o) =>
+    h('button', { class: 'seg-btn' + (tab === o.id ? ' on' : ''), role: 'tab', 'aria-selected': String(tab === o.id), onclick: () => { ui.shopTab = o.id; update(); } }, o.label)));
+  let items;
+  if (shop.kind === 'wear') {
+    const base = r ? cleanLook(r.look, r.username) : null;
+    items = WEAR.filter((w) => w.slot === tab && !w.base).map((w) => {
+      const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
+      drawAvatarIcon(cv, avatarLook(r?.username || 'ospite', { ...base, [w.slot]: w.id }));
+      const has = r && ownsWear(store.city, r.id, w.id);
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => openWear(w) }, cv, h('span', {}, w.label), has ? h('span', { class: 'owned' }, 'Già tuo') : priceTag());
+    });
+  } else {
+    const inv = r ? invOf(store.city, r.id).furni : {};
+    items = FURNI.filter((f) => f.cat === tab).map((f) => {
+      const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
+      drawFurniIcon(cv, f.id, 0);
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => buyFurni(f.id) }, cv, h('span', {}, f.label), inv[f.id] ? h('span', { class: 'owned' }, `Ne hai ${inv[f.id]}`) : priceTag());
+    });
+  }
+  const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'Catalogo del negozio' }, items);
+  const hint = h('p', { class: 'small' }, shop.kind === 'wear' ? 'Tocca un capo per provarlo addosso.' : 'Tocca un articolo per prenderlo: lo trovi in casa, nel pannello Arreda.');
+  return h('div', { class: 'bar room-bar editing' }, head, tabs, strip, hint);
 }
 const isMyRoom = () => me() && ui.room === me().id;
 
 async function onRoomTap(t) {
   if (t.kind === 'door') return exitHouse();
   const room = roomOf(store.city, ui.room);
+  const shop = shopById(ui.room);
+  if (shop && t.kind === 'furni') {
+    // In negozio la merce esposta si compra; appendiabiti e bancone aprono il reparto vestiti.
+    const it = room.items.find((x) => x.uid === t.uid);
+    if (shop.kind === 'furni' && it) return buyFurni(it.t);
+    if (it && (it.t === 'stender' || it.t === 'specchio')) { ui.shopTab = it.t === 'specchio' ? 'extra' : 'top'; return update(); }
+  }
   if (ui.edit && isMyRoom()) {
     if (t.kind === 'floor' && ui.placing) {
       const p = ui.placing;
@@ -927,6 +1042,7 @@ async function onRoomTap(t) {
 
 function roomBar() {
   const city = store.city;
+  if (isShopRoom(ui.room)) return shopBar(shopById(ui.room));
   const owner = city.residents[ui.room];
   const mine = isMyRoom();
   const room = roomOf(city, ui.room);
@@ -948,7 +1064,7 @@ function roomBar() {
         h('button', { class: 'btn small', onclick: act({ act: 'rotate' }) }, 'Ruota'),
         f.color ? h('button', { class: 'btn small', onclick: act({ act: 'color' }) }, 'Colore') : null,
         h('button', { class: 'btn small' + (ui.moving ? ' primary' : ''), onclick: () => { ui.moving = ui.moving ? null : it.uid; update(); } }, 'Sposta'),
-        h('button', { class: 'btn small danger', onclick: act({ act: 'remove' }, () => { ui.sel = null; map.setRoomUI({ selectedUid: null }); }) }, 'Togli'),
+        h('button', { class: 'btn small danger', onclick: act({ act: 'remove' }, () => { ui.sel = null; map.setRoomUI({ selectedUid: null }); toast(`${f.label}: rimesso nell'inventario`); }) }, 'Metti via'),
         h('button', { class: 'btn small ghost', onclick: () => { ui.sel = null; ui.moving = null; map.setRoomUI({ selectedUid: null }); update(); } }, 'Chiudi')));
   } else if (ui.placing) {
     const f = furniById(ui.placing.t);
@@ -959,11 +1075,16 @@ function roomBar() {
         f.color ? h('button', { class: 'btn small', onclick: () => { ui.placing.c = (ui.placing.c + 1) % 8; update(); } }, 'Colore') : null,
         h('button', { class: 'btn small ghost', onclick: () => { ui.placing = null; update(); } }, 'Annulla')));
   } else {
-    const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'Catalogo dei mobili' }, FURNI.map((f) => {
+    // Si sistema solo quello che si ha nell'inventario; il resto si prende al Mobilificio.
+    const inv = invOf(city, me().id).furni;
+    const have = FURNI.filter((f) => inv[f.id] > 0);
+    const shopBtn = h('button', { class: 'catalog-item shop-link', role: 'listitem', onclick: () => goToShop('mobili') }, h('span', { class: 'shop-ico', 'aria-hidden': 'true' }, '🛋️'), h('span', {}, 'Vai al Mobilificio'));
+    const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'I tuoi mobili da sistemare' }, have.map((f) => {
       const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
       drawFurniIcon(cv, f.id, 0);
-      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => { ui.placing = { t: f.id, r: 0, c: 0 }; update(); } }, cv, h('span', {}, f.label));
-    }));
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => { ui.placing = { t: f.id, r: 0, c: 0 }; update(); } }, cv, h('span', {}, f.label), h('span', { class: 'owned' }, `× ${inv[f.id]}`));
+    }), shopBtn);
+    if (!have.length) strip.prepend(h('p', { class: 'small empty-inv' }, 'Hai sistemato tutto. Per altri mobili e decorazioni passa dal Mobilificio, accanto alla piazza.'));
     const chips = (list, value, onPick) => h('div', { class: 'swatches' }, list.map((o) => h('button', { class: 'swatch' + (o.id === value ? ' on' : ''), onclick: () => onPick(o.id) }, o.label)));
     const style = (op) => run(null, async () => { await store.op({ type: 'roomStyle', ...op }); update(); });
     // Una scheda alla volta, così la stanza resta visibile sopra il pannello.
@@ -985,10 +1106,21 @@ function syncAvatars() {
   if (!city) return;
   const ids = new Set([...store.online].filter((id) => city.residents[id]));
   if (me() && city.residents[me().id]) ids.add(me().id);
-  map.setAvatars([...ids].map((id) => ({
+  map.setAvatars([...[...ids].map((id) => ({
     id, name: city.residents[id].username, me: id === me()?.id, look: city.residents[id].look,
     pos: store.avatars?.[id] || spawnPoint(city, id),
-  })));
+  })), ...shopPeople()]);
+}
+// Commessi e manichini dei negozi: esistono solo sullo schermo, stanno fermi al loro posto.
+const KEEPER_LOOKS = { mobili: { skin: 2, hair: 6, style: 'corti', shirt: 3, pants: 3, top: 'camicia', bottom: 'pantaloni', extra: 'occhiali' },
+  moda: { skin: 1, hair: 0, style: 'coda', shirt: 9, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'nessuno' } };
+function shopPeople() {
+  const out = SHOPS.map((sh) => ({ id: 'npc:' + sh.id, name: sh.keeper, look: KEEPER_LOOKS[sh.id], pos: [...SHOP_KEEPER_AT, sh.room], dir: 'SW' }));
+  MANNEQUINS.forEach((m, i) => {
+    const colors = { ...avatarLook('manichino', m.look), skin: '#e9e4da', hair: '#e9e4da', style: 'corti' };
+    out.push({ id: 'npc:man:' + i, name: '', colors, pos: [...m.at, 'shop:moda'], dir: i % 2 ? 'SW' : 'SE' });
+  });
+  return out;
 }
 
 /* Avvio ------------------------------------------------------------------- */

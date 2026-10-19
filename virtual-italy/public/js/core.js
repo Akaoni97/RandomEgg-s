@@ -66,6 +66,16 @@ export const DECOS = [
 ];
 export const SHAPES = ['casa', 'villetta', 'torretta'];
 
+// I negozi sono edifici veri ai lati della piazza, con la vetrina sulla strada principale.
+// Occupano un blocco 2×2 (x0..x0+1, y0..y0+1) e la porta dà sulla casella `front`.
+export const SHOPS = [
+  { id: 'mobili', name: 'Mobilificio Bottega', sign: 'MOBILI', kind: 'furni', x0: 34, y0: 28, keeper: 'Gino' },
+  { id: 'moda', name: 'Sartoria Moda', sign: 'MODA', kind: 'wear', x0: 46, y0: 28, keeper: 'Rosa' },
+].map((sh) => ({ ...sh, room: 'shop:' + sh.id, front: [sh.x0, MAIN_Y] }));
+export const shopById = (id) => SHOPS.find((sh) => sh.id === id || sh.room === id) || null;
+export const shopAt = (x, y) => SHOPS.find((sh) => x >= sh.x0 && x <= sh.x0 + 1 && y >= sh.y0 && y <= sh.y0 + 1) || null;
+export const isShopRoom = (room) => typeof room === 'string' && room.startsWith('shop:') && !!shopById(room);
+
 // Editor del personaggio: ogni scelta è un indice (colori) o un id (pettinatura, accessorio).
 export const LOOK = {
   skin: ['#f6dcc6', '#f3d2b3', '#e8b98f', '#c98d63', '#a8714a', '#8d5b3d', '#5e3b26'],
@@ -75,12 +85,39 @@ export const LOOK = {
   pants: ['#2d3a4a', '#2f4f6f', '#4b4f56', '#6b4a2f', '#c9b48f', '#2d2d2d'],
   extra: [{ id: 'nessuno', label: 'Niente' }, { id: 'cappellino', label: 'Cappellino' }, { id: 'occhiali', label: 'Occhiali' }, { id: 'fiore', label: 'Fiore' }],
 };
+// Vestiti: i capi base li hanno tutti, gli altri si prendono alla Sartoria Moda.
+// `price` è già pronto per la moneta della città: finché non c'è, tutto è gratis.
+export const WEAR = [
+  { id: 'maglietta', slot: 'top', label: 'Maglietta', base: true },
+  { id: 'camicia', slot: 'top', label: 'Camicia', price: 40 },
+  { id: 'righe', slot: 'top', label: 'Maglia a righe', price: 35 },
+  { id: 'felpa', slot: 'top', label: 'Felpa', price: 45 },
+  { id: 'giacca', slot: 'top', label: 'Giacca', price: 80 },
+  { id: 'canotta', slot: 'top', label: 'Canottiera', price: 20 },
+  { id: 'pantaloni', slot: 'bottom', label: 'Pantaloni', base: true },
+  { id: 'pantaloncini', slot: 'bottom', label: 'Pantaloncini', price: 25 },
+  { id: 'gonna', slot: 'bottom', label: 'Gonna', price: 30 },
+  { id: 'nessuno', slot: 'extra', label: 'Niente', base: true },
+  { id: 'cappellino', slot: 'extra', label: 'Cappellino', base: true },
+  { id: 'occhiali', slot: 'extra', label: 'Occhiali', base: true },
+  { id: 'fiore', slot: 'extra', label: 'Fiore', base: true },
+  { id: 'paglia', slot: 'extra', label: 'Cappello di paglia', price: 30 },
+  { id: 'coppola', slot: 'extra', label: 'Coppola', price: 35 },
+  { id: 'basco', slot: 'extra', label: 'Basco', price: 30 },
+  { id: 'cuffie', slot: 'extra', label: 'Cuffie', price: 50 },
+  { id: 'sciarpa', slot: 'extra', label: 'Sciarpa', price: 25 },
+  { id: 'corona', slot: 'extra', label: 'Corona', price: 200 },
+];
+export const WEAR_SLOTS = [{ id: 'top', label: 'Maglie' }, { id: 'bottom', label: 'Sotto' }, { id: 'extra', label: 'Accessori' }];
+export const wearById = (id) => WEAR.find((w) => w.id === id) || null;
+const wearOf = (slot) => WEAR.filter((w) => w.slot === slot);
 // Aspetto di partenza, uguale per sempre per lo stesso nome finché l'abitante non sceglie il suo.
 export function defaultLook(name) {
   const h = hash(String(name));
   return {
     skin: h % LOOK.skin.length, hair: (h >>> 3) % 6, style: LOOK.style[(h >>> 14) % 2].id,
     shirt: (h >>> 6) % LOOK.shirt.length, pants: (h >>> 9) % 4, extra: (h >>> 12) % 3 === 0 ? 'cappellino' : 'nessuno',
+    top: 'maglietta', bottom: 'pantaloni',
   };
 }
 export function cleanLook(raw, name) {
@@ -90,7 +127,8 @@ export function cleanLook(raw, name) {
   const id = (v, list, fb) => (list.some((o) => o.id === v) ? v : fb);
   return {
     skin: idx(r.skin, LOOK.skin, base.skin), hair: idx(r.hair, LOOK.hair, base.hair), style: id(r.style, LOOK.style, base.style),
-    shirt: idx(r.shirt, LOOK.shirt, base.shirt), pants: idx(r.pants, LOOK.pants, base.pants), extra: id(r.extra, LOOK.extra, base.extra),
+    shirt: idx(r.shirt, LOOK.shirt, base.shirt), pants: idx(r.pants, LOOK.pants, base.pants), extra: id(r.extra, wearOf('extra'), base.extra),
+    top: id(r.top, wearOf('top'), base.top), bottom: id(r.bottom, wearOf('bottom'), base.bottom),
   };
 }
 
@@ -135,7 +173,7 @@ export const PLAN = (() => {
       if (!d || y >= SEA_Y) continue;
       district[y * W + x] = d.id;
       const k = key(x, y);
-      if (x % 3 === 0 || y % 3 === 0 || y === MAIN_Y || inPiazza(x, y) || futureRoads.has(k)) continue;
+      if (x % 3 === 0 || y % 3 === 0 || y === MAIN_Y || inPiazza(x, y) || futureRoads.has(k) || shopAt(x, y)) continue;
       lots.add(k);
       lotsByDistrict.get(d.id).push(k);
     }
@@ -188,7 +226,7 @@ function routeFrom(lotKey, net, openDistricts) {
         return { path: path.reverse(), reach: nk };
       }
       const dId = districtAt(nx, ny);
-      if (!dId || dId > openDistricts || PLAN.lots.has(nk)) continue;
+      if (!dId || dId > openDistricts || PLAN.lots.has(nk) || shopAt(nx, ny)) continue;
       prev.set(nk, key(x, y));
       queue.push([nx, ny]);
     }
@@ -240,7 +278,7 @@ export function levelAt(x, y, openDistricts) {
 // Dove si può camminare: ovunque sulla terraferma tranne dentro le case.
 // Si cambia livello solo su strade, vialetti e piazza, dove ci sono le scale.
 export function walkable(s, x, y) {
-  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)];
+  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)] && !shopAt(x, y);
 }
 export function canStep(s, ax, ay, bx, by) {
   if (!walkable(s, bx, by)) return false;
@@ -300,29 +338,71 @@ export const FLOORS = [
 export const WALLS = ['#efe6d2', '#f3d6c3', '#d7e6ef', '#dcebd2', '#f4e7b8', '#d9d0e8', '#c9b8a6', '#5b6b7a'];
 export const FURNI_COLORS = ['#c0392b', '#2f6b9f', '#2f7d4f', '#e0a92a', '#7a4a6b', '#e86b8a', '#6b4a2f', '#4b4f56'];
 // w lungo x e d lungo y con rotazione 0; con rotazione 1 si scambiano. `rug` si può calpestare.
+// `cat` è il reparto del Mobilificio, `price` il prezzo per quando la città avrà la sua moneta.
 export const FURNI = [
-  { id: 'sedia', label: 'Sedia', w: 1, d: 1, color: true },
-  { id: 'poltrona', label: 'Poltrona', w: 1, d: 1, color: true },
-  { id: 'divano', label: 'Divano', w: 2, d: 1, color: true },
-  { id: 'tavolino', label: 'Tavolino', w: 1, d: 1 },
-  { id: 'tavolo', label: 'Tavolo', w: 2, d: 1 },
-  { id: 'letto', label: 'Letto', w: 1, d: 2, color: true },
-  { id: 'tappeto', label: 'Tappeto', w: 2, d: 2, color: true, rug: true },
-  { id: 'lampada', label: 'Lampada', w: 1, d: 1 },
-  { id: 'pianta', label: 'Pianta', w: 1, d: 1 },
-  { id: 'libreria', label: 'Libreria', w: 1, d: 1 },
-  { id: 'tv', label: 'Televisore', w: 1, d: 1 },
-  { id: 'frigo', label: 'Frigorifero', w: 1, d: 1 },
-  { id: 'cucina', label: 'Cucina', w: 2, d: 1 },
-  { id: 'armadio', label: 'Armadio', w: 1, d: 1 },
-  { id: 'scrivania', label: 'Scrivania', w: 2, d: 1 },
-  { id: 'camino', label: 'Camino', w: 2, d: 1 },
-  { id: 'acquario', label: 'Acquario', w: 1, d: 1 },
+  { id: 'sedia', label: 'Sedia', w: 1, d: 1, color: true, cat: 'mobili', price: 20 },
+  { id: 'poltrona', label: 'Poltrona', w: 1, d: 1, color: true, cat: 'mobili', price: 45 },
+  { id: 'divano', label: 'Divano', w: 2, d: 1, color: true, cat: 'mobili', price: 90 },
+  { id: 'pouf', label: 'Pouf', w: 1, d: 1, color: true, cat: 'mobili', price: 15 },
+  { id: 'tavolino', label: 'Tavolino', w: 1, d: 1, cat: 'mobili', price: 25 },
+  { id: 'tavolo', label: 'Tavolo', w: 2, d: 1, cat: 'mobili', price: 60 },
+  { id: 'letto', label: 'Letto', w: 1, d: 2, color: true, cat: 'mobili', price: 80 },
+  { id: 'libreria', label: 'Libreria', w: 1, d: 1, cat: 'mobili', price: 50 },
+  { id: 'armadio', label: 'Armadio', w: 1, d: 1, cat: 'mobili', price: 70 },
+  { id: 'scrivania', label: 'Scrivania', w: 2, d: 1, cat: 'mobili', price: 55 },
+  { id: 'bancone', label: 'Bancone', w: 2, d: 1, color: true, cat: 'mobili', price: 75 },
+  { id: 'cucina', label: 'Cucina', w: 2, d: 1, cat: 'mobili', price: 120 },
+  { id: 'frigo', label: 'Frigorifero', w: 1, d: 1, cat: 'mobili', price: 90 },
+  { id: 'tv', label: 'Televisore', w: 1, d: 1, cat: 'mobili', price: 110 },
+  { id: 'camino', label: 'Camino', w: 2, d: 1, cat: 'mobili', price: 150 },
+  { id: 'tappeto', label: 'Tappeto', w: 2, d: 2, color: true, rug: true, cat: 'deco', price: 30 },
+  { id: 'lampada', label: 'Lampada', w: 1, d: 1, cat: 'deco', price: 25 },
+  { id: 'pianta', label: 'Pianta', w: 1, d: 1, cat: 'deco', price: 15 },
+  { id: 'vaso', label: 'Vaso di fiori', w: 1, d: 1, color: true, cat: 'deco', price: 15 },
+  { id: 'specchio', label: 'Specchio', w: 1, d: 1, cat: 'deco', price: 35 },
+  { id: 'pendolo', label: 'Orologio a pendolo', w: 1, d: 1, cat: 'deco', price: 85 },
+  { id: 'jukebox', label: 'Jukebox', w: 1, d: 1, cat: 'deco', price: 140 },
+  { id: 'statua', label: 'Busto romano', w: 1, d: 1, cat: 'deco', price: 160 },
+  { id: 'acquario', label: 'Acquario', w: 1, d: 1, cat: 'deco', price: 100 },
+  { id: 'stender', label: 'Appendiabiti', w: 2, d: 1, color: true, cat: 'deco', price: 40 },
 ];
+export const FURNI_CATS = [{ id: 'mobili', label: 'Mobili' }, { id: 'deco', label: 'Decorazioni' }];
+// Chi costruisce casa trova dentro un piccolo kit di benvenuto, da sistemare come vuole.
+export const STARTER_KIT = { letto: 1, sedia: 1, tavolino: 1, lampada: 1, pianta: 1 };
+export const MAX_STOCK = 20;          // pezzi uguali tenuti da parte nell'inventario
 export const ACCESS = [{ id: 'tutti', label: 'Tutti' }, { id: 'amici', label: 'Solo amici' }, { id: 'nessuno', label: 'Solo io' }];
 export const furniById = (id) => FURNI.find((f) => f.id === id);
 export const defaultRoom = () => ({ floor: 'parquet', wall: WALLS[0], access: 'tutti', items: [] });
-export const roomOf = (s, ownerId) => s.rooms?.[ownerId] || defaultRoom();
+export const roomOf = (s, ownerId) => (isShopRoom(ownerId) ? shopRoom(ownerId) : s.rooms?.[ownerId] || defaultRoom());
+
+// L'interno dei negozi è fisso: la merce in esposizione si tocca per comprarla.
+const SHOP_ROOMS = {
+  'shop:mobili': { floor: 'marmo', wall: '#f4e7b8', access: 'tutti', items: [
+    ['bancone', 4, 1, 0, 6], ['libreria', 2, 0], ['armadio', 3, 0], ['pendolo', 6, 0], ['statua', 7, 0], ['lampada', 0, 0],
+    ['divano', 1, 2, 0, 1], ['tappeto', 1, 3, 0, 4], ['poltrona', 3, 3, 1, 0], ['tavolino', 2, 4], ['pouf', 1, 4, 0, 3],
+    ['letto', 7, 3, 0, 1], ['tv', 5, 4], ['jukebox', 7, 6], ['acquario', 4, 7], ['pianta', 0, 7], ['vaso', 2, 7, 0, 5],
+  ] },
+  'shop:moda': { floor: 'parquet', wall: '#d9d0e8', access: 'tutti', items: [
+    ['bancone', 4, 1, 0, 7], ['specchio', 2, 0], ['specchio', 3, 0], ['stender', 6, 3, 1, 0], ['stender', 6, 6, 1, 5],
+    ['tappeto', 2, 3, 0, 5], ['pouf', 3, 4, 0, 1], ['pianta', 0, 0], ['pianta', 7, 7], ['vaso', 0, 7, 0, 3], ['lampada', 7, 0],
+  ] },
+};
+for (const [id, room] of Object.entries(SHOP_ROOMS)) room.items = room.items.map(([t, x, y, r = 0, c = 0], i) => ({ uid: `${id}:${i}`, t, x, y, r, c }));
+export const shopRoom = (id) => SHOP_ROOMS[shopById(id)?.room] || defaultRoom();
+// Dove stanno il commesso (dietro al bancone) e i manichini della Sartoria.
+export const SHOP_KEEPER_AT = [5, 0];
+export const MANNEQUINS = [
+  { at: [1, 5], look: { top: 'camicia', bottom: 'pantaloni', extra: 'coppola', shirt: 8, pants: 0 } },
+  { at: [3, 6], look: { top: 'righe', bottom: 'gonna', extra: 'paglia', shirt: 5, pants: 4 } },
+  { at: [5, 6], look: { top: 'giacca', bottom: 'pantaloni', extra: 'occhiali', shirt: 9, pants: 5 } },
+  { at: [4, 3], look: { top: 'felpa', bottom: 'pantaloncini', extra: 'cuffie', shirt: 7, pants: 1 } },
+];
+
+// Inventario: mobili tenuti da parte (non ancora in casa) e vestiti posseduti.
+export const invOf = (s, id) => s.inv?.[id] || { furni: {}, wear: [] };
+export const ownsWear = (s, id, wearId) => !!wearById(wearId)?.base || invOf(s, id).wear.includes(wearId);
+// Qui si pagherà con la moneta della città: per ora i negozi regalano tutto.
+function pay(s, r, price) { void s; void r; void price; }
 export function footprint(it) {
   const f = furniById(it.t);
   const [w, d] = it.r ? [f.d, f.w] : [f.w, f.d];
@@ -349,7 +429,7 @@ function checkPlace(room, it, ignoreUid) {
   }
 }
 export function canVisit(s, visitorId, ownerId) {
-  if (visitorId === ownerId) return true;
+  if (visitorId === ownerId || isShopRoom(ownerId)) return true;
   const access = roomOf(s, ownerId).access;
   if (access === 'tutti') return true;
   if (access === 'amici') return !!visitorId && areFriends(s, visitorId, ownerId);
@@ -493,6 +573,7 @@ export function emptyState(now = Date.now()) {
     news: [],          // { id, kind, at, residentId?, n?, district?, slot? }
     milestones: [],
     rooms: {},         // id abitante → { floor, wall, access, items: [{ uid, t, x, y, r, c }] }
+    inv: {},           // id abitante → { furni: { tipo: quanti }, wear: [id dei vestiti presi] }
   };
   addNews(s, { kind: 'founding', at: now });
   return refresh(s);
@@ -592,6 +673,9 @@ const OPS = {
     if (s.houses[slot]) throw new DomainError('conflict', 'Qualcuno ha appena preso questo lotto: scegline un altro.');
     const h = { slot, residentId: r.id, style: makeStyle(slot, op.style), status: 'cantiere', reservedAt: now, builtAt: null };
     s.houses[slot] = h;
+    s.inv ||= {};
+    const inv = (s.inv[r.id] ||= { furni: {}, wear: [] });
+    for (const [t, n] of Object.entries(STARTER_KIT)) inv.furni[t] = (inv.furni[t] || 0) + n;
     if (r.confirmed) finishHouse(s, r, h, now);
     refresh(s, now);
     return { slot, status: h.status };
@@ -607,8 +691,37 @@ const OPS = {
 
   look(s, op, ctx) {
     const r = needResident(s, ctx);
-    r.look = cleanLook(op.look, r.username);
+    const look = cleanLook(op.look, r.username);
+    for (const slot of ['top', 'bottom', 'extra']) {
+      if (!ownsWear(s, r.id, look[slot])) throw invalid(`${wearById(look[slot]).label}: prima prendilo alla Sartoria Moda.`);
+    }
+    r.look = look;
     return { ok: true };
+  },
+
+  // Negozi: un mobile finisce nell'inventario, un vestito nell'armadio (e volendo addosso).
+  buy(s, op, ctx) {
+    const r = needResident(s, ctx);
+    s.inv ||= {};
+    const inv = (s.inv[r.id] ||= { furni: {}, wear: [] });
+    if (op.kind === 'furni') {
+      const f = furniById(op.t);
+      if (!f) throw invalid('Articolo sconosciuto.');
+      if ((inv.furni[f.id] || 0) >= MAX_STOCK) throw invalid(`Ne hai già ${MAX_STOCK} da parte: sistemane qualcuno in casa.`);
+      pay(s, r, f.price);
+      inv.furni[f.id] = (inv.furni[f.id] || 0) + 1;
+      return { have: inv.furni[f.id] };
+    }
+    if (op.kind === 'wear') {
+      const w = wearById(op.id);
+      if (!w) throw invalid('Articolo sconosciuto.');
+      if (w.base || inv.wear.includes(w.id)) return { already: true };
+      pay(s, r, w.price);
+      inv.wear.push(w.id);
+      if (op.wear) r.look = { ...cleanLook(r.look, r.username), [w.slot]: w.id };
+      return { ok: true };
+    }
+    throw invalid('Articolo sconosciuto.');
   },
 
   // Stile della stanza: pavimento, colore delle pareti, chi può entrare.
@@ -630,18 +743,26 @@ const OPS = {
     s.rooms ||= {};
     const room = (s.rooms[r.id] ||= defaultRoom());
     const int = (v) => Number.isInteger(v) ? v : NaN;
+    s.inv ||= {};
+    const inv = (s.inv[r.id] ||= { furni: {}, wear: [] });
     if (op.act === 'add') {
       const f = furniById(op.t);
       if (!f) throw invalid('Mobile sconosciuto.');
+      if (!inv.furni[f.id]) throw invalid(`Non hai ${f.label.toLowerCase()} da parte: passa dal Mobilificio.`);
       if (room.items.length >= ROOM_MAX_ITEMS) throw invalid(`In casa ci stanno al massimo ${ROOM_MAX_ITEMS} mobili.`);
       const it = { uid: uid('f'), t: f.id, x: int(op.x), y: int(op.y), r: op.r ? 1 : 0, c: f.color ? (Number.isInteger(op.c) && op.c >= 0 && op.c < FURNI_COLORS.length ? op.c : 0) : 0 };
       checkPlace(room, it);
       room.items.push(it);
+      if (--inv.furni[f.id] <= 0) delete inv.furni[f.id];
       return { uid: it.uid };
     }
     const it = room.items.find((o) => o.uid === op.uid);
     if (!it) throw new DomainError('notfound', 'Mobile non trovato.');
-    if (op.act === 'remove') { room.items = room.items.filter((o) => o !== it); return { ok: true }; }
+    if (op.act === 'remove') {
+      room.items = room.items.filter((o) => o !== it);
+      inv.furni[it.t] = (inv.furni[it.t] || 0) + 1;
+      return { ok: true };
+    }
     if (op.act === 'color') { if (furniById(it.t).color) it.c = (it.c + 1) % FURNI_COLORS.length; return { ok: true }; }
     const next = { ...it };
     if (op.act === 'move') { next.x = int(op.x); next.y = int(op.y); }
@@ -713,6 +834,7 @@ const OPS = {
     s.friendships = s.friendships.filter((f) => f.a !== id && f.b !== id);
     delete s.sentLog[id];
     if (s.rooms) delete s.rooms[id];
+    if (s.inv) delete s.inv[id];
     refresh(s, now);
     return { ok: true };
   },
@@ -758,6 +880,7 @@ export function publicView(s, viewerId, admin = false) {
   const v = {
     rev: s.rev, createdAt: s.createdAt, openDistricts: s.openDistricts, residents, houses: s.houses,
     roads: s.roads, doors: s.doors, news: s.news.slice(0, 120), milestones: s.milestones, rooms: s.rooms || {},
+    inv: viewerId && s.inv?.[viewerId] ? { [viewerId]: s.inv[viewerId] } : {},
     requests: viewerId ? s.requests.filter((q) => q.from === viewerId || q.to === viewerId) : [],
     friendships: viewerId ? s.friendships.filter((f) => f.a === viewerId || f.b === viewerId) : [],
     reports: [],

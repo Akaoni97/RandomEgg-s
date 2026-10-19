@@ -87,6 +87,7 @@ test("il secondo quartiere apre all'80% del Centro e il giornale lo annuncia", (
   assert.equal(s.openDistricts, 2);
   assert.ok(s.news.some((n) => n.kind === 'district' && n.district === 2));
   assert.ok(s.roads['60,30'] && s.roads['60,20'] === 'dorsal', 'la nuova strada principale è attiva');
+  s = seedResidents(s, 25 - builtCount(s), 10_000_000, 8);
   assert.ok(s.milestones.includes(25), 'traguardo della fontana');
 });
 
@@ -203,12 +204,48 @@ test("editor del personaggio: valori controllati, aspetto di partenza stabile", 
   let s = join(emptyState(0), 'a', 'anna.b');
   assert.deepEqual(cleanLook(undefined, 'anna.b'), defaultLook('anna.b'));
   s = applyOp(s, { type: 'look', look: { skin: 2, hair: 4, style: 'ricci', shirt: 1, pants: 0, extra: 'occhiali' } }, as('a')).state;
-  assert.deepEqual(s.residents.a.look, { skin: 2, hair: 4, style: 'ricci', shirt: 1, pants: 0, extra: 'occhiali' });
-  s = applyOp(s, { type: 'look', look: { skin: 99, hair: -1, style: '<script>', shirt: 'rosso', extra: 'corona' } }, as('a')).state;
+  assert.deepEqual(s.residents.a.look, { skin: 2, hair: 4, style: 'ricci', shirt: 1, pants: 0, extra: 'occhiali', top: 'maglietta', bottom: 'pantaloni' });
+  s = applyOp(s, { type: 'look', look: { skin: 99, hair: -1, style: '<script>', shirt: 'rosso', extra: 'trono', top: 'armatura' } }, as('a')).state;
   const d = defaultLook('anna.b');
-  assert.deepEqual(s.residents.a.look, { skin: d.skin, hair: d.hair, style: d.style, shirt: d.shirt, pants: d.pants, extra: d.extra }, 'valori sbagliati tornano a quelli di partenza');
+  assert.deepEqual(s.residents.a.look, d, 'valori sbagliati tornano a quelli di partenza');
   assert.ok(d.skin < LOOK.skin.length && LOOK.style.some((o) => o.id === d.style));
   assert.throws(() => applyOp(s, { type: 'look', look: {} }, as('nessuno')), { code: 'auth' });
+});
+
+test('negozi: edifici fissi accanto alla piazza, vestiti e mobili si prendono e finiscono nell\'inventario', async () => {
+  const { SHOPS, shopAt, walkable, roomOf, canVisit, invOf, STARTER_KIT, MAX_STOCK } = await import('../public/js/core.js');
+  let s = join(emptyState(0), 'a', 'anna.b');
+  for (const sh of SHOPS) {
+    for (const k of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+      const x = sh.x0 + k[0], y = sh.y0 + k[1];
+      assert.equal(shopAt(x, y), sh);
+      assert.ok(!isLot(`${x},${y}`), 'il negozio non è un lotto');
+      assert.ok(!walkable(s, x, y), 'nel negozio si entra dalla porta');
+    }
+    assert.equal(s.roads[sh.front.join(',')], 'main', 'la porta dà sulla strada principale');
+    assert.ok(canVisit(s, 'a', sh.room) && roomOf(s, sh.room).items.length > 5, 'il negozio è aperto e ha la merce esposta');
+  }
+  // Vestiti: prima si prendono, poi si indossano.
+  assert.throws(() => applyOp(s, { type: 'look', look: { extra: 'corona' } }, as('a')), /Sartoria/);
+  s = applyOp(s, { type: 'buy', kind: 'wear', id: 'corona', wear: true }, as('a')).state;
+  assert.equal(s.residents.a.look.extra, 'corona');
+  assert.deepEqual(invOf(s, 'a').wear, ['corona']);
+  assert.ok(applyOp(s, { type: 'buy', kind: 'wear', id: 'corona' }, as('a')).result.already);
+  assert.throws(() => applyOp(s, { type: 'buy', kind: 'wear', id: 'mantello' }, as('a')), /sconosciuto/);
+  // Mobili: il kit di benvenuto arriva con la casa, il resto si prende al Mobilificio.
+  s = applyOp(s, { type: 'chooseSlot', slot: freeLots(s)[0] }, as('a')).state;
+  assert.deepEqual(invOf(s, 'a').furni, STARTER_KIT);
+  assert.throws(() => applyOp(s, { type: 'furni', act: 'add', t: 'jukebox', x: 3, y: 3 }, as('a')), /Mobilificio/);
+  s = applyOp(s, { type: 'buy', kind: 'furni', t: 'jukebox' }, as('a')).state;
+  const r = applyOp(s, { type: 'furni', act: 'add', t: 'jukebox', x: 3, y: 3 }, as('a'));
+  s = r.state;
+  assert.equal(invOf(s, 'a').furni.jukebox, undefined, 'sistemato in casa, non è più da parte');
+  s = applyOp(s, { type: 'furni', act: 'remove', uid: r.result.uid }, as('a')).state;
+  assert.equal(invOf(s, 'a').furni.jukebox, 1, 'tolto dalla stanza, torna nell\'inventario');
+  for (let i = 1; i < MAX_STOCK; i++) s = applyOp(s, { type: 'buy', kind: 'furni', t: 'jukebox' }, as('a')).state;
+  assert.throws(() => applyOp(s, { type: 'buy', kind: 'furni', t: 'jukebox' }, as('a')), /da parte/);
+  assert.equal(publicView(s, 'b').inv.a, undefined, 'l\'inventario resta privato');
+  assert.equal(publicView(s, 'a').inv.a.furni.jukebox, MAX_STOCK);
 });
 
 test('nuvolette: testo ripulito, lungo al massimo 60 caratteri, niente parole offensive', async () => {
@@ -225,6 +262,7 @@ test('dentro casa: mobili dentro la stanza, senza sovrapporsi, porta libera, per
   let s = join(join(emptyState(0), 'a', 'anna.b'), 'b', 'bruno.c');
   assert.throws(() => applyOp(s, { type: 'furni', act: 'add', t: 'sedia', x: 1, y: 1 }, as('a')), /Prima costruisci/);
   s = applyOp(s, { type: 'chooseSlot', slot: freeLots(s)[0] }, as('a')).state;
+  for (const t of ['divano', 'tappeto']) s = applyOp(s, { type: 'buy', kind: 'furni', t }, as('a')).state;
   const add = (op) => applyOp(s, { type: 'furni', act: 'add', ...op }, as('a'));
   assert.throws(() => add({ t: 'divano', x: ROOM - 1, y: 0 }), /non entra/);
   assert.throws(() => add({ t: 'sedia', x: ROOM_DOOR[0], y: ROOM_DOOR[1] }), /porta/);

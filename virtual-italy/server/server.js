@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import {
   applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey,
-  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y, checkSay, ROOM, canVisit,
+  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y, checkSay, ROOM, canVisit, isShopRoom,
 } from '../public/js/core.js';
 import { seedResidents } from '../public/js/seed.js';
 
@@ -321,8 +321,8 @@ const routes = {
     const x = Number(b.x), y = Number(b.y);
     const room = b.room ? String(b.room) : null;
     if (room) {
-      // Dentro una casa: deve esistere, l'abitante deve poter entrare e la casella deve stare nella stanza.
-      if (!residentHouse(state, room)) throw new DomainError('notfound', 'Questa casa non esiste.');
+      // Dentro una casa o un negozio: deve esistere, l'abitante deve poter entrare e la casella deve stare nella stanza.
+      if (!isShopRoom(room) && !residentHouse(state, room)) throw new DomainError('notfound', 'Questa casa non esiste.');
       if (!canVisit(state, user.id, room)) throw new DomainError('forbidden', 'Il padrone di casa non fa entrare visite.');
       if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= ROOM || y >= ROOM) throw new DomainError('validation', 'Destinazione non valida.');
     } else if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= W || y > SEA_Y) throw new DomainError('validation', 'Destinazione non valida.');

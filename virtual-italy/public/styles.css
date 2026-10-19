@@ -176,6 +176,12 @@ a { color: var(--brand); font-weight: 700; }
 }
 .catalog-item canvas { width: 56px; height: 56px; image-rendering: auto; }
 .catalog-item:hover { border-color: var(--brand); }
+.catalog-item .price { padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--live) 16%, var(--bg)); color: var(--live); font-size: 0.66rem; }
+.catalog-item .owned { color: var(--muted); font-size: 0.66rem; }
+.catalog-item.shop-link { align-content: center; border-style: dashed; color: var(--brand); }
+.shop-ico { font-size: 1.9rem; line-height: 56px; height: 56px; }
+.empty-inv { flex: none; width: 190px; align-self: center; margin: 0; }
+.price { display: inline-block; justify-self: start; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--live) 16%, var(--bg)); color: var(--live); font-size: 0.8rem; font-weight: 800; }
 .chat { display: flex; gap: 6px; grid-column: 1 / -1; }
 .chat-input {
   flex: 1; min-width: 0; min-height: 40px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--line);
@@ -327,6 +333,8 @@ a { color: var(--brand); font-weight: 700; }
 
 /* Avvisi */
 .toasts { position: absolute; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 170px); display: grid; gap: 8px; width: min(440px, calc(100% - 24px)); pointer-events: none; }
+/* Dentro casa e nei negozi il pannello in basso è alto: gli avvisi passano sotto la testata. */
+body.in-room .toasts { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 124px); }
 .toast { background: var(--ink); color: var(--bg); padding: 12px 14px; border-radius: 12px; font-weight: 700; box-shadow: var(--shadow); animation: rise 0.2s ease-out; transition: opacity 0.4s; }
 .toast.err { background: var(--red); color: #fff; }
 .toast.out { opacity: 0; }

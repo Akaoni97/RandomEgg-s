@@ -5,7 +5,7 @@
 import {
   W, H, MAIN_Y, SEA_Y, PIAZZA, PLAN, ROOFS, DOORS, FOUNTAIN_AT,
   key, parseKey, districtAt, districtById, inPiazza, builtCount, isFounder, formatNews, CITY, PAPER, levelAt, walkPath, LOOK, cleanLook,
-  ROOM, ROOM_DOOR, FURNI_COLORS, furniById, footprint, roomOf, roomPath,
+  ROOM, ROOM_DOOR, FURNI_COLORS, furniById, footprint, roomOf, roomPath, shopAt,
 } from './core.js';
 
 const LV = 14;                                   // altezza di un gradone di terreno, in pixel d'arte
@@ -446,6 +446,107 @@ export function drawHouse(g, style, sx, sy, { lit = false, night = false, founde
   return { wins, top };
 }
 
+/* Negozi ---------------------------------------------------------------------- */
+
+const SHOP_STYLE = {
+  mobili: { wall: '#e6cfa3', trim: '#8a5a36', awning: ['#2f6b4f', '#f6efe0'], sign: '#2f4f3f', ink: '#f6e7b8' },
+  moda: { wall: '#f1dcd8', trim: '#3b3f45', awning: ['#2d2d2d', '#f6efe0'], sign: '#2d2d2d', ink: '#e2bf4f' },
+};
+// Merce in vetrina: sagome di mobili o vestiti appesi, dietro al vetro.
+function vitrine(g, f, u0, u1, kind, night, seed) {
+  poly(g, quadOn(f, u0 - 0.015, u1 + 0.015, 3, 31)); g.fillStyle = '#e9e1cf'; g.fill();
+  const glass = quadOn(f, u0, u1, 5, 29);
+  poly(g, glass); g.fillStyle = night ? '#f4cf7a' : '#bfe0ee'; g.fill();
+  const cols = ['#c0392b', '#2f6b9f', '#e0a92a', '#2f7d4f', '#7a4a6b', '#e86b8a'];
+  const n = 3, span = (u1 - u0) / n;
+  for (let k = 0; k < n; k++) {
+    const c = cols[(seed + k * 2) % cols.length], u = u0 + span * (k + 0.5);
+    if (kind === 'wear') {
+      // Maglie sulle grucce
+      poly(g, quadOn(f, u - span * 0.08, u + span * 0.08, 24, 25)); g.fillStyle = '#6b6b6b'; g.fill();
+      poly(g, quadOn(f, u - span * 0.32, u + span * 0.32, 18, 23)); g.fillStyle = c; g.fill();
+      poly(g, quadOn(f, u - span * 0.2, u + span * 0.2, 9, 18)); g.fill();
+    } else {
+      // Poltroncine e lampade
+      poly(g, quadOn(f, u - span * 0.3, u + span * 0.3, 5, 11)); g.fillStyle = c; g.fill();
+      poly(g, quadOn(f, u - span * 0.3, u - span * 0.12, 11, 18)); g.fill();
+      if (k === 1) { poly(g, quadOn(f, u + span * 0.32, u + span * 0.36, 5, 22)); g.fillStyle = '#3b3f45'; g.fill(); poly(g, quadOn(f, u + span * 0.22, u + span * 0.46, 22, 27)); g.fillStyle = '#f3e2b8'; g.fill(); }
+    }
+  }
+  // Riflesso sul vetro
+  const r0 = f(u0 + (u1 - u0) * 0.1, 27), r1 = f(u0 + (u1 - u0) * 0.35, 12);
+  g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 1; g.beginPath(); g.moveTo(r0[0], r0[1]); g.lineTo(r1[0], r1[1]); g.stroke();
+  return glass;
+}
+// Scritta dipinta su una parete isometrica (che sale verso destra di mezzo pixel per pixel).
+function wallText(g, f, u, hh, text, color, size, slope) {
+  const [x, y] = f(u, hh);
+  g.save(); g.translate(x, y); g.transform(1, slope, 0, 1, 0, 0);
+  g.fillStyle = color; g.font = `800 ${size}px Nunito, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, 0, 0);
+  g.restore();
+}
+// Il negozio occupa un blocco 2×2: (sx, sy) è l'angolo in alto della casella posteriore.
+// La vetrina con l'insegna e la tenda guarda la strada principale (parete sinistra).
+export function drawShop(g, shop, sx, sy, { night = false, detail = true } = {}) {
+  const st = SHOP_STYLE[shop.id];
+  const wins = [];
+  const k = 0.08;
+  const T0 = P(sx, sy, k, k), R0 = P(sx, sy, 2 - k, k), B0 = P(sx, sy, 2 - k, 2 - k), L0 = P(sx, sy, k, 2 - k);
+  const hw = 68;
+  // Marciapiede davanti e ombra
+  g.fillStyle = '#d6cfc0'; poly(g, [P(sx, sy, 0, 0), P(sx, sy, 2, 0), P(sx, sy, 2, 2), P(sx, sy, 0, 2)]); g.fill();
+  g.fillStyle = 'rgba(25,40,15,0.22)'; poly(g, [P(sx, sy, k, k), P(sx, sy, 2.2, -0.1), P(sx, sy, 2.1, 1.9), P(sx, sy, 2 - k, 2 - k)]); g.fill();
+  drawWall(g, L0, B0, hw, st.wall);
+  drawWall(g, B0, R0, hw, shade(st.wall, -0.13));
+  const fl = wallFace(L0, B0), fr = wallFace(B0, R0);
+  // Zoccolo scuro sotto le vetrine
+  for (const [f, c] of [[fl, st.trim], [fr, shade(st.trim, -0.1)]]) { poly(g, quadOn(f, 0, 1, 0, 4)); g.fillStyle = c; g.fill(); }
+  wins.push(vitrine(g, fl, 0.06, 0.38, shop.kind, night, 0));
+  wins.push(vitrine(g, fl, 0.62, 0.94, shop.kind, night, 3));
+  wins.push(vitrine(g, fr, 0.14, 0.86, shop.kind, night, 1));
+  // Porta a vetri al centro della vetrina
+  poly(g, quadOn(fl, 0.42, 0.58, 0, 32)); g.fillStyle = st.trim; g.fill();
+  poly(g, quadOn(fl, 0.445, 0.555, 0, 29)); g.fillStyle = night ? '#f4cf7a' : '#9fcbe0'; g.fill();
+  poly(g, quadOn(fl, 0.495, 0.505, 0, 29)); g.fillStyle = st.trim; g.fill();
+  if (detail) {
+    // Cartello "Aperto" appeso alla porta
+    poly(g, quadOn(fl, 0.455, 0.49, 17, 21)); g.fillStyle = '#f6efe0'; g.fill();
+    poly(g, quadOn(fl, 0.46, 0.485, 18, 20)); g.fillStyle = '#2f7d4f'; g.fill();
+  }
+  // Tenda a strisce che sporge sulla strada
+  const out = (p, d) => add(p, -32 * d, 16 * d);
+  const N = 10;
+  for (let i = 0; i < N; i++) {
+    const a = fl(i / N, 42), b = fl((i + 1) / N, 42);
+    poly(g, [a, b, add(out(b, 0.3), 0, 5), add(out(a, 0.3), 0, 5)]);
+    g.fillStyle = st.awning[i % 2]; g.fill();
+    g.strokeStyle = shade(st.awning[0], -0.3); g.lineWidth = 0.5; g.stroke();
+    // Bordo a festoni
+    const m = lerp(add(out(a, 0.3), 0, 5), add(out(b, 0.3), 0, 5), 0.5);
+    poly(g, [add(out(a, 0.3), 0, 5), add(out(b, 0.3), 0, 5), add(m, 0, 3)]); g.fill();
+  }
+  // Insegna
+  poly(g, quadOn(fl, 0.12, 0.88, 47, 61)); g.fillStyle = st.sign; g.fill(); g.strokeStyle = shade(st.sign, 0.25); g.lineWidth = 1; g.stroke();
+  wallText(g, fl, 0.5, 54, shop.sign, st.ink, 10, 0.5);
+  // Finestrella e insegnina a bandiera sul lato
+  if (detail) {
+    windowOn(g, fr, 0.3, 0.7, 46, 60, { lit: night, night, door: st.trim, detail, wins }, true);
+    const p = fl(0.99, 38);
+    g.fillStyle = '#3b3f45'; g.fillRect(Math.round(p[0]) - 9, Math.round(p[1]) - 1, 10, 1);
+    poly(g, [add(p, -9, 0), add(p, -1, 4), add(p, -1, 16), add(p, -9, 12)]); g.fillStyle = st.sign; g.fill();
+    g.fillStyle = st.ink; g.fillRect(Math.round(p[0]) - 6, Math.round(p[1]) + 6, 3, 3);
+  }
+  // Tetto piano con parapetto
+  const e = (q) => add(q, 0, -hw);
+  poly(g, [e(T0), e(R0), e(B0), e(L0)]); g.fillStyle = shade(st.wall, -0.28); g.fill();
+  const inn = (q) => lerp(lerp(e(T0), e(B0), 0.5), e(q), 0.88);
+  poly(g, [inn(T0), inn(R0), inn(B0), inn(L0)]); g.fillStyle = '#8f8a80'; g.fill();
+  g.strokeStyle = shade(st.wall, -0.4); g.lineWidth = 1; poly(g, [e(T0), e(R0), e(B0), e(L0)]); g.stroke();
+  if (detail) { const c = lerp(inn(T0), inn(R0), 0.5); box(g, add(c, 6, 10), 0.22, 0.22, 8, '#c9c3b5', '#a9a396', '#8f8a80'); }
+  return { wins, top: sy - hw - 8 };
+}
+
 function drawYard(g, garden, sx, sy, det) {
   if (garden === 'nessuno') { g.fillStyle = '#ddcfab'; diamond(g, sx, sy, 2); g.fill(); if (det) speck(g, sx, sy, sx + sy, 8, ['rgba(150,120,70,0.4)', 'rgba(255,255,255,0.5)']); }
   else if (garden === 'prato') { g.fillStyle = 'rgba(200,240,150,0.35)'; diamond(g, sx, sy, 2); g.fill(); }
@@ -683,6 +784,17 @@ export function drawWorld(g, city, view, o) {
       if (r) labels.push({ x: sx, y: sy + 34, text: r.username, me: h.residentId === o.meId, slot: k });
       continue;
     }
+    const shop = shopAt(x, y);
+    if (shop) {
+      // Il negozio si disegna una volta, sulla sua casella più vicina a chi guarda.
+      if (x !== shop.x0 + 1 || y !== shop.y0 + 1) continue;
+      const bx = isoX(shop.x0, shop.y0), by = isoY(shop.x0, shop.y0) - elev(L);
+      const draw = (gg) => drawShop(gg, shop, bx, by, { night, detail: det });
+      const res = draw(g);
+      if (night) lights.push(...res.wins);
+      objects.push({ type: 'shop', shop: shop.id, depth: d, box: [bx - 64, res.top, bx + 64, by + 64], draw });
+      continue;
+    }
     const tree = G.trees.get(k);
     const road = city.roads[k];
     const dd = districtAt(x, y);
@@ -819,7 +931,7 @@ export function drawAmbient(g, city, view, o, t) {
 
 export function avatarLook(name, chosen) {
   const l = cleanLook(chosen, name);
-  return { skin: LOOK.skin[l.skin], hair: LOOK.hair[l.hair], shirt: LOOK.shirt[l.shirt], pants: LOOK.pants[l.pants], style: l.style, extra: l.extra };
+  return { skin: LOOK.skin[l.skin], hair: LOOK.hair[l.hair], shirt: LOOK.shirt[l.shirt], pants: LOOK.pants[l.pants], style: l.style, extra: l.extra, top: l.top, bottom: l.bottom };
 }
 function rectO(g, x, y, w, h, fill, line) {
   g.fillStyle = fill; g.fillRect(x, y, w, h);
@@ -837,17 +949,46 @@ export function drawAvatar(g, x, y, dir, step, look, { night = false } = {}) {
   g.fillStyle = 'rgba(20,30,15,0.3)'; g.beginPath(); g.ellipse(0, 0, 9, 4, 0, 0, 7); g.fill();
   if (mirror) g.scale(-1, 1);
   const a = step === 1 ? 1 : 0, b = step === 2 ? 1 : 0;
-  // Gambe e scarpe
-  rectO(g, -5, -14 + a, 4, 12 - a, look.pants, ol);
-  rectO(g, 1, -14 + b, 4, 12 - b, shade(look.pants, -0.1), ol);
+  // Gambe e scarpe (con pantaloncini e gonna si vede la pelle sotto il ginocchio)
+  const top = look.top || 'maglietta', bottom = look.bottom || 'pantaloni';
+  const legCol = bottom === 'pantaloni' ? look.pants : look.skin;
+  rectO(g, -5, -14 + a, 4, 12 - a, legCol, ol);
+  rectO(g, 1, -14 + b, 4, 12 - b, shade(legCol, -0.1), ol);
+  if (bottom === 'pantaloncini') { rectO(g, -5, -14 + a, 4, 6, look.pants, ol); rectO(g, 1, -14 + b, 4, 6, shade(look.pants, -0.1), ol); }
   rectO(g, -6 + a, -3, 6, 3, '#2b2b2b');
   rectO(g, 1 - b, -3 - b, 6, 3, '#1f1f1f');
+  if (bottom === 'gonna') {
+    g.fillStyle = look.pants; poly(g, [[-7, -15], [7, -15], [9, -6], [-9, -6]]); g.fill(); g.strokeStyle = ol; g.lineWidth = 1; g.stroke();
+    g.fillStyle = shade(look.pants, -0.15); g.fillRect(1, -14, 6, 7);
+  }
   // Braccio dietro, busto, braccio davanti
-  rectO(g, 6, -27 + b, 3, 11, shade(look.shirt, -0.22), ol);
+  const armCol = top === 'canotta' ? look.skin : null;
+  rectO(g, 6, -27 + b, 3, 11, armCol ? shade(armCol, -0.12) : shade(look.shirt, -0.22), ol);
   rectO(g, -7, -28, 14, 15, look.shirt, ol);
   g.fillStyle = shade(look.shirt, back ? 0.08 : -0.14); g.fillRect(back ? -6 : 1, -27, 5, 13);
-  if (!back) { g.fillStyle = shade(look.shirt, 0.18); g.fillRect(-3, -27, 6, 2); }
-  rectO(g, -9, -27 + a, 3, 11, shade(look.shirt, -0.05), ol);
+  if (!back && top !== 'giacca') { g.fillStyle = shade(look.shirt, 0.18); g.fillRect(-3, -27, 6, 2); }
+  const light = rgb(look.shirt).reduce((x, y) => x + y) > 600;
+  if (top === 'righe') {
+    g.fillStyle = light ? '#2f4f7f' : '#f4f1ea';
+    for (const yy of [-25, -21, -17]) g.fillRect(-6, yy, 12, 2);
+  } else if (top === 'camicia' && !back) {
+    g.fillStyle = light ? '#d9d3c4' : '#f4f1ea'; g.fillRect(-4, -28, 3, 3); g.fillRect(1, -28, 3, 3);
+    g.fillStyle = shade(look.shirt, -0.35); for (const yy of [-24, -20, -16]) g.fillRect(0, yy, 1, 1);
+  } else if (top === 'felpa') {
+    g.fillStyle = shade(look.shirt, -0.2);
+    if (back) g.fillRect(-6, -29, 12, 6); else { g.fillRect(-5, -19, 10, 4); g.fillStyle = '#f4f1ea'; g.fillRect(-2, -27, 1, 5); g.fillRect(2, -27, 1, 5); }
+  } else if (top === 'giacca') {
+    if (back) { g.fillStyle = shade(look.shirt, -0.2); g.fillRect(0, -27, 1, 13); }
+    else {
+      g.fillStyle = '#f4f1ea'; poly(g, [[-3, -28], [3, -28], [0, -19]]); g.fill();
+      g.fillStyle = '#c0392b'; g.fillRect(-0.5, -26, 1, 5);
+      g.fillStyle = shade(look.shirt, 0.15); poly(g, [[-4, -28], [-1, -21], [-3, -21]]); g.fill();
+      g.fillStyle = '#e2bf4f'; g.fillRect(-1, -17, 1, 1);
+    }
+  } else if (top === 'canotta') {
+    g.fillStyle = look.skin; g.fillRect(-7, -28, 3, 4); g.fillRect(4, -28, 3, 4);
+  }
+  rectO(g, -9, -27 + a, 3, 11, armCol || shade(look.shirt, -0.05), ol);
   rectO(g, -9, -17 + a, 3, 3, look.skin);
   // Testa
   rectO(g, -2, -31, 4, 3, look.skin);
@@ -884,6 +1025,29 @@ export function drawAvatar(g, x, y, dir, step, look, { night = false } = {}) {
     const fx = back ? 4 : -5, fy = -45;
     g.fillStyle = '#e85d75'; g.fillRect(fx - 2, fy, 2, 2); g.fillRect(fx + 2, fy, 2, 2); g.fillRect(fx, fy - 2, 2, 2); g.fillRect(fx, fy + 2, 2, 2);
     g.fillStyle = '#f6d84a'; g.fillRect(fx, fy, 2, 2);
+  } else if (look.extra === 'paglia') {
+    g.fillStyle = '#c9a94a'; g.beginPath(); g.ellipse(0, -44, 13, 4, 0, 0, 7); g.fill();
+    g.fillStyle = '#e8cf7a'; g.beginPath(); g.ellipse(0, -45, 12, 3.5, 0, 0, 7); g.fill();
+    g.beginPath(); g.roundRect(-6.5, -52, 13, 8, 3); g.fill();
+    g.fillStyle = '#c0392b'; g.fillRect(-6.5, -47, 13, 2);
+  } else if (look.extra === 'coppola') {
+    g.fillStyle = '#6b6156'; g.beginPath(); g.roundRect(-8, -48, 16, 5, 2.5); g.fill();
+    g.fillStyle = '#7d7266'; g.fillRect(-6, -47, 3, 1); g.fillRect(1, -47, 3, 1);
+    if (!back) { g.fillStyle = '#574e44'; g.fillRect(3, -44, 8, 2); }
+  } else if (look.extra === 'basco') {
+    g.fillStyle = '#2d2d2d'; g.beginPath(); g.ellipse(-1, -46, 9, 3.6, -0.15, 0, 7); g.fill();
+    g.fillRect(-1, -51, 2, 2);
+  } else if (look.extra === 'cuffie') {
+    g.strokeStyle = '#2b2b2b'; g.lineWidth = 2; g.beginPath(); g.arc(0, -40, 8.5, Math.PI * 1.05, Math.PI * 1.95); g.stroke();
+    rectO(g, back ? 5 : -10, -41, 4, 6, '#e85d4a', ol);
+  } else if (look.extra === 'sciarpa') {
+    g.fillStyle = '#c0392b'; g.fillRect(-7, -31, 14, 4);
+    g.fillStyle = '#e85d4a'; g.fillRect(-7, -31, 14, 1);
+    if (!back) { g.fillStyle = '#c0392b'; g.fillRect(-5, -28, 3, 9); g.fillStyle = '#f4f1ea'; g.fillRect(-5, -21, 3, 1); }
+  } else if (look.extra === 'corona') {
+    g.fillStyle = '#e2bf4f'; g.fillRect(-6, -49, 12, 4);
+    for (const dx of [-6, -1, 4]) { poly(g, [[dx, -49], [dx + 1, -54], [dx + 2, -49]]); g.fill(); }
+    g.fillStyle = '#c0392b'; g.fillRect(-1, -48, 2, 2);
   }
   g.restore();
 }
@@ -899,6 +1063,16 @@ export function drawAvatarPreview(canvas, look, t) {
   g.setTransform(s, 0, 0, s, canvas.width / 2, canvas.height * 0.86);
   diamond(g, 0, -16); g.fillStyle = '#9fcf6c'; g.fill(); g.strokeStyle = '#6f9f4a'; g.lineWidth = 1; g.stroke();
   drawAvatar(g, 0, 0, dirs[Math.floor(k / 1.4) % 4], (Math.floor(k * 4.5) % 2) + 1, look);
+}
+
+// Figurina ferma per i cataloghi (vestiti dei negozi).
+export function drawAvatarIcon(canvas, look) {
+  const g = canvas.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const s = canvas.height / 62;
+  g.setTransform(s, 0, 0, s, canvas.width / 2, canvas.height - 5 * s);
+  drawAvatar(g, 0, 0, 'SE', 0, look);
 }
 
 /* Nuvole ------------------------------------------------------------------ */
@@ -1120,6 +1294,98 @@ export function drawFurni(g, it, { night = false } = {}) {
       g.fillStyle = '#f2a33a'; g.fillRect(c[0] - 6, c[1] - 26, 4, 2); g.fillStyle = '#e85d75'; g.fillRect(c[0] + 2, c[1] - 21, 4, 2);
       break;
     }
+    case 'pouf': {
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      g.fillStyle = 'rgba(0,0,0,0.22)'; g.beginPath(); g.ellipse(c[0], c[1], 13, 6.5, 0, 0, 7); g.fill();
+      g.fillStyle = shade(col, -0.12); g.beginPath(); g.ellipse(c[0], c[1] - 3, 12, 6, 0, 0, Math.PI); g.lineTo(c[0] - 12, c[1] - 13); g.ellipse(c[0], c[1] - 13, 12, 6, 0, Math.PI, 0, true); g.closePath(); g.fill();
+      g.strokeStyle = shade(col, -0.4); g.lineWidth = 1; g.stroke();
+      g.fillStyle = shade(col, 0.1); g.beginPath(); g.ellipse(c[0], c[1] - 13, 12, 6, 0, 0, 7); g.fill(); g.stroke();
+      g.fillStyle = shade(col, -0.25); g.fillRect(c[0] - 1, c[1] - 14, 2, 2);
+      break;
+    }
+    case 'bancone': {
+      const [a, b] = ins(x0, x1, 0.04), [c, d] = ins(y0, y1, 0.16);
+      box3(g, a, c, b, d, 0, 28, WOOD, { top: '#e9e1cf' });
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0, 1, 20, 24)); g.fillStyle = col; g.fill();
+      for (const u of [0.25, 0.5, 0.75]) { poly(g, quadOn(ff, u - 0.005, u + 0.005, 2, 20)); g.fillStyle = WOOD_D; g.fill(); }
+      // Registratore di cassa
+      const m = r ? [(a + b) / 2, c + 0.3] : [a + 0.3, (c + d) / 2];
+      box3(g, m[0] - 0.14, m[1] - 0.12, m[0] + 0.14, m[1] + 0.12, 28, 36, '#4b4f56');
+      box3(g, m[0] - 0.1, m[1] - 0.08, m[0] + 0.02, m[1] + 0.08, 36, 41, '#2f3338', { top: '#7cc6a0' });
+      break;
+    }
+    case 'vaso': {
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      g.fillStyle = 'rgba(0,0,0,0.22)'; g.beginPath(); g.ellipse(c[0], c[1], 8, 4, 0, 0, 7); g.fill();
+      poly(g, [[c[0] - 5, c[1]], [c[0] + 5, c[1]], [c[0] + 7, c[1] - 12], [c[0] + 3, c[1] - 16], [c[0] - 3, c[1] - 16], [c[0] - 7, c[1] - 12]]);
+      g.fillStyle = col; g.fill(); g.strokeStyle = shade(col, -0.4); g.lineWidth = 1; g.stroke();
+      g.fillStyle = shade(col, 0.25); g.fillRect(c[0] - 5, c[1] - 11, 2, 6);
+      g.strokeStyle = '#3f7d34'; g.beginPath();
+      for (const dx of [-5, -1, 3, 6]) { g.moveTo(c[0] + dx / 3, c[1] - 16); g.lineTo(c[0] + dx, c[1] - 26 - Math.abs(dx)); }
+      g.stroke();
+      for (const [dx, dy, fc] of [[-5, -31, '#f6d84a'], [-1, -27, '#ffffff'], [3, -29, '#e85d75'], [6, -32, '#f6d84a']]) { g.fillStyle = fc; g.fillRect(c[0] + dx - 1.5, c[1] + dy - 1.5, 3, 3); }
+      break;
+    }
+    case 'specchio': {
+      const [a, b, c, d] = r ? [x0 + 0.2, x0 + 0.32, y0 + 0.15, y1 - 0.15] : [x0 + 0.15, x1 - 0.15, y0 + 0.2, y0 + 0.32];
+      box3(g, a - 0.05, c - 0.05, b + 0.05, d + 0.05, 0, 3, WOOD_D);
+      box3(g, a, c, b, d, 3, 58, '#e2bf4f');
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.1, 0.9, 7, 54)); g.fillStyle = night ? '#4a5a7a' : '#cfe6ef'; g.fill();
+      poly(g, quadOn(ff, 0.2, 0.32, 30, 50)); g.fillStyle = 'rgba(255,255,255,0.7)'; g.fill();
+      break;
+    }
+    case 'pendolo': {
+      const [a, b, c, d] = r ? [x0 + 0.25, x0 + 0.65, y0 + 0.22, y1 - 0.22] : [x0 + 0.22, x1 - 0.22, y0 + 0.25, y0 + 0.65];
+      box3(g, a, c, b, d, 0, 64, WOOD_D);
+      box3(g, a - 0.03, c - 0.03, b + 0.03, d + 0.03, 64, 68, WOOD);
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.15, 0.85, 42, 58)); g.fillStyle = '#f4efe3'; g.fill();
+      const ce = ff(0.5, 50);
+      g.strokeStyle = '#2b2b2b'; g.lineWidth = 1; g.beginPath(); g.moveTo(ce[0], ce[1]); g.lineTo(ce[0], ce[1] - 5); g.moveTo(ce[0], ce[1]); g.lineTo(ce[0] + 3, ce[1] + 1); g.stroke();
+      poly(g, quadOn(ff, 0.25, 0.75, 8, 36)); g.fillStyle = '#3a2a1c'; g.fill();
+      const pe = ff(0.5, 14); g.fillStyle = '#e2bf4f'; g.beginPath(); g.arc(pe[0], pe[1], 3, 0, 7); g.fill();
+      g.fillRect(Math.round(pe[0]) - 0.5, Math.round(pe[1]) - 20, 1, 20);
+      break;
+    }
+    case 'jukebox': {
+      const [a, b] = ins(x0, x1, 0.18), [c, d] = ins(y0, y1, 0.22);
+      box3(g, a, c, b, d, 0, 44, '#c0392b', { top: '#e85d4a' });
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.12, 0.88, 26, 42)); g.fillStyle = night ? '#ffe39a' : '#f6d84a'; g.fill();
+      const bands = ['#e85d75', '#4fb3c8', '#7fc25e'];
+      for (let i = 0; i < 3; i++) { poly(g, quadOn(ff, 0.12, 0.88, 6 + i * 6, 9 + i * 6)); g.fillStyle = bands[i]; g.fill(); }
+      poly(g, quadOn(ff, 0.3, 0.7, 30, 38)); g.fillStyle = '#2b2b2b'; g.fill();
+      if (night) { g.save(); g.globalCompositeOperation = 'lighter'; const q = ff(0.5, 32); glow(g, q[0], q[1], 26, 0.3, '255,140,180'); g.restore(); }
+      break;
+    }
+    case 'statua': {
+      box3(g, x0 + 0.24, y0 + 0.24, x1 - 0.24, y1 - 0.24, 0, 30, '#e6e2da', { side: '#c9c3b5' });
+      box3(g, x0 + 0.2, y0 + 0.2, x1 - 0.2, y1 - 0.2, 30, 33, '#f4f2ee');
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      g.fillStyle = '#ece8df'; g.strokeStyle = '#a9a396'; g.lineWidth = 1;
+      poly(g, [[c[0] - 10, c[1] - 33], [c[0] + 10, c[1] - 33], [c[0] + 8, c[1] - 42], [c[0] - 8, c[1] - 42]]); g.fill(); g.stroke();
+      g.fillRect(c[0] - 2, c[1] - 46, 4, 5);
+      g.beginPath(); g.roundRect(c[0] - 5.5, c[1] - 57, 11, 12, 4); g.fill(); g.stroke();
+      // Corona d'alloro
+      g.fillStyle = '#9ab36a'; for (const dx of [-5, -3, -1, 1, 3, 5]) g.fillRect(c[0] + dx - 1, c[1] - 56 + Math.abs(dx) * 0.3, 2, 2);
+      g.fillStyle = '#a9a396'; g.fillRect(c[0] + 1, c[1] - 52, 1.5, 1.5);
+      break;
+    }
+    case 'stender': {
+      const [a, b] = ins(x0, x1, 0.1), [c, d] = ins(y0, y1, 0.35);
+      for (const [p, q] of r ? [[a, c], [a, d - 0.06]] : [[a, c], [b - 0.06, c]]) box3(g, p, q, p + 0.06, q + 0.06, 0, 46, '#4b4f56');
+      if (r) box3(g, a, c, a + 0.06, d, 44, 46, '#4b4f56'); else box3(g, a, c, b, c + 0.06, 44, 46, '#4b4f56');
+      const cols = [col, '#f1ede4', shade(col, 0.3), '#2d2d2d', col];
+      for (let i = 0; i < 5; i++) {
+        const t = 0.12 + i * 0.19;
+        const p = r ? gp(a + 0.03, c + (d - c) * t) : gp(a + (b - a) * t, c + 0.03);
+        poly(g, [[p[0] - 6, p[1] - 40], [p[0] + 6, p[1] - 40], [p[0] + 5, p[1] - 18], [p[0] - 5, p[1] - 18]]);
+        g.fillStyle = cols[i]; g.fill(); g.strokeStyle = shade(cols[i] === '#2d2d2d' ? '#666' : cols[i], -0.35); g.lineWidth = 1; g.stroke();
+      }
+      break;
+    }
   }
 }
 
@@ -1286,12 +1552,13 @@ export class CityMap {
     for (const a of list) {
       const cur = this.avatars.get(a.id);
       const room = a.pos[2] ?? null;
+      const look = a.colors || avatarLook(a.name, a.look);
       if (cur) {
-        cur.name = a.name; cur.me = a.me; cur.look = avatarLook(a.name, a.look);
+        cur.name = a.name; cur.me = a.me; cur.look = look;
         if (cur.room !== room) Object.assign(cur, { room, x: a.pos[0], y: a.pos[1], path: [] });
         continue;
       }
-      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], room, path: [], dir: 'SE', look: avatarLook(a.name, a.look), name: a.name, me: a.me, walked: 0, bubble: null });
+      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], room, path: [], dir: a.dir || 'SE', look, name: a.name, me: a.me, walked: 0, bubble: null });
     }
     this.avatarsDirty = true;
   }
@@ -1566,7 +1833,7 @@ export class CityMap {
     }
     let house = null;
     for (const ob of this.objects) {
-      if (ob.type !== 'house') continue;
+      if (ob.type !== 'house' && ob.type !== 'shop') continue;
       const [x0, y0, x1, y1] = ob.box;
       if (wx >= x0 && wx <= x1 && wy >= y0 && wy <= y1 && (!house || ob.depth > house.depth)) house = ob;
     }
@@ -1579,6 +1846,7 @@ export class CityMap {
       if (!tile || tx + ty > tile[0] + tile[1]) tile = [tx, ty];
     }
     if (house && (!tile || house.depth >= tile[0] + tile[1] - 1)) {
+      if (house.type === 'shop') return this.onTap?.({ kind: 'shop', shop: house.shop });
       const [x, y] = parseKey(house.slot);
       return this.onTap?.({ kind: 'house', slot: house.slot, house: this.city.houses[house.slot], x, y });
     }
@@ -1587,6 +1855,7 @@ export class CityMap {
     const k = key(x, y);
     const at = { x, y };
     if (this.city.houses[k]) return this.onTap?.({ kind: 'house', slot: k, house: this.city.houses[k], ...at });
+    if (shopAt(x, y)) return this.onTap?.({ kind: 'shop', shop: shopAt(x, y).id, ...at });
     if (inPiazza(x, y)) {
       const [ex, ey] = PIAZZA_SPOTS.edicola;
       if (x === ex && y === ey) return this.onTap?.({ kind: 'giornale', ...at });
@@ -1721,11 +1990,11 @@ export class CityMap {
         g.fillStyle = '#ffd34d'; g.strokeStyle = 'rgba(60,40,0,0.6)'; g.lineWidth = 1 / z;
         g.beginPath(); g.moveTo(x - 4 * s, head - 8 * s + bob); g.lineTo(x + 4 * s, head - 8 * s + bob); g.lineTo(x, head - 2 * s + bob); g.closePath(); g.fill(); g.stroke();
       }
-      if (a.me || this.scene || z * this.dpr >= 3) label(g, x, y + 8 * k, a.name, a.me, z);
+      if (a.name && (a.me || this.scene || z * this.dpr >= 3)) label(g, x, y + 8 * k, a.name, a.me, z);
       if (a.bubble) {
         const age = t - a.bubble.t0;
         if (age > 6500) { a.bubble = null; continue; }
-        bubble(g, x, head - 12 * k - Math.min(age / 900, 1) * 4, a.name, a.bubble.text, z, age > 5800 ? 1 - (age - 5800) / 700 : 1);
+        bubble(g, x, head - 12 * k - Math.min(age / 900, 1) * 4, a.name, a.bubble.text, z, age > 5800 ? 1 - (age - 5800) / 700 : 1, this.view());
       }
     }
     for (const [slot, t0] of this.born) {
@@ -1752,7 +2021,7 @@ function label(g, x, y, text, mine, z = 1) {
   g.restore();
 }
 // Nuvoletta alla Habbo: riquadro bianco con bordo nero, nome in grassetto e messaggio.
-function bubble(g, x, y, name, text, z, alpha) {
+function bubble(g, x, y, name, text, z, alpha, view) {
   g.save();
   g.globalAlpha = Math.max(0, alpha);
   const fs = 12 / z;
@@ -1760,10 +2029,11 @@ function bubble(g, x, y, name, text, z, alpha) {
   const nw = g.measureText(name + ': ').width;
   g.font = `600 ${fs}px Nunito, sans-serif`;
   let t = text;
-  const maxW = 220 / z;
+  const maxW = Math.min(220 / z, view ? view.R - view.L - 16 / z : Infinity);
   if (nw + g.measureText(t).width > maxW) { while (t.length > 2 && nw + g.measureText(t + '…').width > maxW) t = t.slice(0, -1); t += '…'; }
   const w = nw + g.measureText(t).width + fs * 1.4, hgt = fs * 2;
-  const bx = x - w / 2, by = y - hgt;
+  // La nuvoletta resta dentro lo schermo; la punta continua a indicare chi parla.
+  const bx = view ? Math.max(view.L + 8 / z, Math.min(view.R - 8 / z - w, x - w / 2)) : x - w / 2, by = y - hgt;
   g.fillStyle = '#ffffff'; g.strokeStyle = '#1f1f1f'; g.lineWidth = 1.5 / z;
   g.beginPath(); g.roundRect(bx, by, w, hgt, 5 / z); g.fill(); g.stroke();
   g.beginPath(); g.moveTo(x - 4 / z, by + hgt - 0.8 / z); g.lineTo(x, by + hgt + 6 / z); g.lineTo(x + 4 / z, by + hgt - 0.8 / z); g.closePath(); g.fill();

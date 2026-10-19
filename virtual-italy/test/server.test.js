@@ -160,6 +160,7 @@ test('dentro casa: si entra solo nelle case aperte, si arreda solo la propria', 
   assert.equal((await host('POST', '/api/move', { x: 3, y: 3, room: hostId })).status, 200, 'a casa propria si entra');
   assert.equal((await host('POST', '/api/move', { x: 20, y: 3, room: hostId })).status, 400, 'fuori dalla stanza');
   assert.equal((await host('POST', '/api/move', { x: 1, y: 1, room: 'u_inesistente' })).status, 404);
+  assert.equal((await host('POST', '/api/op', { op: { type: 'buy', kind: 'furni', t: 'divano' } })).status, 200);
   const add = await host('POST', '/api/op', { op: { type: 'furni', act: 'add', t: 'divano', x: 2, y: 2, c: 1 } });
   assert.equal(add.status, 200);
   assert.equal((await host('POST', '/api/op', { op: { type: 'furni', act: 'add', t: 'sedia', x: 3, y: 2 } })).status, 400, 'non si sovrappongono');
@@ -168,6 +169,8 @@ test('dentro casa: si entra solo nelle case aperte, si arreda solo la propria', 
   const rg = await guest('POST', '/api/register', form('ospite@example.com', 'ospite.uno'));
   await guest('POST', '/api/confirm', { token: tokenOf(rg.body.devLink) });
   assert.equal((await guest('POST', '/api/move', { x: 0, y: 5, room: hostId })).status, 200, 'casa aperta a tutti');
+  assert.equal((await guest('POST', '/api/move', { x: 2, y: 5, room: 'shop:moda' })).status, 200, 'nei negozi entrano tutti');
+  assert.equal((await guest('POST', '/api/move', { x: 2, y: 5, room: 'shop:banca' })).status, 404);
   await host('POST', '/api/op', { op: { type: 'roomStyle', access: 'nessuno', floor: 'cotto' } });
   assert.equal((await guest('POST', '/api/move', { x: 1, y: 5, room: hostId })).status, 403, 'casa chiusa alle visite');
   assert.equal((await guest('POST', '/api/op', { op: { type: 'furni', act: 'remove', uid: add.body.result.uid } })).status, 400, 'gli ospiti non toccano i mobili');
