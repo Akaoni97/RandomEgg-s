@@ -3,13 +3,12 @@
 // a bassa risoluzione e si ingrandisce a pixel interi, così resta nitido e leggero sui telefoni.
 // Uno strato fisso si ridisegna solo quando cambia qualcosa; sopra si muovono omini, acqua, auto.
 import {
-  W, H, MAIN_Y, SEA_Y, PIAZZA, PLAN, ROOFS, DOORS, FOUNTAIN_AT,
+  W, H, MAIN_Y, SEA_Y, PIAZZA, PLAN, ROOFS, DOORS, FOUNTAIN_AT, DISTRICTS,
   key, parseKey, districtAt, districtById, inPiazza, builtCount, isFounder, formatNews, CITY, PAPER, levelAt, walkPath, LOOK, cleanLook,
-  ROOM, ROOM_DOOR, FURNI_COLORS, furniById, footprint, roomOf, roomPath, shopAt, seatAt, BENCHES,
+  ROOM, ROOM_DOOR, FURNI_COLORS, furniById, footprint, roomOf, roomPath, shopAt, seatAt, BENCHES, PIAZZA_DECOR, STREET, isStreet, WALK_SPEED, rideById,
 } from './core.js';
 
 const LV = 14;                                   // altezza di un gradone di terreno, in pixel d'arte
-const BAR_AT = 50;                               // a 50 abitanti arrivano i tavolini del bar in piazza
 const elev = (L) => (L < 0 ? -6 : L * LV);
 const roofColor = (id) => (ROOFS.find((r) => r.id === id) || ROOFS[0]).color;
 const doorColor = (id) => (DOORS.find((r) => r.id === id) || DOORS[0]).color;
@@ -166,6 +165,24 @@ function drawTileTop(g, city, G, x, y, sx, sy, det) {
     }
     return;
   }
+  if (road === 'via') {
+    // Via di quartiere in sampietrini, con il bordo del marciapiede verso i lotti
+    g.fillStyle = '#9b958c'; g.fill();
+    if (det) {
+      for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) {
+        const [px, py] = P(sx, sy, 0.125 + a * 0.25, 0.125 + b * 0.25);
+        g.fillStyle = (a * 3 + b + x + y * 2) % 3 === 0 ? '#aaa49a' : (a + b) % 2 ? '#a39d93' : '#8f897f';
+        diamondSmall(g, px, py, 13, 6.5); g.fill();
+      }
+    }
+    g.fillStyle = '#ddd5c4';
+    const edge = (nx, ny, q) => { if (!city.roads[key(nx, ny)]) { poly(g, q); g.fill(); } };
+    edge(x, y - 1, [P(sx, sy, 0, 0), P(sx, sy, 1, 0), P(sx, sy, 1, 0.12), P(sx, sy, 0, 0.12)]);
+    edge(x, y + 1, [P(sx, sy, 0, 0.88), P(sx, sy, 1, 0.88), P(sx, sy, 1, 1), P(sx, sy, 0, 1)]);
+    edge(x - 1, y, [P(sx, sy, 0, 0), P(sx, sy, 0.12, 0), P(sx, sy, 0.12, 1), P(sx, sy, 0, 1)]);
+    edge(x + 1, y, [P(sx, sy, 0.88, 0), P(sx, sy, 1, 0), P(sx, sy, 1, 1), P(sx, sy, 0.88, 1)]);
+    return;
+  }
   if (road === 'lane') {
     g.fillStyle = '#c7b28a'; g.fill();
     if (det) {
@@ -178,9 +195,23 @@ function drawTileTop(g, city, G, x, y, sx, sy, det) {
     return;
   }
   if (road === 'piazza' || inPiazza(x, y)) {
-    // Pavimento a scacchi, come le stanze di Habbo
-    g.fillStyle = (x + y) % 2 ? '#efe5cf' : '#d9c8a8'; g.fill();
-    if (det) { g.strokeStyle = 'rgba(120,95,60,0.35)'; g.lineWidth = 1; diamond(g, sx, sy); g.stroke(); }
+    // Lastre di pietra chiara, una cornice di cotto lungo il bordo e un anello attorno alla fontana
+    const [fx, fy] = PIAZZA_DECOR.fountain;
+    const ring = Math.max(Math.abs(x - fx), Math.abs(y - fy)) === 2;
+    const border = x === PIAZZA.x0 || x === PIAZZA.x1 || y === PIAZZA.y0 || y === PIAZZA.y1;
+    g.fillStyle = border ? '#c98a5e' : ring ? '#d2c3a2' : '#e9dfca'; g.fill();
+    if (det) {
+      g.strokeStyle = border ? 'rgba(120,60,30,0.35)' : 'rgba(140,120,90,0.28)'; g.lineWidth = 1;
+      g.beginPath();
+      for (let k = 1; k < (border ? 4 : 2); k++) {
+        const t = k / (border ? 4 : 2);
+        const a = P(sx, sy, 0, t), b = P(sx, sy, 1, t), c = P(sx, sy, t, 0), d = P(sx, sy, t, 1);
+        g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]);
+        if (!border || k % 2) { g.moveTo(c[0], c[1]); g.lineTo(d[0], d[1]); }
+      }
+      g.stroke();
+      if (!border && !ring && ih(x, y, 70) > 0.7) speck(g, sx, sy, x * 7 + y, 3, ['rgba(150,130,100,0.35)']);
+    }
     return;
   }
   g.fillStyle = G.color[i]; g.fill();
@@ -451,6 +482,7 @@ export function drawHouse(g, style, sx, sy, { lit = false, night = false, founde
 const SHOP_STYLE = {
   mobili: { wall: '#e6cfa3', trim: '#8a5a36', awning: ['#2f6b4f', '#f6efe0'], sign: '#2f4f3f', ink: '#f6e7b8' },
   moda: { wall: '#f1dcd8', trim: '#3b3f45', awning: ['#2d2d2d', '#f6efe0'], sign: '#2d2d2d', ink: '#e2bf4f' },
+  bici: { wall: '#d7e6ef', trim: '#2f6b9f', awning: ['#e0a92a', '#2f6b9f'], sign: '#2f6b9f', ink: '#f6efe0' },
 };
 // Merce in vetrina: sagome di mobili o vestiti appesi, dietro al vetro.
 function vitrine(g, f, u0, u1, kind, night, seed) {
@@ -461,7 +493,13 @@ function vitrine(g, f, u0, u1, kind, night, seed) {
   const n = 3, span = (u1 - u0) / n;
   for (let k = 0; k < n; k++) {
     const c = cols[(seed + k * 2) % cols.length], u = u0 + span * (k + 0.5);
-    if (kind === 'wear') {
+    if (kind === 'ride') {
+      // Ruote di bici in vetrina
+      const c = f(u, 13);
+      g.strokeStyle = '#1f1f1f'; g.lineWidth = 1; g.beginPath(); g.ellipse(c[0], c[1], 3.5, 4, 0.46, 0, 7); g.stroke();
+      const c2 = f(u + span * 0.3, 13); g.beginPath(); g.ellipse(c2[0], c2[1], 3.5, 4, 0.46, 0, 7); g.stroke();
+      g.strokeStyle = cols[(seed + k * 2) % cols.length]; g.beginPath(); g.moveTo(c[0], c[1]); g.lineTo(c2[0], c2[1] - 4); g.stroke();
+    } else if (kind === 'wear') {
       // Maglie sulle grucce
       poly(g, quadOn(f, u - span * 0.08, u + span * 0.08, 24, 25)); g.fillStyle = '#6b6b6b'; g.fill();
       poly(g, quadOn(f, u - span * 0.32, u + span * 0.32, 18, 23)); g.fillStyle = c; g.fill();
@@ -619,11 +657,7 @@ function drawSite(g, T0, R0, B0, L0, det) {
 
 /* Piazza ------------------------------------------------------------------ */
 
-export const PIAZZA_SPOTS = {
-  edicola: [PIAZZA.x0, PIAZZA.y0],
-  muro: [[PIAZZA.x0 + 3, PIAZZA.y0], [PIAZZA.x0 + 4, PIAZZA.y0], [PIAZZA.x0 + 5, PIAZZA.y0]],
-};
-const FOUNTAIN_TILE = [PIAZZA.x0 + 4, PIAZZA.y0 + 1];
+const FOUNTAIN_TILE = PIAZZA_DECOR.fountain;
 
 // Oggetti della piazza, ognuno legato a una casella per l'ordine di disegno.
 function piazzaProps(city) {
@@ -631,17 +665,17 @@ function piazzaProps(city) {
   const built = builtCount(city);
   const founders = Object.values(city.residents).filter(isFounder).length;
   const put = (x, y, draw) => { const k = key(x, y); if (!out.has(k)) out.set(k, []); out.get(k).push(draw); };
-  put(...PIAZZA_SPOTS.edicola, (g, sx, sy) => edicola(g, sx, sy));
-  put(PIAZZA.x0 + 5, PIAZZA.y0, (g, sx, sy) => muro(g, sx, sy, founders));
-  put(...FOUNTAIN_TILE, (g, sx, sy) => fountain(g, sx, sy, built >= FOUNTAIN_AT));
-  for (const [bx, by] of BENCHES) put(bx, by, (g, sx, sy) => bench(g, ...P(sx, sy, 0.5, 0.5)));
-  put(PIAZZA.x0, PIAZZA.y1, (g, sx, sy) => planter(g, ...P(sx, sy, 0.3, 0.7)));
-  put(PIAZZA.x1, PIAZZA.y1, (g, sx, sy) => planter(g, ...P(sx, sy, 0.7, 0.7)));
-  put(PIAZZA.x0 + 2, PIAZZA.y1, (g, sx, sy) => lampPost(g, ...P(sx, sy, 0.5, 0.85)));
-  put(PIAZZA.x1 - 2, PIAZZA.y1, (g, sx, sy) => lampPost(g, ...P(sx, sy, 0.5, 0.85)));
-  if (built >= BAR_AT) {
-    for (const [x, y] of [[PIAZZA.x1, PIAZZA.y0], [PIAZZA.x1 - 1, PIAZZA.y0 + 1], [PIAZZA.x1, PIAZZA.y0 + 1]]) put(x, y, (g, sx, sy) => cafeTable(g, ...P(sx, sy, 0.5, 0.5)));
-  }
+  const D = PIAZZA_DECOR;
+  put(...D.edicola, (g, sx, sy) => edicola(g, sx, sy));
+  put(...D.muro[D.muro.length - 1], (g, sx, sy) => muro(g, sx, sy, founders));
+  // La fontana si disegna sulla casella più avanti delle nove che occupa
+  put(D.fountain[0] + 1, D.fountain[1] + 1, (g, sx, sy) => fountain(g, sx, sy - 32, built >= FOUNTAIN_AT));
+  put(...D.campanile, (g, sx, sy) => campanile(g, sx, sy));
+  for (const [x, y] of BENCHES) put(x, y, (g, sx, sy) => bench(g, ...P(sx, sy, 0.5, 0.5)));
+  for (const [x, y] of D.planters) put(x, y, (g, sx, sy) => planter(g, ...P(sx, sy, 0.5, 0.55)));
+  for (const [x, y] of D.lamps) put(x, y, (g, sx, sy) => lampPost(g, ...P(sx, sy, 0.5, 0.5)));
+  for (const [x, y] of D.trees) put(x, y, (g, sx, sy) => drawTree(g, { kind: 'tondo', s: 0.8 }, ...P(sx, sy, 0.5, 0.5)));
+  for (const [x, y] of D.cafe) put(x, y, (g, sx, sy) => cafeTable(g, ...P(sx, sy, 0.5, 0.5)));
   return out;
 }
 // Parallelepipedo isometrico appoggiato sul punto `base` (angolo verso chi guarda).
@@ -672,23 +706,55 @@ function muro(g, sx, sy, founders) {
     poly(g, quadOn(f, u, u + 0.05, hh, hh + 3.5)); g.fillStyle = i < n ? '#e2bf4f' : 'rgba(255,255,255,0.25)'; g.fill();
   }
 }
+// Fontana grande al centro della piazza; (sx, sy) è l'angolo in alto della casella centrale.
 function fountain(g, sx, sy, built) {
-  const c = P(sx, sy, 0, 1); // incrocio di quattro caselle: centro della fontana
-  if (!built) {
-    g.fillStyle = '#6aa25a'; g.beginPath(); g.ellipse(c[0], c[1], 28, 14, 0, 0, 7); g.fill(); g.strokeStyle = '#3f6b33'; g.lineWidth = 1; g.stroke();
-    speck(g, c[0], c[1] - 14, 7, 8, ['#e85d75', '#f6d84a', '#fff']);
-    g.fillStyle = '#8a6a3e'; g.fillRect(c[0] - 1, c[1] - 24, 2, 18);
-    g.fillStyle = '#f7f1e1'; g.fillRect(c[0] - 18, c[1] - 32, 36, 10); g.strokeStyle = '#8a6a3e'; g.strokeRect(c[0] - 18.5, c[1] - 32.5, 37, 11);
-    g.fillStyle = '#5b4a2c'; g.font = '700 6px Nunito, sans-serif'; g.textAlign = 'center'; g.fillText(`FONTANA A ${FOUNTAIN_AT}`, c[0], c[1] - 25); g.textAlign = 'left';
-    return;
+  const c = P(sx, sy, 0.5, 0.5);
+  // Gradino, bordo della vasca, acqua (asciutta finché la città non arriva a 25 abitanti), colonna con due coppe
+  g.fillStyle = '#b9aa8c'; g.beginPath(); g.ellipse(c[0], c[1] + 6, 74, 37, 0, 0, Math.PI); g.lineTo(c[0] - 74, c[1]); g.fill();
+  g.fillStyle = '#d7cbb2'; g.beginPath(); g.ellipse(c[0], c[1], 74, 37, 0, 0, 7); g.fill(); g.strokeStyle = '#8c7a5a'; g.lineWidth = 1; g.stroke();
+  g.fillStyle = '#c4b697'; g.beginPath(); g.ellipse(c[0], c[1] - 3, 66, 33, 0, 0, 7); g.fill();
+  g.fillStyle = built ? '#5fb0d4' : '#b3a586'; g.beginPath(); g.ellipse(c[0], c[1] - 3, 60, 30, 0, 0, 7); g.fill();
+  if (built) { g.fillStyle = '#9ad6ea'; g.beginPath(); g.ellipse(c[0] - 18, c[1] - 9, 22, 8, 0, 0, 7); g.fill(); }
+  else speck(g, c[0] - 30, c[1] - 30, 9, 12, ['rgba(120,100,70,0.5)', 'rgba(90,130,60,0.6)']);
+  g.fillStyle = '#cdbf9f'; g.fillRect(c[0] - 4, c[1] - 30, 8, 28); g.strokeStyle = '#8c7a5a'; g.strokeRect(c[0] - 4.5, c[1] - 30.5, 9, 29);
+  for (const [r, h] of [[18, 30], [10, 46]]) {
+    g.fillStyle = '#e2d7bf'; g.beginPath(); g.ellipse(c[0], c[1] - h, r, r / 2.4, 0, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = built ? '#7cc6df' : '#c4b697'; g.beginPath(); g.ellipse(c[0], c[1] - h - 0.5, r - 3, (r - 3) / 2.4, 0, 0, 7); g.fill();
   }
-  g.fillStyle = '#b9aa8c'; g.beginPath(); g.ellipse(c[0], c[1] + 4, 34, 17, 0, 0, Math.PI); g.lineTo(c[0] - 34, c[1]); g.fill();
-  g.fillStyle = '#d7cbb2'; g.beginPath(); g.ellipse(c[0], c[1], 34, 17, 0, 0, 7); g.fill(); g.strokeStyle = '#8c7a5a'; g.lineWidth = 1; g.stroke();
-  g.fillStyle = '#5fb0d4'; g.beginPath(); g.ellipse(c[0], c[1], 28, 13, 0, 0, 7); g.fill();
-  g.fillStyle = '#9ad6ea'; g.beginPath(); g.ellipse(c[0] - 6, c[1] - 3, 12, 5, 0, 0, 7); g.fill();
-  g.fillStyle = '#cdbf9f'; g.fillRect(c[0] - 3, c[1] - 20, 6, 20); g.strokeStyle = '#8c7a5a'; g.strokeRect(c[0] - 3.5, c[1] - 20.5, 7, 21);
-  g.fillStyle = '#e2d7bf'; g.beginPath(); g.ellipse(c[0], c[1] - 21, 10, 4, 0, 0, 7); g.fill(); g.stroke();
-  g.fillStyle = '#7cc6df'; g.beginPath(); g.ellipse(c[0], c[1] - 21.5, 7.5, 2.6, 0, 0, 7); g.fill();
+  g.fillStyle = '#cdbf9f'; g.fillRect(c[0] - 2, c[1] - 56, 4, 10);
+  if (!built) {
+    // Cartello sul bordo: l'acqua arriva con il venticinquesimo abitante
+    const q = [c[0] + 30, c[1] + 26];
+    g.fillStyle = '#8a6a3e'; g.fillRect(q[0] - 1, q[1] - 16, 2, 16);
+    g.fillStyle = '#f7f1e1'; g.fillRect(q[0] - 22, q[1] - 26, 44, 11); g.strokeStyle = '#8a6a3e'; g.lineWidth = 1; g.strokeRect(q[0] - 22.5, q[1] - 26.5, 45, 12);
+    g.fillStyle = '#5b4a2c'; g.font = '700 6.5px Nunito, sans-serif'; g.textAlign = 'center'; g.fillText(`ACQUA A ${FOUNTAIN_AT} ABITANTI`, q[0], q[1] - 18); g.textAlign = 'left';
+  }
+}
+// Campanile in mattoni nell'angolo della piazza, con la cella delle campane e il tetto a punta.
+function campanile(g, sx, sy) {
+  const k = 0.16, hgt = 120;
+  const T0 = P(sx, sy, k, k), R0 = P(sx, sy, 1 - k, k), B0 = P(sx, sy, 1 - k, 1 - k), L0 = P(sx, sy, k, 1 - k);
+  g.fillStyle = 'rgba(25,40,15,0.25)'; poly(g, [P(sx, sy, k, k), P(sx, sy, 1.5, -0.3), P(sx, sy, 1.4, 0.7), B0]); g.fill();
+  drawWall(g, L0, B0, hgt, '#c98a5e');
+  drawWall(g, B0, R0, hgt, '#ad7149');
+  const fl = wallFace(L0, B0), fr = wallFace(B0, R0);
+  g.strokeStyle = 'rgba(90,40,20,0.35)'; g.lineWidth = 1; g.beginPath();
+  for (let h = 8; h < hgt - 4; h += 6) for (const f of [fl, fr]) { const a = f(0, h), b = f(1, h); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }
+  g.stroke();
+  for (const f of [fl, fr]) {
+    poly(g, quadOn(f, 0.2, 0.8, 92, 112)); g.fillStyle = '#2b2118'; g.fill();
+    poly(g, quadOn(f, 0.35, 0.65, 96, 106)); g.fillStyle = '#c99a2e'; g.fill();
+    poly(g, quadOn(f, -0.04, 1.04, 86, 89)); g.fillStyle = '#e6d6b3'; g.fill();
+    poly(g, quadOn(f, 0.4, 0.6, 30, 42)); g.fillStyle = '#2b2118'; g.fill();
+  }
+  // Orologio sulla faccia verso la piazza
+  const cl = fl(0.5, 70); g.fillStyle = '#f4efe3'; g.beginPath(); g.ellipse(cl[0], cl[1], 6, 6.5, 0, 0, 7); g.fill(); g.strokeStyle = '#3b3f45'; g.stroke();
+  g.beginPath(); g.moveTo(cl[0], cl[1]); g.lineTo(cl[0], cl[1] - 4); g.moveTo(cl[0], cl[1]); g.lineTo(cl[0] + 3, cl[1] + 1); g.stroke();
+  const e = (q) => add(q, 0, -hgt);
+  const apex = add(lerp(e(T0), e(B0), 0.5), 0, -34);
+  poly(g, [e(L0), e(B0), apex]); g.fillStyle = '#b5523b'; g.fill(); g.strokeStyle = '#7a3322'; g.stroke();
+  poly(g, [e(B0), e(R0), apex]); g.fillStyle = '#93402d'; g.fill(); g.stroke();
+  g.fillStyle = '#3b3f45'; g.fillRect(Math.round(apex[0]) - 0.5, Math.round(apex[1]) - 8, 1, 8); g.fillRect(Math.round(apex[0]) - 3, Math.round(apex[1]) - 6, 6, 1);
 }
 function bench(g, x, y) {
   g.fillStyle = 'rgba(30,30,20,0.25)'; poly(g, [[x - 10, y + 1], [x + 8, y + 10], [x + 12, y + 8], [x - 6, y - 1]]); g.fill();
@@ -707,13 +773,27 @@ function lampPost(g, x, y) {
   poly(g, [[x - 3.5, y - 30], [x + 3.5, y - 30], [x + 2, y - 37], [x - 2, y - 37]]); g.fill();
   g.fillStyle = '#f3e6c2'; g.fillRect(x - 2, y - 36, 4, 5);
 }
+// Tavolino del bar con due sedie e l'ombrellone a spicchi.
 function cafeTable(g, x, y) {
-  g.fillStyle = '#6b4a2f'; g.fillRect(x - 0.5, y - 22, 1, 22);
-  g.fillStyle = '#f2ead6'; g.beginPath(); g.ellipse(x, y - 2, 6, 3, 0, 0, 7); g.fill();
+  g.fillStyle = 'rgba(30,30,20,0.22)'; g.beginPath(); g.ellipse(x + 4, y + 1, 18, 8, 0, 0, 7); g.fill();
+  const chair = (cx, cy, back) => {
+    g.fillStyle = '#3b3f45'; g.fillRect(cx - 3, cy - 6, 1, 6); g.fillRect(cx + 2, cy - 6, 1, 6);
+    g.fillStyle = '#c0392b'; g.fillRect(cx - 4, cy - 7, 8, 2);
+    g.fillRect(back < 0 ? cx - 4 : cx + 2, cy - 13, 2, 7);
+  };
+  chair(x - 10, y - 2, -1);
+  g.fillStyle = '#3b3f45'; g.fillRect(x - 1, y - 11, 2, 11);
+  g.fillStyle = '#f2ead6'; g.beginPath(); g.ellipse(x, y - 11, 8, 4, 0, 0, 7); g.fill(); g.strokeStyle = '#b5ab92'; g.lineWidth = 1; g.stroke();
+  g.fillStyle = '#ffffff'; g.fillRect(x - 3, y - 13, 2, 2); g.fillStyle = '#6b4a2f'; g.fillRect(x + 1, y - 13, 2, 2);
+  chair(x + 10, y + 3, 1);
+  // Ombrellone: palo e otto spicchi alternati
+  g.fillStyle = '#6b4a2f'; g.fillRect(x - 0.5, y - 40, 1, 29);
+  const apex = [x, y - 44], rim = (a) => [x + Math.cos(a) * 19, y - 33 + Math.sin(a) * 8.5];
   for (let k = 0; k < 8; k++) {
-    g.fillStyle = k % 2 ? '#f6efe0' : '#2f6b4f';
-    g.beginPath(); g.moveTo(x, y - 30); g.ellipse(x, y - 22, 15, 7, 0, Math.PI + (k / 8) * Math.PI, Math.PI + ((k + 1) / 8) * Math.PI); g.closePath(); g.fill();
+    const a0 = (k / 8) * Math.PI * 2, a1 = ((k + 1) / 8) * Math.PI * 2;
+    poly(g, [apex, rim(a0), rim(a1)]); g.fillStyle = k % 2 ? '#f6efe0' : '#2f6b4f'; g.fill();
   }
+  g.strokeStyle = 'rgba(30,50,40,0.45)'; g.lineWidth = 0.6; g.beginPath(); g.ellipse(x, y - 33, 19, 8.5, 0, 0, Math.PI); g.stroke();
 }
 function umbrella(g, x, y, seed) {
   const cols = [['#e85d4a', '#fff'], ['#2f6b9f', '#fff'], ['#f2b632', '#fff'], ['#4f8a72', '#f6efe0']][seed % 4];
@@ -797,26 +877,30 @@ export function drawWorld(g, city, view, o) {
     const tree = G.trees.get(k);
     const road = city.roads[k];
     const dd = districtAt(x, y);
-    const bush = !tree && !road && x % 3 === 0 && y % 3 === 0 && y !== MAIN_Y && dd && dd <= city.openDistricts && !inPiazza(x, y) && ih(x, y, 30) < 0.45;
-    if ((tree && !road) || bush) {
-      const t = tree || { kind: 'cespuglio', s: 1 };
+    // Nei quartieri aperti: un albero nel cortile in fondo a ogni isolato, qualche siepe tra i giardini.
+    const inner = !tree && !road && dd && dd <= city.openDistricts && !inPiazza(x, y) && !isStreet(x, y) && !PLAN.lots.has(k) && !shopAt(x, y);
+    const bx = x % STREET, by = y % STREET;
+    const yard = inner && bx === 1 && by === 1 ? { kind: ih(x, y, 31) < 0.5 ? 'tondo' : 'cipresso', s: 0.9 + ih(x, y, 32) * 0.2 }
+      : inner && ih(x, y, 30) < 0.3 ? { kind: 'cespuglio', s: 1 } : null;
+    if ((tree && !road) || yard) {
+      const t = tree || yard;
       const [cx, cy] = P(sx, sy, 0.5, 0.5);
       drawTree(g, t, cx, cy);
       objects.push({ type: 'tree', depth: d, box: [cx - 18, cy - 50, cx + 18, cy + 4], draw: (gg) => drawTree(gg, t, cx, cy) });
     }
     for (const pd of props.get(k) || []) {
       pd(g, sx, sy);
-      objects.push({ type: 'prop', depth: d, box: [sx - 70, sy - 60, sx + 40, sy + 32], draw: (gg) => pd(gg, sx, sy) });
+      objects.push({ type: 'prop', depth: d, box: [sx - 110, sy - 170, sx + 80, sy + 32], draw: (gg) => pd(gg, sx, sy) });
     }
     // Lampioni lungo la statale e ombrelloni sulla spiaggia
-    if (road === 'main' && x % 5 === 0 && !(x >= PIAZZA.x0 && x <= PIAZZA.x1)) {
+    if (road === 'main' && x % STREET === 3 && !(x >= PIAZZA.x0 && x <= PIAZZA.x1)) {
       const [lx, ly] = P(sx, sy, 0.5, 0.08);
       lampPost(g, lx, ly); lamps.push([lx, ly]);
       objects.push({ type: 'prop', depth: d, box: [lx - 5, ly - 38, lx + 5, ly + 2], draw: (gg) => lampPost(gg, lx, ly) });
     }
     if (y === SEA_Y && x % 3 === 1 && x > 12 && x < 72) { const [ux, uy] = P(sx, sy, 0.5, 0.45); umbrella(g, ux, uy, x); }
   }
-  for (const [x, y] of [[PIAZZA.x0 + 2, PIAZZA.y1], [PIAZZA.x1 - 2, PIAZZA.y1]]) lamps.push(P(isoX(x, y), isoY(x, y) - elev(1), 0.5, 0.85));
+  for (const [x, y] of PIAZZA_DECOR.lamps) lamps.push(P(isoX(x, y), isoY(x, y) - elev(1), 0.5, 0.5));
   if (night) {
     const { L, R, T, B } = view;
     g.save();
@@ -839,34 +923,90 @@ function glow(g, x, y, r, a, color = '255,214,110') {
 
 /* Strato animato: acqua, fontana, auto, barche ------------------------------ */
 
-const CAR_COLORS = ['#e8c95a', '#d9442f', '#6fb3c8', '#f1ede4', '#3f6aa1', '#4f8a72', '#c7c2b8', '#e88a3a'];
-function carsFor(built) {
-  const n = Math.max(2, Math.min(9, 2 + Math.floor(built / 6)));
-  return Array.from({ length: n }, (_, i) => ({
-    color: CAR_COLORS[Math.floor(ih(i, 1, 40) * CAR_COLORS.length)], bus: i % 5 === 4,
-    dir: i % 2 ? -1 : 1, speed: 1.1 + ih(i, 2, 40) * 0.9, offset: ih(i, 3, 40) * W,
-  }));
-}
-function drawCar(g, car, gx, gy, night) {
-  // Auto lungo l'asse x della statale: una scatola isometrica con i finestrini
-  const len = car.bus ? 1.0 : 0.56, wid = 0.3, hgt = car.bus ? 21 : 14;
-  const lv = levelAt(Math.round(gx), Math.round(gy), 1) >= 1 ? 1 : 0;
-  const bx = isoX(gx, gy), by = isoY(gx, gy) - elev(lv);
-  const p = (u, v) => [bx + 32 * u - 32 * v, by + 16 * u + 16 * v];
-  const L0 = p(-len / 2, wid / 2), B0 = p(len / 2, wid / 2), R0 = p(len / 2, -wid / 2), T0 = p(-len / 2, -wid / 2);
-  const col = night ? shade(car.color, -0.25) : car.color;
-  g.fillStyle = 'rgba(0,0,0,0.3)'; poly(g, [add(L0, 3, 2), add(B0, 3, 2), add(R0, 3, 2), add(T0, 3, 2)]); g.fill();
-  const up = (q) => add(q, 0, -hgt);
-  poly(g, [L0, B0, up(B0), up(L0)]); g.fillStyle = shade(col, -0.05); g.fill(); g.strokeStyle = shade(col, -0.4); g.lineWidth = 1; g.stroke();
-  poly(g, [B0, R0, up(R0), up(B0)]); g.fillStyle = shade(col, -0.2); g.fill(); g.stroke();
-  poly(g, [up(L0), up(B0), up(R0), up(T0)]); g.fillStyle = shade(col, 0.1); g.fill(); g.stroke();
-  poly(g, quadOn(wallFace(L0, B0), 0.15, 0.85, hgt - 9, hgt - 3)); g.fillStyle = night ? '#ffe39a' : '#33465a'; g.fill();
-  if (night) {
-    g.save(); g.globalCompositeOperation = 'lighter';
-    const front = car.dir > 0 ? lerp(B0, R0, 0.5) : lerp(L0, T0, 0.5);
-    glow(g, front[0] + car.dir * 12, front[1] + car.dir * 6, 16, 0.4, '255,240,180');
-    g.restore();
+const CAR_COLORS = ['#e8c95a', '#d9442f', '#6fb3c8', '#f1ede4', '#3f6aa1', '#4f8a72', '#c7c2b8', '#e88a3a', '#2d2d2d'];
+// Modelli: lunghezza e larghezza in caselle, poi i pezzi [da, a (lungo la marcia, + è il muso), quota da, quota a, materiale].
+const VEHICLES = {
+  utilitaria: { L: 0.5, W: 0.28, parts: [[-0.25, 0.25, 3, 10, 'body'], [-0.17, 0.1, 10, 16, 'glass'], [-0.15, 0.08, 16, 17.5, 'body']] },
+  berlina: { L: 0.66, W: 0.3, parts: [[-0.33, 0.33, 3, 10, 'body'], [-0.18, 0.13, 10, 16, 'glass'], [-0.16, 0.11, 16, 17.5, 'body']] },
+  furgone: { L: 0.72, W: 0.32, parts: [[-0.36, 0.14, 3, 22, 'body'], [0.14, 0.36, 3, 12, 'body'], [0.14, 0.32, 12, 19, 'glass'], [0.14, 0.3, 19, 20.5, 'body']] },
+  ape: { L: 0.44, W: 0.22, parts: [[-0.22, 0.04, 3, 8, 'wood'], [0.04, 0.22, 3, 10, 'body'], [0.06, 0.22, 10, 16, 'glass'], [0.04, 0.22, 16, 17.5, 'body']] },
+  autobus: { L: 1.3, W: 0.34, parts: [[-0.65, 0.65, 3, 24, 'body']], windows: true },
+};
+// Traffico: sulla statale tutti i modelli, sulle vie del Centro e sulle dorsali aperte auto piccole e Ape.
+function trafficFor(city) {
+  const built = builtCount(city);
+  const out = [];
+  const add = (route, n, kinds, seed) => {
+    for (let i = 0; i < n; i++) {
+      const r = (k) => ih(seed + i, k, 40);
+      out.push({ ...route, kind: kinds[Math.floor(r(1) * kinds.length)], color: CAR_COLORS[Math.floor(r(2) * CAR_COLORS.length)],
+        dir: i % 2 ? -1 : 1, speed: 0.9 + r(3) * 0.7, offset: r(4) * 200 });
+    }
+  };
+  add({ axis: 'x', at: MAIN_Y, from: -2, to: W + 2 }, Math.min(9, 3 + Math.floor(built / 5)), ['utilitaria', 'berlina', 'berlina', 'furgone', 'autobus', 'utilitaria'], 0);
+  add({ axis: 'x', at: 20, from: 30, to: 55 }, 1, ['ape', 'utilitaria'], 20);
+  add({ axis: 'x', at: 35, from: 30, to: 55 }, 2, ['utilitaria', 'ape', 'berlina'], 30);
+  add({ axis: 'y', at: 30, from: 20, to: 35 }, 1, ['ape'], 40);
+  for (const d of DISTRICTS) {
+    if (!d.dorsal || d.id > city.openDistricts) continue;
+    const r = d.dorsal.x !== undefined ? { axis: 'y', at: d.dorsal.x, from: d.dorsal.y0, to: d.dorsal.y1 } : { axis: 'x', at: d.dorsal.y, from: d.dorsal.x0, to: d.dorsal.x1 };
+    add(r, 2, ['utilitaria', 'berlina', 'ape', 'furgone'], 50 + d.id * 10);
   }
+  return out;
+}
+// Posizione di un veicolo al tempo s: avanti e indietro lungo la sua via, sulla corsia di destra.
+function vehicleAt(v, s) {
+  const span = v.to - v.from;
+  let p = (s * v.speed + v.offset) % span;
+  if (v.dir < 0) p = span - p;
+  const along = v.from + p, lane = v.at + 0.5 + (v.axis === 'x' ? v.dir * 0.2 : -v.dir * 0.2);
+  return v.axis === 'x' ? [along, lane] : [lane, along];
+}
+function drawVehicle(g, v, gx, gy, night, open) {
+  const M = VEHICLES[v.kind];
+  const lv = levelAt(Math.floor(gx), Math.floor(gy), open);
+  const col = night ? shade(v.color, -0.25) : v.color;
+  const mats = { body: col, glass: night ? '#ffe39a' : '#3e5a72', wood: '#9a6a43' };
+  // Dalla geometria del veicolo (f lungo la marcia, w di traverso) alle caselle
+  const rect = (f0, f1, w0, w1) => {
+    const a = gx + 0, b = gy + 0;
+    const [u0, u1] = v.dir > 0 ? [f0, f1] : [-f1, -f0];
+    return v.axis === 'x' ? [a + u0, b + w0, a + u1, b + w1] : [a + w0, b + u0, a + w1, b + u1];
+  };
+  g.save();
+  g.translate(0, -elev(lv));
+  // Ombra a terra
+  const [s0, t0, s1, t1] = rect(-M.L / 2 - 0.04, M.L / 2 + 0.04, -M.W / 2 - 0.02, M.W / 2 + 0.06);
+  poly(g, [gp(s0, t0), gp(s1, t0), gp(s1, t1), gp(s0, t1)]); g.fillStyle = 'rgba(0,0,0,0.28)'; g.fill();
+  // Ruote: quelle sul fianco nascosto prima, poi la carrozzeria, poi quelle sul fianco in vista
+  const wheels = M.L > 1 ? [-M.L / 2 + 0.16, M.L / 2 - 0.2] : [-M.L / 2 + 0.11, M.L / 2 - 0.11];
+  const wheel = (f, w) => {
+    const [x0, y0] = rect(f, f, w, w);
+    const [px, py] = gp(x0, y0);
+    g.fillStyle = '#1f1f1f'; g.beginPath(); g.ellipse(px, py - 3, 3.4, 3.4, 0, 0, 7); g.fill();
+    g.fillStyle = '#9aa0a6'; g.fillRect(Math.round(px) - 1, Math.round(py) - 4, 2, 2);
+  };
+  const near = M.W / 2; // il fianco verso chi guarda è sempre quello verso +y (o +x)
+  for (const f of wheels) wheel(f, -near);
+  for (const [f0, f1, z0, z1, m] of M.parts) {
+    const [x0, y0, x1, y1] = rect(f0, f1, -M.W / 2, M.W / 2);
+    box3(g, x0, y0, x1, y1, z0, z1, mats[m], m === 'glass' ? { top: col, side: night ? '#f2cf78' : '#2f475c' } : {});
+  }
+  if (M.windows) {
+    // Finestrini dell'autobus sul fianco in vista
+    const [x0, y0, x1, y1] = rect(-M.L / 2, M.L / 2, -M.W / 2, M.W / 2);
+    const face = v.axis === 'x' ? wallFace(gp(x0, y1), gp(x1, y1)) : wallFace(gp(x1, y1), gp(x1, y0));
+    for (let k = 0; k < 6; k++) { poly(g, quadOn(face, 0.06 + k * 0.15, 0.17 + k * 0.15, 12, 20)); g.fillStyle = mats.glass; g.fill(); }
+    poly(g, quadOn(face, 0, 1, 5, 7)); g.fillStyle = '#f1ede4'; g.fill();
+  }
+  for (const f of wheels) wheel(f, near);
+  // Fari davanti (accesi di sera)
+  const [hx, hy] = rect(M.L / 2, M.L / 2, 0, 0);
+  const [px, py] = gp(hx, hy);
+  if (night) { g.save(); g.globalCompositeOperation = 'lighter'; glow(g, px + (v.axis === 'x' ? 14 : -14) * v.dir, py + 7 * v.dir - 6, 16, 0.4, '255,240,180'); g.restore(); }
+  g.restore();
+  const [cx, cy] = gp(gx, gy);
+  return { depth: gx + gy, box: [cx - 50, cy - elev(lv) - 40, cx + 50, cy - elev(lv) + 12] };
 }
 
 export function drawAmbient(g, city, view, o, t) {
@@ -903,26 +1043,25 @@ export function drawAmbient(g, city, view, o, t) {
   }
   // Fontana
   if (builtCount(city) >= FOUNTAIN_AT) {
-    const [fx, fy] = P(isoX(...FOUNTAIN_TILE), isoY(...FOUNTAIN_TILE) - elev(1), 0, 1);
-    if (fx > L - 60 && fx < R + 60 && fy > T - 60 && fy < B + 60) {
+    const [fx, fy] = tileCenter(...FOUNTAIN_TILE, 1);
+    if (fx > L - 100 && fx < R + 100 && fy > T - 100 && fy < B + 100) {
       g.fillStyle = 'rgba(230,248,255,0.95)';
-      for (let k = 0; k < 12; k++) {
-        const a = (k / 12) * Math.PI * 2, p = (s * 1.3 + k * 0.137) % 1;
-        g.fillRect(Math.round(fx + Math.cos(a) * p * 11), Math.round(fy - 24 - Math.sin(p * Math.PI) * 8 + p * 6 + Math.sin(a) * p * 5), 2, 2);
+      for (let k = 0; k < 18; k++) {
+        const a = (k / 18) * Math.PI * 2, p = (s * 1.2 + k * 0.137) % 1;
+        g.fillRect(Math.round(fx + Math.cos(a) * p * 16), Math.round(fy - 56 - Math.sin(p * Math.PI) * 10 + p * 26 + Math.sin(a) * p * 7), 2, 2);
       }
       g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = 1;
       const p = (s * 0.5) % 1;
-      g.globalAlpha = 1 - p; g.beginPath(); g.ellipse(fx, fy, 8 + p * 18, (8 + p * 18) * 0.5, 0, 0, 7); g.stroke(); g.globalAlpha = 1;
+      g.globalAlpha = 1 - p; g.beginPath(); g.ellipse(fx, fy - 3, 20 + p * 36, (20 + p * 36) * 0.5, 0, 0, 7); g.stroke(); g.globalAlpha = 1;
     }
   }
-  // Automobili sulla statale
-  for (const car of carsFor(builtCount(city))) {
-    let gx = ((s * car.speed + car.offset) % (W + 4)) - 2;
-    if (car.dir < 0) gx = W - gx;
-    const gy = MAIN_Y + 0.5 + (car.dir > 0 ? 0.18 : -0.18);
-    const x0 = isoX(gx, gy);
-    if (x0 < L - 60 || x0 > R + 60) continue;
-    drawCar(g, car, gx, gy, night);
+  // Traffico: ogni veicolo, una volta disegnato, viene coperto da quello che gli sta davanti.
+  for (const v of trafficFor(city)) {
+    const [gx, gy] = vehicleAt(v, s);
+    const x0 = isoX(gx, gy), y0 = isoY(gx, gy);
+    if (x0 < L - 90 || x0 > R + 90 || y0 < T - 60 || y0 > B + 90) continue;
+    const res = drawVehicle(g, v, gx, gy, night, city.openDistricts);
+    o.occlude?.(res.depth, res.box);
   }
 }
 
@@ -936,10 +1075,59 @@ function rectO(g, x, y, w, h, fill, line) {
   g.fillStyle = fill; g.fillRect(x, y, w, h);
   if (line) { g.strokeStyle = line; g.lineWidth = 1; g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); }
 }
+// Mezzi della Ciclofficina, disegnati attorno ai piedi dell'omino (0, 0) senza specchiatura.
+// part: 'rear' (dietro all'omino), 'front' (davanti) o 'all'; back: l'omino è girato di spalle.
+const RIDE_COLOR = { skate: '#c0392b', bici: '#2f6b9f', monopattino: '#2b2b2b' };
+export function drawRide(g, kind, part = 'all', back = false) {
+  // Lungo la marcia si sale o scende di mezzo pixel per pixel; di traverso si va nell'altro verso.
+  const sl = back ? -0.5 : 0.5;
+  const A = (t, w = 0, z = 0) => [t + (back ? w : -w), t * sl + w * 0.5 - z];
+  // Il davanti (+t) è verso chi guarda se l'omino è di fronte, lontano se è di spalle
+  const isFront = (t) => (t > 0) !== back;
+  const want = (t) => part === 'all' || (part === 'front') === isFront(t);
+  const col = RIDE_COLOR[kind];
+  const line = (pts, color, w = 1.5) => { g.strokeStyle = color; g.lineWidth = w; g.beginPath(); g.moveTo(...pts[0]); for (const q of pts.slice(1)) g.lineTo(...q); g.stroke(); };
+  if (kind === 'skate' || kind === 'monopattino') {
+    const [t0, t1] = kind === 'skate' ? [-11, 11] : [-9, 8];
+    if (part !== 'front') {
+      // La tavola sta sotto i piedi: si disegna insieme alle parti di dietro
+      poly(g, [A(t0, -3, 2), A(t1, -3, 2), A(t1, 3, 2), A(t0, 3, 2)]); g.fillStyle = kind === 'skate' ? '#2b2b2b' : '#3b3f45'; g.fill();
+      poly(g, [A(t0, 3, 2), A(t1, 3, 2), A(t1, 3, 0.5), A(t0, 3, 0.5)]); g.fillStyle = col; g.fill();
+      for (const t of [t0 + 2.5, t1 - 2.5]) { g.fillStyle = '#e6dcc6'; const p = A(t, 3, 0); g.fillRect(Math.round(p[0]) - 1, Math.round(p[1]) - 1, 2, 2); }
+    }
+    if (kind === 'monopattino' && want(t1)) {
+      line([A(t1, 0, 2), A(t1 + 1, 0, 28)], '#3b3f45', 2);
+      line([A(t1 + 1, -5, 28), A(t1 + 1, 5, 28)], '#2b2b2b', 2);
+      g.fillStyle = '#4fb3c8'; const p = A(t1 + 1, 0, 22); g.fillRect(Math.round(p[0]) - 1, Math.round(p[1]), 2, 3);
+      g.fillStyle = '#1f1f1f'; const w = A(t1, 0, 2); g.beginPath(); g.arc(w[0], w[1], 2.5, 0, 7); g.fill();
+    }
+    return;
+  }
+  // Bicicletta: due ruote, telaio, sella e manubrio
+  const wheel = (t) => {
+    const c = A(t, 0, 7);
+    g.strokeStyle = '#1f1f1f'; g.lineWidth = 1.8; g.beginPath(); g.ellipse(c[0], c[1], 7, 6.4, Math.atan(sl), 0, 7); g.stroke();
+    g.strokeStyle = 'rgba(180,180,180,0.8)'; g.lineWidth = 0.7; g.beginPath(); g.moveTo(c[0] - 4, c[1] - 4 * sl); g.lineTo(c[0] + 4, c[1] + 4 * sl); g.stroke();
+  };
+  if (want(-11)) {
+    wheel(-11);
+    line([A(-11, 0, 7), A(0, 0, 6), A(-3, 0, 17), A(-11, 0, 7)], col);
+    g.fillStyle = '#2b2b2b'; const p = A(-3, 0, 18); g.fillRect(Math.round(p[0]) - 3, Math.round(p[1]) - 1, 6, 2);
+  }
+  if (want(11)) {
+    wheel(11);
+    line([A(0, 0, 6), A(8, 0, 17), A(-3, 0, 17)], col);
+    line([A(8, 0, 17), A(11, 0, 7)], '#9aa0a6');
+    line([A(8, 0, 17), A(8, 0, 21)], '#3b3f45');
+    line([A(8, -4, 21), A(8, 4, 21)], '#2b2b2b', 2);
+  }
+}
+
 // Direzioni isometriche: SE e SW verso chi guarda (si vede il viso), NE e NW di spalle.
 // (x, y) sono i piedi; step 0 fermo, 1 e 2 le due pose della camminata.
 // pose: 'sit' seduto, 'wave' saluta con la mano, 'dance' balla; t = millisecondi dall'inizio del gesto.
-export function drawAvatar(g, x, y, dir, step, look, { night = false, pose = null, t = 0 } = {}) {
+// ride: il mezzo su cui sta (skate, bici, monopattino).
+export function drawAvatar(g, x, y, dir, step, look, { night = false, pose = null, t = 0, ride = null } = {}) {
   const back = dir === 'NE' || dir === 'NW';
   const mirror = dir === 'SW' || dir === 'NW';
   const ol = 'rgba(30,22,16,0.85)';
@@ -948,6 +1136,13 @@ export function drawAvatar(g, x, y, dir, step, look, { night = false, pose = nul
   if (night && 'filter' in g) g.filter = 'brightness(0.62) saturate(0.85)';
   g.fillStyle = 'rgba(20,30,15,0.3)'; g.beginPath(); g.ellipse(0, 0, 9, 4, 0, 0, 7); g.fill();
   if (mirror) g.scale(-1, 1);
+  if (ride) {
+    // In sella o in piedi sulla tavola: prima il mezzo dietro, poi l'omino un po' più su, poi il davanti.
+    drawRide(g, ride, 'rear', back);
+    if (ride === 'bici') pose = 'sit';
+    step = 0;
+    g.translate(0, ride === 'bici' ? -4 : -3);
+  }
   const beat = Math.floor(t / 260) % 2;
   const a = pose === 'dance' ? beat : step === 1 ? 1 : 0, b = pose === 'dance' ? 1 - beat : step === 2 ? 1 : 0;
   // Gambe e scarpe (con pantaloncini e gonna si vede la pelle sotto il ginocchio)
@@ -1069,10 +1264,20 @@ export function drawAvatar(g, x, y, dir, step, look, { night = false, pose = nul
     for (const dx of [-6, -1, 4]) { poly(g, [[dx, -49], [dx + 1, -54], [dx + 2, -49]]); g.fill(); }
     g.fillStyle = '#c0392b'; g.fillRect(-1, -48, 2, 2);
   }
+  if (ride) { g.translate(0, ride === 'bici' ? 4 : 3); drawRide(g, ride, 'front', back); }
   g.restore();
 }
+// Figurina di un mezzo per il catalogo della Ciclofficina.
+export function drawRideIcon(canvas, kind) {
+  const g = canvas.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const s = canvas.width / 40;
+  g.setTransform(s, 0, 0, s, canvas.width / 2, canvas.height * 0.72);
+  drawRide(g, kind, 'all', false);
+}
 // Anteprima per l'editor del personaggio: cammina sul posto e si gira nelle quattro direzioni.
-export function drawAvatarPreview(canvas, look, t) {
+export function drawAvatarPreview(canvas, look, t, ride = null) {
   const g = canvas.getContext('2d');
   const dirs = ['SE', 'SW', 'NW', 'NE'];
   const k = t / 1000;
@@ -1082,7 +1287,7 @@ export function drawAvatarPreview(canvas, look, t) {
   const s = Math.max(1, Math.floor(canvas.width / 70));
   g.setTransform(s, 0, 0, s, canvas.width / 2, canvas.height * 0.86);
   diamond(g, 0, -16); g.fillStyle = '#9fcf6c'; g.fill(); g.strokeStyle = '#6f9f4a'; g.lineWidth = 1; g.stroke();
-  drawAvatar(g, 0, 0, dirs[Math.floor(k / 1.4) % 4], (Math.floor(k * 4.5) % 2) + 1, look);
+  drawAvatar(g, 0, 0, dirs[Math.floor(k / 1.4) % 4], (Math.floor(k * 4.5) % 2) + 1, look, { ride });
 }
 
 // Figurina ferma per i cataloghi (vestiti dei negozi).
@@ -1393,6 +1598,14 @@ export function drawFurni(g, it, { night = false } = {}) {
       g.fillStyle = '#a9a396'; g.fillRect(c[0] + 1, c[1] - 52, 1.5, 1.5);
       break;
     }
+    case 'espositore': {
+      box3(g, x0 + 0.12, y0 + 0.12, x1 - 0.12, y1 - 0.12, 0, 5, '#e9e1cf', { top: '#f4efe3' });
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      g.save(); g.translate(c[0], c[1] - 5); g.scale(1.3, 1.3);
+      drawRide(g, ['skate', 'bici', 'monopattino'][it.c % 3], 'all', false);
+      g.restore();
+      break;
+    }
     case 'targa': {
       const [a, b, c, d] = r ? [x0 + 0.38, x0 + 0.5, y0 + 0.2, y1 - 0.2] : [x0 + 0.2, x1 - 0.2, y0 + 0.38, y0 + 0.5];
       box3(g, a - 0.06, c - 0.06, b + 0.06, d + 0.06, 0, 4, WOOD_D);
@@ -1586,11 +1799,11 @@ export class CityMap {
       const room = a.pos[2] ?? null;
       const look = a.colors || avatarLook(a.name, a.look);
       if (cur) {
-        cur.name = a.name; cur.me = a.me; cur.look = look;
+        cur.name = a.name; cur.me = a.me; cur.look = look; cur.ride = a.ride || null;
         if (cur.room !== room) Object.assign(cur, { room, x: a.pos[0], y: a.pos[1], path: [] });
         continue;
       }
-      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], room, path: [], dir: a.dir || 'SE', look, name: a.name, me: a.me, walked: 0, bubble: null });
+      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], room, path: [], dir: a.dir || 'SE', look, name: a.name, me: a.me, walked: 0, bubble: null, ride: a.ride || null });
     }
     this.avatarsDirty = true;
   }
@@ -1650,7 +1863,9 @@ export class CityMap {
     for (const a of this.avatars.values()) {
       if (!a.path.length) continue;
       moving = true;
-      let left = dt * 3.2; // caselle al secondo
+      // A passo d'uomo; con bici, monopattino o skate (solo in città) più svelti.
+      const speed = (!a.room && rideById(a.ride)?.speed) || WALK_SPEED;
+      let left = dt * speed;
       while (left > 0 && a.path.length) {
         const [nx, ny] = a.path[0];
         const dx = nx - a.x, dy = ny - a.y, d = Math.hypot(dx, dy);
@@ -1658,7 +1873,7 @@ export class CityMap {
         if (d <= left) { a.x = nx; a.y = ny; a.path.shift(); left -= d; } else { a.x += (dx / d) * left; a.y += (dy / d) * left; left = 0; }
       }
       if (!a.path.length) this.settle(a);
-      a.walked += dt * 3.2;
+      a.walked += dt * speed;
       // La telecamera segue il proprio omino quando esce dal centro dello schermo.
       if (a.me && !this.scene && !this.pointers.size) {
         const [wx, wy] = this.avatarScreen(a);
@@ -1690,7 +1905,7 @@ export class CityMap {
     else if (kind === 'saluta') pose = 'wave';
     g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(k, k);
     if (lift) g.translate(0, -Math.round(lift));
-    drawAvatar(g, 0, 0, a.dir, step, a.look, { night, pose, t });
+    drawAvatar(g, 0, 0, a.dir, step, a.look, { night, pose, t, ride: a.room || a.sit ? null : a.ride });
     g.restore();
   }
   // Gesti: saluta, balla, salta. Sedersi aspetta che l'omino arrivi sulla seduta.
@@ -1753,13 +1968,15 @@ export class CityMap {
     this.clamp();
     this.dirty = true;
   }
-  fitCentro() {
+  fitCentro({ wide = false } = {}) {
     const d = districtById(1).rect;
     const span = (d[2] - d[0] + d[3] - d[1] + 4) * 32;
     // Mai più lontano di un pixel d'arte per pixel dello schermo: la città si vede nitida da subito.
-    this.cam.z = Math.max(1, Math.round((this.vw * this.dpr) / 560)) / this.dpr;
-    void span;
-    [this.cam.x, this.cam.y] = tileCenter((d[0] + d[2]) / 2, (d[1] + d[3]) / 2, 1);
+    // A grandezza naturale: due pixel dello schermo (o più) per pixel d'arte, centrati sulla piazza.
+    // Per scegliere il lotto si guarda tutto il Centro dall'alto.
+    this.cam.z = wide ? Math.max(1, Math.round((this.vw * this.dpr) / 700)) / this.dpr : Math.max(2, Math.round((this.vw * this.dpr) / 420)) / this.dpr;
+    void span; void d;
+    [this.cam.x, this.cam.y] = tileCenter(40, 27, 1);
     this.clamp();
     this.dirty = true;
   }
@@ -1914,9 +2131,9 @@ export class CityMap {
     if (this.city.houses[k]) return this.onTap?.({ kind: 'house', slot: k, house: this.city.houses[k], ...at });
     if (shopAt(x, y)) return this.onTap?.({ kind: 'shop', shop: shopAt(x, y).id, ...at });
     if (inPiazza(x, y)) {
-      const [ex, ey] = PIAZZA_SPOTS.edicola;
+      const [ex, ey] = PIAZZA_DECOR.edicola;
       if (x === ex && y === ey) return this.onTap?.({ kind: 'giornale', ...at });
-      if (PIAZZA_SPOTS.muro.some(([mx, my]) => mx === x && my === y)) return this.onTap?.({ kind: 'muro', ...at });
+      if (PIAZZA_DECOR.muro.some(([mx, my]) => mx === x && my === y)) return this.onTap?.({ kind: 'muro', ...at });
       return this.onTap?.({ kind: 'piazza', ...at });
     }
     const d = districtAt(x, y);
@@ -2005,6 +2222,15 @@ export class CityMap {
     fg.setTransform(1, 0, 0, 1, 0, 0);
     fg.drawImage(this.layer, 0, 0);
     this.worldTransform(fg, s, bw, bh);
+    // Quello che sta davanti a un veicolo (case, alberi, negozi) lo copre.
+    o.occlude = (depth, [bx0, by0, bx1, by1]) => {
+      for (const ob of this.objects) {
+        if (ob.depth <= depth + 0.6) continue;
+        const [x0, y0, x1, y1] = ob.box;
+        if (bx1 < x0 || bx0 > x1 || by1 < y0 || by0 > y1) continue;
+        ob.draw(fg);
+      }
+    };
     drawAmbient(fg, this.city, view, o, this.still ? 0 : t);
     if (this.opts.mode === 'choose') {
       const pulse = 0.5 + 0.5 * Math.sin(t / 300);

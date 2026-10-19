@@ -15,7 +15,7 @@ Serve **Node.js 22.5 o successivo**. Non ci sono dipendenze da installare.
 npm start            # città vera, vuota                        → http://localhost:8080
 npm run dev          # come sopra, con i link delle email in console e redazione@example.com come redazione
 npm run demo         # città già abitata da 18 abitanti finti (archivio separato in data-demo/)
-npm test             # 24 prove: regole della città + server (iscrizione, email, permessi, omini, negozi, missioni, tempo reale)
+npm test             # 25 prove: regole della città + server (iscrizione, email, permessi, omini, negozi, missioni, tempo reale)
 npm run build:demo   # genera dist/virtual-italy-demo.html: demo in un solo file, senza server
 ```
 
@@ -40,7 +40,10 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 
 ## Cosa c'è in questa versione
 
-- **Mappa isometrica in pixel art** (stile Habbo), con trascinamento, pizzico e zoom a scatti nitidi. Il terreno è a gradoni (pianura, paese, collina, montagne) con scarpate e scale. Il centro ha la piazza a scacchi con l'edicola del giornale, il Muro dei Fondatori e la fontana, che arriva a 25 abitanti.
+- **Mappa isometrica in pixel art** (stile Habbo), con trascinamento, pizzico e zoom a scatti nitidi. Il terreno è a gradoni (pianura, paese, collina, montagne) con scarpate e scale.
+- **Piano della città con respiro:** vie in sampietrini ogni 5 caselle, collegate alla strada principale e alle dorsali dei quartieri; in ogni isolato tre lotti affacciati sulla via, separati da giardini, e un cortile alberato. La **piazza** è grande (9×9): lastre di pietra con cornice in cotto, fontana al centro (l'acqua arriva a 25 abitanti), campanile, edicola del giornale, Muro dei Fondatori, panchine, lampioni e i tavolini del bar con gli ombrelloni.
+- **Traffico e passanti:** utilitarie, berline, furgoni, Ape e autobus girano sulla corsia di destra di statale, vie del Centro e dorsali, coperti da case e alberi che stanno davanti. Qualche passante passeggia, si siede in piazza e saluta, così la città è viva anche con pochi abitanti.
+- **Ciclofficina Ruota Libera:** a piedi si va a passo d'uomo; skateboard, bicicletta e monopattino elettrico fanno girare la città più svelti. Si sale e si scende dal pannello dei gesti.
 - **Dentro casa, come in Habbo:** ogni casa ha una stanza 8×8 da arredare (mobili ruotabili, alcuni con il colore a scelta), cinque pavimenti e otto colori di pareti. Il padrone decide chi può entrare (tutti, solo amici, solo lui), e gli ospiti si vedono e parlano in tempo reale. Con la casa arriva un kit di benvenuto (letto, sedia, tavolino, lampada, pianta); in casa si sistema solo quello che si ha nell'inventario, e ciò che si toglie torna lì.
 - **Negozi veri in città:** ai lati della piazza, con vetrina e insegna sulla strada principale, ci sono il **Mobilificio Bottega** (25 tra mobili e decorazioni, esposti in negozio) e la **Sartoria Moda** (maglie, gonne, pantaloncini, cappelli e accessori, con i manichini da provare). Si entra con il proprio omino, si tocca la merce e la si prende. Ogni articolo ha già il suo prezzo (`price` in `core.js`), ma finché la città non ha la sua moneta è tutto gratis: il pagamento si aggancia alla funzione `pay()` in `core.js`.
 - **Missioni:** sette missioni di benvenuto che accompagnano il nuovo abitante (omino, casa, mobili, Sartoria, panchina in piazza, visita a un vicino, giornale), con la Targa di benvenuto come premio. Poi una missione del giorno, uguale per tutti, con la serie di giorni di fila 🔥.
@@ -51,7 +54,7 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 - **Anti-bot**: campo nascosto, tempo minimo di compilazione, limiti per IP. Filtro su nomi e frasi offensive, nomi riservati (sindaco, redazione…).
 - **Lotti e case**: si sceglie lo slot, si personalizzano tetto, porta, giardino e oggetto davanti casa. Forma e muri seguono lo stile del quartiere. Senza email confermata la casa resta un cantiere, e il lotto si libera dopo 24 ore.
 - **Strade automatiche**: ogni casa viene collegata alla rete con il percorso più breve, riusando i vialetti già esistenti. Le future strade principali sono tratteggiate e si attivano con il loro quartiere, e allora le case vicine si ricollegano.
-- **Cinque quartieri** (Centro, Borgo Est, Borgo Ovest, Collina Nord, Marina Sud, 916 lotti in tutto). Il successivo si apre quando quelli aperti sono pieni all'80%.
+- **Cinque quartieri** (Centro, Borgo Est, Borgo Ovest, Collina Nord, Marina Sud, 297 lotti, più larghi). Il successivo si apre quando quelli aperti sono pieni all'80%.
 - **Amicizie**: "Bussa alla porta", cassetta delle lettere, bandierina sulle case degli amici, massimo 20 richieste al giorno, segnalazioni.
 - **Giornale**: notizie automatiche (nuovi abitanti, traguardi, quartieri). La redazione genera le immagini per Instagram, post 1080×1350 e storia 1080×1920.
 - **Redazione**: provenienza degli iscritti, segnalazioni con sospensione, posta in uscita.

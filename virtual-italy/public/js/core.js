@@ -8,7 +8,8 @@ export const W = 84;
 export const H = 60;
 export const MAIN_Y = 30;                                  // la strada principale attraversa tutta la mappa
 export const SEA_Y = 52;                                   // da qui in giù c'è il mare
-export const PIAZZA = { x0: 37, y0: 27, x1: 44, y1: 29 };  // estremi inclusi, a nord della strada principale
+export const PIAZZA = { x0: 36, y0: 21, x1: 44, y1: 29 };  // estremi inclusi: 9×9, affacciata sulla strada principale
+export const STREET = 5;                                   // le vie corrono ogni 5 caselle, i lotti stanno negli isolati 4×4
 export const RESERVE_MS = 24 * 3600000;                    // un cantiere senza email confermata dura 24 ore
 export const UNLOCK_RATIO = 0.8;                           // un nuovo quartiere si apre all'80% di occupazione
 export const FOUNDERS = 100;
@@ -16,22 +17,25 @@ export const FRIEND_REQUESTS_PER_DAY = 20;
 export const FOUNTAIN_AT = 25;
 export const MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
 
-// Il tracciato delle vie segue una griglia di passo 3: le righe e colonne multiple di 3 sono
-// corsie percorribili, gli altri riquadri 2×2 sono lotti. Così ogni lotto tocca sempre una corsia
-// e ogni corsia porta a una strada: nessuna casa può restare isolata.
-// Le strade principali future (dorsali) stanno anch'esse sulla griglia delle corsie.
+// Il tracciato segue una griglia di passo 5: righe e colonne multiple di 5 sono vie, in mezzo
+// restano isolati di 4×4 caselle. In ogni isolato ci sono tre lotti affacciati su una via
+// (gli angoli verso chi guarda), separati da giardini; l'angolo in fondo è un cortile alberato.
+// Le dorsali sono le vie principali di ogni quartiere, tratteggiate finché il quartiere è chiuso.
 export const DISTRICTS = [
-  { id: 1, name: 'Centro', rect: [33, 27, 50, 33], dorsal: null,
+  { id: 1, name: 'Centro', rect: [30, 20, 55, 35], dorsal: null,
     walls: ['#e8b86a', '#d98b5f', '#f0d39a', '#e3a27a'] },
-  { id: 2, name: 'Borgo Est', rect: [51, 24, 69, 36], dorsal: { x: 60, y0: 18, y1: 42 },
+  { id: 2, name: 'Borgo Est', rect: [55, 20, 75, 35], dorsal: { x: 65, y0: 15, y1: 45 },
     walls: ['#f3d6d0', '#d7e6ef', '#f4e7b8', '#dcebd2'] },
-  { id: 3, name: 'Borgo Ovest', rect: [15, 24, 32, 36], dorsal: { x: 24, y0: 18, y1: 42 },
+  { id: 3, name: 'Borgo Ovest', rect: [10, 20, 30, 35], dorsal: { x: 20, y0: 15, y1: 45 },
     walls: ['#d8cfc0', '#c9bba4', '#e6dccb', '#bfb5a6'] },
-  { id: 4, name: 'Collina Nord', rect: [15, 12, 69, 26], dorsal: { y: 18, x0: 15, x1: 68 },
+  { id: 4, name: 'Collina Nord', rect: [10, 8, 75, 20], dorsal: { y: 15, x0: 10, x1: 75 },
     walls: ['#c99a6b', '#b98a5e', '#e0c49e', '#a8794f'] },
-  { id: 5, name: 'Marina Sud', rect: [15, 34, 69, 51], dorsal: { y: 42, x0: 15, x1: 68 },
+  { id: 5, name: 'Marina Sud', rect: [10, 35, 75, 51], dorsal: { y: 45, x0: 10, x1: 75 },
     walls: ['#f5f3ee', '#dbe8f1', '#f7efe0', '#e5eef0'] },
 ];
+export const isStreet = (x, y) => x % STREET === 0 || y % STREET === 0;
+// Posizione dentro l'isolato (1..4): i lotti sono gli angoli che guardano a sud o a est.
+const LOT_SPOTS = ['4,1', '1,4', '4,4'];
 
 export const ROOFS = [
   { id: 'coppi', label: 'Coppi', color: '#b5523b' },
@@ -69,8 +73,9 @@ export const SHAPES = ['casa', 'villetta', 'torretta'];
 // I negozi sono edifici veri ai lati della piazza, con la vetrina sulla strada principale.
 // Occupano un blocco 2×2 (x0..x0+1, y0..y0+1) e la porta dà sulla casella `front`.
 export const SHOPS = [
-  { id: 'mobili', name: 'Mobilificio Bottega', sign: 'MOBILI', kind: 'furni', x0: 34, y0: 28, keeper: 'Gino' },
+  { id: 'mobili', name: 'Mobilificio Bottega', sign: 'MOBILI', kind: 'furni', x0: 33, y0: 28, keeper: 'Gino' },
   { id: 'moda', name: 'Sartoria Moda', sign: 'MODA', kind: 'wear', x0: 46, y0: 28, keeper: 'Rosa' },
+  { id: 'bici', name: 'Ciclofficina Ruota Libera', sign: 'BICI', kind: 'ride', x0: 51, y0: 28, keeper: 'Tonino' },
 ].map((sh) => ({ ...sh, room: 'shop:' + sh.id, front: [sh.x0, MAIN_Y] }));
 export const shopById = (id) => SHOPS.find((sh) => sh.id === id || sh.room === id) || null;
 export const shopAt = (x, y) => SHOPS.find((sh) => x >= sh.x0 && x <= sh.x0 + 1 && y >= sh.y0 && y <= sh.y0 + 1) || null;
@@ -108,6 +113,14 @@ export const WEAR = [
   { id: 'sciarpa', slot: 'extra', label: 'Sciarpa', price: 25 },
   { id: 'corona', slot: 'extra', label: 'Corona', price: 200 },
 ];
+// Mezzi della Ciclofficina: a piedi si va a passo d'uomo, con un mezzo più svelti (caselle al secondo).
+export const WALK_SPEED = 1.6;
+export const RIDES = [
+  { id: 'skate', label: 'Skateboard', speed: 2.6, price: 60 },
+  { id: 'bici', label: 'Bicicletta', speed: 3.2, price: 120 },
+  { id: 'monopattino', label: 'Monopattino elettrico', speed: 3.8, price: 250 },
+];
+export const rideById = (id) => RIDES.find((r) => r.id === id) || null;
 export const WEAR_SLOTS = [{ id: 'top', label: 'Maglie' }, { id: 'bottom', label: 'Sotto' }, { id: 'extra', label: 'Accessori' }];
 export const wearById = (id) => WEAR.find((w) => w.id === id) || null;
 const wearOf = (slot) => WEAR.filter((w) => w.slot === slot);
@@ -173,7 +186,12 @@ export const PLAN = (() => {
       if (!d || y >= SEA_Y) continue;
       district[y * W + x] = d.id;
       const k = key(x, y);
-      if (x % 3 === 0 || y % 3 === 0 || y === MAIN_Y || inPiazza(x, y) || futureRoads.has(k) || shopAt(x, y)) continue;
+      if (isStreet(x, y) || y === MAIN_Y || inPiazza(x, y) || futureRoads.has(k) || shopAt(x, y)) continue;
+      const bx = x % STREET, by = y % STREET;
+      // L'isolato deve stare tutto nel quartiere (e sopra la spiaggia)
+      const [rx0, ry0, rx1, ry1] = d.rect;
+      if (x - bx < rx0 || x - bx + STREET > rx1 || y - by < ry0 || y - by + STREET > Math.min(ry1, SEA_Y)) continue;
+      if (!LOT_SPOTS.includes(bx + ',' + by)) continue;
       lots.add(k);
       lotsByDistrict.get(d.id).push(k);
     }
@@ -201,6 +219,12 @@ function baseNetwork(openDistricts) {
   for (const d of DISTRICTS) {
     if (d.id > openDistricts) continue;
     for (const k of dorsalTiles(d.dorsal)) if (!net.has(k)) net.set(k, 'dorsal');
+    // Le vie del quartiere, con i marciapiedi, ci sono già prima delle case.
+    const [x0, y0, x1, y1] = d.rect;
+    for (let y = y0; y <= Math.min(y1, SEA_Y - 1); y++) for (let x = x0; x <= x1; x++) {
+      const k = key(x, y);
+      if (isStreet(x, y) && !net.has(k) && !shopAt(x, y) && !inPiazza(x, y)) net.set(k, 'via');
+    }
   }
   return net;
 }
@@ -241,11 +265,14 @@ export function computeRoads(houses, openDistricts) {
   const doors = {};
   const ordered = Object.values(houses).sort((a, b) => a.reservedAt - b.reservedAt || (a.slot < b.slot ? -1 : 1));
   for (const h of ordered) {
+    // Di solito la casa sta già sulla via: la porta guarda la via (meglio se verso chi guarda).
+    const [hx, hy] = parseKey(h.slot);
+    const side = [['S', 0, 1], ['E', 1, 0], ['W', -1, 0], ['N', 0, -1]].find(([, dx, dy]) => net.has(key(hx + dx, hy + dy)));
+    if (side) { doors[h.slot] = side[0]; continue; }
     const r = routeFrom(h.slot, net, openDistricts);
     if (!r) continue;
     for (const k of r.path) net.set(k, 'lane');
     const first = r.path[0] || r.reach;
-    const [hx, hy] = parseKey(h.slot);
     const [fx, fy] = parseKey(first);
     doors[h.slot] = fx > hx ? 'E' : fx < hx ? 'W' : fy > hy ? 'S' : 'N';
   }
@@ -265,7 +292,7 @@ export function levelAt(x, y, openDistricts) {
   if (y > SEA_Y) return -1;
   if (y === SEA_Y) return 0;
   const d = districtAt(x, y);
-  if (d === 4 && y <= 23) return 2;
+  if (d === 4 && y < 15) return 2;
   if (inPiazza(x, y) || (d && d <= openDistricts)) return 1;
   if (!d) {
     const edge = 7 + (hash('monte' + Math.floor(x / 4)) % 3);
@@ -278,7 +305,7 @@ export function levelAt(x, y, openDistricts) {
 // Dove si può camminare: ovunque sulla terraferma tranne dentro le case.
 // Si cambia livello solo su strade, vialetti e piazza, dove ci sono le scale.
 export function walkable(s, x, y) {
-  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)] && !shopAt(x, y);
+  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)] && !shopAt(x, y) && !PIAZZA_BLOCKED.has(key(x, y));
 }
 export function canStep(s, ax, ay, bx, by) {
   if (!walkable(s, bx, by)) return false;
@@ -319,7 +346,7 @@ export function frontOf(s, slot) {
   const [dx, dy] = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[d];
   return [x + dx, y + dy];
 }
-export const PIAZZA_CENTER = [PIAZZA.x0 + 3, PIAZZA.y0 + 2];
+export const PIAZZA_CENTER = [40, 28];
 
 export function spawnPoint(s, residentId) {
   const h = residentHouse(s, residentId);
@@ -367,6 +394,8 @@ export const FURNI = [
   { id: 'stender', label: 'Appendiabiti', w: 2, d: 1, color: true, cat: 'deco', price: 40 },
   // Premi: non si vendono, si guadagnano con le missioni.
   { id: 'targa', label: 'Targa di benvenuto', w: 1, d: 1, cat: 'premi' },
+  // Solo in negozio: la pedana con un mezzo in esposizione (il colore sceglie quale)
+  { id: 'espositore', label: 'Espositore', w: 1, d: 1, cat: 'negozio' },
 ];
 export const FURNI_CATS = [{ id: 'mobili', label: 'Mobili' }, { id: 'deco', label: 'Decorazioni' }];
 // Chi costruisce casa trova dentro un piccolo kit di benvenuto, da sistemare come vuole.
@@ -383,6 +412,10 @@ const SHOP_ROOMS = {
     ['bancone', 4, 1, 0, 6], ['libreria', 2, 0], ['armadio', 3, 0], ['pendolo', 6, 0], ['statua', 7, 0], ['lampada', 0, 0],
     ['divano', 1, 2, 0, 1], ['tappeto', 1, 3, 0, 4], ['poltrona', 3, 3, 1, 0], ['tavolino', 2, 4], ['pouf', 1, 4, 0, 3],
     ['letto', 7, 3, 0, 1], ['tv', 5, 4], ['jukebox', 7, 6], ['acquario', 4, 7], ['pianta', 0, 7], ['vaso', 2, 7, 0, 5],
+  ] },
+  'shop:bici': { floor: 'piastrelle', wall: '#dcebd2', access: 'tutti', items: [
+    ['bancone', 4, 1, 0, 1], ['espositore', 2, 3, 0, 0], ['espositore', 4, 3, 0, 1], ['espositore', 6, 3, 0, 2],
+    ['espositore', 2, 6, 0, 1], ['espositore', 4, 6, 0, 2], ['espositore', 6, 6, 0, 0], ['pianta', 0, 0], ['lampada', 7, 0], ['pianta', 7, 7],
   ] },
   'shop:moda': { floor: 'parquet', wall: '#d9d0e8', access: 'tutti', items: [
     ['bancone', 4, 1, 0, 7], ['specchio', 2, 0], ['specchio', 3, 0], ['stender', 6, 3, 1, 0], ['stender', 6, 6, 1, 5],
@@ -401,7 +434,7 @@ export const MANNEQUINS = [
 ];
 
 // Inventario: mobili tenuti da parte (non ancora in casa) e vestiti posseduti.
-export const invOf = (s, id) => s.inv?.[id] || { furni: {}, wear: [] };
+export const invOf = (s, id) => ({ furni: {}, wear: [], rides: [], ...s.inv?.[id] });
 export const ownsWear = (s, id, wearId) => !!wearById(wearId)?.base || invOf(s, id).wear.includes(wearId);
 // Qui si pagherà con la moneta della città: per ora i negozi regalano tutto.
 function pay(s, r, price) { void s; void r; void price; }
@@ -467,7 +500,24 @@ export function roomPath(room, from, to) {
 
 // Altezza della seduta (pixel d'arte) e verso in cui si guarda: lo schienale resta alle spalle.
 export const SEATS = { sedia: 15, poltrona: 12, divano: 11, pouf: 13 };
-export const BENCHES = [[PIAZZA.x0 + 1, PIAZZA.y1], [PIAZZA.x1 - 1, PIAZZA.y1]];
+// Arredo della piazza, all'italiana senza esagerare: fontana al centro, campanile in un angolo,
+// edicola e bar ai lati, panchine attorno alla fontana, qualche leccio e due fioriere.
+export const PIAZZA_DECOR = {
+  fountain: [40, 25],                       // centro della vasca; occupa le 3×3 caselle attorno
+  edicola: [37, 28],
+  muro: [[39, 21], [40, 21], [41, 21]],
+  campanile: [44, 21],
+  cafe: [[43, 24], [44, 25], [43, 26]],
+  lamps: [[37, 23], [43, 23], [37, 27], [43, 27]],
+  trees: [[36, 23], [36, 26]],
+  planters: [[36, 29], [44, 29]],
+};
+export const BENCHES = [[38, 25], [42, 25], [40, 23], [40, 27]];
+export const PIAZZA_BLOCKED = new Set([
+  ...[-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => key(PIAZZA_DECOR.fountain[0] + dx, PIAZZA_DECOR.fountain[1] + dy))),
+  key(...PIAZZA_DECOR.edicola), key(...PIAZZA_DECOR.campanile), ...PIAZZA_DECOR.muro.map((p) => key(...p)),
+  ...PIAZZA_DECOR.trees.map((p) => key(...p)), ...PIAZZA_DECOR.planters.map((p) => key(...p)),
+]);
 function seatIn(room, x, y) {
   for (const it of room.items) {
     const h = SEATS[it.t];
@@ -818,6 +868,16 @@ const OPS = {
       if (op.wear) r.look = { ...cleanLook(r.look, r.username), [w.slot]: w.id };
       return { ok: true };
     }
+    if (op.kind === 'ride') {
+      const m = rideById(op.id);
+      if (!m) throw invalid('Articolo sconosciuto.');
+      inv.rides ||= [];
+      if (inv.rides.includes(m.id)) return { already: true };
+      pay(s, r, m.price);
+      inv.rides.push(m.id);
+      if (op.use) r.ride = m.id;
+      return { ok: true };
+    }
     throw invalid('Articolo sconosciuto.');
   },
 
@@ -868,6 +928,16 @@ const OPS = {
     else throw invalid('Azione sconosciuta.');
     checkPlace(room, next, it.uid);
     Object.assign(it, next);
+    return { ok: true };
+  },
+
+  // Salire su un mezzo che si ha (o scendere e andare a piedi).
+  ride(s, op, ctx) {
+    const r = needResident(s, ctx);
+    if (op.id === null || op.id === undefined || op.id === '') { delete r.ride; return { ok: true }; }
+    if (!rideById(op.id)) throw invalid('Mezzo sconosciuto.');
+    if (!invOf(s, r.id).rides.includes(op.id)) throw invalid('Prima prendilo alla Ciclofficina.');
+    r.ride = op.id;
     return { ok: true };
   },
 
@@ -1090,7 +1160,7 @@ export function formatNews(n, s) {
     case 'milestone':
       return {
         title: `${CITY} ha ${n.n} abitanti`,
-        text: n.n === FOUNTAIN_AT ? 'Traguardo raggiunto: in piazza è arrivata la fontana. Grazie a tutti!' : `Un nuovo traguardo per la città. ${nextGoal({ milestones: [] }, n.n)}`,
+        text: n.n === FOUNTAIN_AT ? 'Traguardo raggiunto: la fontana della piazza ha l\'acqua. Grazie a tutti!' : `Un nuovo traguardo per la città. ${nextGoal({ milestones: [] }, n.n)}`,
       };
     case 'casaSettimana':
       return {
@@ -1104,7 +1174,7 @@ export function formatNews(n, s) {
 
 // Il prossimo obiettivo collettivo, per la barra in piazza.
 export function nextGoal(s, built) {
-  if (built < FOUNTAIN_AT) return `Mancano ${FOUNTAIN_AT - built} abitanti alla fontana in piazza.`;
+  if (built < FOUNTAIN_AT) return `Mancano ${FOUNTAIN_AT - built} abitanti all'acqua nella fontana della piazza.`;
   const m = MILESTONES.find((x) => x > built);
   return m ? `Prossimo traguardo: ${m} abitanti.` : 'Siamo una vera città!';
 }

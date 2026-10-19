@@ -86,7 +86,7 @@ test("il secondo quartiere apre all'80% del Centro e il giornale lo annuncia", (
   s = seedResidents(s, 1, 10_000_000, 7);
   assert.equal(s.openDistricts, 2);
   assert.ok(s.news.some((n) => n.kind === 'district' && n.district === 2));
-  assert.ok(s.roads['60,30'] && s.roads['60,20'] === 'dorsal', 'la nuova strada principale è attiva');
+  assert.ok(s.roads['65,30'] && s.roads['65,17'] === 'dorsal' && s.roads['60,27'] === 'via', 'la nuova strada principale e le vie del quartiere sono attive');
   s = seedResidents(s, 25 - builtCount(s), 10_000_000, 8);
   assert.ok(s.milestones.includes(25), 'traguardo della fontana');
 });
@@ -183,10 +183,10 @@ test('livelli del terreno e passeggiate: si cambia livello solo dalle strade', a
   const { levelAt, walkPath, canStep, spawnPoint, frontOf, PIAZZA_CENTER } = await import('../public/js/core.js');
   let s = seedResidents(emptyState(0), 12, 10_000_000);
   assert.equal(levelAt(40, 28, 1), 1, 'il paese è rialzato');
-  assert.equal(levelAt(40, 20, 1), 2, 'la collina è più in alto');
+  assert.equal(levelAt(40, 12, 1), 2, 'la collina è più in alto');
   assert.equal(levelAt(40, 2, 1), 3, 'le montagne in fondo');
   assert.equal(levelAt(40, 55, 1), -1, 'il mare');
-  assert.equal(canStep(s, 34, 33, 34, 34), false, 'non si scavalca il muro del paese');
+  assert.equal(canStep(s, 34, 36, 34, 35) || canStep(s, 33, 35, 33, 36), false, 'non si scavalca il muro del paese');
   const id = Object.keys(s.residents)[0];
   const home = spawnPoint(s, id);
   assert.deepEqual(home, frontOf(s, Object.values(s.houses).find((h) => h.residentId === id).slot));
@@ -350,4 +350,34 @@ test('vita in città: missioni, libro degli ospiti, cuori, Casa della settimana,
   s = applyOp(s, { type: 'leave', id: 'b' }, sys()).state;
   assert.equal(s.guestbook.a.length, 0);
   assert.equal(s.progress.b, undefined);
+});
+
+test('piano della città: vie ogni 5 caselle, lotti distanziati sulle vie, piazza grande, mezzi della Ciclofficina', async () => {
+  const { isStreet, PIAZZA, PIAZZA_CENTER, walkable, RIDES, WALK_SPEED, invOf } = await import('../public/js/core.js');
+  let s = emptyState(0);
+  assert.ok(PIAZZA.x1 - PIAZZA.x0 + 1 >= 9 && PIAZZA.y1 - PIAZZA.y0 + 1 >= 9, 'la piazza è grande');
+  assert.ok(walkable(s, ...PIAZZA_CENTER));
+  for (const k of PLAN.lots) {
+    const [x, y] = parseKey(k);
+    assert.ok(!isStreet(x, y));
+    // Nessun lotto attaccato a un altro: tra due case c'è sempre un giardino o una via
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) assert.ok(!isLot(`${x + dx},${y + dy}`), `lotto ${k} attaccato a un altro`);
+  }
+  // Ogni casa del Centro ha la porta su una via già tracciata
+  s = seedResidents(s, 20, 10_000_000);
+  for (const h of Object.values(s.houses)) {
+    const [x, y] = parseKey(h.slot);
+    const [dx, dy] = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[s.doors[h.slot]];
+    assert.ok(s.roads[`${x + dx},${y + dy}`], `la casa ${h.slot} guarda una via`);
+  }
+  // Mezzi: si prendono, ci si sale, si scende; più veloci che a piedi
+  assert.ok(RIDES.every((m) => m.speed > WALK_SPEED));
+  s = join(s, 'z', 'zeno.v');
+  assert.throws(() => applyOp(s, { type: 'ride', id: 'bici' }, as('z')), /Ciclofficina/);
+  s = applyOp(s, { type: 'buy', kind: 'ride', id: 'bici', use: true }, as('z')).state;
+  assert.equal(s.residents.z.ride, 'bici');
+  assert.deepEqual(invOf(s, 'z').rides, ['bici']);
+  s = applyOp(s, { type: 'ride', id: null }, as('z')).state;
+  assert.equal(s.residents.z.ride, undefined);
+  assert.throws(() => applyOp(s, { type: 'ride', id: 'razzo' }, as('z')), /sconosciuto/);
 });

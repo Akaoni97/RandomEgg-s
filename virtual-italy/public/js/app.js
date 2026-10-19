@@ -7,8 +7,9 @@ import {
   FURNI, FLOORS, WALLS, ACCESS, ROOM_DOOR, furniById, roomOf, canVisit,
   SHOPS, shopById, isShopRoom, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
   seatAt, footprint, missionStatus, progressOf, dayKey, weekKey, heartsThisWeek, weekRanking, WELCOME_PRIZE,
+  RIDES, rideById, walkable, W, SEA_Y, BENCHES, WALK_SPEED,
 } from './core.js';
-import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook, drawFurniIcon, drawAvatarIcon } from './render.js';
+import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook, drawFurniIcon, drawAvatarIcon, drawRideIcon } from './render.js';
 import { RemoteStore, LocalStore } from './store.js';
 
 const DEMO = window.__VI_MODE === 'demo' || new URLSearchParams(location.search).has('demo');
@@ -292,9 +293,22 @@ function doAct(kind) {
 }
 function actionsRow() {
   const emoji = ['😄', '😂', '❤️', '👍', '😮', '🎉'];
+  // Con un mezzo della Ciclofficina: si sale e si scende da qui (solo in città).
+  const r = myResident();
+  const rides = r && !ui.room ? invOf(store.city, r.id).rides || [] : [];
+  const icons = { skate: '🛹', bici: '🚲', monopattino: '🛴' };
+  const rideChips = rides.length ? [
+    h('button', { class: 'chip' + (!r.ride ? ' on' : ''), onclick: () => setRide(null) }, '🚶 A piedi'),
+    ...rides.map((id) => h('button', { class: 'chip' + (r.ride === id ? ' on' : ''), onclick: () => setRide(id) }, `${icons[id]} ${rideById(id).label.split(' ')[0]}`)),
+  ] : [];
   return h('div', { class: 'acts', role: 'group', 'aria-label': 'Gesti e faccine' },
+    rideChips,
     [['saluta', '👋 Saluta'], ['balla', '💃 Balla'], ['salta', '⤴️ Salta']].map(([k, label]) => h('button', { class: 'chip', onclick: () => doAct(k) }, label)),
     emoji.map((e) => h('button', { class: 'chip emoji', 'aria-label': `Faccina ${e}`, onclick: () => sayIt(e) }, e)));
+}
+async function setRide(id) {
+  const ok = await run(null, async () => { await store.op({ type: 'ride', id }); return true; });
+  if (ok) { syncAvatars(); update(); }
 }
 // Sedersi: si cammina fino alla seduta, poi ci si siede.
 function sitOn(x, y, room = null) {
@@ -351,7 +365,7 @@ function rankingBox(city) {
 
 // Cosa arriva al prossimo traguardo, detto in breve per la barra in basso.
 function goalText(built, target) {
-  const what = target === 25 ? 'la fontana in piazza' : target === 50 ? 'i tavolini del bar in piazza' : `quota ${target} abitanti`;
+  const what = target === 25 ? 'l\'acqua nella fontana' : `quota ${target} abitanti`;
   const left = Math.max(0, target - built);
   return left ? `Ancora ${left} ${left === 1 ? 'abitante' : 'abitanti'} per ${what}` : 'Traguardo raggiunto!';
 }
@@ -567,7 +581,7 @@ function startChoosing() {
   if (myHouse()) return toast('Hai già una casa a Virtual-Italy.');
   closeSheet();
   ui.mode = 'choose';
-  map.fitCentro();
+  map.fitCentro({ wide: true });
   update();
 }
 
@@ -1064,7 +1078,9 @@ function goToShop(id) {
 
 function openShop(shop) {
   map.set({ selected: null });
-  const what = shop.kind === 'wear' ? 'Maglie, gonne, cappelli e accessori per il tuo omino.' : 'Mobili e decorazioni da portare a casa e sistemare come vuoi.';
+  const what = shop.kind === 'wear' ? 'Maglie, gonne, cappelli e accessori per il tuo omino.'
+    : shop.kind === 'ride' ? 'Skateboard, biciclette e monopattini elettrici: a piedi si va a passo d\'uomo, con un mezzo si gira la città più svelti.'
+      : 'Mobili e decorazioni da portare a casa e sistemare come vuoi.';
   openSheet(shop.name, h('div', { class: 'stack' },
     h('div', { class: 'badges' }, h('span', { class: 'tag live' }, 'Aperto'), h('span', { class: 'tag gold' }, 'Inaugurazione: tutto gratis')),
     h('p', {}, what),
@@ -1102,7 +1118,28 @@ function openWear(w) {
     has ? null : h('button', { class: 'btn', onclick: (e) => run(e.currentTarget, async () => { await store.op({ type: 'buy', kind: 'wear', id: w.id }); closeSheet(); toast(`${w.label}: nel tuo armadio`); }) }, 'Prendi e tienilo da parte')), { wide: true });
   requestAnimationFrame(anim);
 }
+// Prova di un mezzo: l'omino ci gira sopra; si prende e ci si sale subito.
+function openRide(m) {
+  const r = myResident();
+  if (!r) return openLogin();
+  const has = (invOf(store.city, r.id).rides || []).includes(m.id);
+  const on = r.ride === m.id;
+  const cv = h('canvas', { class: 'avatar-preview', width: 300, height: 300, 'aria-label': `Tu su ${m.label.toLowerCase()}` });
+  const t0 = performance.now();
+  const anim = (t) => { if (!cv.isConnected) return; drawAvatarPreview(cv, avatarLook(r.username, r.look), t - t0, m.id); requestAnimationFrame(anim); };
+  const go = (op, msg) => (e) => run(e.currentTarget, async () => { await store.op(op); closeSheet(); syncAvatars(); toast(msg); update(); });
+  openSheet(m.label, h('div', { class: 'stack' },
+    h('div', { class: 'avatar-head' }, cv, h('div', { class: 'stack' },
+      h('p', { class: 'small' }, `Va ${Math.round((m.speed / WALK_SPEED) * 10) / 10} volte più veloce che a piedi.`),
+      has ? h('p', { class: 'small' }, on ? 'Ci sei già sopra.' : 'È già tuo.') : priceTag())),
+    has ? (on ? h('button', { class: 'btn big', onclick: go({ type: 'ride', id: null }, 'Sei sceso: si va a piedi') }, 'Scendi e vai a piedi')
+      : h('button', { class: 'btn primary big', onclick: go({ type: 'ride', id: m.id }, `In sella! ${m.label}`) }, 'Sali'))
+      : h('button', { class: 'btn primary big', onclick: go({ type: 'buy', kind: 'ride', id: m.id, use: true }, `${m.label}: è tuo! Esci e fatti un giro`) }, 'Prendi e sali'),
+    h('p', { class: 'small' }, 'In casa e nei negozi si entra sempre a piedi.')), { wide: true });
+  requestAnimationFrame(anim);
+}
 function onNpcTap(id) {
+  if (id.startsWith('npc:p:')) { map.say(id, ['Buongiorno!', 'Bella giornata, eh?', 'Ciao!', 'Hai visto la fontana?', 'Vado a prendere un caffè'][Math.floor(Math.random() * 5)]); return; }
   const shop = shopById(ui.room);
   if (!shop) return;
   const m = /^npc:man:(\d+)$/.exec(id);
@@ -1111,7 +1148,7 @@ function onNpcTap(id) {
     const look = MANNEQUINS[+m[1]].look;
     return openWear(['extra', 'top', 'bottom'].map((k) => wearById(look[k])).find((w) => w && !w.base));
   }
-  map.say(id, shop.kind === 'wear' ? 'Prova quello che vuoi, oggi è tutto gratis!' : 'Scegli pure: oggi è tutto gratis!');
+  map.say(id, shop.kind === 'wear' ? 'Prova quello che vuoi, oggi è tutto gratis!' : shop.kind === 'ride' ? 'Fatti un giro di prova, oggi è tutto gratis!' : 'Scegli pure: oggi è tutto gratis!');
 }
 // Barra in basso dentro un negozio: il catalogo completo, diviso per reparto.
 function shopBar(shop) {
@@ -1119,12 +1156,19 @@ function shopBar(shop) {
     h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, 'Sei in negozio'), h('strong', {}, shop.name)),
     h('span', { class: 'row-actions' }, h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
   const r = myResident();
-  const tabsList = shop.kind === 'wear' ? WEAR_SLOTS : FURNI_CATS;
+  const tabsList = shop.kind === 'wear' ? WEAR_SLOTS : shop.kind === 'ride' ? [{ id: 'mezzi', label: 'Mezzi' }] : FURNI_CATS;
   const tab = ui.shopTab || tabsList[0].id;
   const tabs = h('div', { class: 'seg', role: 'tablist' }, tabsList.map((o) =>
     h('button', { class: 'seg-btn' + (tab === o.id ? ' on' : ''), role: 'tab', 'aria-selected': String(tab === o.id), onclick: () => { ui.shopTab = o.id; update(); } }, o.label)));
   let items;
-  if (shop.kind === 'wear') {
+  if (shop.kind === 'ride') {
+    const owned = r ? invOf(store.city, r.id).rides || [] : [];
+    items = RIDES.map((m) => {
+      const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
+      drawRideIcon(cv, m.id);
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => openRide(m) }, cv, h('span', {}, m.label), owned.includes(m.id) ? h('span', { class: 'owned' }, r.ride === m.id ? 'Ci sei sopra' : 'Già tuo') : priceTag());
+    });
+  } else if (shop.kind === 'wear') {
     const base = r ? cleanLook(r.look, r.username) : null;
     items = WEAR.filter((w) => w.slot === tab && !w.base).map((w) => {
       const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
@@ -1141,7 +1185,9 @@ function shopBar(shop) {
     });
   }
   const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'Catalogo del negozio' }, items);
-  const hint = h('p', { class: 'small' }, shop.kind === 'wear' ? 'Tocca un capo per provarlo addosso.' : 'Tocca un articolo per prenderlo: lo trovi in casa, nel pannello Arreda.');
+  const hint = h('p', { class: 'small' }, shop.kind === 'wear' ? 'Tocca un capo per provarlo addosso.'
+    : shop.kind === 'ride' ? 'Tocca un mezzo per provarlo. In città sali e scendi dal pannello dei gesti (la faccina accanto alla chat).'
+      : 'Tocca un articolo per prenderlo: lo trovi in casa, nel pannello Arreda.');
   return h('div', { class: 'bar room-bar editing' }, head, tabs, strip, hint);
 }
 const isMyRoom = () => me() && ui.room === me().id;
@@ -1154,6 +1200,7 @@ async function onRoomTap(t) {
     // In negozio la merce esposta si compra; appendiabiti e bancone aprono il reparto vestiti.
     const it = room.items.find((x) => x.uid === t.uid);
     if (shop.kind === 'furni' && it) return buyFurni(it.t);
+    if (shop.kind === 'ride' && it?.t === 'espositore') return openRide(RIDES[it.c % 3]); // l'ordine degli espositori è quello di RIDES
     if (it && (it.t === 'stender' || it.t === 'specchio')) { ui.shopTab = it.t === 'specchio' ? 'extra' : 'top'; return update(); }
   }
   if (ui.edit && isMyRoom()) {
@@ -1271,13 +1318,47 @@ function syncAvatars() {
   const ids = new Set([...store.online].filter((id) => city.residents[id]));
   if (me() && city.residents[me().id]) ids.add(me().id);
   map.setAvatars([...[...ids].map((id) => ({
-    id, name: city.residents[id].username, me: id === me()?.id, look: city.residents[id].look,
+    id, name: city.residents[id].username, me: id === me()?.id, look: city.residents[id].look, ride: city.residents[id].ride,
     pos: store.avatars?.[id] || spawnPoint(city, id),
-  })), ...shopPeople()]);
+  })), ...shopPeople(), ...passersby()]);
 }
 // Commessi e manichini dei negozi: esistono solo sullo schermo, stanno fermi al loro posto.
 const KEEPER_LOOKS = { mobili: { skin: 2, hair: 6, style: 'corti', shirt: 3, pants: 3, top: 'camicia', bottom: 'pantaloni', extra: 'occhiali' },
-  moda: { skin: 1, hair: 0, style: 'coda', shirt: 9, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'nessuno' } };
+  moda: { skin: 1, hair: 0, style: 'coda', shirt: 9, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'nessuno' },
+  bici: { skin: 3, hair: 2, style: 'ricci', shirt: 4, pants: 1, top: 'felpa', bottom: 'pantaloncini', extra: 'cuffie' } };
+// Passanti: gente del paese che fa due passi, si siede in piazza, prende il caffè. Esistono solo
+// sullo schermo di chi guarda e servono a dare vita alla città anche quando gli abitanti sono pochi.
+const PASSERSBY = Array.from({ length: 8 }, (_, i) => ({
+  id: 'npc:p:' + i,
+  look: { skin: (i * 3) % 7, hair: (i * 5) % 9, style: ['corti', 'lunghi', 'coda', 'ricci'][i % 4], shirt: (i * 7 + 2) % 10, pants: i % 6,
+    top: ['maglietta', 'camicia', 'righe', 'felpa', 'giacca', 'maglietta', 'camicia', 'canotta'][i], bottom: ['pantaloni', 'gonna', 'pantaloni', 'pantaloncini'][i % 4],
+    extra: ['nessuno', 'paglia', 'occhiali', 'coppola', 'nessuno', 'basco', 'sciarpa', 'nessuno'][i] },
+  ride: i === 3 ? 'bici' : i === 6 ? 'monopattino' : null,
+  pos: [[38, 28], [42, 23], [35, 27], [45, 25], [41, 29], [37, 22], [50, 30], [43, 28]][i],
+}));
+function passersby() { return PASSERSBY.map((p) => ({ id: p.id, name: '', colors: avatarLook('passante', p.look), ride: p.ride, pos: p.pos })); }
+// Ogni tanto un passante sceglie dove andare: un'altra via del centro, una panchina, il bar.
+function strollPassersby() {
+  const city = store.city;
+  if (!city || document.hidden) return;
+  const idle = PASSERSBY.map((p) => map.avatarOf(p.id)).filter((a) => a && !a.path.length);
+  if (!idle.length) return;
+  const a = idle[Math.floor(Math.random() * idle.length)];
+  const r = Math.random();
+  if (r < 0.2) {
+    const [bx, by] = BENCHES[Math.floor(Math.random() * BENCHES.length)];
+    const busy = [...map.avatars.values()].some((o) => o !== a && Math.round(o.x) === bx && Math.round(o.y) === by);
+    if (!busy && map.walk(a.id, bx, by)) map.act(a.id, 'siedi');
+    return;
+  }
+  if (r < 0.28) { map.act(a.id, Math.random() < 0.6 ? 'saluta' : 'balla'); return; }
+  for (let i = 0; i < 10; i++) {
+    const tx = Math.max(1, Math.min(W - 2, Math.round(a.x + (Math.random() - 0.5) * 16)));
+    const ty = Math.max(1, Math.min(SEA_Y - 1, Math.round(a.y + (Math.random() - 0.5) * 12)));
+    if (!city.roads[`${tx},${ty}`] || !walkable(city, tx, ty)) continue;
+    if (map.walk(a.id, tx, ty)) return;
+  }
+}
 function shopPeople() {
   const out = SHOPS.map((sh) => ({ id: 'npc:' + sh.id, name: sh.keeper, look: KEEPER_LOOKS[sh.id], pos: [...SHOP_KEEPER_AT, sh.room], dir: 'SW' }));
   MANNEQUINS.forEach((m, i) => {
@@ -1324,6 +1405,7 @@ async function boot() {
 
 if ('serviceWorker' in navigator && !DEMO && location.protocol !== 'file:') navigator.serviceWorker.register('/sw.js').catch(() => {});
 setInterval(update, 60000);
+setInterval(strollPassersby, 2500);
 setInterval(renderTicker, 6000);
 // Il menu della demo si chiude toccando altrove.
 addEventListener('pointerdown', (e) => {
