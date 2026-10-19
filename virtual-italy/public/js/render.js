@@ -1153,11 +1153,17 @@ export class CityMap {
     this.bind();
     this.resize();
     new ResizeObserver(() => this.resize()).observe(canvas);
+    this.lastFull = 0;
+    this.interactUntil = 0;
+    // Durante un gesto si sposta l'ultima immagine pronta (costa pochissimo); la città si ridisegna
+    // nitida appena il dito si ferma, o prima se il gesto ha scoperto troppa mappa. Le animazioni vanno a 15 fotogrammi al secondo.
     const loop = (t) => {
       this.now = t;
+      const interacting = this.pointers.size > 0 || t < this.interactUntil;
       const growing = this.animating(t);
-      if (this.dirty || growing) { this.dirty = false; this.render(t, true); this.lastAmbient = t; }
-      else if (!this.still && t - this.lastAmbient > 33) { this.render(t, false); this.lastAmbient = t; }
+      if ((this.dirty || growing) && interacting && this.layerCam && !this.stale()) this.fast();
+      else if (this.dirty || growing) { this.dirty = false; this.render(t, true); this.lastFull = this.lastAmbient = t; }
+      else if (!this.still && this.ambientVisible && t - this.lastAmbient > 66) { this.render(t, false); this.lastAmbient = t; }
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -1181,7 +1187,7 @@ export class CityMap {
 
   resize() {
     const r = this.cv.getBoundingClientRect();
-    const dpr = Math.min(3, window.devicePixelRatio || 1);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
     this.vw = Math.max(1, r.width);
     this.vh = Math.max(1, r.height);
     this.cv.width = this.layer.width = Math.round(this.vw * dpr);
@@ -1220,6 +1226,7 @@ export class CityMap {
     return [(sx - this.vw / 2) / this.cam.z + this.cam.x, (sy - this.vh / 2) / this.cam.z + this.cam.y];
   }
   zoomAt(sx, sy, factor) {
+    this.interactUntil = performance.now() + 160;
     const [wx, wy] = this.toWorld(sx, sy);
     this.cam.z *= factor;
     this.clamp();
@@ -1305,6 +1312,23 @@ export class CityMap {
       x1: Math.min(W - 1, Math.ceil((this.cam.x + hw) / T) + 1), y1: Math.min(H - 1, Math.ceil((this.cam.y + hh) / T) + 2),
     };
   }
+  stale() {
+    const L = this.layerCam, c = this.cam;
+    const s = c.z / L.z;
+    const dx = Math.abs(L.x - c.x) * c.z, dy = Math.abs(L.y - c.y) * c.z;
+    return s < 0.7 || s > 2.2 || dx > this.vw * 0.4 || dy > this.vh * 0.35;
+  }
+  // Ridisegno veloce durante i gesti: l'ultima immagine pronta, spostata e scalata sulla camera attuale.
+  fast() {
+    const L = this.layerCam, c = this.cam, d = this.dpr;
+    const s = c.z / L.z;
+    const g = this.g;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = '#9fc87a';
+    g.fillRect(0, 0, this.cv.width, this.cv.height);
+    g.setTransform(s, 0, 0, s, d * ((this.vw / 2) * (1 - s) + (L.x - c.x) * c.z), d * ((this.vh / 2) * (1 - s) + (L.y - c.y) * c.z));
+    g.drawImage(this.layer, 0, 0);
+  }
   worldTransform(g) {
     const s = this.dpr * this.cam.z;
     g.setTransform(s, 0, 0, s, this.dpr * this.vw / 2 - this.cam.x * s, this.dpr * this.vh / 2 - this.cam.y * s);
@@ -1313,8 +1337,11 @@ export class CityMap {
   render(t, full) {
     if (!this.city) return;
     const view = this.view();
-    const o = { ...this.opts, t, born: this.born, z: this.cam.z, detail: this.cam.z * this.dpr >= 1.3 };
+    const o = { ...this.opts, t, born: this.born, z: this.cam.z, detail: this.cam.z * this.dpr >= 2.4 };
     if (full) {
+      this.layerCam = { ...this.cam };
+      this.ambientVisible = view.y1 >= SEA_Y || (MAIN_Y >= view.y0 && MAIN_Y <= view.y1) ||
+        (builtCount(this.city) >= FOUNTAIN_AT && PIAZZA.x1 >= view.x0 && PIAZZA.x0 <= view.x1 && PIAZZA.y1 >= view.y0 && PIAZZA.y0 <= view.y1);
       const lg = this.lg;
       lg.setTransform(1, 0, 0, 1, 0, 0);
       lg.fillStyle = '#4b97bd';
