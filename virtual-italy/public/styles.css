@@ -160,6 +160,22 @@ a { color: var(--brand); font-weight: 700; }
   backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2);
 }
 @media (min-width: 640px) { .bar { grid-template-columns: 1fr minmax(220px, auto); } }
+.room-bar { gap: 8px; }
+.room-bar.editing { max-height: 46vh; overflow: auto; }
+.seg { display: flex; gap: 2px; background: var(--surface); border-radius: 12px; padding: 3px; overflow-x: auto; }
+.seg-btn { flex: 1; min-height: 34px; padding: 4px 10px; border: 0; border-radius: 9px; background: transparent; font-weight: 800; font-size: 0.82rem; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.seg-btn.on { background: var(--bg); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.room-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.room-title { display: grid; gap: 2px; min-width: 0; }
+.room-title .eyebrow { font-size: 0.64rem; }
+.room-title strong { font: 600 1.05rem/1.1 var(--f-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catalog { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.catalog-item {
+  flex: none; display: grid; justify-items: center; gap: 2px; width: 76px; padding: 6px 4px; border-radius: 12px;
+  border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; font-size: 0.72rem; font-weight: 800; color: var(--ink);
+}
+.catalog-item canvas { width: 56px; height: 56px; image-rendering: auto; }
+.catalog-item:hover { border-color: var(--brand); }
 .chat { display: flex; gap: 6px; grid-column: 1 / -1; }
 .chat-input {
   flex: 1; min-width: 0; min-height: 40px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--line);

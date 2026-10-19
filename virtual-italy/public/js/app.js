@@ -4,8 +4,9 @@ import {
   CITY, PAPER, ROOFS, DOORS, GARDENS, DECOS, PLAN, FOUNDERS, RESERVE_MS, UNLOCK_RATIO,
   districtAt, districtById, parseKey, makeStyle, residentHouse, builtCount, isFounder, areFriends, friendsOf,
   formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook, SAY_PRESETS, SAY_MAX,
+  FURNI, FLOORS, WALLS, ACCESS, ROOM_DOOR, furniById, roomOf, canVisit,
 } from './core.js';
-import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook } from './render.js';
+import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook, drawFurniIcon } from './render.js';
 import { RemoteStore, LocalStore } from './store.js';
 
 const DEMO = window.__VI_MODE === 'demo' || new URLSearchParams(location.search).has('demo');
@@ -190,6 +191,7 @@ function update() {
   // Barra in basso (non si tocca mentre si sta scrivendo un messaggio).
   const bottom = $('#bottom');
   if (document.activeElement?.id === 'chat-input') return;
+  if (ui.room) { bottom.replaceChildren(roomBar()); return; }
   if (ui.mode === 'choose') {
     bottom.replaceChildren(h('div', { class: 'bar choose' },
       h('span', { class: 'goal-ico' }, icon('pin')),
@@ -207,6 +209,7 @@ function update() {
   let cta;
   if (!mine) cta = h('button', { class: 'btn primary big', onclick: openRegister }, 'Vieni ad abitare qui');
   else if (!house) cta = h('button', { class: 'btn primary big', onclick: startChoosing }, 'Scegli il tuo lotto');
+  else if (house.status === 'casa') cta = h('button', { class: 'btn primary big', onclick: () => enterHouse(mine.id) }, icon('home'), 'Entra in casa');
   else cta = h('button', { class: 'btn big', onclick: () => { map.focus(house.slot, 2); openHouse(house.slot); } }, icon('home'), 'La mia casa');
   const talk = mine && map.avatarOf(mine.id) ? chatBar() : null;
   bottom.replaceChildren(h('div', { class: 'bar' }, talk, goal, cta));
@@ -574,6 +577,11 @@ function openHouse(slot) {
     h('div', {}, h('dt', {}, 'Arrivato il'), h('dd', {}, fmtDate(house.builtAt || house.reservedAt))),
     r.instagram ? h('div', {}, h('dt', {}, 'Instagram'), h('dd', {}, h('a', { href: `https://instagram.com/${r.instagram}`, target: '_blank', rel: 'noopener noreferrer' }, '@' + r.instagram))) : null);
   const actions = h('div', { class: 'stack' });
+  if (house.status === 'casa' && mine && (isMe || canVisit(city, mine.id, r.id))) {
+    actions.append(h('button', { class: 'btn primary', onclick: () => enterHouse(r.id) }, icon('home'), isMe ? 'Entra in casa' : `Entra da ${r.username}`));
+  } else if (house.status === 'casa' && mine && !isMe) {
+    actions.append(h('p', { class: 'small' }, roomOf(city, r.id).access === 'amici' ? 'Fa entrare solo gli amici.' : 'In questo momento non fa entrare visite.'));
+  }
   if (isMe) {
     actions.append(
       h('button', { class: 'btn', onclick: () => openBuild(slot, { restyle: true }) }, 'Rinnova la casa'),
@@ -838,6 +846,7 @@ function onTap(t) {
     return;
   }
   if (t.kind === 'avatar') return openSay(t.id);
+  if (ui.room) return onRoomTap(t);
   // Con il proprio omino in città, ogni tocco è anche una passeggiata.
   const walker = me() && map.avatarOf(me().id);
   const go = (x, y) => walker && walkTo(x, y);
@@ -856,6 +865,118 @@ function walkTo(x, y) {
   const ok = map.walk(me().id, x, y);
   if (ok) store.move(x, y);
   return ok;
+}
+
+/* Dentro casa ---------------------------------------------------------------- */
+
+function enterHouse(ownerId) {
+  const mine = me();
+  if (!mine) return openLogin();
+  const city = store.city;
+  if (!canVisit(city, mine.id, ownerId)) return toast('Il padrone di casa non fa entrare visite.', 'err');
+  if (!map.avatarOf(mine.id)) syncAvatars();
+  closeSheet();
+  ui.room = ownerId;
+  ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null;
+  map.walk(mine.id, ...ROOM_DOOR, ownerId);
+  store.move(...ROOM_DOOR, ownerId);
+  map.enterRoom(ownerId);
+  update();
+}
+function exitHouse() {
+  const owner = ui.room;
+  ui.room = null; ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null;
+  const house = residentHouse(store.city, owner);
+  const [x, y] = house ? frontOf(store.city, house.slot) : spawnPoint(store.city, me().id);
+  map.walk(me().id, x, y, null);
+  store.move(x, y, null);
+  map.exitRoom();
+  if (house) map.focus(house.slot);
+  update();
+}
+const isMyRoom = () => me() && ui.room === me().id;
+
+async function onRoomTap(t) {
+  if (t.kind === 'door') return exitHouse();
+  const room = roomOf(store.city, ui.room);
+  if (ui.edit && isMyRoom()) {
+    if (t.kind === 'floor' && ui.placing) {
+      const p = ui.placing;
+      const ok = await run(null, async () => { await store.op({ type: 'furni', act: 'add', t: p.t, x: t.x, y: t.y, r: p.r, c: p.c }); return true; });
+      if (ok) { ui.placing = null; toast(`${furniById(p.t).label}: al suo posto`); }
+      return update();
+    }
+    if (t.kind === 'floor' && ui.moving) {
+      const uid = ui.moving;
+      const ok = await run(null, async () => { await store.op({ type: 'furni', act: 'move', uid, x: t.x, y: t.y }); return true; });
+      if (ok) ui.moving = null;
+      map.setRoomUI({ selectedUid: ui.sel });
+      return update();
+    }
+    if (t.kind === 'furni') { ui.sel = t.uid; ui.moving = null; ui.placing = null; map.setRoomUI({ selectedUid: t.uid }); return update(); }
+    if (t.kind === 'floor') { ui.sel = null; map.setRoomUI({ selectedUid: null }); return update(); }
+    return;
+  }
+  // Fuori dalla modalità arredo ogni tocco è una passeggiata (verso il mobile o la casella).
+  if (t.kind === 'floor' || t.kind === 'furni') {
+    if (!map.walk(me().id, t.x, t.y, ui.room)) return;
+    store.move(t.x, t.y, ui.room);
+  }
+  void room;
+}
+
+function roomBar() {
+  const city = store.city;
+  const owner = city.residents[ui.room];
+  const mine = isMyRoom();
+  const room = roomOf(city, ui.room);
+  const title = h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, mine ? 'Sei a casa' : 'Sei ospite'), h('strong', {}, mine ? 'Casa tua' : `Casa di ${owner?.username || '…'}`));
+  const head = h('div', { class: 'room-head' }, title,
+    h('span', { class: 'row-actions' },
+      mine ? h('button', { class: 'btn small' + (ui.edit ? ' primary' : ''), onclick: () => { ui.edit = !ui.edit; ui.placing = null; ui.sel = null; ui.moving = null; map.setRoomUI({ selectedUid: null }); update(); } }, ui.edit ? 'Fine' : 'Arreda') : null,
+      h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
+  if (!ui.edit || !mine) return h('div', { class: 'bar room-bar' }, head, chatBar());
+  let body;
+  if (ui.sel) {
+    const it = room.items.find((x) => x.uid === ui.sel);
+    if (!it) { ui.sel = null; return roomBar(); }
+    const f = furniById(it.t);
+    const act = (op, after) => async (e) => { await run(e.currentTarget, async () => { await store.op({ type: 'furni', uid: it.uid, ...op }); after?.(); }); update(); };
+    body = h('div', { class: 'stack' },
+      h('p', {}, h('strong', {}, f.label), ui.moving ? ' · tocca il pavimento dove spostarlo' : ''),
+      h('div', { class: 'row-wrap' },
+        h('button', { class: 'btn small', onclick: act({ act: 'rotate' }) }, 'Ruota'),
+        f.color ? h('button', { class: 'btn small', onclick: act({ act: 'color' }) }, 'Colore') : null,
+        h('button', { class: 'btn small' + (ui.moving ? ' primary' : ''), onclick: () => { ui.moving = ui.moving ? null : it.uid; update(); } }, 'Sposta'),
+        h('button', { class: 'btn small danger', onclick: act({ act: 'remove' }, () => { ui.sel = null; map.setRoomUI({ selectedUid: null }); }) }, 'Togli'),
+        h('button', { class: 'btn small ghost', onclick: () => { ui.sel = null; ui.moving = null; map.setRoomUI({ selectedUid: null }); update(); } }, 'Chiudi')));
+  } else if (ui.placing) {
+    const f = furniById(ui.placing.t);
+    body = h('div', { class: 'stack' },
+      h('p', {}, 'Tocca il pavimento dove vuoi mettere ', h('strong', {}, f.label.toLowerCase()), '.'),
+      h('div', { class: 'row-wrap' },
+        h('button', { class: 'btn small', onclick: () => { ui.placing.r = ui.placing.r ? 0 : 1; toast(ui.placing.r ? 'Girato di lato' : 'Girato di fronte'); } }, 'Ruota'),
+        f.color ? h('button', { class: 'btn small', onclick: () => { ui.placing.c = (ui.placing.c + 1) % 8; update(); } }, 'Colore') : null,
+        h('button', { class: 'btn small ghost', onclick: () => { ui.placing = null; update(); } }, 'Annulla')));
+  } else {
+    const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'Catalogo dei mobili' }, FURNI.map((f) => {
+      const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
+      drawFurniIcon(cv, f.id, 0);
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => { ui.placing = { t: f.id, r: 0, c: 0 }; update(); } }, cv, h('span', {}, f.label));
+    }));
+    const chips = (list, value, onPick) => h('div', { class: 'swatches' }, list.map((o) => h('button', { class: 'swatch' + (o.id === value ? ' on' : ''), onclick: () => onPick(o.id) }, o.label)));
+    const style = (op) => run(null, async () => { await store.op({ type: 'roomStyle', ...op }); update(); });
+    // Una scheda alla volta, così la stanza resta visibile sopra il pannello.
+    const tab = ui.editTab || 'mobili';
+    const tabs = h('div', { class: 'seg', role: 'tablist' }, [['mobili', 'Mobili'], ['pavimento', 'Pavimento'], ['pareti', 'Pareti'], ['ingresso', 'Chi entra']].map(([id, label]) =>
+      h('button', { class: 'seg-btn' + (tab === id ? ' on' : ''), role: 'tab', 'aria-selected': String(tab === id), onclick: () => { ui.editTab = id; update(); } }, label)));
+    const pane = tab === 'pavimento' ? chips(FLOORS, room.floor, (v) => style({ floor: v }))
+      : tab === 'pareti' ? h('div', { class: 'swatches' }, WALLS.map((c) => h('button', { class: 'swatch color' + (c === room.wall ? ' on' : ''), style: `--sw:${c}`, 'aria-label': 'Colore delle pareti', onclick: () => style({ wall: c }) })))
+        : tab === 'ingresso' ? h('div', { class: 'stack' }, chips(ACCESS, room.access, (v) => style({ access: v })), h('p', { class: 'small' }, 'Chi entra vede i tuoi mobili e può parlare con te. Solo tu puoi spostarli.'))
+          : strip;
+    body = h('div', { class: 'stack' }, tabs, pane);
+  }
+  return h('div', { class: 'bar room-bar editing' }, head, body);
 }
 
 // Gli omini in città: chi è collegato (e io, se ho fatto l'accesso).
@@ -882,7 +1003,7 @@ async function boot() {
   }
   map.setCity(store.city, { animateNew: false });
   store.subscribe((kind, data) => {
-    if (kind === 'move') { if (data.id !== me()?.id) map.walk(data.id, data.x, data.y); return; }
+    if (kind === 'move') { if (data.id !== me()?.id) map.walk(data.id, data.x, data.y, data.room ?? null); return; }
     if (kind === 'say') { if (data.id !== me()?.id) map.say(data.id, data.text); return; }
     map.setCity(store.city);
     syncAvatars();

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import {
   applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey,
-  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y, checkSay,
+  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y, checkSay, ROOM, canVisit,
 } from '../public/js/core.js';
 import { seedResidents } from '../public/js/seed.js';
 
@@ -319,12 +319,19 @@ const routes = {
   'POST /api/move': async (req, res, user) => {
     const b = await readJson(req);
     const x = Number(b.x), y = Number(b.y);
-    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= W || y > SEA_Y) throw new DomainError('validation', 'Destinazione non valida.');
+    const room = b.room ? String(b.room) : null;
+    if (room) {
+      // Dentro una casa: deve esistere, l'abitante deve poter entrare e la casella deve stare nella stanza.
+      if (!residentHouse(state, room)) throw new DomainError('notfound', 'Questa casa non esiste.');
+      if (!canVisit(state, user.id, room)) throw new DomainError('forbidden', 'Il padrone di casa non fa entrare visite.');
+      if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= ROOM || y >= ROOM) throw new DomainError('validation', 'Destinazione non valida.');
+    } else if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= W || y > SEA_Y) throw new DomainError('validation', 'Destinazione non valida.');
     const now = Date.now();
-    if (now - (lastMove.get(user.id) || 0) < 150) return send(res, 200, { ok: true, skipped: true });
+    const sameRoom = (avatars.get(user.id)?.[2] ?? null) === room;
+    if (sameRoom && now - (lastMove.get(user.id) || 0) < 150) return send(res, 200, { ok: true, skipped: true });
     lastMove.set(user.id, now);
-    avatars.set(user.id, [x, y]);
-    const data = `event: move\ndata: ${JSON.stringify({ id: user.id, x, y })}\n\n`;
+    avatars.set(user.id, [x, y, room]);
+    const data = `event: move\ndata: ${JSON.stringify({ id: user.id, x, y, room })}\n\n`;
     for (const c of streams) if (c.userId !== user.id) c.res.write(data);
     send(res, 200, { ok: true });
   },

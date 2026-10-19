@@ -165,6 +165,22 @@ a { color: var(--brand); font-weight: 700; }
   backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2);
 }
 @media (min-width: 640px) { .bar { grid-template-columns: 1fr minmax(220px, auto); } }
+.room-bar { gap: 8px; }
+.room-bar.editing { max-height: 46vh; overflow: auto; }
+.seg { display: flex; gap: 2px; background: var(--surface); border-radius: 12px; padding: 3px; overflow-x: auto; }
+.seg-btn { flex: 1; min-height: 34px; padding: 4px 10px; border: 0; border-radius: 9px; background: transparent; font-weight: 800; font-size: 0.82rem; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.seg-btn.on { background: var(--bg); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.room-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.room-title { display: grid; gap: 2px; min-width: 0; }
+.room-title .eyebrow { font-size: 0.64rem; }
+.room-title strong { font: 600 1.05rem/1.1 var(--f-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catalog { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.catalog-item {
+  flex: none; display: grid; justify-items: center; gap: 2px; width: 76px; padding: 6px 4px; border-radius: 12px;
+  border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; font-size: 0.72rem; font-weight: 800; color: var(--ink);
+}
+.catalog-item canvas { width: 56px; height: 56px; image-rendering: auto; }
+.catalog-item:hover { border-color: var(--brand); }
 .chat { display: flex; gap: 6px; grid-column: 1 / -1; }
 .chat-input {
   flex: 1; min-width: 0; min-height: 40px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--line);
@@ -631,6 +647,97 @@ function spawnPoint(s, residentId) {
   return h ? frontOf(s, h.slot) : PIAZZA_CENTER;
 }
 
+/* Dentro casa: stanza isometrica da arredare ---------------------------- */
+
+const ROOM = 8;                 // la stanza è 8×8 caselle
+const ROOM_DOOR = [0, 5];       // si entra dal muro di sinistra, su questa casella
+const ROOM_MAX_ITEMS = 80;
+const FLOORS = [
+  { id: 'parquet', label: 'Parquet' }, { id: 'piastrelle', label: 'Piastrelle' },
+  { id: 'cotto', label: 'Cotto' }, { id: 'marmo', label: 'Marmo' }, { id: 'moquette', label: 'Moquette' },
+];
+const WALLS = ['#efe6d2', '#f3d6c3', '#d7e6ef', '#dcebd2', '#f4e7b8', '#d9d0e8', '#c9b8a6', '#5b6b7a'];
+const FURNI_COLORS = ['#c0392b', '#2f6b9f', '#2f7d4f', '#e0a92a', '#7a4a6b', '#e86b8a', '#6b4a2f', '#4b4f56'];
+// w lungo x e d lungo y con rotazione 0; con rotazione 1 si scambiano. `rug` si può calpestare.
+const FURNI = [
+  { id: 'sedia', label: 'Sedia', w: 1, d: 1, color: true },
+  { id: 'poltrona', label: 'Poltrona', w: 1, d: 1, color: true },
+  { id: 'divano', label: 'Divano', w: 2, d: 1, color: true },
+  { id: 'tavolino', label: 'Tavolino', w: 1, d: 1 },
+  { id: 'tavolo', label: 'Tavolo', w: 2, d: 1 },
+  { id: 'letto', label: 'Letto', w: 1, d: 2, color: true },
+  { id: 'tappeto', label: 'Tappeto', w: 2, d: 2, color: true, rug: true },
+  { id: 'lampada', label: 'Lampada', w: 1, d: 1 },
+  { id: 'pianta', label: 'Pianta', w: 1, d: 1 },
+  { id: 'libreria', label: 'Libreria', w: 1, d: 1 },
+  { id: 'tv', label: 'Televisore', w: 1, d: 1 },
+  { id: 'frigo', label: 'Frigorifero', w: 1, d: 1 },
+  { id: 'cucina', label: 'Cucina', w: 2, d: 1 },
+  { id: 'armadio', label: 'Armadio', w: 1, d: 1 },
+  { id: 'scrivania', label: 'Scrivania', w: 2, d: 1 },
+  { id: 'camino', label: 'Camino', w: 2, d: 1 },
+  { id: 'acquario', label: 'Acquario', w: 1, d: 1 },
+];
+const ACCESS = [{ id: 'tutti', label: 'Tutti' }, { id: 'amici', label: 'Solo amici' }, { id: 'nessuno', label: 'Solo io' }];
+const furniById = (id) => FURNI.find((f) => f.id === id);
+const defaultRoom = () => ({ floor: 'parquet', wall: WALLS[0], access: 'tutti', items: [] });
+const roomOf = (s, ownerId) => s.rooms?.[ownerId] || defaultRoom();
+function footprint(it) {
+  const f = furniById(it.t);
+  const [w, d] = it.r ? [f.d, f.w] : [f.w, f.d];
+  return { x0: it.x, y0: it.y, x1: it.x + w - 1, y1: it.y + d - 1, w, d };
+}
+function cellsOf(it) {
+  const { x0, y0, x1, y1 } = footprint(it);
+  const out = [];
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) out.push(key(x, y));
+  return out;
+}
+// Controlla che un mobile stia nella stanza, non copra la porta e non si sovrapponga ad altri
+// (i tappeti possono stare sotto ai mobili, ma non sopra un altro tappeto).
+function checkPlace(room, it, ignoreUid) {
+  const f = furniById(it.t);
+  const { x0, y0, x1, y1 } = footprint(it);
+  if (x0 < 0 || y0 < 0 || x1 >= ROOM || y1 >= ROOM) throw invalid('Il mobile non entra in quel punto: prova più al centro.');
+  const cells = new Set(cellsOf(it));
+  if (!f.rug && cells.has(key(...ROOM_DOOR))) throw invalid('Lascia libero il passaggio davanti alla porta.');
+  for (const o of room.items) {
+    if (o.uid === ignoreUid) continue;
+    if (!!furniById(o.t).rug !== !!f.rug) continue;
+    if (cellsOf(o).some((c) => cells.has(c))) throw invalid('Lì c\'è già un altro mobile.');
+  }
+}
+function canVisit(s, visitorId, ownerId) {
+  if (visitorId === ownerId) return true;
+  const access = roomOf(s, ownerId).access;
+  if (access === 'tutti') return true;
+  if (access === 'amici') return !!visitorId && areFriends(s, visitorId, ownerId);
+  return false;
+}
+// Dentro casa si cammina sul pavimento libero (i tappeti si calpestano).
+function roomPath(room, from, to) {
+  const blocked = new Set();
+  for (const it of room.items) if (!furniById(it.t)?.rug) for (const c of cellsOf(it)) blocked.add(c);
+  const ok = (x, y) => x >= 0 && y >= 0 && x < ROOM && y < ROOM && !blocked.has(key(x, y));
+  const [sx, sy] = from, [tx, ty] = to;
+  if (sx === tx && sy === ty) return [];
+  if (!ok(tx, ty)) return null;
+  const start = key(sx, sy), goal = key(tx, ty);
+  const prev = new Map([[start, null]]);
+  const queue = [[sx, sy]];
+  for (let i = 0; i < queue.length; i++) {
+    const [x, y] = queue[i];
+    for (const [dx, dy] of STEPS) {
+      const nx = x + dx, ny = y + dy, nk = key(nx, ny);
+      if (prev.has(nk) || !ok(nx, ny)) continue;
+      prev.set(nk, key(x, y));
+      if (nk === goal) { const p = []; for (let k = goal; k !== start; k = prev.get(k)) p.push(parseKey(k)); return p.reverse(); }
+      queue.push([nx, ny]);
+    }
+  }
+  return null;
+}
+
 // Le nuvolette sopra la testa: frasi pronte oppure un messaggio breve e filtrato.
 const SAY_PRESETS = ['Ciao!', 'Buongiorno!', 'Buonasera!', 'Come va?', 'Benvenuto!', 'Bella casa!', 'Ci vediamo in piazza', 'A dopo!', '👋', '😄', '❤️', '👍'];
 const SAY_MAX = 60;
@@ -744,6 +851,7 @@ function emptyState(now = Date.now()) {
     reports: [],       // { id, from, target, reason, at, resolved }
     news: [],          // { id, kind, at, residentId?, n?, district?, slot? }
     milestones: [],
+    rooms: {},         // id abitante → { floor, wall, access, items: [{ uid, t, x, y, r, c }] }
   };
   addNews(s, { kind: 'founding', at: now });
   return refresh(s);
@@ -862,6 +970,47 @@ const OPS = {
     return { ok: true };
   },
 
+  // Stile della stanza: pavimento, colore delle pareti, chi può entrare.
+  roomStyle(s, op, ctx) {
+    const r = needResident(s, ctx);
+    if (!residentHouse(s, r.id)) throw invalid('Prima costruisci la tua casa.');
+    s.rooms ||= {};
+    const room = (s.rooms[r.id] ||= defaultRoom());
+    if (op.floor !== undefined) { if (!FLOORS.some((f) => f.id === op.floor)) throw invalid('Pavimento sconosciuto.'); room.floor = op.floor; }
+    if (op.wall !== undefined) { if (!WALLS.includes(op.wall)) throw invalid('Colore sconosciuto.'); room.wall = op.wall; }
+    if (op.access !== undefined) { if (!ACCESS.some((a) => a.id === op.access)) throw invalid('Scelta sconosciuta.'); room.access = op.access; }
+    return { ok: true };
+  },
+
+  // Mobili: aggiungere, spostare, ruotare, cambiare colore, togliere. Solo nella propria casa.
+  furni(s, op, ctx) {
+    const r = needResident(s, ctx);
+    if (!residentHouse(s, r.id)) throw invalid('Prima costruisci la tua casa.');
+    s.rooms ||= {};
+    const room = (s.rooms[r.id] ||= defaultRoom());
+    const int = (v) => Number.isInteger(v) ? v : NaN;
+    if (op.act === 'add') {
+      const f = furniById(op.t);
+      if (!f) throw invalid('Mobile sconosciuto.');
+      if (room.items.length >= ROOM_MAX_ITEMS) throw invalid(`In casa ci stanno al massimo ${ROOM_MAX_ITEMS} mobili.`);
+      const it = { uid: uid('f'), t: f.id, x: int(op.x), y: int(op.y), r: op.r ? 1 : 0, c: f.color ? (Number.isInteger(op.c) && op.c >= 0 && op.c < FURNI_COLORS.length ? op.c : 0) : 0 };
+      checkPlace(room, it);
+      room.items.push(it);
+      return { uid: it.uid };
+    }
+    const it = room.items.find((o) => o.uid === op.uid);
+    if (!it) throw new DomainError('notfound', 'Mobile non trovato.');
+    if (op.act === 'remove') { room.items = room.items.filter((o) => o !== it); return { ok: true }; }
+    if (op.act === 'color') { if (furniById(it.t).color) it.c = (it.c + 1) % FURNI_COLORS.length; return { ok: true }; }
+    const next = { ...it };
+    if (op.act === 'move') { next.x = int(op.x); next.y = int(op.y); }
+    else if (op.act === 'rotate') next.r = it.r ? 0 : 1;
+    else throw invalid('Azione sconosciuta.');
+    checkPlace(room, next, it.uid);
+    Object.assign(it, next);
+    return { ok: true };
+  },
+
   profile(s, op, ctx) {
     const r = needResident(s, ctx);
     if (op.bio !== undefined) r.bio = cleanBio(op.bio);
@@ -922,6 +1071,7 @@ const OPS = {
     s.requests = s.requests.filter((q) => q.from !== id && q.to !== id);
     s.friendships = s.friendships.filter((f) => f.a !== id && f.b !== id);
     delete s.sentLog[id];
+    if (s.rooms) delete s.rooms[id];
     refresh(s, now);
     return { ok: true };
   },
@@ -966,7 +1116,7 @@ function publicView(s, viewerId, admin = false) {
   }
   const v = {
     rev: s.rev, createdAt: s.createdAt, openDistricts: s.openDistricts, residents, houses: s.houses,
-    roads: s.roads, doors: s.doors, news: s.news.slice(0, 120), milestones: s.milestones,
+    roads: s.roads, doors: s.doors, news: s.news.slice(0, 120), milestones: s.milestones, rooms: s.rooms || {},
     requests: viewerId ? s.requests.filter((q) => q.from === viewerId || q.to === viewerId) : [],
     friendships: viewerId ? s.friendships.filter((f) => f.a === viewerId || f.b === viewerId) : [],
     reports: [],
@@ -1432,16 +1582,18 @@ function drawHouse(g, style, sx, sy, { lit = false, night = false, founder = fal
   const inset = style.shape === 'villetta' ? 0.1 : 0.17;
   const T0 = P(sx, sy, inset, inset), R0 = P(sx, sy, 1 - inset, inset), B0 = P(sx, sy, 1 - inset, 1 - inset), L0 = P(sx, sy, inset, 1 - inset);
   if (cantiere) { drawSite(g, T0, R0, B0, L0, detail); return { wins, top: sy - 40 }; }
-  const hw = style.shape === 'villetta' ? 22 : style.shape === 'torretta' ? 26 : 30;
+  // In scala con gli omini (alti circa 24): porte da 26, piani da 22, palazzine a due piani.
+  const floors = style.shape === 'villetta' ? 1 : 2;
+  const hw = style.shape === 'villetta' ? 30 : style.shape === 'torretta' ? 46 : 50;
   let top = sy;
   if (style.shape === 'torretta') {
     // Torre sull'angolo posteriore, disegnata prima perché sta dietro
     const tT = P(sx, sy, 0.12, 0.12), tR = P(sx, sy, 0.46, 0.12), tB = P(sx, sy, 0.46, 0.46), tL = P(sx, sy, 0.12, 0.46);
-    const th = 50;
+    const th = 76;
     drawWall(g, tL, tB, th, shade(wall, 0.02));
     drawWall(g, tB, tR, th, shade(wall, -0.12));
-    windowOn(g, wallFace(tL, tB), 0.3, 0.7, th - 16, th - 6, o, false);
-    const apex = add(lerp(tT, tB, 0.5), 0, -th - 20);
+    windowOn(g, wallFace(tL, tB), 0.3, 0.7, th - 18, th - 6, o, false);
+    const apex = add(lerp(tT, tB, 0.5), 0, -th - 22);
     const e = (p) => add(p, 0, -th);
     poly(g, [e(tL), e(tB), apex]); g.fillStyle = roof; g.fill(); g.strokeStyle = shade(roof, -0.35); g.lineWidth = 1; g.stroke();
     poly(g, [e(tB), e(tR), apex]); g.fillStyle = shade(roof, -0.14); g.fill(); g.stroke();
@@ -1451,25 +1603,35 @@ function drawHouse(g, style, sx, sy, { lit = false, night = false, founder = fal
   drawWall(g, L0, B0, hw, wall);
   drawWall(g, B0, R0, hw, shade(wall, -0.13));
   const fl = wallFace(L0, B0), fr = wallFace(B0, R0);
-  // Porta sul lato che guarda la sua via, finestre ai lati
-  const doorLeft = door !== 'E';
-  if (doorLeft) {
-    doorOn(g, fl, 0.42, 0.6, 15, dcol);
-    windowOn(g, fl, 0.12, 0.28, 9, 18, o, false);
-    windowOn(g, fl, 0.74, 0.9, 9, 18, o, false);
-    windowOn(g, fr, 0.3, 0.55, 9, 18, o, true);
-  } else {
-    doorOn(g, fr, 0.4, 0.6, 15, dcol);
-    windowOn(g, fl, 0.25, 0.45, 9, 18, o, false);
-    windowOn(g, fl, 0.6, 0.8, 9, 18, o, false);
+  if (floors === 2 && detail) {
+    // Marcapiano tra il pianterreno e il primo piano
+    for (const [f, c] of [[fl, shade(wall, 0.1)], [fr, shade(wall, -0.03)]]) { poly(g, quadOn(f, 0, 1, 27, 29)); g.fillStyle = c; g.fill(); }
   }
-  if (founder) { const q = (doorLeft ? fl : fr)(0.34, 11); g.fillStyle = '#e2bf4f'; g.fillRect(Math.round(q[0]), Math.round(q[1]), 3, 2); }
+  // Porta sul lato che guarda la sua via, finestre ai lati e al piano di sopra
+  const doorLeft = door !== 'E';
+  const fd = doorLeft ? fl : fr, fo = doorLeft ? fr : fl;
+  doorOn(g, fd, 0.4, 0.6, 26, dcol);
+  windowOn(g, fd, 0.1, 0.27, 11, 23, o, !doorLeft);
+  windowOn(g, fd, 0.73, 0.9, 11, 23, o, !doorLeft);
+  windowOn(g, fo, 0.3, 0.55, 11, 23, o, doorLeft);
+  if (floors === 2) {
+    for (const [u0, u1] of [[0.1, 0.27], [0.415, 0.585], [0.73, 0.9]]) windowOn(g, fd, u0, u1, 33, 44, o, !doorLeft);
+    windowOn(g, fo, 0.3, 0.55, 33, 44, o, doorLeft);
+    if (detail) {
+      // Balconcino sopra la porta
+      poly(g, quadOn(fd, 0.36, 0.64, 31, 33)); g.fillStyle = '#e9e1cf'; g.fill();
+      g.strokeStyle = '#3b3f45'; g.lineWidth = 1; g.beginPath();
+      for (let k = 0; k <= 6; k++) { const a = fd(0.37 + k * 0.045, 33), b = fd(0.37 + k * 0.045, 38); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }
+      const a = fd(0.36, 38), b = fd(0.64, 38); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+    }
+  }
+  if (founder) { const q = fd(0.33, 14); g.fillStyle = '#e2bf4f'; g.fillRect(Math.round(q[0]), Math.round(q[1]), 3, 2); }
   // Tetto, con un po' di sporgenza
   const e = (p) => add(p, 0, -hw);
   const ctr = lerp(e(T0), e(B0), 0.5);
   const oh = (p) => lerp(ctr, p, 1.12);
   const Lt = oh(e(L0)), Bt = oh(e(B0)), Rt = oh(e(R0)), Tt = oh(e(T0));
-  const rh = style.shape === 'villetta' ? 10 : 15;
+  const rh = style.shape === 'villetta' ? 12 : 18;
   if (style.shape === 'villetta') {
     // Padiglione: quattro falde, colmo corto
     const mid1 = lerp(Lt, Tt, 0.5), mid2 = lerp(Bt, Rt, 0.5);
@@ -1609,12 +1771,12 @@ function box(g, base, w, d, hgt, top, left, right) {
   return { B, R, L: Lc, T: Tc };
 }
 function edicola(g, sx, sy) {
-  const b = box(g, P(sx, sy, 0.85, 0.85), 0.6, 0.6, 22, '#c0392b', '#2f6b5c', '#24564a');
+  const b = box(g, P(sx, sy, 0.85, 0.85), 0.62, 0.62, 34, '#c0392b', '#2f6b5c', '#24564a');
   const f = wallFace(b.L, b.B);
-  poly(g, quadOn(f, 0.12, 0.88, 6, 16)); g.fillStyle = '#f4ecd8'; g.fill();
+  poly(g, quadOn(f, 0.12, 0.88, 8, 24)); g.fillStyle = '#f4ecd8'; g.fill();
   const cols = ['#e85d4a', '#3f6aa1', '#f2c14e', '#7a4a6b', '#4f8a72'];
-  for (let k = 0; k < 5; k++) { poly(g, quadOn(f, 0.16 + k * 0.14, 0.27 + k * 0.14, 8, 14)); g.fillStyle = cols[k]; g.fill(); }
-  for (let k = 0; k < 6; k++) { poly(g, quadOn(f, k / 6, (k + 1) / 6, 18, 22)); g.fillStyle = k % 2 ? '#f6efe0' : '#c0392b'; g.fill(); }
+  for (let k = 0; k < 5; k++) { poly(g, quadOn(f, 0.16 + k * 0.14, 0.27 + k * 0.14, 11, 21)); g.fillStyle = cols[k]; g.fill(); }
+  for (let k = 0; k < 6; k++) { poly(g, quadOn(f, k / 6, (k + 1) / 6, 28, 34)); g.fillStyle = k % 2 ? '#f6efe0' : '#c0392b'; g.fill(); }
 }
 function muro(g, sx, sy, founders) {
   // Muro dei Fondatori lungo tre caselle in fila sull'asse x (questa è l'ultima)
@@ -1794,7 +1956,7 @@ function carsFor(built) {
 }
 function drawCar(g, car, gx, gy, night) {
   // Auto lungo l'asse x della statale: una scatola isometrica con i finestrini
-  const len = car.bus ? 0.9 : 0.5, wid = 0.26, hgt = car.bus ? 13 : 8;
+  const len = car.bus ? 1.0 : 0.56, wid = 0.3, hgt = car.bus ? 21 : 14;
   const lv = levelAt(Math.round(gx), Math.round(gy), 1) >= 1 ? 1 : 0;
   const bx = isoX(gx, gy), by = isoY(gx, gy) - elev(lv);
   const p = (u, v) => [bx + 32 * u - 32 * v, by + 16 * u + 16 * v];
@@ -1805,7 +1967,7 @@ function drawCar(g, car, gx, gy, night) {
   poly(g, [L0, B0, up(B0), up(L0)]); g.fillStyle = shade(col, -0.05); g.fill(); g.strokeStyle = shade(col, -0.4); g.lineWidth = 1; g.stroke();
   poly(g, [B0, R0, up(R0), up(B0)]); g.fillStyle = shade(col, -0.2); g.fill(); g.stroke();
   poly(g, [up(L0), up(B0), up(R0), up(T0)]); g.fillStyle = shade(col, 0.1); g.fill(); g.stroke();
-  poly(g, quadOn(wallFace(L0, B0), 0.15, 0.85, hgt - 6, hgt - 2)); g.fillStyle = night ? '#ffe39a' : '#33465a'; g.fill();
+  poly(g, quadOn(wallFace(L0, B0), 0.15, 0.85, hgt - 9, hgt - 3)); g.fillStyle = night ? '#ffe39a' : '#33465a'; g.fill();
   if (night) {
     g.save(); g.globalCompositeOperation = 'lighter';
     const front = car.dir > 0 ? lerp(B0, R0, 0.5) : lerp(L0, T0, 0.5);
@@ -2003,6 +2165,289 @@ function drawClouds(g, cam, vw, vh, dpr, t, night) {
   g.restore();
 }
 
+/* Dentro casa: la stanza isometrica e i mobili ----------------------------- */
+
+const WALL_H = 104;
+const gp = (x, y) => [isoX(x, y), isoY(x, y)];
+// Parallelepipedo tra gli angoli di griglia (x0, y0)–(x1, y1), dall'altezza z0 a z1.
+function box3(g, x0, y0, x1, y1, z0, z1, color, { top, side } = {}) {
+  const A = gp(x0, y1), B = gp(x1, y1), C = gp(x1, y0), D = gp(x0, y0);
+  const up = (p, z) => [p[0], p[1] - z];
+  const ol = shade(color, -0.4);
+  g.lineWidth = 1; g.strokeStyle = ol;
+  poly(g, [up(A, z0), up(B, z0), up(B, z1), up(A, z1)]); g.fillStyle = color; g.fill(); g.stroke();
+  poly(g, [up(B, z0), up(C, z0), up(C, z1), up(B, z1)]); g.fillStyle = side || shade(color, -0.15); g.fill(); g.stroke();
+  poly(g, [up(A, z1), up(B, z1), up(C, z1), up(D, z1)]); g.fillStyle = top || shade(color, 0.12); g.fill(); g.stroke();
+}
+// Faccia frontale di un mobile (verso chi guarda): lungo +y se r=0, lungo +x se r=1.
+function frontFace(x0, y0, x1, y1, r) {
+  return r ? wallFace(gp(x1, y1), gp(x1, y0)) : wallFace(gp(x0, y1), gp(x1, y1));
+}
+const WOOD = '#9a6a43', WOOD_D = '#6b4a2f', WHITE = '#f2efe8';
+function legs(g, x0, y0, x1, y1, h, color = WOOD_D) {
+  const k = 0.08;
+  for (const [a, b] of [[x0, y0], [x1 - k, y0], [x0, y1 - k], [x1 - k, y1 - k]]) box3(g, a, b, a + k, b + k, 0, h, color);
+}
+
+// Disegna un mobile in coordinate di griglia della stanza.
+function drawFurni(g, it, { night = false } = {}) {
+  const f = furniById(it.t);
+  if (!f) return;
+  const { x0, y0, x1: xe, y1: ye } = footprint(it);
+  const x1 = xe + 1, y1 = ye + 1, r = it.r, col = FURNI_COLORS[it.c] || FURNI_COLORS[0];
+  const ins = (a, b, k) => [a + k, b - k];
+  switch (it.t) {
+    case 'sedia': {
+      const [a, b] = ins(x0, x1, 0.22), [c, d] = ins(y0, y1, 0.22);
+      legs(g, a, c, b, d, 12);
+      box3(g, a, c, b, d, 12, 15, col);
+      if (r) box3(g, a, c, a + 0.1, d, 15, 32, col); else box3(g, a, c, b, c + 0.1, 15, 32, col);
+      break;
+    }
+    case 'poltrona': {
+      const [a, b] = ins(x0, x1, 0.14), [c, d] = ins(y0, y1, 0.14);
+      box3(g, a, c, b, d, 0, 12, col);
+      if (r) { box3(g, a, c, a + 0.16, d, 12, 30, shade(col, -0.05)); box3(g, a, c, b, c + 0.14, 12, 20, col); box3(g, a, d - 0.14, b, d, 12, 20, col); }
+      else { box3(g, a, c, b, c + 0.16, 12, 30, shade(col, -0.05)); box3(g, a, c, a + 0.14, d, 12, 20, col); box3(g, b - 0.14, c, b, d, 12, 20, col); }
+      break;
+    }
+    case 'divano': {
+      const [a, b] = ins(x0, x1, 0.06), [c, d] = ins(y0, y1, 0.12);
+      box3(g, a, c, b, d, 0, 11, col);
+      if (r) { box3(g, a, c, a + 0.18, d, 11, 28, shade(col, -0.05)); box3(g, a, c, b, c + 0.14, 11, 19, col); box3(g, a, d - 0.14, b, d, 11, 19, col); }
+      else { box3(g, a, c, b, c + 0.18, 11, 28, shade(col, -0.05)); box3(g, a, c, a + 0.14, d, 11, 19, col); box3(g, b - 0.14, c, b, d, 11, 19, col); }
+      break;
+    }
+    case 'tavolino': {
+      const [a, b] = ins(x0, x1, 0.18), [c, d] = ins(y0, y1, 0.18);
+      legs(g, a, c, b, d, 13);
+      box3(g, a - 0.04, c - 0.04, b + 0.04, d + 0.04, 13, 16, WOOD);
+      break;
+    }
+    case 'tavolo': {
+      const [a, b] = ins(x0, x1, 0.1), [c, d] = ins(y0, y1, 0.12);
+      legs(g, a, c, b, d, 20);
+      box3(g, a, c, b, d, 20, 23, WOOD);
+      const m = [(a + b) / 2, (c + d) / 2];
+      box3(g, m[0] - 0.08, m[1] - 0.08, m[0] + 0.08, m[1] + 0.08, 23, 31, '#3f6aa1');
+      blob(g, ...gp(m[0], m[1]).map((v, i) => (i ? v - 35 : v)), 4, '#e85d75');
+      break;
+    }
+    case 'letto': {
+      const [a, b] = ins(x0, x1, 0.06), [c, d] = ins(y0, y1, 0.06);
+      box3(g, a, c, b, d, 0, 8, WOOD);
+      box3(g, a + 0.04, c + 0.04, b - 0.04, d - 0.04, 8, 13, WHITE);
+      if (r) { box3(g, a + 0.6, c + 0.04, b - 0.04, d - 0.04, 13, 14, col); box3(g, a + 0.12, c + 0.15, a + 0.42, d - 0.15, 13, 17, '#ffffff'); box3(g, a, c, a + 0.12, d, 0, 26, WOOD_D); }
+      else { box3(g, a + 0.04, c + 0.6, b - 0.04, d - 0.04, 13, 14, col); box3(g, a + 0.15, c + 0.12, b - 0.15, c + 0.42, 13, 17, '#ffffff'); box3(g, a, c, b, c + 0.12, 0, 26, WOOD_D); }
+      break;
+    }
+    case 'tappeto': {
+      const k = 0.06;
+      poly(g, [gp(x0 + k, y0 + k), gp(x1 - k, y0 + k), gp(x1 - k, y1 - k), gp(x0 + k, y1 - k)]); g.fillStyle = col; g.fill();
+      g.strokeStyle = shade(col, 0.3); g.lineWidth = 2; poly(g, [gp(x0 + 0.2, y0 + 0.2), gp(x1 - 0.2, y0 + 0.2), gp(x1 - 0.2, y1 - 0.2), gp(x0 + 0.2, y1 - 0.2)]); g.stroke();
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      poly(g, [gp(cx, cy - 0.35), gp(cx + 0.35, cy), gp(cx, cy + 0.35), gp(cx - 0.35, cy)]); g.fillStyle = shade(col, 0.25); g.fill();
+      break;
+    }
+    case 'lampada': {
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(c[0], c[1], 9, 4.5, 0, 0, 7); g.fill();
+      box3(g, x0 + 0.38, y0 + 0.38, x0 + 0.62, y0 + 0.62, 0, 2, '#3b3f45');
+      g.fillStyle = '#3b3f45'; g.fillRect(c[0] - 1, c[1] - 40, 2, 39);
+      poly(g, [[c[0] - 7, c[1] - 38], [c[0] + 7, c[1] - 38], [c[0] + 4, c[1] - 50], [c[0] - 4, c[1] - 50]]); g.fillStyle = night ? '#ffe39a' : '#f3e2b8'; g.fill(); g.strokeStyle = '#a78b52'; g.lineWidth = 1; g.stroke();
+      if (night) { g.save(); g.globalCompositeOperation = 'lighter'; glow(g, c[0], c[1] - 40, 40, 0.35); g.restore(); }
+      break;
+    }
+    case 'pianta': {
+      box3(g, x0 + 0.3, y0 + 0.3, x0 + 0.7, y0 + 0.7, 0, 13, '#b8643d');
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      for (const [dx, dy, rr, cc] of [[-6, -20, 7, '#3f7d34'], [6, -22, 7, '#3f7d34'], [0, -28, 8, '#4f9a3c'], [-3, -33, 5, '#62ad4c'], [4, -36, 4, '#7fc25e']]) blob(g, c[0] + dx, c[1] + dy, rr, cc, '#285422');
+      break;
+    }
+    case 'libreria': {
+      const [a, b, c, d] = r ? [x0 + 0.08, x0 + 0.45, y0 + 0.08, y1 - 0.08] : [x0 + 0.08, x1 - 0.08, y0 + 0.08, y0 + 0.45];
+      box3(g, a, c, b, d, 0, 52, WOOD);
+      const f = frontFace(a, c, b, d, r);
+      const books = ['#c0392b', '#2f6b9f', '#e0a92a', '#2f7d4f', '#7a4a6b', '#e88a3a'];
+      for (let s = 0; s < 4; s++) {
+        poly(g, quadOn(f, 0.06, 0.94, 4 + s * 12, 5 + s * 12)); g.fillStyle = WOOD_D; g.fill();
+        for (let k = 0; k < 6; k++) { poly(g, quadOn(f, 0.1 + k * 0.13, 0.2 + k * 0.13, 5 + s * 12, 13 + s * 12 - (k % 3))); g.fillStyle = books[(k + s) % 6]; g.fill(); }
+      }
+      break;
+    }
+    case 'tv': {
+      const [a, b, c, d] = r ? [x0 + 0.3, x0 + 0.7, y0 + 0.12, y1 - 0.12] : [x0 + 0.12, x1 - 0.12, y0 + 0.3, y0 + 0.7];
+      box3(g, a, c, b, d, 0, 14, WOOD_D);
+      const [e, f2, h, k] = r ? [x0 + 0.44, x0 + 0.54, y0 + 0.16, y1 - 0.16] : [x0 + 0.16, x1 - 0.16, y0 + 0.44, y0 + 0.54];
+      box3(g, e, h, f2, k, 14, 36, '#1f2328');
+      const ff = frontFace(e, h, f2, k, r);
+      poly(g, quadOn(ff, 0.08, 0.92, 2, 20)); g.fillStyle = night ? '#6fb3ff' : '#2d4a6b'; g.fill();
+      break;
+    }
+    case 'frigo': {
+      box3(g, x0 + 0.15, y0 + 0.18, x1 - 0.15, y1 - 0.18, 0, 54, '#e9edf0', { side: '#c9cfd4' });
+      const ff = frontFace(x0 + 0.15, y0 + 0.18, x1 - 0.15, y1 - 0.18, r);
+      poly(g, quadOn(ff, 0, 1, 36, 37)); g.fillStyle = '#9aa3aa'; g.fill();
+      poly(g, quadOn(ff, 0.8, 0.86, 40, 50)); g.fillStyle = '#9aa3aa'; g.fill();
+      poly(g, quadOn(ff, 0.8, 0.86, 18, 32)); g.fill();
+      break;
+    }
+    case 'cucina': {
+      const [a, b, c, d] = r ? [x0 + 0.1, x1 - 0.1, y0 + 0.05, y1 - 0.05] : [x0 + 0.05, x1 - 0.05, y0 + 0.1, y1 - 0.1];
+      box3(g, a, c, b, d, 0, 24, WHITE, { top: '#8c9399' });
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.08, 0.45, 4, 18)); g.fillStyle = '#2b2f33'; g.fill();
+      poly(g, quadOn(ff, 0.55, 0.95, 4, 18)); g.fillStyle = '#e1ddd3'; g.fill(); g.strokeStyle = '#b5b0a5'; g.stroke();
+      for (const [u, v] of [[0.25, 0.3], [0.25, 0.7], [0.75, 0.3], [0.75, 0.7]]) {
+        const p = gp(a + (b - a) * (r ? v : u * 0.5), c + (d - c) * (r ? u * 0.5 : v));
+        g.strokeStyle = '#2b2f33'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(p[0], p[1] - 24, 5, 2.5, 0, 0, 7); g.stroke();
+      }
+      break;
+    }
+    case 'armadio': {
+      const [a, b, c, d] = r ? [x0 + 0.1, x0 + 0.62, y0 + 0.08, y1 - 0.08] : [x0 + 0.08, x1 - 0.08, y0 + 0.1, y0 + 0.62];
+      box3(g, a, c, b, d, 0, 58, WOOD);
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.495, 0.505, 4, 54)); g.fillStyle = WOOD_D; g.fill();
+      for (const u of [0.42, 0.55]) { poly(g, quadOn(ff, u, u + 0.03, 26, 34)); g.fillStyle = '#e2bf4f'; g.fill(); }
+      break;
+    }
+    case 'scrivania': {
+      const [a, b] = ins(x0, x1, 0.08), [c, d] = ins(y0, y1, 0.14);
+      legs(g, a, c, b, d, 20);
+      box3(g, a, c, b, d, 20, 23, '#f2efe8');
+      const m = r ? [a + 0.25, (c + d) / 2] : [(a + b) / 2, c + 0.25];
+      box3(g, m[0] - 0.05, m[1] - 0.05, m[0] + 0.05, m[1] + 0.05, 23, 27, '#3b3f45');
+      if (r) box3(g, m[0] - 0.04, m[1] - 0.35, m[0] + 0.04, m[1] + 0.35, 27, 40, '#1f2328'); else box3(g, m[0] - 0.35, m[1] - 0.04, m[0] + 0.35, m[1] + 0.04, 27, 40, '#1f2328');
+      break;
+    }
+    case 'camino': {
+      const [a, b, c, d] = r ? [x0 + 0.05, x0 + 0.55, y0 + 0.05, y1 - 0.05] : [x0 + 0.05, x1 - 0.05, y0 + 0.05, y0 + 0.55];
+      box3(g, a, c, b, d, 0, 38, '#c9b48f');
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.25, 0.75, 0, 20)); g.fillStyle = '#2b2118'; g.fill();
+      poly(g, quadOn(ff, 0.32, 0.68, 0, 7)); g.fillStyle = '#e88a3a'; g.fill();
+      poly(g, quadOn(ff, 0.4, 0.6, 3, 12)); g.fillStyle = '#f6d84a'; g.fill();
+      poly(g, quadOn(ff, -0.02, 1.02, 34, 38)); g.fillStyle = '#e6d6b3'; g.fill();
+      break;
+    }
+    case 'acquario': {
+      box3(g, x0 + 0.12, y0 + 0.2, x1 - 0.12, y1 - 0.2, 0, 14, WOOD_D);
+      g.globalAlpha = 0.75; box3(g, x0 + 0.12, y0 + 0.2, x1 - 0.12, y1 - 0.2, 14, 36, '#7cc6df', { top: '#a8e0f0' }); g.globalAlpha = 1;
+      const c = gp(x0 + 0.5, y0 + 0.5);
+      g.fillStyle = '#f2a33a'; g.fillRect(c[0] - 6, c[1] - 26, 4, 2); g.fillStyle = '#e85d75'; g.fillRect(c[0] + 2, c[1] - 21, 4, 2);
+      break;
+    }
+  }
+}
+
+// Icona di un mobile per il catalogo.
+function drawFurniIcon(canvas, t, c = 0) {
+  const g = canvas.getContext('2d');
+  const f = furniById(t);
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, canvas.width, canvas.height);
+  const span = (f.w + f.d) * 32;
+  const s = Math.min(canvas.width / (span + 12), canvas.height / (span / 2 + 64));
+  const cx = canvas.width / 2 - ((f.w - f.d) * 32 * s) / 2;
+  g.setTransform(s, 0, 0, s, cx, canvas.height - ((f.w + f.d) * 16 + 6) * s);
+  drawFurni(g, { t, x: 0, y: 0, r: 0, c });
+}
+
+// La stanza: pavimento, due pareti con porta e finestra, mobili e omini in ordine di profondità.
+function drawRoom(g, room, o) {
+  const N = ROOM;
+  const wall = room.wall || '#efe6d2';
+  // Bordo del pavimento (la stanza è una piastra sospesa, come in Habbo)
+  const A = gp(0, N), B = gp(N, N), C = gp(N, 0);
+  poly(g, [A, B, add(B, 0, 10), add(A, 0, 10)]); g.fillStyle = '#7b5a3a'; g.fill();
+  poly(g, [B, C, add(C, 0, 10), add(B, 0, 10)]); g.fillStyle = '#5f4329'; g.fill();
+  // Pavimento
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const sx = isoX(x, y), sy = isoY(x, y);
+    diamond(g, sx, sy);
+    const odd = (x + y) % 2;
+    if (room.floor === 'piastrelle') g.fillStyle = odd ? '#f2efe8' : '#c9d3da';
+    else if (room.floor === 'cotto') g.fillStyle = odd ? '#c4673d' : '#b65d36';
+    else if (room.floor === 'marmo') g.fillStyle = odd ? '#f4f2ee' : '#e6e2da';
+    else if (room.floor === 'moquette') g.fillStyle = '#8b6aa8';
+    else g.fillStyle = (x % 2) ? '#c8935c' : '#bd8954';
+    g.fill();
+    if (room.floor === 'parquet') {
+      g.strokeStyle = 'rgba(90,55,25,0.35)'; g.lineWidth = 1; g.beginPath();
+      for (let k = 1; k < 4; k++) { const a = P(sx, sy, 0, k / 4), b = P(sx, sy, 1, k / 4); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }
+      g.stroke();
+    } else if (room.floor === 'marmo') {
+      g.strokeStyle = 'rgba(150,140,130,0.4)'; g.beginPath(); const a = P(sx, sy, 0.2, 0.7), b = P(sx, sy, 0.8, 0.3); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+    } else if (room.floor !== 'moquette') { g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 1; diamond(g, sx, sy); g.stroke(); }
+    if (o.highlight && o.highlight[0] === x && o.highlight[1] === y) { diamond(g, sx, sy, 2); g.strokeStyle = '#ffd34d'; g.lineWidth = 2; g.stroke(); }
+  }
+  // Parete sinistra (lungo x = 0) con la porta, parete destra (lungo y = 0) con la finestra
+  const up = (p, z) => [p[0], p[1] - z];
+  for (let y = 0; y < N; y++) {
+    const a = gp(0, y), b = gp(0, y + 1);
+    poly(g, [b, a, up(a, WALL_H), up(b, WALL_H)]); g.fillStyle = shade(wall, 0.02); g.fill();
+    g.strokeStyle = shade(wall, -0.12); g.lineWidth = 1; g.stroke();
+  }
+  for (let x = 0; x < N; x++) {
+    const a = gp(x, 0), b = gp(x + 1, 0);
+    poly(g, [a, b, up(b, WALL_H), up(a, WALL_H)]); g.fillStyle = shade(wall, -0.1); g.fill();
+    g.strokeStyle = shade(wall, -0.22); g.lineWidth = 1; g.stroke();
+  }
+  // Zoccolino e cornice in cima
+  poly(g, [gp(0, N), gp(0, 0), up(gp(0, 0), 5), up(gp(0, N), 5)]); g.fillStyle = shade(wall, -0.25); g.fill();
+  poly(g, [gp(0, 0), gp(N, 0), up(gp(N, 0), 5), up(gp(0, 0), 5)]); g.fillStyle = shade(wall, -0.32); g.fill();
+  g.strokeStyle = shade(wall, 0.2); g.lineWidth = 3;
+  g.beginPath(); const t0 = up(gp(0, N), WALL_H), t1 = up(gp(0, 0), WALL_H), t2 = up(gp(N, 0), WALL_H); g.moveTo(t0[0], t0[1]); g.lineTo(t1[0], t1[1]); g.lineTo(t2[0], t2[1]); g.stroke();
+  // Porta
+  const fdoor = wallFace(gp(0, ROOM_DOOR[1] + 1), gp(0, ROOM_DOOR[1]));
+  poly(g, quadOn(fdoor, 0.1, 0.9, 0, 66)); g.fillStyle = '#e6dcc6'; g.fill();
+  poly(g, quadOn(fdoor, 0.16, 0.84, 0, 62)); g.fillStyle = '#2b2118'; g.fill();
+  poly(g, quadOn(fdoor, 0.16, 0.84, 0, 3)); g.fillStyle = '#4a3a2a'; g.fill();
+  // Finestre sulla parete destra
+  for (const x of [2, 5]) {
+    const fw = wallFace(gp(x, 0), gp(x + 1, 0));
+    poly(g, quadOn(fw, 0.12, 0.88, 40, 84)); g.fillStyle = '#f4efe3'; g.fill();
+    poly(g, quadOn(fw, 0.18, 0.82, 44, 80)); g.fillStyle = o.night ? '#1b2a4a' : '#b5dcef'; g.fill();
+    poly(g, quadOn(fw, 0.48, 0.52, 44, 80)); g.fillStyle = '#f4efe3'; g.fill();
+    poly(g, quadOn(fw, 0.18, 0.82, 61, 63)); g.fill();
+  }
+  // Mobili e omini dal fondo verso chi guarda (i tappeti stanno sotto a tutto)
+  const items = [...room.items].sort((a, b) => {
+    const ra = furniById(a.t)?.rug ? 0 : 1, rb = furniById(b.t)?.rug ? 0 : 1;
+    if (ra !== rb) return ra - rb;
+    const fa = footprint(a), fb = footprint(b);
+    return fa.x1 + fa.y1 - (fb.x1 + fb.y1);
+  });
+  const hits = [];
+  const draws = [];
+  for (const it of items) {
+    const fp = footprint(it);
+    const rug = furniById(it.t)?.rug;
+    draws.push({ d: rug ? -1 : fp.x1 + fp.y1 + 0.5, draw: () => drawFurni(g, it, o) });
+    const L = gp(fp.x0, fp.y1 + 1), Rr = gp(fp.x1 + 1, fp.y0), T0 = gp(fp.x0, fp.y0), B0 = gp(fp.x1 + 1, fp.y1 + 1);
+    hits.push({ uid: it.uid, d: rug ? -1 : fp.x1 + fp.y1, box: [L[0], T0[1] - (rug ? 2 : 56), Rr[0], B0[1]] });
+  }
+  for (const a of o.avatars || []) draws.push({ d: a.x + a.y + 0.6, draw: () => a.draw(g) });
+  draws.sort((p, q) => p.d - q.d);
+  for (const d of draws) d.draw();
+  if (o.selectedUid) {
+    const it = room.items.find((x) => x.uid === o.selectedUid);
+    if (it) {
+      const fp = footprint(it);
+      poly(g, [gp(fp.x0, fp.y0), gp(fp.x1 + 1, fp.y0), gp(fp.x1 + 1, fp.y1 + 1), gp(fp.x0, fp.y1 + 1)]);
+      g.strokeStyle = '#ffd34d'; g.lineWidth = 2; g.setLineDash([4, 3]); g.stroke(); g.setLineDash([]);
+    }
+  }
+  if (o.night) {
+    g.save();
+    g.globalCompositeOperation = 'multiply'; g.fillStyle = '#7a84b0';
+    g.fillRect(-N * 32 - 100, -WALL_H - 100, N * 64 + 200, N * 32 + WALL_H + 200);
+    g.restore();
+  }
+  return hits;
+}
+
 /* Mappa ------------------------------------------------------------------ */
 
 const DIR_OF = (dx, dy) => (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'SE' : 'NW') : (dy > 0 ? 'SW' : 'NE'));
@@ -2020,6 +2465,9 @@ class CityMap {
     this.cam = { x: 0, y: 900, z: 1 };
     this.born = new Map();
     this.avatars = new Map();
+    this.scene = null;          // null = città, altrimenti l'id dell'abitante di cui si è in casa
+    this.roomUI = {};           // { highlight, selectedUid } durante l'arredamento
+    this.roomHits = [];
     this.objects = [];
     this.labels = [];
     this.dirty = true;
@@ -2055,15 +2503,23 @@ class CityMap {
     for (const id of this.avatars.keys()) if (!ids.has(id)) this.avatars.delete(id);
     for (const a of list) {
       const cur = this.avatars.get(a.id);
-      if (cur) { cur.name = a.name; cur.me = a.me; cur.look = avatarLook(a.name, a.look); continue; }
-      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], path: [], dir: 'SE', look: avatarLook(a.name, a.look), name: a.name, me: a.me, walked: 0, bubble: null });
+      const room = a.pos[2] ?? null;
+      if (cur) {
+        cur.name = a.name; cur.me = a.me; cur.look = avatarLook(a.name, a.look);
+        if (cur.room !== room) Object.assign(cur, { room, x: a.pos[0], y: a.pos[1], path: [] });
+        continue;
+      }
+      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], room, path: [], dir: 'SE', look: avatarLook(a.name, a.look), name: a.name, me: a.me, walked: 0, bubble: null });
     }
     this.avatarsDirty = true;
   }
-  walk(id, tx, ty) {
+  walk(id, tx, ty, room = null) {
     const a = this.avatars.get(id);
     if (!a || !this.city) return false;
-    const path = walkPath(this.city, [Math.round(a.x), Math.round(a.y)], [tx, ty]);
+    // Entrare o uscire di casa: l'omino compare direttamente dall'altra parte della porta.
+    if ((a.room ?? null) !== (room ?? null)) { Object.assign(a, { room, x: tx, y: ty, path: [], dir: room ? 'SE' : 'SW' }); this.avatarsDirty = true; return true; }
+    const from = [Math.round(a.x), Math.round(a.y)];
+    const path = room ? roomPath(roomOf(this.city, room), from, [tx, ty]) : walkPath(this.city, from, [tx, ty]);
     if (!path) return false;
     a.path = path;
     this.avatarsDirty = true;
@@ -2078,9 +2534,33 @@ class CityMap {
   bubbling(t) { for (const a of this.avatars.values()) if (a.bubble && t - a.bubble.t0 < 6500) return true; return false; }
   avatarOf(id) { return this.avatars.get(id); }
   avatarScreen(a) {
-    const [cx, cy] = tileCenter(a.x, a.y, this.levelOf(a.x, a.y));
+    const [cx, cy] = tileCenter(a.x, a.y, a.room ? 0 : this.levelOf(a.x, a.y));
     return [cx, cy + 2];
   }
+  // In città l'omino è in scala con le case (metà); in casa è grande come in Habbo.
+  avatarScale() { return this.scene ? 1 : 0.5; }
+  visibleAvatars() { const here = this.scene || null; return [...this.avatars.values()].filter((a) => (a.room ?? null) === here); }
+
+  /* Dentro casa */
+  enterRoom(ownerId) {
+    if (!this.scene) this.townCam = { ...this.cam };
+    this.scene = ownerId;
+    this.roomUI = {};
+    // La stanza riempie la larghezza dello schermo e sta nella metà alta, sopra i comandi.
+    this.cam.z = Math.max(1, Math.round((Math.min(this.vw, this.vh * 1.2) * this.dpr) / 450)) / this.dpr;
+    [this.cam.x, this.cam.y] = tileCenter(ROOM / 2 - 0.5, ROOM / 2 - 0.5, 0);
+    this.cam.y += (0.5 - 0.36) * this.vh / this.cam.z - 40;
+    this.clamp();
+    this.dirty = true;
+  }
+  exitRoom() {
+    this.scene = null;
+    this.roomUI = {};
+    if (this.townCam) this.cam = { ...this.townCam };
+    this.clamp();
+    this.dirty = true;
+  }
+  setRoomUI(ui) { this.roomUI = { ...this.roomUI, ...ui }; this.dirty = true; }
   tickAvatars(t) {
     const dt = Math.min(0.1, (t - (this.lastTick || t)) / 1000);
     this.lastTick = t;
@@ -2097,7 +2577,7 @@ class CityMap {
       }
       a.walked += dt * 3.2;
       // La telecamera segue il proprio omino quando esce dal centro dello schermo.
-      if (a.me && !this.pointers.size) {
+      if (a.me && !this.scene && !this.pointers.size) {
         const [wx, wy] = this.avatarScreen(a);
         const sx = (wx - this.cam.x) * this.cam.z, sy = (wy - 24 - this.cam.y) * this.cam.z;
         const mx = this.vw * 0.28, my = this.vh * 0.2;
@@ -2114,19 +2594,26 @@ class CityMap {
     this.wasWalking = moving;
     return moving;
   }
+  drawOneAvatar(g, a, night) {
+    const [x, y] = this.avatarScreen(a);
+    const step = a.path.length ? (Math.floor(a.walked * 2.6) % 2) + 1 : 0;
+    const k = this.avatarScale();
+    g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(k, k);
+    drawAvatar(g, 0, 0, a.dir, step, a.look, { night });
+    g.restore();
+  }
   drawAvatars(g, night, occlude) {
-    const list = [...this.avatars.values()].sort((a, b) => a.x + a.y - (b.x + b.y));
+    const list = this.visibleAvatars().sort((a, b) => a.x + a.y - (b.x + b.y));
     for (const a of list) {
       const [x, y] = this.avatarScreen(a);
-      const step = a.path.length ? (Math.floor(a.walked * 2.6) % 2) + 1 : 0;
-      drawAvatar(g, x, y, a.dir, step, a.look, { night });
+      this.drawOneAvatar(g, a, night);
       if (!occlude) continue;
       // Ciò che sta davanti all'omino (case, alberi) lo ricopre, come in Habbo.
       const depth = a.x + a.y;
       for (const ob of this.objects) {
         if (ob.depth <= depth + 0.6) continue;
         const [x0, y0, x1, y1] = ob.box;
-        if (x + 10 < x0 || x - 10 > x1 || y < y0 || y - 50 > y1) continue;
+        if (x + 6 < x0 || x - 6 > x1 || y < y0 || y - 26 > y1) continue;
         ob.draw(g);
       }
     }
@@ -2164,7 +2651,8 @@ class CityMap {
     const d = districtById(1).rect;
     const span = (d[2] - d[0] + d[3] - d[1] + 4) * 32;
     // Mai più lontano di un pixel d'arte per pixel dello schermo: la città si vede nitida da subito.
-    this.cam.z = Math.max(1, Math.round((this.vw / span) * this.dpr)) / this.dpr;
+    this.cam.z = Math.max(1, Math.round((this.vw * this.dpr) / 560)) / this.dpr;
+    void span;
     [this.cam.x, this.cam.y] = tileCenter((d[0] + d[2]) / 2, (d[1] + d[3]) / 2, 1);
     this.clamp();
     this.dirty = true;
@@ -2182,6 +2670,13 @@ class CityMap {
     return [minZ, Math.min(4 / this.dpr, 3)];
   }
   clamp() {
+    if (this.scene) {
+      this.cam.z = Math.max(0.5 / this.dpr, Math.min(4 / this.dpr, this.cam.z));
+      const [cx, cy] = tileCenter(ROOM / 2 - 0.5, ROOM / 2 - 0.5, 0);
+      this.cam.x = Math.max(cx - 260, Math.min(cx + 260, this.cam.x));
+      this.cam.y = Math.max(cy - 200, Math.min(cy + 60 + 0.3 * this.vh / this.cam.z, this.cam.y));
+      return;
+    }
     const [minZ, maxZ] = this.zoomLimits();
     this.cam.z = Math.max(minZ, Math.min(maxZ, this.cam.z));
     const hw = this.vw / 2 / this.cam.z, hh = this.vh / 2 / this.cam.z;
@@ -2269,11 +2764,24 @@ class CityMap {
     if (!this.city) return;
     const [wx, wy] = this.toWorld(sx, sy);
     let best = null;
-    for (const a of this.avatars.values()) {
+    const ks = this.avatarScale();
+    for (const a of this.visibleAvatars()) {
       const [x, y] = this.avatarScreen(a);
-      if (wx > x - 10 && wx < x + 10 && wy > y - 50 && wy < y + 3 && (!best || a.x + a.y > best.d)) best = { d: a.x + a.y, id: a.id };
+      if (wx > x - 10 * ks && wx < x + 10 * ks && wy > y - 50 * ks && wy < y + 3 && (!best || a.x + a.y > best.d)) best = { d: a.x + a.y, id: a.id };
     }
     if (best) return this.onTap?.({ kind: 'avatar', id: best.id });
+    if (this.scene) {
+      let hit = null;
+      for (const h of this.roomHits) { const [x0, y0, x1, y1] = h.box; if (wx >= x0 && wx <= x1 && wy >= y0 && wy <= y1 && (!hit || h.d > hit.d)) hit = h; }
+      const tx = Math.floor((wy / 16 + wx / 32) / 2), ty = Math.floor((wy / 16 - wx / 32) / 2);
+      const onFloor = tx >= 0 && ty >= 0 && tx < ROOM && ty < ROOM;
+      if (hit && (!onFloor || hit.d >= 0)) return this.onTap?.({ kind: 'furni', uid: hit.uid, x: tx, y: ty });
+      if (onFloor) return this.onTap?.({ kind: 'floor', x: tx, y: ty });
+      // La porta, sulla parete di sinistra
+      const dc = tileCenter(-0.5, ROOM_DOOR[1], 0);
+      if (Math.abs(wx - dc[0]) < 26 && wy < dc[1] && wy > dc[1] - 80) return this.onTap?.({ kind: 'door' });
+      return this.onTap?.({ kind: 'none' });
+    }
     let house = null;
     for (const ob of this.objects) {
       if (ob.type !== 'house') continue;
@@ -2326,6 +2834,7 @@ class CityMap {
     return { q, s: n / q };
   }
   fast() {
+    if (this.scene) return this.render(this.now, true);
     const L = this.layerCam, c = this.cam, d = this.dpr;
     const s = c.z / L.z;
     const g = this.g;
@@ -2342,8 +2851,30 @@ class CityMap {
     g.setTransform(scale, 0, 0, scale, w / 2 - this.cam.x * scale, h / 2 - this.cam.y * scale);
   }
 
+  renderRoom(t) {
+    const { q, s } = this.pixelScale();
+    const bw = Math.ceil(this.cv.width / q), bh = Math.ceil(this.cv.height / q);
+    const fr = this.frame;
+    if (fr.width !== bw || fr.height !== bh) { fr.width = bw; fr.height = bh; }
+    const fg = fr.getContext('2d');
+    fg.setTransform(1, 0, 0, 1, 0, 0);
+    const bg = fg.createLinearGradient(0, 0, 0, bh);
+    bg.addColorStop(0, '#20263a'); bg.addColorStop(1, '#0f1320');
+    fg.fillStyle = bg; fg.fillRect(0, 0, bw, bh);
+    this.worldTransform(fg, s, bw, bh);
+    const night = this.opts.night;
+    const avatars = this.visibleAvatars().map((a) => ({ x: a.x, y: a.y, draw: () => this.drawOneAvatar(fg, a, night) }));
+    this.roomHits = drawRoom(fg, roomOf(this.city, this.scene), { night, avatars, ...this.roomUI });
+    const g = this.g;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(fr, 0, 0, bw * q, bh * q);
+    this.overlay(g, t, { ...this.opts, selected: null });
+  }
+
   render(t, full) {
     if (!this.city) return;
+    if (this.scene) return this.renderRoom(t);
     const { q, s } = this.pixelScale();
     const bw = Math.ceil(this.cv.width / q), bh = Math.ceil(this.cv.height / q);
     for (const cv of [this.layer, this.frame]) if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; full = true; }
@@ -2398,18 +2929,21 @@ class CityMap {
     }
     // Come in Habbo i nomi stanno sugli omini; sulle case solo su quella selezionata.
     for (const l of this.labels) if (l.slot === o.selected) label(g, l.x, l.y + 4, l.text, l.me, z);
-    for (const a of this.avatars.values()) {
+    const k = this.avatarScale();
+    for (const a of this.visibleAvatars()) {
       const [x, y] = this.avatarScreen(a);
+      const head = y - 52 * k;
       if (a.me) {
         const bob = Math.sin(t / 300) * 1.5;
+        const s = Math.max(k, 0.7);
         g.fillStyle = '#ffd34d'; g.strokeStyle = 'rgba(60,40,0,0.6)'; g.lineWidth = 1 / z;
-        g.beginPath(); g.moveTo(x - 4, y - 60 + bob); g.lineTo(x + 4, y - 60 + bob); g.lineTo(x, y - 54 + bob); g.closePath(); g.fill(); g.stroke();
+        g.beginPath(); g.moveTo(x - 4 * s, head - 8 * s + bob); g.lineTo(x + 4 * s, head - 8 * s + bob); g.lineTo(x, head - 2 * s + bob); g.closePath(); g.fill(); g.stroke();
       }
-      if (a.me || z * this.dpr >= 3) label(g, x, y + 8, a.name, a.me, z);
+      if (a.me || this.scene || z * this.dpr >= 3) label(g, x, y + 8 * k, a.name, a.me, z);
       if (a.bubble) {
         const age = t - a.bubble.t0;
         if (age > 6500) { a.bubble = null; continue; }
-        bubble(g, x, y - 62 - Math.min(age / 900, 1) * 4, a.name, a.bubble.text, z, age > 5800 ? 1 - (age - 5800) / 700 : 1);
+        bubble(g, x, head - 12 * k - Math.min(age / 900, 1) * 4, a.name, a.bubble.text, z, age > 5800 ? 1 - (age - 5800) / 700 : 1);
       }
     }
     for (const [slot, t0] of this.born) {
@@ -2604,7 +3138,7 @@ class RemoteStore extends Base {
     this.es.addEventListener('say', (e) => this.emit('say', JSON.parse(e.data)));
     this.es.addEventListener('move', (e) => {
       const d = JSON.parse(e.data);
-      this.avatars[d.id] = [d.x, d.y];
+      this.avatars[d.id] = [d.x, d.y, d.room ?? null];
       this.emit('move', d);
     });
   }
@@ -2627,11 +3161,11 @@ class RemoteStore extends Base {
   async deleteAccount(password) { await this.call('POST', '/api/me/delete', { password }); this.me = null; await this.refresh(); this.emit('me'); }
   admin() { return this.call('GET', '/api/admin'); }
   // Il proprio omino: si muove subito qui, il server lo racconta agli altri.
-  move(x, y) {
+  move(x, y, room = null) {
     if (!this.me) return;
-    this.avatars[this.me.id] = [x, y];
-    this.emit('move', { id: this.me.id, x, y });
-    this.call('POST', '/api/move', { x, y }).catch(() => {});
+    this.avatars[this.me.id] = [x, y, room];
+    this.emit('move', { id: this.me.id, x, y, room });
+    this.call('POST', '/api/move', { x, y, room }).catch(() => {});
   }
   say(text) { checkSay(text); return this.call('POST', '/api/say', { text }); }
 }
@@ -2791,10 +3325,10 @@ class LocalStore extends Base {
     return { sources: Object.values(sources), outbox: this.db.inbox.map((m) => ({ to: m.to, subject: m.subject, body: m.body, at: m.at })), mailConfigured: false };
   }
 
-  move(x, y) {
+  move(x, y, room = null) {
     if (!this.me) return;
-    this.avatars[this.me.id] = [x, y];
-    this.emit('move', { id: this.me.id, x, y });
+    this.avatars[this.me.id] = [x, y, room];
+    this.emit('move', { id: this.me.id, x, y, room });
   }
   async say(text) { checkSay(text); return { ok: true }; }
   // Gli abitanti finti in città fanno due passi qua e là, e ogni tanto salutano.
@@ -2804,7 +3338,7 @@ class LocalStore extends Base {
       if (talkers.length) this.emit('say', { id: talkers[Math.floor(Math.random() * talkers.length)], text: SAY_PRESETS[Math.floor(Math.random() * SAY_PRESETS.length)] });
     }
     const s = this.db.state;
-    const ids = [...this.online].filter((id) => id.startsWith(DEMO_TAG) && this.avatars[id]);
+    const ids = [...this.online].filter((id) => id.startsWith(DEMO_TAG) && this.avatars[id] && !this.avatars[id][2]);
     if (!ids.length) return;
     const id = ids[Math.floor(Math.random() * ids.length)];
     const [x, y] = this.avatars[id];
@@ -3023,6 +3557,7 @@ function update() {
   // Barra in basso (non si tocca mentre si sta scrivendo un messaggio).
   const bottom = $('#bottom');
   if (document.activeElement?.id === 'chat-input') return;
+  if (ui.room) { bottom.replaceChildren(roomBar()); return; }
   if (ui.mode === 'choose') {
     bottom.replaceChildren(h('div', { class: 'bar choose' },
       h('span', { class: 'goal-ico' }, icon('pin')),
@@ -3040,6 +3575,7 @@ function update() {
   let cta;
   if (!mine) cta = h('button', { class: 'btn primary big', onclick: openRegister }, 'Vieni ad abitare qui');
   else if (!house) cta = h('button', { class: 'btn primary big', onclick: startChoosing }, 'Scegli il tuo lotto');
+  else if (house.status === 'casa') cta = h('button', { class: 'btn primary big', onclick: () => enterHouse(mine.id) }, icon('home'), 'Entra in casa');
   else cta = h('button', { class: 'btn big', onclick: () => { map.focus(house.slot, 2); openHouse(house.slot); } }, icon('home'), 'La mia casa');
   const talk = mine && map.avatarOf(mine.id) ? chatBar() : null;
   bottom.replaceChildren(h('div', { class: 'bar' }, talk, goal, cta));
@@ -3407,6 +3943,11 @@ function openHouse(slot) {
     h('div', {}, h('dt', {}, 'Arrivato il'), h('dd', {}, fmtDate(house.builtAt || house.reservedAt))),
     r.instagram ? h('div', {}, h('dt', {}, 'Instagram'), h('dd', {}, h('a', { href: `https://instagram.com/${r.instagram}`, target: '_blank', rel: 'noopener noreferrer' }, '@' + r.instagram))) : null);
   const actions = h('div', { class: 'stack' });
+  if (house.status === 'casa' && mine && (isMe || canVisit(city, mine.id, r.id))) {
+    actions.append(h('button', { class: 'btn primary', onclick: () => enterHouse(r.id) }, icon('home'), isMe ? 'Entra in casa' : `Entra da ${r.username}`));
+  } else if (house.status === 'casa' && mine && !isMe) {
+    actions.append(h('p', { class: 'small' }, roomOf(city, r.id).access === 'amici' ? 'Fa entrare solo gli amici.' : 'In questo momento non fa entrare visite.'));
+  }
   if (isMe) {
     actions.append(
       h('button', { class: 'btn', onclick: () => openBuild(slot, { restyle: true }) }, 'Rinnova la casa'),
@@ -3671,6 +4212,7 @@ function onTap(t) {
     return;
   }
   if (t.kind === 'avatar') return openSay(t.id);
+  if (ui.room) return onRoomTap(t);
   // Con il proprio omino in città, ogni tocco è anche una passeggiata.
   const walker = me() && map.avatarOf(me().id);
   const go = (x, y) => walker && walkTo(x, y);
@@ -3689,6 +4231,118 @@ function walkTo(x, y) {
   const ok = map.walk(me().id, x, y);
   if (ok) store.move(x, y);
   return ok;
+}
+
+/* Dentro casa ---------------------------------------------------------------- */
+
+function enterHouse(ownerId) {
+  const mine = me();
+  if (!mine) return openLogin();
+  const city = store.city;
+  if (!canVisit(city, mine.id, ownerId)) return toast('Il padrone di casa non fa entrare visite.', 'err');
+  if (!map.avatarOf(mine.id)) syncAvatars();
+  closeSheet();
+  ui.room = ownerId;
+  ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null;
+  map.walk(mine.id, ...ROOM_DOOR, ownerId);
+  store.move(...ROOM_DOOR, ownerId);
+  map.enterRoom(ownerId);
+  update();
+}
+function exitHouse() {
+  const owner = ui.room;
+  ui.room = null; ui.edit = false; ui.placing = null; ui.sel = null; ui.moving = null;
+  const house = residentHouse(store.city, owner);
+  const [x, y] = house ? frontOf(store.city, house.slot) : spawnPoint(store.city, me().id);
+  map.walk(me().id, x, y, null);
+  store.move(x, y, null);
+  map.exitRoom();
+  if (house) map.focus(house.slot);
+  update();
+}
+const isMyRoom = () => me() && ui.room === me().id;
+
+async function onRoomTap(t) {
+  if (t.kind === 'door') return exitHouse();
+  const room = roomOf(store.city, ui.room);
+  if (ui.edit && isMyRoom()) {
+    if (t.kind === 'floor' && ui.placing) {
+      const p = ui.placing;
+      const ok = await run(null, async () => { await store.op({ type: 'furni', act: 'add', t: p.t, x: t.x, y: t.y, r: p.r, c: p.c }); return true; });
+      if (ok) { ui.placing = null; toast(`${furniById(p.t).label}: al suo posto`); }
+      return update();
+    }
+    if (t.kind === 'floor' && ui.moving) {
+      const uid = ui.moving;
+      const ok = await run(null, async () => { await store.op({ type: 'furni', act: 'move', uid, x: t.x, y: t.y }); return true; });
+      if (ok) ui.moving = null;
+      map.setRoomUI({ selectedUid: ui.sel });
+      return update();
+    }
+    if (t.kind === 'furni') { ui.sel = t.uid; ui.moving = null; ui.placing = null; map.setRoomUI({ selectedUid: t.uid }); return update(); }
+    if (t.kind === 'floor') { ui.sel = null; map.setRoomUI({ selectedUid: null }); return update(); }
+    return;
+  }
+  // Fuori dalla modalità arredo ogni tocco è una passeggiata (verso il mobile o la casella).
+  if (t.kind === 'floor' || t.kind === 'furni') {
+    if (!map.walk(me().id, t.x, t.y, ui.room)) return;
+    store.move(t.x, t.y, ui.room);
+  }
+  void room;
+}
+
+function roomBar() {
+  const city = store.city;
+  const owner = city.residents[ui.room];
+  const mine = isMyRoom();
+  const room = roomOf(city, ui.room);
+  const title = h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, mine ? 'Sei a casa' : 'Sei ospite'), h('strong', {}, mine ? 'Casa tua' : `Casa di ${owner?.username || '…'}`));
+  const head = h('div', { class: 'room-head' }, title,
+    h('span', { class: 'row-actions' },
+      mine ? h('button', { class: 'btn small' + (ui.edit ? ' primary' : ''), onclick: () => { ui.edit = !ui.edit; ui.placing = null; ui.sel = null; ui.moving = null; map.setRoomUI({ selectedUid: null }); update(); } }, ui.edit ? 'Fine' : 'Arreda') : null,
+      h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
+  if (!ui.edit || !mine) return h('div', { class: 'bar room-bar' }, head, chatBar());
+  let body;
+  if (ui.sel) {
+    const it = room.items.find((x) => x.uid === ui.sel);
+    if (!it) { ui.sel = null; return roomBar(); }
+    const f = furniById(it.t);
+    const act = (op, after) => async (e) => { await run(e.currentTarget, async () => { await store.op({ type: 'furni', uid: it.uid, ...op }); after?.(); }); update(); };
+    body = h('div', { class: 'stack' },
+      h('p', {}, h('strong', {}, f.label), ui.moving ? ' · tocca il pavimento dove spostarlo' : ''),
+      h('div', { class: 'row-wrap' },
+        h('button', { class: 'btn small', onclick: act({ act: 'rotate' }) }, 'Ruota'),
+        f.color ? h('button', { class: 'btn small', onclick: act({ act: 'color' }) }, 'Colore') : null,
+        h('button', { class: 'btn small' + (ui.moving ? ' primary' : ''), onclick: () => { ui.moving = ui.moving ? null : it.uid; update(); } }, 'Sposta'),
+        h('button', { class: 'btn small danger', onclick: act({ act: 'remove' }, () => { ui.sel = null; map.setRoomUI({ selectedUid: null }); }) }, 'Togli'),
+        h('button', { class: 'btn small ghost', onclick: () => { ui.sel = null; ui.moving = null; map.setRoomUI({ selectedUid: null }); update(); } }, 'Chiudi')));
+  } else if (ui.placing) {
+    const f = furniById(ui.placing.t);
+    body = h('div', { class: 'stack' },
+      h('p', {}, 'Tocca il pavimento dove vuoi mettere ', h('strong', {}, f.label.toLowerCase()), '.'),
+      h('div', { class: 'row-wrap' },
+        h('button', { class: 'btn small', onclick: () => { ui.placing.r = ui.placing.r ? 0 : 1; toast(ui.placing.r ? 'Girato di lato' : 'Girato di fronte'); } }, 'Ruota'),
+        f.color ? h('button', { class: 'btn small', onclick: () => { ui.placing.c = (ui.placing.c + 1) % 8; update(); } }, 'Colore') : null,
+        h('button', { class: 'btn small ghost', onclick: () => { ui.placing = null; update(); } }, 'Annulla')));
+  } else {
+    const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'Catalogo dei mobili' }, FURNI.map((f) => {
+      const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
+      drawFurniIcon(cv, f.id, 0);
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => { ui.placing = { t: f.id, r: 0, c: 0 }; update(); } }, cv, h('span', {}, f.label));
+    }));
+    const chips = (list, value, onPick) => h('div', { class: 'swatches' }, list.map((o) => h('button', { class: 'swatch' + (o.id === value ? ' on' : ''), onclick: () => onPick(o.id) }, o.label)));
+    const style = (op) => run(null, async () => { await store.op({ type: 'roomStyle', ...op }); update(); });
+    // Una scheda alla volta, così la stanza resta visibile sopra il pannello.
+    const tab = ui.editTab || 'mobili';
+    const tabs = h('div', { class: 'seg', role: 'tablist' }, [['mobili', 'Mobili'], ['pavimento', 'Pavimento'], ['pareti', 'Pareti'], ['ingresso', 'Chi entra']].map(([id, label]) =>
+      h('button', { class: 'seg-btn' + (tab === id ? ' on' : ''), role: 'tab', 'aria-selected': String(tab === id), onclick: () => { ui.editTab = id; update(); } }, label)));
+    const pane = tab === 'pavimento' ? chips(FLOORS, room.floor, (v) => style({ floor: v }))
+      : tab === 'pareti' ? h('div', { class: 'swatches' }, WALLS.map((c) => h('button', { class: 'swatch color' + (c === room.wall ? ' on' : ''), style: `--sw:${c}`, 'aria-label': 'Colore delle pareti', onclick: () => style({ wall: c }) })))
+        : tab === 'ingresso' ? h('div', { class: 'stack' }, chips(ACCESS, room.access, (v) => style({ access: v })), h('p', { class: 'small' }, 'Chi entra vede i tuoi mobili e può parlare con te. Solo tu puoi spostarli.'))
+          : strip;
+    body = h('div', { class: 'stack' }, tabs, pane);
+  }
+  return h('div', { class: 'bar room-bar editing' }, head, body);
 }
 
 // Gli omini in città: chi è collegato (e io, se ho fatto l'accesso).
@@ -3715,7 +4369,7 @@ async function boot() {
   }
   map.setCity(store.city, { animateNew: false });
   store.subscribe((kind, data) => {
-    if (kind === 'move') { if (data.id !== me()?.id) map.walk(data.id, data.x, data.y); return; }
+    if (kind === 'move') { if (data.id !== me()?.id) map.walk(data.id, data.x, data.y, data.room ?? null); return; }
     if (kind === 'say') { if (data.id !== me()?.id) map.say(data.id, data.text); return; }
     map.setCity(store.city);
     syncAvatars();

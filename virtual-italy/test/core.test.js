@@ -219,3 +219,28 @@ test('nuvolette: testo ripulito, lungo al massimo 60 caratteri, niente parole of
   assert.throws(() => checkSay('a'.repeat(61)), /60/);
   assert.throws(() => checkSay('vaffanculo'), /non ammesse/);
 });
+
+test('dentro casa: mobili dentro la stanza, senza sovrapporsi, porta libera, percorsi tra i mobili', async () => {
+  const { roomOf, roomPath, canVisit, ROOM, ROOM_DOOR } = await import('../public/js/core.js');
+  let s = join(join(emptyState(0), 'a', 'anna.b'), 'b', 'bruno.c');
+  assert.throws(() => applyOp(s, { type: 'furni', act: 'add', t: 'sedia', x: 1, y: 1 }, as('a')), /Prima costruisci/);
+  s = applyOp(s, { type: 'chooseSlot', slot: freeLots(s)[0] }, as('a')).state;
+  const add = (op) => applyOp(s, { type: 'furni', act: 'add', ...op }, as('a'));
+  assert.throws(() => add({ t: 'divano', x: ROOM - 1, y: 0 }), /non entra/);
+  assert.throws(() => add({ t: 'sedia', x: ROOM_DOOR[0], y: ROOM_DOOR[1] }), /porta/);
+  assert.throws(() => add({ t: 'trono', x: 1, y: 1 }), /sconosciuto/);
+  let r = add({ t: 'divano', x: 2, y: 2 }); s = r.state;
+  assert.throws(() => add({ t: 'sedia', x: 3, y: 2 }), /già un altro/);
+  s = add({ t: 'tappeto', x: 2, y: 2 }).state; // il tappeto può stare sotto il divano
+  assert.throws(() => applyOp(s, { type: 'furni', act: 'rotate', uid: r.result.uid }, as('b')), /Prima costruisci/, 'gli altri non toccano i mobili');
+  s = applyOp(s, { type: 'furni', act: 'rotate', uid: r.result.uid }, as('a')).state;
+  assert.equal(roomOf(s, 'a').items.find((i) => i.t === 'divano').r, 1);
+  const p = roomPath(roomOf(s, 'a'), ROOM_DOOR, [7, 0]);
+  assert.ok(p && p.every(([x, y]) => !(x === 2 && (y === 2 || y === 3))), 'si gira attorno al divano');
+  assert.ok(canVisit(s, 'b', 'a'));
+  s = applyOp(s, { type: 'roomStyle', access: 'amici' }, as('a')).state;
+  assert.equal(canVisit(s, 'b', 'a'), false);
+  assert.throws(() => applyOp(s, { type: 'roomStyle', floor: 'oro' }, as('a')), /sconosciuto/);
+  s = applyOp(s, { type: 'leave', id: 'a' }, sys()).state;
+  assert.equal(s.rooms.a, undefined, 'chi se ne va porta via i mobili');
+});

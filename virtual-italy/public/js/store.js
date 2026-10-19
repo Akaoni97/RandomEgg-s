@@ -56,7 +56,7 @@ export class RemoteStore extends Base {
     this.es.addEventListener('say', (e) => this.emit('say', JSON.parse(e.data)));
     this.es.addEventListener('move', (e) => {
       const d = JSON.parse(e.data);
-      this.avatars[d.id] = [d.x, d.y];
+      this.avatars[d.id] = [d.x, d.y, d.room ?? null];
       this.emit('move', d);
     });
   }
@@ -79,11 +79,11 @@ export class RemoteStore extends Base {
   async deleteAccount(password) { await this.call('POST', '/api/me/delete', { password }); this.me = null; await this.refresh(); this.emit('me'); }
   admin() { return this.call('GET', '/api/admin'); }
   // Il proprio omino: si muove subito qui, il server lo racconta agli altri.
-  move(x, y) {
+  move(x, y, room = null) {
     if (!this.me) return;
-    this.avatars[this.me.id] = [x, y];
-    this.emit('move', { id: this.me.id, x, y });
-    this.call('POST', '/api/move', { x, y }).catch(() => {});
+    this.avatars[this.me.id] = [x, y, room];
+    this.emit('move', { id: this.me.id, x, y, room });
+    this.call('POST', '/api/move', { x, y, room }).catch(() => {});
   }
   say(text) { checkSay(text); return this.call('POST', '/api/say', { text }); }
 }
@@ -243,10 +243,10 @@ export class LocalStore extends Base {
     return { sources: Object.values(sources), outbox: this.db.inbox.map((m) => ({ to: m.to, subject: m.subject, body: m.body, at: m.at })), mailConfigured: false };
   }
 
-  move(x, y) {
+  move(x, y, room = null) {
     if (!this.me) return;
-    this.avatars[this.me.id] = [x, y];
-    this.emit('move', { id: this.me.id, x, y });
+    this.avatars[this.me.id] = [x, y, room];
+    this.emit('move', { id: this.me.id, x, y, room });
   }
   async say(text) { checkSay(text); return { ok: true }; }
   // Gli abitanti finti in città fanno due passi qua e là, e ogni tanto salutano.
@@ -256,7 +256,7 @@ export class LocalStore extends Base {
       if (talkers.length) this.emit('say', { id: talkers[Math.floor(Math.random() * talkers.length)], text: SAY_PRESETS[Math.floor(Math.random() * SAY_PRESETS.length)] });
     }
     const s = this.db.state;
-    const ids = [...this.online].filter((id) => id.startsWith(DEMO_TAG) && this.avatars[id]);
+    const ids = [...this.online].filter((id) => id.startsWith(DEMO_TAG) && this.avatars[id] && !this.avatars[id][2]);
     if (!ids.length) return;
     const id = ids[Math.floor(Math.random() * ids.length)];
     const [x, y] = this.avatars[id];

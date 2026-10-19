@@ -137,7 +137,7 @@ test('gli omini: posizione iniziale, movimento raccontato agli altri', async () 
   assert.equal((await a('POST', '/api/move', { x: 40, y: 28 })).status, 200);
   let text = '';
   for (let i = 0; i < 5 && !text.includes('event: move'); i++) text += new TextDecoder().decode((await reader.read()).value);
-  assert.match(text, /event: move\ndata: \{"id":"u_[0-9a-f]+","x":40,"y":28\}/);
+  assert.match(text, /event: move\ndata: \{"id":"u_[0-9a-f]+","x":40,"y":28,"room":null\}/);
   // Nuvolette: arrivano agli altri, le parole offensive no.
   assert.equal((await a('POST', '/api/say', { text: 'sei uno stronzo' })).status, 400);
   assert.equal((await a('POST', '/api/say', { text: 'x'.repeat(61) })).status, 400);
@@ -146,6 +146,31 @@ test('gli omini: posizione iniziale, movimento raccontato agli altri', async () 
   for (let i = 0; i < 5 && !text.includes('event: say'); i++) text += new TextDecoder().decode((await reader.read()).value);
   assert.match(text, /event: say\ndata: \{"id":"u_[0-9a-f]+","text":"Ciao a tutti!"\}/);
   ctrl.abort();
+});
+
+test('dentro casa: si entra solo nelle case aperte, si arreda solo la propria', async () => {
+  const host = client();
+  const guest = client();
+  const rh = await host('POST', '/api/register', form('casa@example.com', 'padrone.casa'));
+  await host('POST', '/api/confirm', { token: tokenOf(rh.body.devLink) });
+  let city = (await host('GET', '/api/city')).body.city;
+  const free = PLAN.lotsByDistrict.get(1).find((k) => !city.houses[k]);
+  assert.equal((await host('POST', '/api/op', { op: { type: 'chooseSlot', slot: free } })).status, 200);
+  const hostId = rh.body.me.id;
+  assert.equal((await host('POST', '/api/move', { x: 3, y: 3, room: hostId })).status, 200, 'a casa propria si entra');
+  assert.equal((await host('POST', '/api/move', { x: 20, y: 3, room: hostId })).status, 400, 'fuori dalla stanza');
+  assert.equal((await host('POST', '/api/move', { x: 1, y: 1, room: 'u_inesistente' })).status, 404);
+  const add = await host('POST', '/api/op', { op: { type: 'furni', act: 'add', t: 'divano', x: 2, y: 2, c: 1 } });
+  assert.equal(add.status, 200);
+  assert.equal((await host('POST', '/api/op', { op: { type: 'furni', act: 'add', t: 'sedia', x: 3, y: 2 } })).status, 400, 'non si sovrappongono');
+  city = (await guest('GET', '/api/city')).body.city;
+  assert.equal(city.rooms[hostId].items[0].t, 'divano', 'gli ospiti vedono l\'arredamento');
+  const rg = await guest('POST', '/api/register', form('ospite@example.com', 'ospite.uno'));
+  await guest('POST', '/api/confirm', { token: tokenOf(rg.body.devLink) });
+  assert.equal((await guest('POST', '/api/move', { x: 0, y: 5, room: hostId })).status, 200, 'casa aperta a tutti');
+  await host('POST', '/api/op', { op: { type: 'roomStyle', access: 'nessuno', floor: 'cotto' } });
+  assert.equal((await guest('POST', '/api/move', { x: 1, y: 5, room: hostId })).status, 403, 'casa chiusa alle visite');
+  assert.equal((await guest('POST', '/api/op', { op: { type: 'furni', act: 'remove', uid: add.body.result.uid } })).status, 400, 'gli ospiti non toccano i mobili');
 });
 
 test('aggiornamenti in tempo reale', async () => {

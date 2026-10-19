@@ -15,7 +15,7 @@ Serve **Node.js 22.5 o successivo**. Non ci sono dipendenze da installare.
 npm start            # città vera, vuota                        → http://localhost:8080
 npm run dev          # come sopra, con i link delle email in console e redazione@example.com come redazione
 npm run demo         # città già abitata da 18 abitanti finti (archivio separato in data-demo/)
-npm test             # 20 prove: regole della città + server (iscrizione, email, permessi, omini, nuvolette, tempo reale)
+npm test             # 22 prove: regole della città + server (iscrizione, email, permessi, omini, nuvolette, tempo reale)
 npm run build:demo   # genera dist/virtual-italy-demo.html: demo in un solo file, senza server
 ```
 
@@ -41,6 +41,7 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 ## Cosa c'è in questa versione
 
 - **Mappa isometrica in pixel art** (stile Habbo), con trascinamento, pizzico e zoom a scatti nitidi. Il terreno è a gradoni (pianura, paese, collina, montagne) con scarpate e scale. Il centro ha la piazza a scacchi con l'edicola del giornale, il Muro dei Fondatori e la fontana, che arriva a 25 abitanti.
+- **Dentro casa, come in Habbo:** ogni casa ha una stanza 8×8 da arredare con 17 mobili (ruotabili, alcuni con il colore a scelta), cinque pavimenti e otto colori di pareti. Il padrone decide chi può entrare (tutti, solo amici, solo lui), e gli ospiti si vedono e parlano in tempo reale.
 - **Omini e nuvolette:** ogni abitante in città ha un omino personalizzabile (editor del personaggio) che cammina dove tocchi. Si parla con la barra in basso o salutando chi si incontra, e i messaggi compaiono a tutti in tempo reale.
 - **Iscrizione** con email, nome utente e password, conferma via email entro 24 ore, accesso con email o nome utente, password dimenticata.
 - **Anti-bot**: campo nascosto, tempo minimo di compilazione, limiti per IP. Filtro su nomi e frasi offensive, nomi riservati (sindaco, redazione…).

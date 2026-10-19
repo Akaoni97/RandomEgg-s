@@ -288,6 +288,97 @@ export function spawnPoint(s, residentId) {
   return h ? frontOf(s, h.slot) : PIAZZA_CENTER;
 }
 
+/* Dentro casa: stanza isometrica da arredare ---------------------------- */
+
+export const ROOM = 8;                 // la stanza è 8×8 caselle
+export const ROOM_DOOR = [0, 5];       // si entra dal muro di sinistra, su questa casella
+export const ROOM_MAX_ITEMS = 80;
+export const FLOORS = [
+  { id: 'parquet', label: 'Parquet' }, { id: 'piastrelle', label: 'Piastrelle' },
+  { id: 'cotto', label: 'Cotto' }, { id: 'marmo', label: 'Marmo' }, { id: 'moquette', label: 'Moquette' },
+];
+export const WALLS = ['#efe6d2', '#f3d6c3', '#d7e6ef', '#dcebd2', '#f4e7b8', '#d9d0e8', '#c9b8a6', '#5b6b7a'];
+export const FURNI_COLORS = ['#c0392b', '#2f6b9f', '#2f7d4f', '#e0a92a', '#7a4a6b', '#e86b8a', '#6b4a2f', '#4b4f56'];
+// w lungo x e d lungo y con rotazione 0; con rotazione 1 si scambiano. `rug` si può calpestare.
+export const FURNI = [
+  { id: 'sedia', label: 'Sedia', w: 1, d: 1, color: true },
+  { id: 'poltrona', label: 'Poltrona', w: 1, d: 1, color: true },
+  { id: 'divano', label: 'Divano', w: 2, d: 1, color: true },
+  { id: 'tavolino', label: 'Tavolino', w: 1, d: 1 },
+  { id: 'tavolo', label: 'Tavolo', w: 2, d: 1 },
+  { id: 'letto', label: 'Letto', w: 1, d: 2, color: true },
+  { id: 'tappeto', label: 'Tappeto', w: 2, d: 2, color: true, rug: true },
+  { id: 'lampada', label: 'Lampada', w: 1, d: 1 },
+  { id: 'pianta', label: 'Pianta', w: 1, d: 1 },
+  { id: 'libreria', label: 'Libreria', w: 1, d: 1 },
+  { id: 'tv', label: 'Televisore', w: 1, d: 1 },
+  { id: 'frigo', label: 'Frigorifero', w: 1, d: 1 },
+  { id: 'cucina', label: 'Cucina', w: 2, d: 1 },
+  { id: 'armadio', label: 'Armadio', w: 1, d: 1 },
+  { id: 'scrivania', label: 'Scrivania', w: 2, d: 1 },
+  { id: 'camino', label: 'Camino', w: 2, d: 1 },
+  { id: 'acquario', label: 'Acquario', w: 1, d: 1 },
+];
+export const ACCESS = [{ id: 'tutti', label: 'Tutti' }, { id: 'amici', label: 'Solo amici' }, { id: 'nessuno', label: 'Solo io' }];
+export const furniById = (id) => FURNI.find((f) => f.id === id);
+export const defaultRoom = () => ({ floor: 'parquet', wall: WALLS[0], access: 'tutti', items: [] });
+export const roomOf = (s, ownerId) => s.rooms?.[ownerId] || defaultRoom();
+export function footprint(it) {
+  const f = furniById(it.t);
+  const [w, d] = it.r ? [f.d, f.w] : [f.w, f.d];
+  return { x0: it.x, y0: it.y, x1: it.x + w - 1, y1: it.y + d - 1, w, d };
+}
+function cellsOf(it) {
+  const { x0, y0, x1, y1 } = footprint(it);
+  const out = [];
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) out.push(key(x, y));
+  return out;
+}
+// Controlla che un mobile stia nella stanza, non copra la porta e non si sovrapponga ad altri
+// (i tappeti possono stare sotto ai mobili, ma non sopra un altro tappeto).
+function checkPlace(room, it, ignoreUid) {
+  const f = furniById(it.t);
+  const { x0, y0, x1, y1 } = footprint(it);
+  if (x0 < 0 || y0 < 0 || x1 >= ROOM || y1 >= ROOM) throw invalid('Il mobile non entra in quel punto: prova più al centro.');
+  const cells = new Set(cellsOf(it));
+  if (!f.rug && cells.has(key(...ROOM_DOOR))) throw invalid('Lascia libero il passaggio davanti alla porta.');
+  for (const o of room.items) {
+    if (o.uid === ignoreUid) continue;
+    if (!!furniById(o.t).rug !== !!f.rug) continue;
+    if (cellsOf(o).some((c) => cells.has(c))) throw invalid('Lì c\'è già un altro mobile.');
+  }
+}
+export function canVisit(s, visitorId, ownerId) {
+  if (visitorId === ownerId) return true;
+  const access = roomOf(s, ownerId).access;
+  if (access === 'tutti') return true;
+  if (access === 'amici') return !!visitorId && areFriends(s, visitorId, ownerId);
+  return false;
+}
+// Dentro casa si cammina sul pavimento libero (i tappeti si calpestano).
+export function roomPath(room, from, to) {
+  const blocked = new Set();
+  for (const it of room.items) if (!furniById(it.t)?.rug) for (const c of cellsOf(it)) blocked.add(c);
+  const ok = (x, y) => x >= 0 && y >= 0 && x < ROOM && y < ROOM && !blocked.has(key(x, y));
+  const [sx, sy] = from, [tx, ty] = to;
+  if (sx === tx && sy === ty) return [];
+  if (!ok(tx, ty)) return null;
+  const start = key(sx, sy), goal = key(tx, ty);
+  const prev = new Map([[start, null]]);
+  const queue = [[sx, sy]];
+  for (let i = 0; i < queue.length; i++) {
+    const [x, y] = queue[i];
+    for (const [dx, dy] of STEPS) {
+      const nx = x + dx, ny = y + dy, nk = key(nx, ny);
+      if (prev.has(nk) || !ok(nx, ny)) continue;
+      prev.set(nk, key(x, y));
+      if (nk === goal) { const p = []; for (let k = goal; k !== start; k = prev.get(k)) p.push(parseKey(k)); return p.reverse(); }
+      queue.push([nx, ny]);
+    }
+  }
+  return null;
+}
+
 // Le nuvolette sopra la testa: frasi pronte oppure un messaggio breve e filtrato.
 export const SAY_PRESETS = ['Ciao!', 'Buongiorno!', 'Buonasera!', 'Come va?', 'Benvenuto!', 'Bella casa!', 'Ci vediamo in piazza', 'A dopo!', '👋', '😄', '❤️', '👍'];
 export const SAY_MAX = 60;
@@ -401,6 +492,7 @@ export function emptyState(now = Date.now()) {
     reports: [],       // { id, from, target, reason, at, resolved }
     news: [],          // { id, kind, at, residentId?, n?, district?, slot? }
     milestones: [],
+    rooms: {},         // id abitante → { floor, wall, access, items: [{ uid, t, x, y, r, c }] }
   };
   addNews(s, { kind: 'founding', at: now });
   return refresh(s);
@@ -519,6 +611,47 @@ const OPS = {
     return { ok: true };
   },
 
+  // Stile della stanza: pavimento, colore delle pareti, chi può entrare.
+  roomStyle(s, op, ctx) {
+    const r = needResident(s, ctx);
+    if (!residentHouse(s, r.id)) throw invalid('Prima costruisci la tua casa.');
+    s.rooms ||= {};
+    const room = (s.rooms[r.id] ||= defaultRoom());
+    if (op.floor !== undefined) { if (!FLOORS.some((f) => f.id === op.floor)) throw invalid('Pavimento sconosciuto.'); room.floor = op.floor; }
+    if (op.wall !== undefined) { if (!WALLS.includes(op.wall)) throw invalid('Colore sconosciuto.'); room.wall = op.wall; }
+    if (op.access !== undefined) { if (!ACCESS.some((a) => a.id === op.access)) throw invalid('Scelta sconosciuta.'); room.access = op.access; }
+    return { ok: true };
+  },
+
+  // Mobili: aggiungere, spostare, ruotare, cambiare colore, togliere. Solo nella propria casa.
+  furni(s, op, ctx) {
+    const r = needResident(s, ctx);
+    if (!residentHouse(s, r.id)) throw invalid('Prima costruisci la tua casa.');
+    s.rooms ||= {};
+    const room = (s.rooms[r.id] ||= defaultRoom());
+    const int = (v) => Number.isInteger(v) ? v : NaN;
+    if (op.act === 'add') {
+      const f = furniById(op.t);
+      if (!f) throw invalid('Mobile sconosciuto.');
+      if (room.items.length >= ROOM_MAX_ITEMS) throw invalid(`In casa ci stanno al massimo ${ROOM_MAX_ITEMS} mobili.`);
+      const it = { uid: uid('f'), t: f.id, x: int(op.x), y: int(op.y), r: op.r ? 1 : 0, c: f.color ? (Number.isInteger(op.c) && op.c >= 0 && op.c < FURNI_COLORS.length ? op.c : 0) : 0 };
+      checkPlace(room, it);
+      room.items.push(it);
+      return { uid: it.uid };
+    }
+    const it = room.items.find((o) => o.uid === op.uid);
+    if (!it) throw new DomainError('notfound', 'Mobile non trovato.');
+    if (op.act === 'remove') { room.items = room.items.filter((o) => o !== it); return { ok: true }; }
+    if (op.act === 'color') { if (furniById(it.t).color) it.c = (it.c + 1) % FURNI_COLORS.length; return { ok: true }; }
+    const next = { ...it };
+    if (op.act === 'move') { next.x = int(op.x); next.y = int(op.y); }
+    else if (op.act === 'rotate') next.r = it.r ? 0 : 1;
+    else throw invalid('Azione sconosciuta.');
+    checkPlace(room, next, it.uid);
+    Object.assign(it, next);
+    return { ok: true };
+  },
+
   profile(s, op, ctx) {
     const r = needResident(s, ctx);
     if (op.bio !== undefined) r.bio = cleanBio(op.bio);
@@ -579,6 +712,7 @@ const OPS = {
     s.requests = s.requests.filter((q) => q.from !== id && q.to !== id);
     s.friendships = s.friendships.filter((f) => f.a !== id && f.b !== id);
     delete s.sentLog[id];
+    if (s.rooms) delete s.rooms[id];
     refresh(s, now);
     return { ok: true };
   },
@@ -623,7 +757,7 @@ export function publicView(s, viewerId, admin = false) {
   }
   const v = {
     rev: s.rev, createdAt: s.createdAt, openDistricts: s.openDistricts, residents, houses: s.houses,
-    roads: s.roads, doors: s.doors, news: s.news.slice(0, 120), milestones: s.milestones,
+    roads: s.roads, doors: s.doors, news: s.news.slice(0, 120), milestones: s.milestones, rooms: s.rooms || {},
     requests: viewerId ? s.requests.filter((q) => q.from === viewerId || q.to === viewerId) : [],
     friendships: viewerId ? s.friendships.filter((f) => f.a === viewerId || f.b === viewerId) : [],
     reports: [],
