@@ -385,7 +385,7 @@ function swatches(name, list, value, onPick, colorOf) {
 function openBuild(slot, { restyle = false } = {}) {
   const current = restyle ? myHouse().style : makeStyle(slot);
   const choice = { roof: current.roof, door: current.door, garden: current.garden, deco: current.deco };
-  const preview = h('canvas', { class: 'preview', width: 320, height: 240, 'aria-label': 'Anteprima della casa' });
+  const preview = h('canvas', { class: 'preview', width: 640, height: 480, 'aria-label': 'Anteprima della casa' });
   const groups = h('div', { class: 'stack' });
   const paint = () => {
     drawPreview(preview, makeStyle(slot, choice));
