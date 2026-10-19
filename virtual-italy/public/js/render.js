@@ -8,7 +8,7 @@ import {
 } from './core.js';
 import { shade, ih, clamp01, poly, add, lerp, blob, glow } from './art.js';
 import {
-  TILE, townCenter, TOWN_WORLD, townElev, surfaceOf, drawTown, drawTownLights, drawTownAmbient, townTileAt, drawHouse3, townVisible,
+  TILE, townCenter, TOWN_WORLD, townElev, surfaceOf, drawTown, drawTownLights, drawTownAmbient, townTileAt, drawHouse3, townVisible, warmLight,
 } from './town.js';
 
 
@@ -1163,6 +1163,13 @@ export class CityMap {
       const cg = cv.getContext('2d');
       cg.setTransform(s, 0, 0, s, ox - px0, oy - py0);
       ob.draw(cg);
+      // Di giorno il ritaglio prende la stessa luce calda dello strato fisso (poi si rimettono i bordi trasparenti).
+      if (!this.opts.night) {
+        const shape = document.createElement('canvas'); shape.width = cv.width; shape.height = cv.height;
+        shape.getContext('2d').drawImage(cv, 0, 0);
+        warmLight(cg, bw, bh, -px0, -py0);
+        cg.save(); cg.setTransform(1, 0, 0, 1, 0, 0); cg.globalCompositeOperation = 'destination-in'; cg.drawImage(shape, 0, 0); cg.restore();
+      }
       ob.sprite = { cv, px0, py0 };
     }
     g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1216,6 +1223,8 @@ export class CityMap {
       lg.fillStyle = sky; lg.fillRect(0, 0, bw, bh);
       this.worldTransform(lg, s, bw, bh);
       const res = drawTown(lg, this.city, view, o);
+      // La luce calda del giorno si stende una volta sola sullo strato fisso.
+      if (!o.night) warmLight(lg, bw, bh);
       this.objects = res.objects;
       this.labels = res.labels;
       this.layerCam = { ...this.cam, q };
