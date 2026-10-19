@@ -54,6 +54,7 @@ export class RemoteStore extends Base {
       else this.emit('online');
     });
     this.es.addEventListener('say', (e) => this.emit('say', JSON.parse(e.data)));
+    this.es.addEventListener('act', (e) => this.emit('act', JSON.parse(e.data)));
     this.es.addEventListener('move', (e) => {
       const d = JSON.parse(e.data);
       this.avatars[d.id] = [d.x, d.y, d.room ?? null];
@@ -86,6 +87,7 @@ export class RemoteStore extends Base {
     this.call('POST', '/api/move', { x, y, room }).catch(() => {});
   }
   say(text) { checkSay(text); return this.call('POST', '/api/say', { text }); }
+  act(act) { return this.call('POST', '/api/act', { act }).catch(() => {}); }
 }
 
 /* Demo nel browser ---------------------------------------------------------- */
@@ -102,6 +104,8 @@ export class LocalStore extends Base {
     const saved = load();
     this.db = saved?.version === 1 ? saved : this.fresh();
     this.me = this.db.session ? this.meView(this.db.session) : null;
+    // A settimana finita il giornale annuncia la Casa della settimana.
+    if (applyOp(this.db.state, { type: 'weekly' }, { system: true, now: Date.now() }).result.changed) this.apply({ type: 'weekly' }, { system: true });
     this.publish();
     // Qualche abitante finto entra ed esce, per vedere le finestre accese di sera, e passeggia.
     this.timer = setInterval(() => this.shuffleOnline(), 15000);
@@ -109,7 +113,28 @@ export class LocalStore extends Base {
   }
   fresh() {
     const now = Date.now();
-    return { version: 1, state: seedResidents(emptyState(now - 6 * 86400000), 14, now), accounts: {}, tokens: {}, session: null, inbox: [] };
+    const state = seedResidents(emptyState(now - 6 * 86400000), 14, now);
+    // Qualche cuore già dato in settimana, così la classifica delle case non parte vuota.
+    const ids = Object.keys(state.residents);
+    ids.forEach((owner, i) => {
+      const n = (i * 5) % 4;
+      for (let k = 1; k <= n; k++) (state.hearts[owner] ||= {})[ids[(i + k) % ids.length]] = now - k * 3600000;
+    });
+    // Case dei vicini già arredate, così le visite hanno qualcosa da vedere.
+    const LAYOUTS = [
+      [['tappeto', 2, 2, 0, 1], ['divano', 2, 1, 0, 1], ['tavolino', 3, 3], ['tv', 3, 5], ['lampada', 0, 0], ['libreria', 4, 0], ['pianta', 7, 7], ['letto', 7, 1]],
+      [['tavolo', 3, 3], ['sedia', 3, 2, 0, 2], ['sedia', 4, 2, 0, 2], ['cucina', 5, 0], ['frigo', 7, 0], ['vaso', 3, 4, 0, 5], ['pianta', 0, 0], ['camino', 1, 7]],
+      [['letto', 6, 2, 0, 4], ['armadio', 7, 0], ['scrivania', 2, 0], ['sedia', 2, 1, 0, 6], ['tappeto', 3, 4, 0, 3], ['pouf', 4, 5, 0, 5], ['acquario', 0, 0], ['jukebox', 7, 7]],
+    ];
+    const floors = ['parquet', 'piastrelle', 'cotto', 'marmo', 'moquette'];
+    Object.values(state.houses).forEach((h, i) => {
+      if (h.status !== 'casa') return;
+      state.rooms[h.residentId] = {
+        floor: floors[i % floors.length], wall: ['#efe6d2', '#f3d6c3', '#d7e6ef', '#dcebd2', '#f4e7b8'][i % 5], access: 'tutti',
+        items: LAYOUTS[i % LAYOUTS.length].map(([t, x, y, r = 0, c = 0], k) => ({ uid: `demo${i}-${k}`, t, x, y, r, c })),
+      };
+    });
+    return { version: 1, state, accounts: {}, tokens: {}, session: null, inbox: [] };
   }
   persist() { save(this.db); }
   meView(id) {
@@ -249,11 +274,21 @@ export class LocalStore extends Base {
     this.emit('move', { id: this.me.id, x, y, room });
   }
   async say(text) { checkSay(text); return { ok: true }; }
+  async act() { return { ok: true }; }
   // Gli abitanti finti in città fanno due passi qua e là, e ogni tanto salutano.
   wander() {
     if (Math.random() < 0.18) {
       const talkers = [...this.online].filter((x) => x.startsWith(DEMO_TAG) && this.avatars[x]);
       if (talkers.length) this.emit('say', { id: talkers[Math.floor(Math.random() * talkers.length)], text: SAY_PRESETS[Math.floor(Math.random() * SAY_PRESETS.length)] });
+    }
+    const fakes = [...this.online].filter((x) => x.startsWith(DEMO_TAG) && this.avatars[x] && !this.avatars[x][2]);
+    if (fakes.length && Math.random() < 0.08) this.emit('act', { id: fakes[Math.floor(Math.random() * fakes.length)], act: Math.random() < 0.5 ? 'saluta' : 'balla' });
+    // Ogni tanto un vicino passa da casa tua e firma il libro degli ospiti.
+    if (this.me && Math.random() < 0.03) {
+      const guest = fakes[Math.floor(Math.random() * fakes.length)];
+      if (guest) {
+        try { this.apply({ type: 'sign', owner: this.me.id, text: ['Bella casa!', 'Che bel salotto', 'Passavo di qui 👋', 'Torno presto!'][Math.floor(Math.random() * 4)] }, { user: { id: guest } }); } catch { /* casa non finita o già firmato oggi */ }
+      }
     }
     const s = this.db.state;
     const ids = [...this.online].filter((id) => id.startsWith(DEMO_TAG) && this.avatars[id] && !this.avatars[id][2]);

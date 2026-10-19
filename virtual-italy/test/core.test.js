@@ -282,3 +282,72 @@ test('dentro casa: mobili dentro la stanza, senza sovrapporsi, porta libera, per
   s = applyOp(s, { type: 'leave', id: 'a' }, sys()).state;
   assert.equal(s.rooms.a, undefined, 'chi se ne va porta via i mobili');
 });
+
+test('vita in città: missioni, libro degli ospiti, cuori, Casa della settimana, sedute', async () => {
+  const { missionStatus, invOf, heartsThisWeek, weekRanking, seatAt, roomOf, roomPath, BENCHES, dailyMission, DAILY } = await import('../public/js/core.js');
+  const T = Date.UTC(2026, 9, 19, 10); // lunedì
+  const at = (id, t = T) => ({ user: { id }, now: t });
+  let s = join(join(emptyState(0), 'a', 'anna.b'), 'b', 'bruno.c');
+  const lots = freeLots(s);
+  for (const [id, i] of [['a', 0], ['b', 1]]) s = applyOp(s, { type: 'chooseSlot', slot: lots[i] }, at(id)).state;
+  // Libro degli ospiti: una firma al giorno, non a casa propria, testo filtrato.
+  assert.throws(() => applyOp(s, { type: 'sign', owner: 'a' }, at('a')), /gli altri/);
+  s = applyOp(s, { type: 'sign', owner: 'a', text: 'Bella casa!' }, at('b')).state;
+  assert.throws(() => applyOp(s, { type: 'sign', owner: 'a' }, at('b')), /già firmato/);
+  assert.throws(() => applyOp(s, { type: 'sign', owner: 'a', text: 'vaffanculo' }, at('b', T + 86400000)), /non ammesse/);
+  assert.equal(s.guestbook.a[0].text, 'Bella casa!');
+  // Cuori: uno a settimana, si tolgono e si rimettono.
+  let r = applyOp(s, { type: 'heart', owner: 'a' }, at('b')); s = r.state;
+  assert.deepEqual(r.result, { on: true, n: 1 });
+  assert.equal(applyOp(s, { type: 'heart', owner: 'a' }, at('b')).result.on, false);
+  assert.throws(() => applyOp(s, { type: 'heart', owner: 'a' }, at('a')), /propria casa/);
+  assert.equal(heartsThisWeek(s, 'a', T + 6 * 86400000), 1);
+  assert.equal(heartsThisWeek(s, 'a', T + 7 * 86400000), 0, 'la settimana dopo si riparte da zero');
+  assert.equal(weekRanking(s, Math.floor((T + 3600000 + 3 * 86400000) / (7 * 86400000)))[0].id, 'a');
+  // Il lunedì dopo il giornale annuncia la Casa della settimana, una volta sola.
+  r = applyOp(s, { type: 'weekly' }, { system: true, now: T + 7 * 86400000 });
+  assert.ok(r.result.announced);
+  s = r.state;
+  assert.equal(s.news[0].kind, 'casaSettimana');
+  assert.match(formatNews(s.news[0], s).title, /anna\.b/);
+  assert.equal(applyOp(s, { type: 'weekly' }, { system: true, now: T + 7 * 86400000 + 60000 }).result.changed, false);
+  // Missioni di benvenuto: si completano con quello che si fa, poi si ritira il premio.
+  let st = missionStatus(s, 'b', T);
+  assert.ok(st.welcome.find((m) => m.id === 'visita').done && st.welcome.find((m) => m.id === 'casa').done);
+  assert.throws(() => applyOp(s, { type: 'claim', what: 'welcome' }, at('b')), /Completa prima/);
+  s = applyOp(s, { type: 'look', look: { skin: 1 } }, at('b')).state;
+  for (const t of ['sedia', 'tavolino', 'letto']) s = applyOp(s, { type: 'furni', act: 'add', t, x: 2 + ['sedia', 'tavolino', 'letto'].indexOf(t) * 2, y: 2 }, at('b')).state;
+  s = applyOp(s, { type: 'buy', kind: 'wear', id: 'basco' }, at('b')).state;
+  for (const what of ['panchina', 'giornale']) s = applyOp(s, { type: 'mark', what }, at('b')).state;
+  assert.throws(() => applyOp(s, { type: 'mark', what: 'barare' }, at('b')), /sconosciuta/);
+  assert.ok(missionStatus(s, 'b', T).welcomeReady);
+  s = applyOp(s, { type: 'claim', what: 'welcome' }, at('b')).state;
+  assert.equal(invOf(s, 'b').furni.targa, 1, 'la targa di benvenuto arriva nell\'inventario');
+  assert.throws(() => applyOp(s, { type: 'claim', what: 'welcome' }, at('b')), /già ritirato/);
+  // Missione del giorno e serie di giorni di fila.
+  assert.ok(DAILY.length >= 5);
+  let streak = 0;
+  for (const d of [3, 4]) { // due giorni di fila con missioni da fare con l'omino
+    const t = T + d * 86400000;
+    const m = dailyMission(t);
+    // Le missioni che si fanno con l'omino (le altre sono già provate sopra)
+    if (!['panchina', 'balla', 'saluta', 'giornale'].includes(m.id)) continue;
+    s = applyOp(s, { type: 'mark', what: m.id }, at('b', t)).state;
+    assert.ok(missionStatus(s, 'b', t).daily.done, `missione ${m.id} completata`);
+    const res = applyOp(s, { type: 'claim', what: 'daily' }, at('b', t));
+    s = res.state;
+    streak = res.result.streak;
+    assert.throws(() => applyOp(s, { type: 'claim', what: 'daily' }, at('b', t)), /già fatto/);
+  }
+  assert.equal(streak, 2, 'due giorni di fila');
+  // Sedute: panchine in piazza e mobili in casa; ci si arriva sopra ma non ci si passa attraverso.
+  assert.ok(seatAt(s, null, ...BENCHES[0]).bench);
+  assert.equal(seatAt(s, null, 0, 0), null);
+  const chair = roomOf(s, 'b').items.find((i) => i.t === 'sedia');
+  assert.ok(seatAt(s, 'b', chair.x, chair.y));
+  assert.ok(roomPath(roomOf(s, 'b'), [0, 5], [chair.x, chair.y]), 'si arriva sulla sedia');
+  // Chi se ne va porta via firme e cuori.
+  s = applyOp(s, { type: 'leave', id: 'b' }, sys()).state;
+  assert.equal(s.guestbook.a.length, 0);
+  assert.equal(s.progress.b, undefined);
+});

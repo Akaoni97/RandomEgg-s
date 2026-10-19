@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import {
   applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey,
-  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y, checkSay, ROOM, canVisit, isShopRoom,
+  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y, checkSay, ROOM, canVisit, isShopRoom, ACTS,
 } from '../public/js/core.js';
 import { seedResidents } from '../public/js/seed.js';
 
@@ -75,11 +75,12 @@ function housekeeping() {
   const now = Date.now();
   const r = applyOp(state, { type: 'expire' }, { system: true, now });
   if (r.result.freed) persist(r.state);
+  // A settimana finita il giornale annuncia la Casa della settimana.
+  const w = applyOp(state, { type: 'weekly' }, { system: true, now });
+  if (w.result.changed) persist(w.state);
   db.prepare('DELETE FROM tokens WHERE expires_at < ?').run(now);
   db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(now);
 }
-housekeeping();
-setInterval(housekeeping, 60000).unref();
 
 /* Tempo reale ---------------------------------------------------------- */
 
@@ -93,6 +94,8 @@ function broadcast() {
   for (const c of streams) c.res.write(data);
 }
 setInterval(() => { for (const c of streams) c.res.write(': ping\n\n'); }, 25000).unref();
+housekeeping();
+setInterval(housekeeping, 60000).unref();
 
 /* Account ---------------------------------------------------------------- */
 
@@ -332,6 +335,16 @@ const routes = {
     lastMove.set(user.id, now);
     avatars.set(user.id, [x, y, room]);
     const data = `event: move\ndata: ${JSON.stringify({ id: user.id, x, y, room })}\n\n`;
+    for (const c of streams) if (c.userId !== user.id) c.res.write(data);
+    send(res, 200, { ok: true });
+  },
+
+  // Saluta, balla, salta, siediti: un gesto del proprio omino, raccontato a tutti quelli collegati.
+  'POST /api/act': async (req, res, user) => {
+    const b = await readJson(req);
+    if (!ACTS.includes(b.act)) throw new DomainError('validation', 'Gesto sconosciuto.');
+    throttle('act:' + user.id, 30, 1);
+    const data = `event: act\ndata: ${JSON.stringify({ id: user.id, act: b.act })}\n\n`;
     for (const c of streams) if (c.userId !== user.id) c.res.write(data);
     send(res, 200, { ok: true });
   },

@@ -15,7 +15,7 @@ Serve **Node.js 22.5 o successivo**. Non ci sono dipendenze da installare.
 npm start            # città vera, vuota                        → http://localhost:8080
 npm run dev          # come sopra, con i link delle email in console e redazione@example.com come redazione
 npm run demo         # città già abitata da 18 abitanti finti (archivio separato in data-demo/)
-npm test             # 23 prove: regole della città + server (iscrizione, email, permessi, omini, nuvolette, negozi, tempo reale)
+npm test             # 24 prove: regole della città + server (iscrizione, email, permessi, omini, negozi, missioni, tempo reale)
 npm run build:demo   # genera dist/virtual-italy-demo.html: demo in un solo file, senza server
 ```
 
@@ -43,6 +43,9 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 - **Mappa isometrica in pixel art** (stile Habbo), con trascinamento, pizzico e zoom a scatti nitidi. Il terreno è a gradoni (pianura, paese, collina, montagne) con scarpate e scale. Il centro ha la piazza a scacchi con l'edicola del giornale, il Muro dei Fondatori e la fontana, che arriva a 25 abitanti.
 - **Dentro casa, come in Habbo:** ogni casa ha una stanza 8×8 da arredare (mobili ruotabili, alcuni con il colore a scelta), cinque pavimenti e otto colori di pareti. Il padrone decide chi può entrare (tutti, solo amici, solo lui), e gli ospiti si vedono e parlano in tempo reale. Con la casa arriva un kit di benvenuto (letto, sedia, tavolino, lampada, pianta); in casa si sistema solo quello che si ha nell'inventario, e ciò che si toglie torna lì.
 - **Negozi veri in città:** ai lati della piazza, con vetrina e insegna sulla strada principale, ci sono il **Mobilificio Bottega** (25 tra mobili e decorazioni, esposti in negozio) e la **Sartoria Moda** (maglie, gonne, pantaloncini, cappelli e accessori, con i manichini da provare). Si entra con il proprio omino, si tocca la merce e la si prende. Ogni articolo ha già il suo prezzo (`price` in `core.js`), ma finché la città non ha la sua moneta è tutto gratis: il pagamento si aggancia alla funzione `pay()` in `core.js`.
+- **Missioni:** sette missioni di benvenuto che accompagnano il nuovo abitante (omino, casa, mobili, Sartoria, panchina in piazza, visita a un vicino, giornale), con la Targa di benvenuto come premio. Poi una missione del giorno, uguale per tutti, con la serie di giorni di fila 🔥.
+- **Gesti e sedute:** l'omino saluta, balla, salta e manda faccine; si siede sulle panchine della piazza e su sedie, poltrone, divani e pouf. Tutti lo vedono in tempo reale.
+- **Libro degli ospiti e cuori:** chi visita una casa firma il libro (una volta al giorno) e lascia un ❤️ (uno a settimana). Il giornale tiene la classifica della settimana e il lunedì annuncia la **Casa della settimana**, con la cartolina pronta per Instagram.
 - **Omini e nuvolette:** ogni abitante in città ha un omino personalizzabile (editor del personaggio) che cammina dove tocchi. Si parla con la barra in basso o salutando chi si incontra, e i messaggi compaiono a tutti in tempo reale.
 - **Iscrizione** con email, nome utente e password, conferma via email entro 24 ore, accesso con email o nome utente, password dimenticata.
 - **Anti-bot**: campo nascosto, tempo minimo di compilazione, limiti per IP. Filtro su nomi e frasi offensive, nomi riservati (sindaco, redazione…).

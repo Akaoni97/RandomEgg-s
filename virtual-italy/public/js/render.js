@@ -5,7 +5,7 @@
 import {
   W, H, MAIN_Y, SEA_Y, PIAZZA, PLAN, ROOFS, DOORS, FOUNTAIN_AT,
   key, parseKey, districtAt, districtById, inPiazza, builtCount, isFounder, formatNews, CITY, PAPER, levelAt, walkPath, LOOK, cleanLook,
-  ROOM, ROOM_DOOR, FURNI_COLORS, furniById, footprint, roomOf, roomPath, shopAt,
+  ROOM, ROOM_DOOR, FURNI_COLORS, furniById, footprint, roomOf, roomPath, shopAt, seatAt, BENCHES,
 } from './core.js';
 
 const LV = 14;                                   // altezza di un gradone di terreno, in pixel d'arte
@@ -634,8 +634,7 @@ function piazzaProps(city) {
   put(...PIAZZA_SPOTS.edicola, (g, sx, sy) => edicola(g, sx, sy));
   put(PIAZZA.x0 + 5, PIAZZA.y0, (g, sx, sy) => muro(g, sx, sy, founders));
   put(...FOUNTAIN_TILE, (g, sx, sy) => fountain(g, sx, sy, built >= FOUNTAIN_AT));
-  put(PIAZZA.x0 + 1, PIAZZA.y1, (g, sx, sy) => bench(g, ...P(sx, sy, 0.5, 0.6)));
-  put(PIAZZA.x1 - 1, PIAZZA.y1, (g, sx, sy) => bench(g, ...P(sx, sy, 0.5, 0.6)));
+  for (const [bx, by] of BENCHES) put(bx, by, (g, sx, sy) => bench(g, ...P(sx, sy, 0.5, 0.5)));
   put(PIAZZA.x0, PIAZZA.y1, (g, sx, sy) => planter(g, ...P(sx, sy, 0.3, 0.7)));
   put(PIAZZA.x1, PIAZZA.y1, (g, sx, sy) => planter(g, ...P(sx, sy, 0.7, 0.7)));
   put(PIAZZA.x0 + 2, PIAZZA.y1, (g, sx, sy) => lampPost(g, ...P(sx, sy, 0.5, 0.85)));
@@ -939,7 +938,8 @@ function rectO(g, x, y, w, h, fill, line) {
 }
 // Direzioni isometriche: SE e SW verso chi guarda (si vede il viso), NE e NW di spalle.
 // (x, y) sono i piedi; step 0 fermo, 1 e 2 le due pose della camminata.
-export function drawAvatar(g, x, y, dir, step, look, { night = false } = {}) {
+// pose: 'sit' seduto, 'wave' saluta con la mano, 'dance' balla; t = millisecondi dall'inizio del gesto.
+export function drawAvatar(g, x, y, dir, step, look, { night = false, pose = null, t = 0 } = {}) {
   const back = dir === 'NE' || dir === 'NW';
   const mirror = dir === 'SW' || dir === 'NW';
   const ol = 'rgba(30,22,16,0.85)';
@@ -948,22 +948,35 @@ export function drawAvatar(g, x, y, dir, step, look, { night = false } = {}) {
   if (night && 'filter' in g) g.filter = 'brightness(0.62) saturate(0.85)';
   g.fillStyle = 'rgba(20,30,15,0.3)'; g.beginPath(); g.ellipse(0, 0, 9, 4, 0, 0, 7); g.fill();
   if (mirror) g.scale(-1, 1);
-  const a = step === 1 ? 1 : 0, b = step === 2 ? 1 : 0;
+  const beat = Math.floor(t / 260) % 2;
+  const a = pose === 'dance' ? beat : step === 1 ? 1 : 0, b = pose === 'dance' ? 1 - beat : step === 2 ? 1 : 0;
   // Gambe e scarpe (con pantaloncini e gonna si vede la pelle sotto il ginocchio)
   const top = look.top || 'maglietta', bottom = look.bottom || 'pantaloni';
   const legCol = bottom === 'pantaloni' ? look.pants : look.skin;
-  rectO(g, -5, -14 + a, 4, 12 - a, legCol, ol);
-  rectO(g, 1, -14 + b, 4, 12 - b, shade(legCol, -0.1), ol);
-  if (bottom === 'pantaloncini') { rectO(g, -5, -14 + a, 4, 6, look.pants, ol); rectO(g, 1, -14 + b, 4, 6, shade(look.pants, -0.1), ol); }
-  rectO(g, -6 + a, -3, 6, 3, '#2b2b2b');
-  rectO(g, 1 - b, -3 - b, 6, 3, '#1f1f1f');
-  if (bottom === 'gonna') {
+  if (pose === 'sit') {
+    // Seduti: cosce in avanti, stinchi giù verso il pavimento (davanti, se si guarda verso di noi)
+    const thigh = bottom === 'pantaloni' || bottom === 'pantaloncini' ? look.pants : look.skin;
+    for (const [dx, c] of [[0, shade(thigh, -0.1)], [-3, thigh]]) {
+      rectO(g, -5 + dx, -15, 10, 4, c, ol);
+      rectO(g, 2 + dx, -12, 4, 9, dx ? legCol : shade(legCol, -0.1), ol);
+      rectO(g, 2 + dx, -4, 6, 3, '#2b2b2b');
+    }
+  } else {
+    rectO(g, -5, -14 + a, 4, 12 - a, legCol, ol);
+    rectO(g, 1, -14 + b, 4, 12 - b, shade(legCol, -0.1), ol);
+    if (bottom === 'pantaloncini') { rectO(g, -5, -14 + a, 4, 6, look.pants, ol); rectO(g, 1, -14 + b, 4, 6, shade(look.pants, -0.1), ol); }
+    rectO(g, -6 + a, -3, 6, 3, '#2b2b2b');
+    rectO(g, 1 - b, -3 - b, 6, 3, '#1f1f1f');
+  }
+  if (bottom === 'gonna' && pose !== 'sit') {
     g.fillStyle = look.pants; poly(g, [[-7, -15], [7, -15], [9, -6], [-9, -6]]); g.fill(); g.strokeStyle = ol; g.lineWidth = 1; g.stroke();
     g.fillStyle = shade(look.pants, -0.15); g.fillRect(1, -14, 6, 7);
   }
   // Braccio dietro, busto, braccio davanti
   const armCol = top === 'canotta' ? look.skin : null;
-  rectO(g, 6, -27 + b, 3, 11, armCol ? shade(armCol, -0.12) : shade(look.shirt, -0.22), ol);
+  const backArmUp = pose === 'dance' && beat === 1;
+  if (backArmUp) rectO(g, 6, -38, 3, 11, armCol ? shade(armCol, -0.12) : shade(look.shirt, -0.22), ol);
+  else rectO(g, 6, -27 + b, 3, 11, armCol ? shade(armCol, -0.12) : shade(look.shirt, -0.22), ol);
   rectO(g, -7, -28, 14, 15, look.shirt, ol);
   g.fillStyle = shade(look.shirt, back ? 0.08 : -0.14); g.fillRect(back ? -6 : 1, -27, 5, 13);
   if (!back && top !== 'giacca') { g.fillStyle = shade(look.shirt, 0.18); g.fillRect(-3, -27, 6, 2); }
@@ -988,8 +1001,15 @@ export function drawAvatar(g, x, y, dir, step, look, { night = false } = {}) {
   } else if (top === 'canotta') {
     g.fillStyle = look.skin; g.fillRect(-7, -28, 3, 4); g.fillRect(4, -28, 3, 4);
   }
-  rectO(g, -9, -27 + a, 3, 11, armCol || shade(look.shirt, -0.05), ol);
-  rectO(g, -9, -17 + a, 3, 3, look.skin);
+  if (pose === 'wave' || (pose === 'dance' && beat === 0)) {
+    // Braccio alzato: la mano oscilla avanti e indietro
+    const sway = pose === 'wave' ? (Math.floor(t / 180) % 2 ? -2 : 0) : 0;
+    rectO(g, -10 + sway, -38, 3, 11, armCol || shade(look.shirt, -0.05), ol);
+    rectO(g, -10 + sway, -41, 3, 3, look.skin);
+  } else {
+    rectO(g, -9, -27 + a, 3, 11, armCol || shade(look.shirt, -0.05), ol);
+    rectO(g, -9, -17 + a, 3, 3, look.skin);
+  }
   // Testa
   rectO(g, -2, -31, 4, 3, look.skin);
   g.fillStyle = ol; g.beginPath(); g.roundRect(-7.5, -44.5, 15, 15, 4); g.fill();
@@ -1373,6 +1393,17 @@ export function drawFurni(g, it, { night = false } = {}) {
       g.fillStyle = '#a9a396'; g.fillRect(c[0] + 1, c[1] - 52, 1.5, 1.5);
       break;
     }
+    case 'targa': {
+      const [a, b, c, d] = r ? [x0 + 0.38, x0 + 0.5, y0 + 0.2, y1 - 0.2] : [x0 + 0.2, x1 - 0.2, y0 + 0.38, y0 + 0.5];
+      box3(g, a - 0.06, c - 0.06, b + 0.06, d + 0.06, 0, 4, WOOD_D);
+      box3(g, a, c, b, d, 4, 34, '#e2bf4f', { top: '#f3d77a' });
+      const ff = frontFace(a, c, b, d, r);
+      poly(g, quadOn(ff, 0.1, 0.9, 8, 30)); g.fillStyle = '#c99a2e'; g.fill();
+      poly(g, quadOn(ff, 0.2, 0.8, 22, 26)); g.fillStyle = '#7a5a1a'; g.fill();
+      poly(g, quadOn(ff, 0.25, 0.75, 15, 17)); g.fill();
+      poly(g, quadOn(ff, 0.3, 0.7, 11, 13)); g.fill();
+      break;
+    }
     case 'stender': {
       const [a, b] = ins(x0, x1, 0.1), [c, d] = ins(y0, y1, 0.35);
       for (const [p, q] of r ? [[a, c], [a, d - 0.06]] : [[a, c], [b - 0.06, c]]) box3(g, p, q, p + 0.06, q + 0.06, 0, 46, '#4b4f56');
@@ -1476,7 +1507,7 @@ export function drawRoom(g, room, o) {
     const L = gp(fp.x0, fp.y1 + 1), Rr = gp(fp.x1 + 1, fp.y0), T0 = gp(fp.x0, fp.y0), B0 = gp(fp.x1 + 1, fp.y1 + 1);
     hits.push({ uid: it.uid, d: rug ? -1 : fp.x1 + fp.y1, box: [L[0], T0[1] - (rug ? 2 : 56), Rr[0], B0[1]] });
   }
-  for (const a of o.avatars || []) draws.push({ d: a.x + a.y + 0.6, draw: () => a.draw(g) });
+  for (const a of o.avatars || []) draws.push({ d: a.d ?? a.x + a.y + 0.6, draw: () => a.draw(g) });
   draws.sort((p, q) => p.d - q.d);
   for (const d of draws) d.draw();
   if (o.selectedUid) {
@@ -1498,6 +1529,7 @@ export function drawRoom(g, room, o) {
 
 /* Mappa ------------------------------------------------------------------ */
 
+const ACT_MS = { saluta: 2000, balla: 6000, salta: 1600 };
 const DIR_OF = (dx, dy) => (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'SE' : 'NW') : (dy > 0 ? 'SW' : 'NE'));
 
 export class CityMap {
@@ -1536,7 +1568,7 @@ export class CityMap {
       const walking = this.tickAvatars(t);
       if ((this.dirty || growing) && interacting && this.layerCam && !this.stale()) this.fast();
       else if (this.dirty || growing) { this.dirty = false; this.render(t, true); this.lastAmbient = t; }
-      else if ((walking || this.bubbling(t)) && t - this.lastAmbient > 33) { this.render(t, false); this.lastAmbient = t; }
+      else if ((walking || this.bubbling(t) || this.acting(t)) && t - this.lastAmbient > 33) { this.render(t, false); this.lastAmbient = t; }
       else if (this.avatarsDirty || (!this.still && t - this.lastAmbient > 66)) { this.avatarsDirty = false; this.render(t, false); this.lastAmbient = t; }
       requestAnimationFrame(loop);
     };
@@ -1571,6 +1603,7 @@ export class CityMap {
     const path = room ? roomPath(roomOf(this.city, room), from, [tx, ty]) : walkPath(this.city, from, [tx, ty]);
     if (!path) return false;
     a.path = path;
+    if (path.length) { a.sit = null; a.wantSit = false; a.act = null; }
     this.avatarsDirty = true;
     return true;
   }
@@ -1624,6 +1657,7 @@ export class CityMap {
         if (d > 0.001) a.dir = DIR_OF(dx, dy);
         if (d <= left) { a.x = nx; a.y = ny; a.path.shift(); left -= d; } else { a.x += (dx / d) * left; a.y += (dy / d) * left; left = 0; }
       }
+      if (!a.path.length) this.settle(a);
       a.walked += dt * 3.2;
       // La telecamera segue il proprio omino quando esce dal centro dello schermo.
       if (a.me && !this.scene && !this.pointers.size) {
@@ -1647,10 +1681,33 @@ export class CityMap {
     const [x, y] = this.avatarScreen(a);
     const step = a.path.length ? (Math.floor(a.walked * 2.6) % 2) + 1 : 0;
     const k = this.avatarScale();
+    const t = (this.now || 0) - (a.act?.t0 || 0);
+    const kind = a.act && t < ACT_MS[a.act.kind] ? a.act.kind : null;
+    let lift = 0, pose = null;
+    if (a.sit && !a.path.length) { pose = 'sit'; lift = a.sit.h / k - 15; } // il sedere sulla seduta
+    else if (kind === 'salta') { lift = Math.abs(Math.sin((t / 800) * Math.PI)) * 9; }
+    else if (kind === 'balla') { pose = 'dance'; lift = Math.floor(t / 260) % 2 ? 1 : 0; }
+    else if (kind === 'saluta') pose = 'wave';
     g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(k, k);
-    drawAvatar(g, 0, 0, a.dir, step, a.look, { night });
+    if (lift) g.translate(0, -Math.round(lift));
+    drawAvatar(g, 0, 0, a.dir, step, a.look, { night, pose, t });
     g.restore();
   }
+  // Gesti: saluta, balla, salta. Sedersi aspetta che l'omino arrivi sulla seduta.
+  act(id, kind) {
+    const a = this.avatars.get(id);
+    if (!a) return;
+    if (kind === 'siedi') { a.wantSit = true; this.settle(a); }
+    else { a.act = { kind, t0: this.now || performance.now() }; a.sit = null; }
+    this.avatarsDirty = true;
+  }
+  settle(a) {
+    if (!a.wantSit || a.path.length || !this.city) return;
+    a.wantSit = false;
+    const seat = seatAt(this.city, a.room, Math.round(a.x), Math.round(a.y));
+    if (seat) { a.sit = seat; if (seat.dir) a.dir = seat.dir; }
+  }
+  acting(t) { for (const a of this.avatars.values()) if (a.act && t - a.act.t0 < ACT_MS[a.act.kind]) return true; return false; }
   drawAvatars(g, night, occlude) {
     const list = this.visibleAvatars().sort((a, b) => a.x + a.y - (b.x + b.y));
     for (const a of list) {
@@ -1914,7 +1971,7 @@ export class CityMap {
     fg.fillStyle = bg; fg.fillRect(0, 0, bw, bh);
     this.worldTransform(fg, s, bw, bh);
     const night = this.opts.night;
-    const avatars = this.visibleAvatars().map((a) => ({ x: a.x, y: a.y, draw: () => this.drawOneAvatar(fg, a, night) }));
+    const avatars = this.visibleAvatars().map((a) => ({ x: a.x, y: a.y, d: a.sit?.d, draw: () => this.drawOneAvatar(fg, a, night) }));
     this.roomHits = drawRoom(fg, roomOf(this.city, this.scene), { night, avatars, ...this.roomUI });
     const g = this.g;
     g.setTransform(1, 0, 0, 1, 0, 0);

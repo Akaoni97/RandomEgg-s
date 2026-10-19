@@ -94,6 +94,8 @@ a { color: var(--brand); font-weight: 700; }
   position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px;
   border: 0; background: transparent; color: var(--ink); cursor: pointer;
 }
+/* Sui telefoni stretti i comandi in alto si stringono, così il nome della città resta leggibile. */
+@media (max-width: 420px) { .top-actions { gap: 0; } }
 .tab:hover { background: var(--bg); }
 .tab:active { transform: scale(0.94); }
 .round {
@@ -354,3 +356,34 @@ body.in-room .toasts { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 1
   .notice-ico { display: none; }
   .notice-text { min-width: 0; flex-basis: 100%; }
 }
+
+/* Missioni */
+.missions { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: var(--surface); }
+.missions-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.missions-head h3 { margin: 0; font: 600 1.1rem/1.2 var(--f-display); }
+.mission-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.mission { display: flex; gap: 10px; align-items: flex-start; }
+.mission-tick { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); font-weight: 900; font-size: 0.8rem; color: var(--bg); }
+.mission.done .mission-tick { background: var(--live); border-color: var(--live); }
+.mission.done strong { color: var(--muted); text-decoration: line-through; }
+.mission-body { display: grid; gap: 1px; }
+.mission-body .small { margin: 0; }
+/* Gesti e faccine sopra la barra per parlare */
+.chat-wrap { display: grid; gap: 6px; grid-column: 1 / -1; }
+.acts { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.acts .chip { flex: none; }
+.chip.emoji { font-size: 1.1rem; padding: 4px 10px; }
+.icon-btn { padding: 0 8px; min-width: 40px; }
+.icon-btn.on { background: var(--brand); color: var(--bg); }
+/* Libro degli ospiti e cuori */
+.room-social { gap: 6px; }
+.btn.heart.on { border-color: #e85d75; color: #c0392b; }
+.guestbook { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.guestbook li { padding: 10px 12px; border-radius: 12px; background: var(--surface); }
+.guestbook p { margin: 4px 0 0; }
+.gb-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.ranking { display: grid; gap: 6px; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--gold); }
+.ranking h3 { margin: 0; font: 600 1.05rem/1.2 var(--f-display); }
+.ranking ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ranking li { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
+.ranking .small { margin: 0; }

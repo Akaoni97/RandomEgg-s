@@ -365,6 +365,8 @@ export const FURNI = [
   { id: 'statua', label: 'Busto romano', w: 1, d: 1, cat: 'deco', price: 160 },
   { id: 'acquario', label: 'Acquario', w: 1, d: 1, cat: 'deco', price: 100 },
   { id: 'stender', label: 'Appendiabiti', w: 2, d: 1, color: true, cat: 'deco', price: 40 },
+  // Premi: non si vendono, si guadagnano con le missioni.
+  { id: 'targa', label: 'Targa di benvenuto', w: 1, d: 1, cat: 'premi' },
 ];
 export const FURNI_CATS = [{ id: 'mobili', label: 'Mobili' }, { id: 'deco', label: 'Decorazioni' }];
 // Chi costruisce casa trova dentro un piccolo kit di benvenuto, da sistemare come vuole.
@@ -439,6 +441,8 @@ export function canVisit(s, visitorId, ownerId) {
 export function roomPath(room, from, to) {
   const blocked = new Set();
   for (const it of room.items) if (!furniById(it.t)?.rug) for (const c of cellsOf(it)) blocked.add(c);
+  // Sulle sedute ci si può fermare (per sedersi), ma non passarci attraverso.
+  if (seatIn(room, to[0], to[1])) blocked.delete(key(to[0], to[1]));
   const ok = (x, y) => x >= 0 && y >= 0 && x < ROOM && y < ROOM && !blocked.has(key(x, y));
   const [sx, sy] = from, [tx, ty] = to;
   if (sx === tx && sy === ty) return [];
@@ -457,6 +461,91 @@ export function roomPath(room, from, to) {
     }
   }
   return null;
+}
+
+/* Vita in città: sedersi, missioni, libro degli ospiti, Casa della settimana ---- */
+
+// Altezza della seduta (pixel d'arte) e verso in cui si guarda: lo schienale resta alle spalle.
+export const SEATS = { sedia: 15, poltrona: 12, divano: 11, pouf: 13 };
+export const BENCHES = [[PIAZZA.x0 + 1, PIAZZA.y1], [PIAZZA.x1 - 1, PIAZZA.y1]];
+function seatIn(room, x, y) {
+  for (const it of room.items) {
+    const h = SEATS[it.t];
+    if (!h) continue;
+    const f = footprint(it);
+    if (x < f.x0 || x > f.x1 || y < f.y0 || y > f.y1) continue;
+    return { h, dir: it.t === 'pouf' ? null : it.r ? 'SE' : 'SW', d: f.x1 + f.y1 + 0.55 };
+  }
+  return null;
+}
+// Dove ci si può sedere: un mobile in una stanza (o in un negozio) oppure una panchina in piazza.
+export function seatAt(s, room, x, y) {
+  if (room) return seatIn(roomOf(s, room), x, y);
+  return BENCHES.some(([bx, by]) => bx === x && by === y) ? { h: 6, dir: 'SW', d: x + y + 0.6, bench: true } : null;
+}
+export const ACTS = ['saluta', 'balla', 'salta', 'siedi'];
+
+// Il giorno e la settimana si contano all'ora italiana (circa: UTC+1), le settimane da lunedì.
+export const dayKey = (t) => new Date(t + 3600000).toISOString().slice(0, 10);
+export const weekKey = (t) => Math.floor((t + 3600000 + 3 * 86400000) / (7 * 86400000));
+
+// Cose fatte con l'omino che il server non vede passare (si segnano con l'operazione `mark`).
+export const MARKS = ['panchina', 'giornale', 'saluta', 'balla'];
+export const progressOf = (s, id) => s.progress?.[id] || { marks: {}, welcome: null, daily: { last: null, streak: 0 } };
+const signedBy = (s, id, since = 0) => Object.values(s.guestbook || {}).reduce((n, list) => n + list.filter((g) => g.by === id && g.at >= since).length, 0);
+const heartsBy = (s, id, since = 0) => Object.values(s.hearts || {}).reduce((n, m) => n + (m[id] >= since ? 1 : 0), 0);
+const markedSince = (s, id, k, since) => (progressOf(s, id).marks[k] || -1) >= since;
+
+// Missioni di benvenuto: una lista da spuntare, con un premio alla fine.
+export const WELCOME = [
+  { id: 'look', label: 'Dai uno stile al tuo omino', hint: 'Profilo → Il mio personaggio', done: (s, id) => !!s.residents[id]?.look },
+  { id: 'casa', label: 'Costruisci la tua casa', hint: 'Scegli un lotto libero', done: (s, id) => residentHouse(s, id)?.status === 'casa' },
+  { id: 'arreda', label: 'Sistema 3 mobili in casa', hint: 'Entra in casa → Arreda', done: (s, id) => (s.rooms?.[id]?.items.length || 0) >= 3 },
+  { id: 'sartoria', label: 'Prendi un capo alla Sartoria Moda', hint: 'Il negozio a destra della piazza', done: (s, id) => invOf(s, id).wear.length > 0 },
+  { id: 'panchina', label: 'Siediti su una panchina in piazza', hint: 'Tocca una panchina', done: (s, id) => markedSince(s, id, 'panchina', 0) },
+  { id: 'visita', label: 'Firma il libro degli ospiti di un vicino', hint: 'Entra in un\'altra casa', done: (s, id) => signedBy(s, id) > 0 },
+  { id: 'giornale', label: 'Leggi il giornale', hint: 'L\'icona del giornale in alto', done: (s, id) => markedSince(s, id, 'giornale', 0) },
+];
+export const WELCOME_PRIZE = 'targa';
+
+// Missione del giorno: una al giorno, uguale per tutti, scelta dalla data.
+export const DAILY = [
+  { id: 'visite', label: 'Firma 2 libri degli ospiti', done: (s, id, t0) => signedBy(s, id, t0) >= 2 },
+  { id: 'cuore', label: 'Lascia un ❤️ a una casa che ti piace', done: (s, id, t0) => heartsBy(s, id, t0) > 0 },
+  { id: 'panchina', label: 'Siediti in piazza', done: (s, id, t0) => markedSince(s, id, 'panchina', t0) },
+  { id: 'balla', label: 'Balla in città', done: (s, id, t0) => markedSince(s, id, 'balla', t0) },
+  { id: 'saluta', label: 'Saluta qualcuno', done: (s, id, t0) => markedSince(s, id, 'saluta', t0) },
+  { id: 'arreda', label: 'Aggiungi o sposta un mobile in casa', done: (s, id, t0) => markedSince(s, id, 'arreda', t0) },
+  { id: 'giornale', label: 'Leggi le notizie del giorno', done: (s, id, t0) => markedSince(s, id, 'giornale', t0) },
+];
+const dayStart = (t) => Date.parse(dayKey(t) + 'T00:00:00Z') - 3600000;
+export function dailyMission(now) { return DAILY[hash('giorno' + dayKey(now)) % DAILY.length]; }
+export function missionStatus(s, id, now) {
+  const p = progressOf(s, id);
+  const welcome = WELCOME.map((m) => ({ id: m.id, label: m.label, hint: m.hint, done: !!m.done(s, id) }));
+  const d = dailyMission(now);
+  const today = dayKey(now);
+  return {
+    welcome, welcomeClaimed: !!p.welcome, welcomeReady: !p.welcome && welcome.every((m) => m.done),
+    daily: { id: d.id, label: d.label, done: !!d.done(s, id, dayStart(now)), claimed: p.daily.last === today },
+    streak: p.daily.last === today || p.daily.last === dayKey(now - 86400000) ? p.daily.streak : 0,
+  };
+}
+
+// Libro degli ospiti e cuori.
+export const GUESTBOOK_MAX = 60;
+export function heartsThisWeek(s, ownerId, now) {
+  const w = weekKey(now);
+  return Object.values(s.hearts?.[ownerId] || {}).filter((t) => weekKey(t) === w).length;
+}
+// Classifica delle case con più cuori in una settimana (a parità vince chi li ha avuti prima).
+export function weekRanking(s, w) {
+  const out = [];
+  for (const [owner, m] of Object.entries(s.hearts || {})) {
+    const times = Object.values(m).filter((t) => weekKey(t) === w);
+    if (times.length && s.residents[owner] && residentHouse(s, owner)?.status === 'casa') out.push({ id: owner, n: times.length, last: Math.max(...times) });
+  }
+  return out.sort((a, b) => b.n - a.n || a.last - b.last);
 }
 
 // Le nuvolette sopra la testa: frasi pronte oppure un messaggio breve e filtrato.
@@ -574,6 +663,10 @@ export function emptyState(now = Date.now()) {
     milestones: [],
     rooms: {},         // id abitante → { floor, wall, access, items: [{ uid, t, x, y, r, c }] }
     inv: {},           // id abitante → { furni: { tipo: quanti }, wear: [id dei vestiti presi] }
+    progress: {},      // id abitante → { marks: { cosa: istante }, welcome: istante del premio, daily: { last, streak } }
+    guestbook: {},     // id padrone di casa → [{ by, at, text }] (le firme più recenti in fondo)
+    hearts: {},        // id padrone di casa → { id visitatore: istante dell'ultimo cuore }
+    weeklyDone: null,  // ultima settimana di cui il giornale ha annunciato la Casa della settimana
   };
   addNews(s, { kind: 'founding', at: now });
   return refresh(s);
@@ -619,6 +712,10 @@ function needResident(s, ctx) {
   if (!r) throw new DomainError('auth', 'Accedi per continuare.');
   if (r.suspended) throw forbidden('Il tuo account è sospeso.');
   return r;
+}
+function progressFor(s, id) {
+  s.progress ||= {};
+  return (s.progress[id] ||= { marks: {}, welcome: null, daily: { last: null, streak: 0 } });
 }
 function needAdmin(ctx) {
   if (!ctx.user?.admin) throw forbidden('Riservato alla redazione.');
@@ -745,6 +842,7 @@ const OPS = {
     const int = (v) => Number.isInteger(v) ? v : NaN;
     s.inv ||= {};
     const inv = (s.inv[r.id] ||= { furni: {}, wear: [] });
+    if (op.act === 'add' || op.act === 'move') progressFor(s, r.id).marks.arreda = ctx.now ?? Date.now();
     if (op.act === 'add') {
       const f = furniById(op.t);
       if (!f) throw invalid('Mobile sconosciuto.');
@@ -771,6 +869,80 @@ const OPS = {
     checkPlace(room, next, it.uid);
     Object.assign(it, next);
     return { ok: true };
+  },
+
+  // Qualcosa fatto con l'omino (sedersi in piazza, ballare, salutare, leggere il giornale).
+  mark(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    if (!MARKS.includes(op.what)) throw invalid('Azione sconosciuta.');
+    progressFor(s, r.id).marks[op.what] = now;
+    return { ok: true };
+  },
+
+  // Premi delle missioni: il kit di benvenuto completato e la missione del giorno.
+  claim(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    const st = missionStatus(s, r.id, now);
+    const p = progressFor(s, r.id);
+    if (op.what === 'welcome') {
+      if (st.welcomeClaimed) throw invalid('Il premio di benvenuto l\'hai già ritirato.');
+      if (!st.welcomeReady) throw invalid('Completa prima tutte le missioni di benvenuto.');
+      p.welcome = now;
+      s.inv ||= {};
+      const inv = (s.inv[r.id] ||= { furni: {}, wear: [] });
+      inv.furni[WELCOME_PRIZE] = (inv.furni[WELCOME_PRIZE] || 0) + 1;
+      return { prize: WELCOME_PRIZE };
+    }
+    if (op.what === 'daily') {
+      if (st.daily.claimed) throw invalid('Per oggi hai già fatto: torna domani per una nuova missione.');
+      if (!st.daily.done) throw invalid('La missione di oggi non è ancora completa.');
+      p.daily = { last: dayKey(now), streak: st.streak + 1 };
+      return { streak: p.daily.streak };
+    }
+    throw invalid('Premio sconosciuto.');
+  },
+
+  // Libro degli ospiti: chi è in visita lascia la firma (una al giorno per casa) e un pensiero.
+  sign(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    const owner = s.residents[op.owner];
+    if (!owner || residentHouse(s, owner.id)?.status !== 'casa') throw new DomainError('notfound', 'Casa non trovata.');
+    if (owner.id === r.id) throw invalid('Il libro degli ospiti lo firmano gli altri.');
+    if (!canVisit(s, r.id, owner.id)) throw forbidden('Il padrone di casa non fa entrare visite.');
+    s.guestbook ||= {};
+    const list = (s.guestbook[owner.id] ||= []);
+    const today = dayKey(now);
+    if (list.some((g) => g.by === r.id && dayKey(g.at) === today)) throw invalid('Oggi hai già firmato: ripassa domani.');
+    const text = op.text ? checkSay(op.text) : '';
+    list.push({ by: r.id, at: now, text });
+    if (list.length > GUESTBOOK_MAX) list.splice(0, list.length - GUESTBOOK_MAX);
+    return { ok: true };
+  },
+
+  // Un cuore alla casa: uno a settimana per ogni visitatore, si può anche togliere.
+  heart(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    const owner = s.residents[op.owner];
+    if (!owner || residentHouse(s, owner.id)?.status !== 'casa') throw new DomainError('notfound', 'Casa non trovata.');
+    if (owner.id === r.id) throw invalid('Alla propria casa non si danno cuori.');
+    if (!canVisit(s, r.id, owner.id)) throw forbidden('Il padrone di casa non fa entrare visite.');
+    s.hearts ||= {};
+    const m = (s.hearts[owner.id] ||= {});
+    const on = m[r.id] !== undefined && weekKey(m[r.id]) === weekKey(now);
+    if (on) delete m[r.id]; else m[r.id] = now;
+    return { on: !on, n: heartsThisWeek(s, owner.id, now) };
+  },
+
+  // Sistema: a settimana finita il giornale annuncia la Casa della settimana.
+  weekly(s, op, ctx, now) {
+    if (!ctx.system) throw forbidden('Operazione interna.');
+    const prev = weekKey(now) - 1;
+    if (s.weeklyDone === prev) return { announced: false, changed: false };
+    s.weeklyDone = prev;
+    const top = weekRanking(s, prev)[0];
+    if (!top) return { announced: false, changed: true };
+    addNews(s, { kind: 'casaSettimana', at: now, residentId: top.id, slot: residentHouse(s, top.id).slot, n: top.n });
+    return { announced: true, changed: true };
   },
 
   profile(s, op, ctx) {
@@ -835,6 +1007,9 @@ const OPS = {
     delete s.sentLog[id];
     if (s.rooms) delete s.rooms[id];
     if (s.inv) delete s.inv[id];
+    if (s.progress) delete s.progress[id];
+    if (s.guestbook) { delete s.guestbook[id]; for (const list of Object.values(s.guestbook)) for (let i = list.length - 1; i >= 0; i--) if (list[i].by === id) list.splice(i, 1); }
+    if (s.hearts) { delete s.hearts[id]; for (const m of Object.values(s.hearts)) delete m[id]; }
     refresh(s, now);
     return { ok: true };
   },
@@ -881,6 +1056,8 @@ export function publicView(s, viewerId, admin = false) {
     rev: s.rev, createdAt: s.createdAt, openDistricts: s.openDistricts, residents, houses: s.houses,
     roads: s.roads, doors: s.doors, news: s.news.slice(0, 120), milestones: s.milestones, rooms: s.rooms || {},
     inv: viewerId && s.inv?.[viewerId] ? { [viewerId]: s.inv[viewerId] } : {},
+    progress: viewerId && s.progress?.[viewerId] ? { [viewerId]: s.progress[viewerId] } : {},
+    guestbook: s.guestbook || {}, hearts: s.hearts || {},
     requests: viewerId ? s.requests.filter((q) => q.from === viewerId || q.to === viewerId) : [],
     friendships: viewerId ? s.friendships.filter((f) => f.a === viewerId || f.b === viewerId) : [],
     reports: [],
@@ -914,6 +1091,11 @@ export function formatNews(n, s) {
       return {
         title: `${CITY} ha ${n.n} abitanti`,
         text: n.n === FOUNTAIN_AT ? 'Traguardo raggiunto: in piazza è arrivata la fontana. Grazie a tutti!' : `Un nuovo traguardo per la città. ${nextGoal({ milestones: [] }, n.n)}`,
+      };
+    case 'casaSettimana':
+      return {
+        title: r ? `Casa della settimana: da ${who}` : 'La Casa della settimana',
+        text: `${n.n} ${n.n === 1 ? 'abitante le ha lasciato' : 'abitanti le hanno lasciato'} un cuore. Passate a trovarla nel quartiere ${d ? d.name : 'Centro'} e firmate il libro degli ospiti!`,
       };
     default:
       return { title: 'Notizia', text: '' };

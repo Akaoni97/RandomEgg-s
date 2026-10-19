@@ -6,6 +6,7 @@ import {
   formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook, SAY_PRESETS, SAY_MAX,
   FURNI, FLOORS, WALLS, ACCESS, ROOM_DOOR, furniById, roomOf, canVisit,
   SHOPS, shopById, isShopRoom, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
+  seatAt, footprint, missionStatus, progressOf, dayKey, weekKey, heartsThisWeek, weekRanking, WELCOME_PRIZE,
 } from './core.js';
 import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook, drawFurniIcon, drawAvatarIcon } from './render.js';
 import { RemoteStore, LocalStore } from './store.js';
@@ -43,6 +44,8 @@ const ICONS = {
   fountain: '<path d="M4 15h16M6 15c0 3 2.7 5 6 5s6-2 6-5M12 15V8M12 8c-2 0-3.5 1.2-4 3M12 8c2 0 3.5 1.2 4 3M12 5v1"/>',
   flask: '<path d="M10 3h4M10.5 3v5.5L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5.5-9.5V3M7.5 14h9"/>',
   pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  star: '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  smile: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14c.9 1.4 2.1 2 3.5 2s2.6-.6 3.5-2M9 9.5v.5M15 9.5v.5"/>',
 };
 const icon = (name) => h('span', { class: 'ico', 'aria-hidden': 'true', html: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>` });
 
@@ -89,10 +92,11 @@ function shell() {
           h('span', { class: 'brand-text' },
             h('span', { class: 'brand-name' }, 'Virtual', h('span', { class: 'brand-dash' }, '-'), 'Italy'),
             h('span', { class: 'brand-count', id: 'count' }))),
-        DEMO ? h('button', { class: 'demo-chip', id: 'demo-chip', 'aria-expanded': 'false', onclick: toggleDemoMenu }, icon('flask'), 'Demo') : null,
+        DEMO ? h('button', { class: 'demo-chip', id: 'demo-chip', 'aria-expanded': 'false', onclick: toggleDemoMenu }, icon('flask'), h('span', { class: 'demo-label' }, 'Demo')) : null,
         h('nav', { class: 'top-actions', 'aria-label': 'Comandi' },
           h('button', { class: 'tab', id: 'btn-night', onclick: toggleNight, 'aria-label': 'Giorno o notte' }),
           h('button', { class: 'tab', onclick: () => openGiornale(), 'aria-label': 'Il giornale' }, icon('paper')),
+          h('button', { class: 'tab', id: 'btn-missions', onclick: () => openMissions(), 'aria-label': 'Missioni' }, icon('star'), h('span', { class: 'badge', id: 'missions-badge', hidden: true })),
           h('button', { class: 'tab', id: 'btn-mail', onclick: () => openMailbox(), 'aria-label': 'Cassetta delle lettere' }, icon('mail'), h('span', { class: 'badge', id: 'mail-badge', hidden: true })),
           h('button', { class: 'tab', id: 'btn-me', onclick: () => (me() ? openProfile() : openLogin()), 'aria-label': 'Il mio profilo' }, icon('user')))),
       DEMO ? demoMenu() : null,
@@ -168,6 +172,8 @@ function update() {
   badge.hidden = !incoming;
   badge.textContent = incoming;
   $('#btn-mail').hidden = !mine;
+  $('#btn-missions').hidden = !mine;
+  if (mine && city.residents[mine.id]) watchProgress(city, mine.id);
 
   map.set({
     mode: ui.mode, meId: mine?.id || null, night, online: store.online,
@@ -217,6 +223,132 @@ function update() {
   bottom.replaceChildren(h('div', { class: 'bar' }, talk, goal, cta));
 }
 
+/* Missioni, gesti, libro degli ospiti --------------------------------------- */
+
+// Ad ogni aggiornamento: badge delle missioni, missioni appena completate, nuove firme in casa.
+function watchProgress(city, id) {
+  const st = missionStatus(city, id, Date.now());
+  const ready = (st.welcomeReady ? 1 : 0) + (st.daily.done && !st.daily.claimed ? 1 : 0);
+  const mb = $('#missions-badge');
+  mb.hidden = !ready; mb.textContent = ready ? '!' : '';
+  const done = new Set([...st.welcome.filter((m) => m.done).map((m) => 'w:' + m.id), ...(st.daily.done ? ['d:' + dayKey(Date.now())] : [])]);
+  if (ui.missionsSeen && ui.missionsFor === id) {
+    for (const k of done) {
+      if (ui.missionsSeen.has(k)) continue;
+      const label = k.startsWith('w:') ? st.welcome.find((m) => 'w:' + m.id === k).label : st.daily.label;
+      toast(`Missione completata: ${label} ✓`);
+    }
+  }
+  ui.missionsSeen = done; ui.missionsFor = id;
+  const gb = city.guestbook?.[id] || [];
+  const last = gb[gb.length - 1];
+  if (ui.gbLast && last && last.at > ui.gbLast && ui.room !== id) toast(`${city.residents[last.by]?.username || 'Un vicino'} ha firmato il tuo libro degli ospiti${last.text ? `: “${last.text}”` : ''}`);
+  ui.gbLast = last?.at || ui.gbLast || 1;
+}
+// Segna una volta al giorno una cosa fatta con l'omino (serve alle missioni).
+function markOnce(what) {
+  const mine = me();
+  if (!mine || !store.city.residents[mine.id]) return;
+  const t = progressOf(store.city, mine.id).marks[what];
+  if (t && dayKey(t) === dayKey(Date.now())) return;
+  store.op({ type: 'mark', what }).catch(() => {});
+}
+function openMissions() {
+  const mine = me();
+  if (!mine) return openLogin();
+  const city = store.city;
+  const st = missionStatus(city, mine.id, Date.now());
+  const claim = (what) => (e) => run(e.currentTarget, async () => {
+    const r = await store.op({ type: 'claim', what });
+    if (r.prize) toast(`Premio: ${furniById(r.prize).label}! La trovi in casa, nel pannello Arreda.`);
+    else toast(r.streak > 1 ? `Fatto! Sono ${r.streak} giorni di fila 🔥` : 'Fatto! Torna domani per la prossima missione 🔥');
+    openMissions(); update();
+  });
+  const n = st.welcome.filter((m) => m.done).length;
+  const welcome = st.welcomeClaimed ? null : h('section', { class: 'missions' },
+    h('div', { class: 'missions-head' }, h('h3', {}, 'Benvenuto in città'), h('span', { class: 'tag' }, `${n}/${st.welcome.length}`)),
+    h('ul', { class: 'mission-list' }, st.welcome.map((m) => h('li', { class: 'mission' + (m.done ? ' done' : '') },
+      h('span', { class: 'mission-tick', 'aria-hidden': 'true' }, m.done ? '✓' : ''),
+      h('span', { class: 'mission-body' }, h('strong', {}, m.label), m.done ? null : h('span', { class: 'small' }, m.hint))))),
+    h('p', { class: 'small' }, `Premio finale: ${furniById(WELCOME_PRIZE).label.toLowerCase()} da mettere in casa, solo per chi le completa tutte.`),
+    st.welcomeReady ? h('button', { class: 'btn primary big', onclick: claim('welcome') }, 'Ritira il premio') : null);
+  const daily = h('section', { class: 'missions daily' },
+    h('div', { class: 'missions-head' }, h('h3', {}, 'Missione del giorno'), h('span', { class: 'tag gold' }, `🔥 ${st.streak} ${st.streak === 1 ? 'giorno' : 'giorni'} di fila`)),
+    h('div', { class: 'mission' + (st.daily.done ? ' done' : '') }, h('span', { class: 'mission-tick', 'aria-hidden': 'true' }, st.daily.done ? '✓' : ''), h('span', { class: 'mission-body' }, h('strong', {}, st.daily.label))),
+    st.daily.claimed ? h('p', { class: 'small' }, 'Fatta! Domani ne arriva un\'altra: non perdere la serie.')
+      : st.daily.done ? h('button', { class: 'btn primary', onclick: claim('daily') }, 'Segna come fatta')
+        : h('p', { class: 'small' }, 'Ogni giorno una missione nuova, uguale per tutti. Completale di fila per allungare la serie.'));
+  openSheet('Missioni', h('div', { class: 'stack' }, welcome, daily, st.welcomeClaimed ? h('p', { class: 'small' }, 'Missioni di benvenuto completate: sei un abitante a tutti gli effetti!') : null));
+}
+
+// Gesti del proprio omino: li vedono tutti quelli che sono nello stesso posto.
+function doAct(kind) {
+  const mine = me();
+  if (!mine || !map.avatarOf(mine.id)) return;
+  map.act(mine.id, kind);
+  store.act(kind);
+  if (kind === 'saluta') markOnce('saluta');
+  if (kind === 'balla') markOnce('balla');
+}
+function actionsRow() {
+  const emoji = ['😄', '😂', '❤️', '👍', '😮', '🎉'];
+  return h('div', { class: 'acts', role: 'group', 'aria-label': 'Gesti e faccine' },
+    [['saluta', '👋 Saluta'], ['balla', '💃 Balla'], ['salta', '⤴️ Salta']].map(([k, label]) => h('button', { class: 'chip', onclick: () => doAct(k) }, label)),
+    emoji.map((e) => h('button', { class: 'chip emoji', 'aria-label': `Faccina ${e}`, onclick: () => sayIt(e) }, e)));
+}
+// Sedersi: si cammina fino alla seduta, poi ci si siede.
+function sitOn(x, y, room = null) {
+  const mine = me();
+  if (!mine || !map.avatarOf(mine.id)) return false;
+  if (!map.walk(mine.id, x, y, room)) return false;
+  store.move(x, y, room);
+  map.act(mine.id, 'siedi');
+  store.act('siedi');
+  if (!room) markOnce('panchina');
+  return true;
+}
+
+function openGuestbook(ownerId) {
+  const city = store.city;
+  const owner = city.residents[ownerId];
+  const mine = me();
+  const mineHouse = mine && mine.id === ownerId;
+  const list = [...(city.guestbook?.[ownerId] || [])].reverse();
+  if (mineHouse) ls.set('vi-gb-seen', String(Date.now()));
+  const today = dayKey(Date.now());
+  const signed = mine && list.some((g) => g.by === mine.id && dayKey(g.at) === today);
+  let text = '';
+  const input = h('input', { class: 'chat-input', maxlength: SAY_MAX, placeholder: 'Un pensiero (facoltativo)', 'aria-label': 'Messaggio per il libro degli ospiti', oninput: (e) => { text = e.target.value; } });
+  const form = !mine || mineHouse ? null : signed ? h('p', { class: 'small' }, 'Oggi hai già firmato. Ripassa domani!')
+    : h('div', { class: 'stack' },
+      h('div', { class: 'chips' }, ['Bella casa!', 'Che bel salotto', 'Torno presto!', 'Grazie dell\'ospitalità'].map((t) => h('button', { class: 'chip', onclick: () => { input.value = t; text = t; } }, t))),
+      input,
+      h('button', { class: 'btn primary', onclick: (e) => run(e.currentTarget, async () => { await store.op({ type: 'sign', owner: ownerId, text }); toast('Firma lasciata ✍️'); openGuestbook(ownerId); update(); }) }, '✍️ Firma il libro'));
+  openSheet(`Libro degli ospiti${mineHouse ? '' : ` di ${owner?.username || ''}`}`, h('div', { class: 'stack' },
+    form,
+    list.length ? h('ol', { class: 'guestbook' }, list.map((g) => h('li', {},
+      h('div', { class: 'gb-head' }, h('strong', {}, city.residents[g.by]?.username || 'Un ex abitante'), h('span', { class: 'small' }, fmtDay(g.at))),
+      g.text ? h('p', {}, g.text) : null)))
+      : h('p', { class: 'small' }, mineHouse ? 'Ancora nessuna firma: invita i vicini a passare!' : 'Nessuno ha ancora firmato: sii il primo!')));
+}
+async function toggleHeart(ownerId) {
+  const r = await run(null, () => store.op({ type: 'heart', owner: ownerId }));
+  if (r) toast(r.on ? `❤️ Cuore lasciato: questa casa ne ha ${r.n} questa settimana` : 'Cuore tolto');
+  update();
+}
+// Le case con più cuori nella settimana (la prima diventa la Casa della settimana sul giornale).
+function rankingBox(city) {
+  const top = weekRanking(city, weekKey(Date.now())).slice(0, 5);
+  if (!top.length) return h('section', { class: 'ranking' }, h('h3', {}, 'Casa della settimana'), h('p', { class: 'small' }, 'Ancora nessun cuore questa settimana. Entra nelle case dei vicini e lascia un ❤️ a quella che ti piace di più: lunedì il giornale annuncia la vincitrice.'));
+  return h('section', { class: 'ranking' },
+    h('h3', {}, 'Corsa alla Casa della settimana'),
+    h('ol', {}, top.map((e, i) => {
+      const house = residentHouse(city, e.id);
+      return h('li', {}, h('button', { class: 'link-btn', onclick: () => { closeSheet(); map.focus(house.slot); openHouse(house.slot); } }, `${i + 1}. ${city.residents[e.id].username}`), h('span', {}, `❤️ ${e.n}`));
+    })),
+    h('p', { class: 'small' }, 'Lunedì il giornale annuncia la vincitrice.'));
+}
+
 // Cosa arriva al prossimo traguardo, detto in breve per la barra in basso.
 function goalText(built, target) {
   const what = target === 25 ? 'la fontana in piazza' : target === 50 ? 'i tavolini del bar in piazza' : `quota ${target} abitanti`;
@@ -227,15 +359,16 @@ function goalText(built, target) {
 // Barra per parlare, come in Habbo: quello che scrivi compare in una nuvoletta sopra il tuo omino.
 function chatBar() {
   const input = h('input', { id: 'chat-input', class: 'chat-input', maxlength: SAY_MAX, placeholder: 'Scrivi qualcosa…', autocomplete: 'off', enterkeyhint: 'send', 'aria-label': 'Messaggio da dire' });
+  const toggle = h('button', { class: 'btn small icon-btn' + (ui.actsOpen ? ' on' : ''), type: 'button', 'aria-expanded': String(!!ui.actsOpen), 'aria-label': 'Gesti e faccine', onclick: () => { ui.actsOpen = !ui.actsOpen; update(); } }, icon('smile'));
   const form = h('form', { class: 'chat', onsubmit: (e) => { e.preventDefault(); sayIt(input.value).then((ok) => { if (ok) input.value = ''; }); } },
-    input, h('button', { class: 'btn small primary', type: 'submit' }, 'Di\''));
+    toggle, input, h('button', { class: 'btn small primary', type: 'submit' }, 'Di\''));
   if (ui.chatDraft) input.value = ui.chatDraft;
   input.addEventListener('input', () => { ui.chatDraft = input.value; });
-  return form;
+  return ui.actsOpen ? h('div', { class: 'chat-wrap' }, actionsRow(), form) : form;
 }
 async function sayIt(text) {
   const ok = await run(null, async () => { await store.say(text); return true; });
-  if (ok) { ui.chatDraft = ''; map.say(me().id, String(text).replace(/\s+/g, ' ').trim()); }
+  if (ok) { ui.chatDraft = ''; map.say(me().id, String(text).replace(/\s+/g, ' ').trim()); markOnce('saluta'); }
   return !!ok;
 }
 // Toccando un omino: salutalo con una frase pronta, o vai a casa sua.
@@ -579,6 +712,9 @@ function openHouse(slot) {
     isFounder(r) ? h('span', { class: 'tag gold' }, 'Fondatore') : null,
     house.status === 'cantiere' ? h('span', { class: 'tag warn' }, 'Cantiere') : null,
     store.online.has(r.id) ? h('span', { class: 'tag live' }, 'In città ora') : null,
+    city.news.some((n) => n.kind === 'casaSettimana' && n.residentId === r.id && weekKey(n.at) === weekKey(Date.now())) ? h('span', { class: 'tag gold' }, '🏆 Casa della settimana') : null,
+    heartsThisWeek(city, r.id, Date.now()) ? h('span', { class: 'tag' }, `❤️ ${heartsThisWeek(city, r.id, Date.now())} questa settimana`) : null,
+    (() => { const st = missionStatus(city, r.id, Date.now()).streak; return st > 1 ? h('span', { class: 'tag' }, `🔥 ${st} giorni di fila`) : null; })(),
     r.suspended ? h('span', { class: 'tag warn' }, 'Sospeso') : null);
   const facts = h('dl', { class: 'facts-list' },
     h('div', {}, h('dt', {}, 'Quartiere'), h('dd', {}, d.name)),
@@ -756,6 +892,7 @@ function openLocked(id) {
 function openGiornale() {
   const city = store.city;
   const admin = me()?.admin;
+  markOnce('giornale');
   const list = h('ol', { class: 'news' }, city.news.map((n) => {
     const f = formatNews(n, city);
     return h('li', { class: 'news-item' },
@@ -770,6 +907,7 @@ function openGiornale() {
   openSheet('', h('div', { class: 'paper' },
     h('div', { class: 'masthead' }, h('p', { class: 'mast-name' }, CITY), h('p', { class: 'mast-sub' }, `${PAPER} · il giornale della città`)),
     admin ? h('button', { class: 'btn small', onclick: openRedazione }, icon('desk'), 'Redazione') : null,
+    rankingBox(city),
     list), { wide: true });
 }
 
@@ -864,7 +1002,11 @@ function onTap(t) {
   if (t.kind === 'lot') { go(t.x, t.y); return openLot(t.slot); }
   if (t.kind === 'giornale') { go(t.x, t.y + 1); return openGiornale(); }
   if (t.kind === 'muro') { go(t.x, t.y + 1); return openMuro(); }
-  if (t.kind === 'piazza') { if (walker) { closeSheet(); return go(t.x, t.y); } return openMuro(); }
+  if (t.kind === 'piazza') {
+    if (walker && seatAt(store.city, null, t.x, t.y)) { closeSheet(); return sitOn(t.x, t.y); }
+    if (walker) { closeSheet(); return go(t.x, t.y); }
+    return openMuro();
+  }
   if (t.kind === 'locked' && !walker) return openLocked(t.district);
   closeSheet();
   if (walker && !go(t.x, t.y)) toast('Da qui non si passa: prova a seguire le strade.', 'err');
@@ -1032,6 +1174,16 @@ async function onRoomTap(t) {
     if (t.kind === 'floor') { ui.sel = null; map.setRoomUI({ selectedUid: null }); return update(); }
     return;
   }
+  // Su sedie, poltrone, divani e pouf ci si siede.
+  if (t.kind === 'furni') {
+    const it = room.items.find((x) => x.uid === t.uid);
+    if (it && seatAt(store.city, ui.room, it.x, it.y)) {
+      const f = footprint(it);
+      const sx = Math.max(f.x0, Math.min(f.x1, t.x)), sy = Math.max(f.y0, Math.min(f.y1, t.y));
+      if (!sitOn(sx, sy, ui.room)) toast('Non si arriva a quella seduta.', 'err');
+      return;
+    }
+  }
   // Fuori dalla modalità arredo ogni tocco è una passeggiata (verso il mobile o la casella).
   if (t.kind === 'floor' || t.kind === 'furni') {
     if (!map.walk(me().id, t.x, t.y, ui.room)) return;
@@ -1051,7 +1203,19 @@ function roomBar() {
     h('span', { class: 'row-actions' },
       mine ? h('button', { class: 'btn small' + (ui.edit ? ' primary' : ''), onclick: () => { ui.edit = !ui.edit; ui.placing = null; ui.sel = null; ui.moving = null; map.setRoomUI({ selectedUid: null }); update(); } }, ui.edit ? 'Fine' : 'Arreda') : null,
       h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
-  if (!ui.edit || !mine) return h('div', { class: 'bar room-bar' }, head, chatBar());
+  if (!ui.edit || !mine) {
+    // Il libro degli ospiti e i cuori: chi visita firma e lascia un ❤️, il padrone legge.
+    const gb = city.guestbook?.[ui.room] || [];
+    const seen = Number(ls.get('vi-gb-seen') || 0);
+    const fresh = mine ? gb.filter((g) => g.at > seen).length : 0;
+    const hearted = !mine && me() && (() => { const t = city.hearts?.[ui.room]?.[me().id]; return t !== undefined && weekKey(t) === weekKey(Date.now()); })();
+    const n = heartsThisWeek(city, ui.room, Date.now());
+    const social = h('div', { class: 'row-wrap room-social' },
+      h('button', { class: 'btn small', onclick: () => openGuestbook(ui.room) }, mine ? `📖 Libro degli ospiti${fresh ? ` (${fresh} nuove)` : ` (${gb.length})`}` : '✍️ Firma il libro'),
+      mine ? h('span', { class: 'tag' }, `❤️ ${n} questa settimana`)
+        : h('button', { class: 'btn small heart' + (hearted ? ' on' : ''), 'aria-pressed': String(!!hearted), onclick: () => toggleHeart(ui.room) }, `${hearted ? '❤️' : '🤍'} ${n}`));
+    return h('div', { class: 'bar room-bar' }, head, social, chatBar());
+  }
   let body;
   if (ui.sel) {
     const it = room.items.find((x) => x.uid === ui.sel);
@@ -1137,6 +1301,7 @@ async function boot() {
   store.subscribe((kind, data) => {
     if (kind === 'move') { if (data.id !== me()?.id) map.walk(data.id, data.x, data.y, data.room ?? null); return; }
     if (kind === 'say') { if (data.id !== me()?.id) map.say(data.id, data.text); return; }
+    if (kind === 'act') { if (data.id !== me()?.id) map.act(data.id, data.act); return; }
     map.setCity(store.city);
     syncAvatars();
     update();
