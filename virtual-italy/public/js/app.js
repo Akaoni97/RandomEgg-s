@@ -38,6 +38,9 @@ const ICONS = {
   desk: '<path d="M4 6h16v10H4zM9 20h6M12 16v4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
+  fountain: '<path d="M4 15h16M6 15c0 3 2.7 5 6 5s6-2 6-5M12 15V8M12 8c-2 0-3.5 1.2-4 3M12 8c2 0 3.5 1.2 4 3M12 5v1"/>',
+  flask: '<path d="M10 3h4M10.5 3v5.5L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5.5-9.5V3M7.5 14h9"/>',
+  pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
 };
 const icon = (name) => h('span', { class: 'ico', 'aria-hidden': 'true', html: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>` });
 
@@ -76,20 +79,28 @@ function shell() {
   const app = $('#app');
   app.replaceChildren(
     h('canvas', { id: 'map', 'aria-label': `Mappa di ${CITY}` }),
-    h('header', { class: 'top' },
-      h('button', { class: 'brand', onclick: () => { closeSheet(); map.fitCentro(); map.dirty = true; }, 'aria-label': 'Torna al centro' },
-        h('span', { class: 'brand-name' }, 'Virtual', h('span', { class: 'brand-dash' }, '-'), 'Italy'),
-        h('span', { class: 'brand-count', id: 'count' })),
-      h('nav', { class: 'top-actions' },
-        h('button', { class: 'round', id: 'btn-night', onclick: toggleNight, 'aria-label': 'Giorno o notte' }),
-        h('button', { class: 'round', onclick: () => openGiornale(), 'aria-label': 'Il giornale' }, icon('paper')),
-        h('button', { class: 'round', id: 'btn-mail', onclick: () => openMailbox(), 'aria-label': 'Cassetta delle lettere' }, icon('mail'), h('span', { class: 'badge', id: 'mail-badge', hidden: true })),
-        h('button', { class: 'round', id: 'btn-me', onclick: () => (me() ? openProfile() : openLogin()), 'aria-label': 'Il mio profilo' }, icon('user')))),
-    DEMO ? demoBar() : null,
-    h('div', { class: 'notice', id: 'notice', hidden: true }),
+    h('div', { class: 'haze', 'aria-hidden': 'true' }),
+    h('div', { class: 'hud-top' },
+      h('header', { class: 'top' },
+        h('button', { class: 'brand', onclick: () => { closeSheet(); map.fitCentro(); }, 'aria-label': 'Torna al centro della città' },
+          h('span', { class: 'brand-mark', 'aria-hidden': 'true', html: BRAND_MARK }),
+          h('span', { class: 'brand-text' },
+            h('span', { class: 'brand-name' }, 'Virtual', h('span', { class: 'brand-dash' }, '-'), 'Italy'),
+            h('span', { class: 'brand-count', id: 'count' }))),
+        DEMO ? h('button', { class: 'demo-chip', id: 'demo-chip', 'aria-expanded': 'false', onclick: toggleDemoMenu }, icon('flask'), 'Demo') : null,
+        h('nav', { class: 'top-actions', 'aria-label': 'Comandi' },
+          h('button', { class: 'tab', id: 'btn-night', onclick: toggleNight, 'aria-label': 'Giorno o notte' }),
+          h('button', { class: 'tab', onclick: () => openGiornale(), 'aria-label': 'Il giornale' }, icon('paper')),
+          h('button', { class: 'tab', id: 'btn-mail', onclick: () => openMailbox(), 'aria-label': 'Cassetta delle lettere' }, icon('mail'), h('span', { class: 'badge', id: 'mail-badge', hidden: true })),
+          h('button', { class: 'tab', id: 'btn-me', onclick: () => (me() ? openProfile() : openLogin()), 'aria-label': 'Il mio profilo' }, icon('user')))),
+      DEMO ? demoMenu() : null,
+      h('button', { class: 'ticker', id: 'ticker', onclick: () => openGiornale(), 'aria-label': 'Ultime notizie: apri il giornale' },
+        h('span', { class: 'ticker-tag' }, 'Ultim\'ora'),
+        h('span', { class: 'ticker-text', id: 'ticker-text' })),
+      h('div', { class: 'notice', id: 'notice', hidden: true })),
     h('div', { class: 'zoom' },
-      h('button', { class: 'round small', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1.3), 'aria-label': 'Ingrandisci' }, icon('plus')),
-      h('button', { class: 'round small', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1 / 1.3), 'aria-label': 'Rimpicciolisci' }, icon('minus'))),
+      h('button', { class: 'tab', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1.3), 'aria-label': 'Ingrandisci' }, icon('plus')),
+      h('button', { class: 'tab', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1 / 1.3), 'aria-label': 'Rimpicciolisci' }, icon('minus'))),
     h('footer', { class: 'bottom', id: 'bottom' }),
     h('div', { class: 'scrim', id: 'scrim', hidden: true, onclick: closeSheet }),
     h('section', { class: 'sheet', id: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'true' }),
@@ -99,14 +110,38 @@ function shell() {
   window.__virtualItaly = { store, map }; // comodo per il debug dalla console
 }
 
-function demoBar() {
-  return h('div', { class: 'demobar' },
-    h('span', { class: 'demobar-label', title: 'La città vive solo in questo browser e le email sono finte.' }, 'Demo'),
-    h('span', { class: 'demobar-actions' },
-      h('button', { onclick: () => { store.addResidents(5); toast('Sono arrivati 5 nuovi abitanti'); } }, '+5 abitanti'),
-      h('button', { onclick: () => { if (!me()) return toast('Prima iscriviti: poi un vicino busserà alla tua porta.', 'err'); toast(store.knock() ? 'Qualcuno ha bussato: guarda la cassetta' : 'Hai già conosciuto tutti i vicini'); } }, 'Fai bussare un vicino'),
-      h('button', { onclick: openDemoInbox }, 'Email finte'),
-      h('button', { onclick: () => { store.reset(); ui.mode = 'browse'; closeSheet(); toast('Demo ripartita'); } }, 'Ricomincia')));
+const BRAND_MARK = '<svg viewBox="0 0 64 64" width="30" height="30"><rect width="64" height="64" rx="16" fill="#f2b632"/><path d="M15 44V28h34v16z" fill="#fbf3dc"/><path d="M11 29 32 12l21 17z" fill="#b5523b"/><path d="M28 44v-9h8v9z" fill="#2f5d50"/><path d="M19 31h6v5h-6zM39 31h6v5h-6z" fill="#2f5d50"/><path d="M6 48h52" stroke="#2f5d50" stroke-width="4" stroke-linecap="round"/></svg>';
+
+function toggleDemoMenu(force) {
+  const menu = $('#demo-menu');
+  const open = typeof force === 'boolean' ? force : menu.hidden;
+  menu.hidden = !open;
+  $('#demo-chip').setAttribute('aria-expanded', String(open));
+}
+function demoMenu() {
+  const act = (fn) => () => { toggleDemoMenu(false); fn(); };
+  return h('div', { class: 'demo-menu', id: 'demo-menu', hidden: true },
+    h('p', { class: 'small' }, 'La città vive solo in questo browser: gli altri abitanti sono finti e le email non partono davvero.'),
+    h('span', { class: 'demo-actions' },
+      h('button', { class: 'btn small', onclick: act(() => { store.addResidents(5); toast('Sono arrivati 5 nuovi abitanti'); }) }, '+5 abitanti'),
+      h('button', { class: 'btn small', onclick: act(() => { if (!me()) return toast('Prima iscriviti: poi un vicino busserà alla tua porta.', 'err'); toast(store.knock() ? 'Qualcuno ha bussato: guarda la cassetta' : 'Hai già conosciuto tutti i vicini'); }) }, 'Fai bussare un vicino'),
+      h('button', { class: 'btn small', onclick: act(openDemoInbox) }, 'Email finte'),
+      h('button', { class: 'btn small', onclick: act(() => { store.reset(); ui.mode = 'browse'; closeSheet(); toast('Demo ripartita'); }) }, 'Ricomincia')));
+}
+
+// Banner del giornale: fa girare i titoli più recenti.
+function renderTicker() {
+  const city = store.city;
+  const el = $('#ticker-text');
+  if (!city || !el) return;
+  const items = city.news.slice(0, 5);
+  if (!items.length) return;
+  ui.tick = ((ui.tick ?? -1) + 1) % items.length;
+  const f = formatNews(items[ui.tick], city);
+  el.classList.remove('in');
+  void el.offsetWidth;
+  el.textContent = f.title;
+  el.classList.add('in');
 }
 
 function toggleNight() {
@@ -120,7 +155,8 @@ function update() {
   const city = store.city;
   if (!city) return;
   const built = builtCount(city);
-  $('#count').textContent = `${built} ${built === 1 ? 'abitante' : 'abitanti'}`;
+  $('#count').textContent = `${built} ${built === 1 ? 'abitante' : 'abitanti'} · ${city.openDistricts} ${city.openDistricts === 1 ? 'quartiere' : 'quartieri'}`;
+  if (ui.newsTop !== city.news[0]?.id) { ui.newsTop = city.news[0]?.id; ui.tick = -1; renderTicker(); }
   const night = isNight();
   $('#btn-night').replaceChildren(icon(night ? 'sun' : 'moon'));
   $('#btn-night').setAttribute('aria-label', night ? 'Passa al giorno' : 'Passa alla notte');
@@ -143,7 +179,8 @@ function update() {
     const left = house ? Math.max(0, Math.ceil((house.reservedAt + RESERVE_MS - Date.now()) / 3600000)) : null;
     notice.hidden = false;
     notice.replaceChildren(
-      h('div', {}, h('strong', {}, 'Conferma la tua email'),
+      h('span', { class: 'notice-ico' }, icon('mail')),
+      h('div', { class: 'notice-text' }, h('strong', {}, 'Conferma la tua email'),
         h('span', {}, house ? ` per finire la casa: il cantiere resta tuo per altre ${left} ore.` : ` per diventare abitante a tutti gli effetti. L'abbiamo mandata a ${mine.email}.`)),
       h('div', { class: 'notice-actions' },
         DEMO ? h('button', { class: 'btn small primary', onclick: openDemoInbox }, 'Apri l\'email') : null,
@@ -154,19 +191,30 @@ function update() {
   const bottom = $('#bottom');
   if (ui.mode === 'choose') {
     bottom.replaceChildren(h('div', { class: 'bar choose' },
-      h('div', {}, h('strong', {}, 'Tocca un lotto libero'), h('span', {}, ' Quelli tratteggiati sono disponibili.')),
+      h('span', { class: 'goal-ico' }, icon('pin')),
+      h('div', { class: 'goal-body' }, h('strong', {}, 'Tocca un lotto libero'), h('span', { class: 'small' }, 'Quelli con il cartello "Libero" sono disponibili.')),
       h('button', { class: 'btn', onclick: () => { ui.mode = 'browse'; map.set({ selected: null }); update(); } }, 'Annulla')));
     return;
   }
   const g = goalProgress(built);
-  const goal = h('button', { class: 'goal', onclick: () => openMuro() },
-    h('span', { class: 'goal-text' }, nextGoal(city, built)),
-    h('span', { class: 'goal-track' }, h('span', { class: 'goal-fill', style: `width:${Math.round(g.ratio * 100)}%` })));
+  const goal = h('button', { class: 'goal', onclick: () => openMuro(), 'aria-label': `${nextGoal(city, built)} Apri il Muro dei Fondatori` },
+    h('span', { class: 'goal-ico' }, icon('fountain')),
+    h('span', { class: 'goal-body' },
+      h('span', { class: 'goal-head' }, h('span', { class: 'eyebrow' }, 'Prossimo traguardo'), h('span', { class: 'goal-num' }, `${built}/${g.target}`)),
+      h('span', { class: 'goal-text' }, goalText(built, g.target)),
+      h('span', { class: 'goal-track' }, h('span', { class: 'goal-fill', style: `width:${Math.round(g.ratio * 100)}%` }))));
   let cta;
   if (!mine) cta = h('button', { class: 'btn primary big', onclick: openRegister }, 'Vieni ad abitare qui');
   else if (!house) cta = h('button', { class: 'btn primary big', onclick: startChoosing }, 'Scegli il tuo lotto');
   else cta = h('button', { class: 'btn big', onclick: () => { map.focus(house.slot, 2); openHouse(house.slot); } }, icon('home'), 'La mia casa');
   bottom.replaceChildren(h('div', { class: 'bar' }, goal, cta));
+}
+
+// Cosa arriva al prossimo traguardo, detto in breve per la barra in basso.
+function goalText(built, target) {
+  const what = target === 25 ? 'la fontana in piazza' : target === 50 ? 'i tavolini del bar in piazza' : `quota ${target} abitanti`;
+  const left = Math.max(0, target - built);
+  return left ? `Ancora ${left} ${left === 1 ? 'abitante' : 'abitanti'} per ${what}` : 'Traguardo raggiunto!';
 }
 
 function devLinkToast(r) {
@@ -180,6 +228,7 @@ function openSheet(title, body, { wide = false, onClose } = {}) {
   ui.sheet = { onClose };
   sheet.className = 'sheet' + (wide ? ' wide' : '');
   sheet.replaceChildren(
+    h('div', { class: 'sheet-grab', 'aria-hidden': 'true' }),
     h('div', { class: 'sheet-head' },
       h('h2', { id: 'sheet-title' }, title),
       h('button', { class: 'round small ghost', onclick: closeSheet, 'aria-label': 'Chiudi' }, icon('x'))),
@@ -738,4 +787,10 @@ async function boot() {
 
 if ('serviceWorker' in navigator && !DEMO && location.protocol !== 'file:') navigator.serviceWorker.register('/sw.js').catch(() => {});
 setInterval(update, 60000);
+setInterval(renderTicker, 6000);
+// Il menu della demo si chiude toccando altrove.
+addEventListener('pointerdown', (e) => {
+  const menu = document.getElementById('demo-menu');
+  if (menu && !menu.hidden && !e.target.closest('#demo-menu, #demo-chip')) toggleDemoMenu(false);
+});
 boot();

@@ -19,7 +19,11 @@
   --gold: #b88a12;
   --warn: #a55a12;
   --live: #2f7d4f;
-  --glass: rgba(251, 248, 241, 0.92);
+  --glass: rgba(251, 248, 241, 0.86);
+  --glass-line: rgba(255, 255, 255, 0.7);
+  --haze: rgba(236, 244, 248, 0.55);
+  --paper: #f6f1e3;
+  --paper-ink: #1f2a26;
   --shadow: 0 10px 30px rgba(20, 30, 26, 0.18);
   --sea: #5aa6c9;
   --f-display: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
@@ -31,14 +35,14 @@
   :root:not([data-theme="light"]) {
     --bg: #1b2321; --surface: #24302c; --ink: #ece6d8; --muted: #a2aca6; --line: rgba(236, 230, 216, 0.14);
     --brand: #7fc2ab; --brand-ink: #10201b; --accent: #f2b632; --accent-ink: #2a1e00; --red: #e86b5f;
-    --gold: #e2bd4f; --warn: #f0a35b; --live: #6fd39a; --glass: rgba(27, 35, 33, 0.9); --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --gold: #e2bd4f; --warn: #f0a35b; --live: #6fd39a; --glass: rgba(27, 35, 33, 0.86); --glass-line: rgba(255, 255, 255, 0.08); --haze: rgba(20, 30, 50, 0.45); --paper: #26302c; --paper-ink: #ece6d8; --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #1b2321; --surface: #24302c; --ink: #ece6d8; --muted: #a2aca6; --line: rgba(236, 230, 216, 0.14);
   --brand: #7fc2ab; --brand-ink: #10201b; --accent: #f2b632; --accent-ink: #2a1e00; --red: #e86b5f;
-  --gold: #e2bd4f; --warn: #f0a35b; --live: #6fd39a; --glass: rgba(27, 35, 33, 0.9); --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --gold: #e2bd4f; --warn: #f0a35b; --live: #6fd39a; --glass: rgba(27, 35, 33, 0.86); --glass-line: rgba(255, 255, 255, 0.08); --haze: rgba(20, 30, 50, 0.45); --paper: #26302c; --paper-ink: #ece6d8; --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   color-scheme: dark;
 }
 
@@ -54,58 +58,97 @@ a { color: var(--brand); font-weight: 700; }
 #map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
 #map:active { cursor: grabbing; }
 
-/* Barra in alto */
-.top {
+/* Velatura in lontananza: la parte alta della mappa è più chiara, come la foschia. */
+.haze {
+  position: absolute; inset: 0 0 auto; height: 34%; z-index: 1; pointer-events: none;
+  background: linear-gradient(to bottom, var(--haze) 0%, transparent 100%);
+}
+
+/* In alto: intestazione, banner del giornale, avvisi */
+.hud-top {
   position: absolute; z-index: 5; top: 0; left: 0; right: 0;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px;
   padding: calc(env(safe-area-inset-top, 0px) + 10px) max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
   pointer-events: none;
 }
-.top > * { pointer-events: auto; }
-.brand {
-  display: flex; align-items: baseline; gap: 10px; min-width: 0;
-  background: var(--brand); color: var(--brand-ink); border: 0; border-radius: 999px; padding: 8px 14px 8px 16px;
-  box-shadow: var(--shadow); cursor: pointer;
+.hud-top > * { pointer-events: auto; }
+.top {
+  width: min(760px, 100%); min-width: 0;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--glass); border: 1px solid var(--glass-line); border-radius: 22px;
+  padding: 6px; box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2);
 }
-.brand-name { font: 700 1.25rem/1 var(--f-display); letter-spacing: 0.01em; white-space: nowrap; }
+.brand {
+  display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;
+  background: none; border: 0; padding: 2px 6px 2px 2px; border-radius: 16px; cursor: pointer; text-align: left; color: var(--ink);
+}
+.brand-mark { flex: none; display: grid; filter: drop-shadow(0 2px 3px rgba(20, 30, 20, 0.25)); }
+.brand-mark svg { width: 38px; height: 38px; }
+.brand-text { display: grid; min-width: 0; overflow: hidden; }
+.brand-name { font: 700 1.22rem/1.05 var(--f-display); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--brand); }
 .brand-dash { color: var(--accent); }
-.brand-count { font: 800 0.75rem/1 var(--f-body); opacity: 0.85; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.top-actions { display: flex; gap: 6px; }
+.brand-count { font: 800 0.74rem/1.3 var(--f-body); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.demo-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 10px 0 8px;
+  border-radius: 999px; border: 0; background: var(--accent); color: var(--accent-ink); font: 800 0.78rem/1 var(--f-body); cursor: pointer;
+}
+.demo-chip .ico svg { width: 16px; height: 16px; }
+.top-actions { flex: none; display: flex; gap: 2px; background: var(--surface); border-radius: 16px; padding: 3px; }
+.tab {
+  position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px;
+  border: 0; background: transparent; color: var(--ink); cursor: pointer;
+}
+.tab:hover { background: var(--bg); }
+.tab:active { transform: scale(0.94); }
 .round {
   position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
   border: 0; background: var(--glass); color: var(--ink); box-shadow: var(--shadow); cursor: pointer;
-  backdrop-filter: blur(6px);
 }
 .round.small { width: 38px; height: 38px; }
 .round.ghost { box-shadow: none; background: transparent; }
 .ico { display: grid; place-items: center; }
 .badge {
-  position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;
-  background: var(--red); color: #fff; font: 800 0.72rem/20px var(--f-body); text-align: center;
+  position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--red); color: #fff; font: 800 0.68rem/18px var(--f-body); text-align: center; box-shadow: 0 0 0 2px var(--surface);
 }
 
-.demobar {
-  position: absolute; z-index: 4; left: 50%; transform: translateX(-50%);
-  top: calc(env(safe-area-inset-top, 0px) + 62px); width: min(760px, calc(100% - 24px));
-  display: flex; align-items: center; gap: 8px;
-  background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 0.8rem; font-weight: 800;
-  box-shadow: var(--shadow);
+.demo-menu {
+  width: min(760px, 100%); display: grid; gap: 8px;
+  background: var(--bg); border: 2px solid var(--accent); border-radius: 18px; padding: 12px; box-shadow: var(--shadow);
 }
-.demobar-label { flex: none; }
-.demobar-actions { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
-.demobar-actions::-webkit-scrollbar { display: none; }
-.demobar button { flex: none; border: 1px solid rgba(58, 42, 0, 0.35); background: rgba(255, 255, 255, 0.4); color: inherit; border-radius: 999px; padding: 4px 10px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.demo-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Banner del giornale */
+.ticker {
+  width: min(760px, 100%); display: flex; align-items: center; gap: 10px; min-width: 0;
+  background: var(--paper); color: var(--paper-ink); border: 0; border-radius: 14px; padding: 6px 12px 6px 6px;
+  box-shadow: 0 6px 18px rgba(20, 30, 20, 0.16); cursor: pointer; text-align: left;
+  border-bottom: 3px solid var(--red);
+}
+.ticker-tag {
+  flex: none; background: var(--red); color: #fff; border-radius: 8px; padding: 5px 8px;
+  font: 800 0.66rem/1 var(--f-body); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.ticker-text { min-width: 0; flex: 1; font: 400 0.98rem/1.25 var(--f-paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticker-text.in { animation: tick-in 0.45s ease-out; }
+@keyframes tick-in { from { opacity: 0; transform: translateY(6px); } }
 
 .notice {
-  position: absolute; z-index: 4; left: 50%; transform: translateX(-50%);
-  top: calc(env(safe-area-inset-top, 0px) + 64px); width: min(560px, calc(100% - 24px));
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
-  background: var(--glass); border: 2px solid var(--accent); border-radius: var(--r); padding: 10px 12px; box-shadow: var(--shadow); font-size: 0.9rem;
+  width: min(760px, 100%);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  background: var(--bg); border-radius: 16px; padding: 10px 12px; box-shadow: var(--shadow); font-size: 0.9rem;
+  border-left: 5px solid var(--accent);
 }
-.demobar ~ .notice { top: calc(env(safe-area-inset-top, 0px) + 106px); }
+.notice-ico { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--accent) 30%, var(--bg)); color: var(--accent-ink); }
+.notice-text { flex: 1; min-width: 180px; }
 .notice-actions { display: flex; gap: 6px; }
 
-.zoom { position: absolute; z-index: 3; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); display: grid; gap: 8px; }
+.zoom {
+  position: absolute; z-index: 3; right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 170px);
+  display: grid; gap: 2px; padding: 3px; border-radius: 16px; background: var(--glass); box-shadow: var(--shadow);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
 @media (pointer: coarse) { .zoom { display: none; } }
 
 /* Barra in basso */
@@ -115,14 +158,24 @@ a { color: var(--brand); font-weight: 700; }
   display: flex; justify-content: center; pointer-events: none;
 }
 .bar {
-  pointer-events: auto; width: min(560px, 100%);
-  display: grid; gap: 10px; background: var(--glass); border-radius: 20px; padding: 12px; box-shadow: var(--shadow); backdrop-filter: blur(8px);
+  pointer-events: auto; width: min(760px, 100%);
+  display: grid; gap: 10px; align-items: center;
+  background: var(--glass); border: 1px solid var(--glass-line); border-radius: 22px; padding: 10px;
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2);
 }
-.bar.choose { grid-template-columns: 1fr auto; align-items: center; border: 2px solid var(--accent); font-size: 0.92rem; }
-.goal { display: grid; gap: 6px; background: none; border: 0; padding: 0 2px; text-align: left; cursor: pointer; font-size: 0.88rem; font-weight: 700; color: var(--muted); }
+@media (min-width: 640px) { .bar { grid-template-columns: 1fr minmax(220px, auto); } }
+.bar.choose { grid-template-columns: auto 1fr auto; border: 2px solid var(--accent); }
+.goal { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 0; border-radius: 16px; padding: 10px 12px; text-align: left; cursor: pointer; color: var(--ink); min-width: 0; }
+.goal-ico { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--brand); color: var(--brand-ink); }
+.goal-body { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.goal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.goal-head .eyebrow { font-size: 0.66rem; }
+.goal-num { font: 600 0.9rem/1 var(--f-display); color: var(--brand); font-variant-numeric: tabular-nums; }
+.goal-text { font-size: 0.86rem; font-weight: 700; color: var(--muted); }
 .goal-track { display: block; height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .goal-track.big { height: 12px; border-radius: 6px; }
-.goal-fill { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width 0.6s ease; }
+.goal-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #f6cf6a); border-radius: inherit; transition: width 0.6s ease; }
 
 /* Bottoni */
 .btn {
@@ -151,11 +204,13 @@ a { color: var(--brand); font-weight: 700; }
 }
 @keyframes rise { from { transform: translateY(30px); opacity: 0; } }
 @media (min-width: 860px) {
-  .sheet { left: auto; top: calc(env(safe-area-inset-top, 0px) + 70px); right: 14px; bottom: 14px; width: 420px; max-height: none; border-radius: 20px; }
+  .sheet { left: auto; top: calc(env(safe-area-inset-top, 0px) + 124px); right: 14px; bottom: 14px; width: 420px; max-height: none; border-radius: 20px; }
   .sheet.wide { width: 520px; }
   .scrim { background: transparent; pointer-events: none; }
 }
 @media (prefers-reduced-motion: reduce) { .sheet, .toast { animation: none; } .goal-fill { transition: none; } }
+.sheet-grab { width: 44px; height: 5px; border-radius: 3px; background: var(--line); margin: 4px auto 0; }
+@media (min-width: 860px) { .sheet-grab { display: none; } }
 .sheet-head { position: sticky; top: -6px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg); padding: 10px 0 6px; }
 .sheet-head h2 { margin: 0; font: 600 1.35rem/1.15 var(--f-display); text-wrap: balance; min-width: 0; overflow-wrap: anywhere; }
 .sheet-body { display: grid; gap: 14px; }
@@ -248,16 +303,19 @@ a { color: var(--brand); font-weight: 700; }
 .poster { width: 100%; border-radius: 8px; box-shadow: var(--shadow); }
 
 /* Avvisi */
-.toasts { position: absolute; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); display: grid; gap: 8px; width: min(440px, calc(100% - 24px)); pointer-events: none; }
+.toasts { position: absolute; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 170px); display: grid; gap: 8px; width: min(440px, calc(100% - 24px)); pointer-events: none; }
 .toast { background: var(--ink); color: var(--bg); padding: 12px 14px; border-radius: 12px; font-weight: 700; box-shadow: var(--shadow); animation: rise 0.2s ease-out; transition: opacity 0.4s; }
 .toast.err { background: var(--red); color: #fff; }
 .toast.out { opacity: 0; }
 
 @media (max-width: 420px) {
-  .brand-name { font-size: 1.08rem; }
-  .brand { padding: 8px 12px; gap: 8px; }
-  .round { width: 40px; height: 40px; }
-  .top-actions { gap: 4px; }
+  .brand-mark svg { width: 32px; height: 32px; }
+  .brand-name { font-size: 1rem; }
+  .brand { gap: 7px; }
+  .top { gap: 4px; }
+  .tab { width: 34px; height: 38px; }
+  .demo-chip { padding: 0 8px; }
+  .demo-chip .ico { display: none; }
 }
 @media (max-width: 360px) { .brand-count { display: none; } }
 
@@ -1109,9 +1167,59 @@ function getGround(open) {
     if (ih(x, y, 17) > 0.35) continue;
     trees.push({ x: x * T + 16, y: y * T + 28, kind: 'pino', s: 0.9 + ih(x, y, 18) * 0.3 });
   }
-  const gcache = { kind, color, crop, parcel, trees };
+  const high = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const d = districtAt(x, y);
+    if ((d && d <= open && y < SEA_Y) || inPiazza(x, y)) high[y * W + x] = 1;
+  }
+  const gcache = { kind, color, crop, parcel, trees, high };
   groundCache.set(open, gcache);
   return gcache;
+}
+
+// Il terrazzamento del paese: muro di pietra sul lato sud, ombra sulla campagna a est e a sud,
+// bordo illuminato a nord e a ovest. La spiaggia scende nel mare con una riva più scura.
+function drawTerrace(g, G, view, det) {
+  const { x0, y0, x1, y1 } = view;
+  const hi = (x, y) => x >= 0 && y >= 0 && x < W && y < H && G.high[y * W + x] === 1;
+  const WALL = 11;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (hi(x, y)) continue;
+      const px = x * T, py = y * T;
+      if (hi(x, y - 1)) {
+        const sh = g.createLinearGradient(0, py + WALL, 0, py + WALL + 14);
+        sh.addColorStop(0, 'rgba(30,40,15,0.4)'); sh.addColorStop(1, 'rgba(30,40,15,0)');
+        g.fillStyle = sh; g.fillRect(px, py + WALL, T, 14);
+        const wg = g.createLinearGradient(0, py, 0, py + WALL);
+        wg.addColorStop(0, '#d7c39c'); wg.addColorStop(1, '#a8916a');
+        g.fillStyle = wg; g.fillRect(px, py, T, WALL);
+        if (det) {
+          g.strokeStyle = 'rgba(90,70,40,0.35)'; g.lineWidth = 0.4;
+          for (let r = 0; r < 3; r++) for (let k = 0; k < 6; k++) g.strokeRect(px + k * 7 + (r % 2) * 3.5 - 3.5, py + 0.8 + r * 3.3, 7, 3.3);
+        }
+        g.fillStyle = '#ece0c4'; g.fillRect(px, py, T, 1);
+        g.fillStyle = 'rgba(40,30,15,0.35)'; g.fillRect(px, py + WALL - 0.8, T, 0.8);
+      }
+      if (hi(x - 1, y)) {
+        const sh = g.createLinearGradient(px, 0, px + 10, 0);
+        sh.addColorStop(0, 'rgba(30,40,15,0.28)'); sh.addColorStop(1, 'rgba(30,40,15,0)');
+        g.fillStyle = sh; g.fillRect(px, py + (hi(x, y - 1) ? WALL : 0), 10, T);
+      }
+    }
+  }
+  g.fillStyle = 'rgba(255,250,225,0.55)';
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    if (!hi(x, y)) continue;
+    if (!hi(x, y - 1)) g.fillRect(x * T, y * T, T, 1.2);
+    if (!hi(x - 1, y)) g.fillRect(x * T, y * T, 1.2, T);
+  }
+  if (SEA_Y + 1 >= y0 && SEA_Y + 1 <= y1) {
+    const py = (SEA_Y + 1) * T;
+    const rg = g.createLinearGradient(0, py, 0, py + 9);
+    rg.addColorStop(0, 'rgba(150,120,70,0.55)'); rg.addColorStop(1, 'rgba(40,90,130,0)');
+    g.fillStyle = rg; g.fillRect(x0 * T, py, (x1 - x0 + 1) * T, 9);
+  }
 }
 
 function drawGround(g, G, view, det) {
@@ -1138,6 +1246,7 @@ function drawGround(g, G, view, det) {
       }
     }
   }
+  drawTerrace(g, G, view, !!P);
   if (!P) return;
   // Siepi tra un campo e l'altro.
   g.fillStyle = '#6f9a4f';
@@ -1252,6 +1361,7 @@ function drawRoads(g, roads, view, det) {
   if (P) { g.save(); g.translate(0, -0.8); roadPass(g, roads, view, ['dorsal', 'main'], 'side', ROAD.main.sideColor); g.restore(); }
   roadPass(g, roads, view, ['dorsal', 'main'], 'surf', ROAD.main.surfColor);
   if (P) roadPass(g, roads, view, ['dorsal', 'main'], 'surf', P.asphalt);
+  curbs(g, roads, view);
   // Segnaletica: tratteggio centrale, linee di bordo, strisce pedonali dove arriva una via.
   const { x0, y0, x1, y1 } = view;
   for (let y = y0; y <= y1; y++) {
@@ -1273,6 +1383,35 @@ function drawRoads(g, roads, view, det) {
         }
       } else if (vert && !horiz) {
         g.fillRect(cx - 0.6, y * T + 7, 1.2, 16);
+      }
+    }
+  }
+}
+
+// Il marciapiede a nord mostra il suo cordolo e fa ombra sull'asfalto; quello a sud ha il bordo in luce.
+function curbs(g, roads, view) {
+  const { x0, y0, x1, y1 } = view;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const t = roads[key(x, y)];
+      if (t !== 'main' && t !== 'dorsal') continue;
+      const horiz = roads[key(x - 1, y)] === t || roads[key(x + 1, y)] === t;
+      const vert = roads[key(x, y - 1)] === t || roads[key(x, y + 1)] === t;
+      const hw = (ROAD[t].surf * T) / 2, cx = x * T + T / 2, cy = y * T + T / 2;
+      if (horiz && !vert) {
+        const openN = roads[key(x, y - 1)] && roads[key(x, y - 1)] !== 'piazza';
+        if (!openN) {
+          g.fillStyle = '#9d978b'; g.fillRect(x * T, cy - hw, T, 1.6);
+          const sh = g.createLinearGradient(0, cy - hw + 1.6, 0, cy - hw + 5);
+          sh.addColorStop(0, 'rgba(0,0,0,0.28)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+          g.fillStyle = sh; g.fillRect(x * T, cy - hw + 1.6, T, 3.4);
+        }
+        if (!roads[key(x, y + 1)]) { g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(x * T, cy + hw - 0.1, T, 0.7); }
+      } else if (vert && !horiz) {
+        const sh = g.createLinearGradient(cx - hw, 0, cx - hw + 4, 0);
+        sh.addColorStop(0, 'rgba(0,0,0,0.25)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = sh; g.fillRect(cx - hw, y * T, 4, T);
+        g.fillStyle = 'rgba(255,255,255,0.55)'; g.fillRect(cx + hw - 0.4, y * T, 0.6, T);
       }
     }
   }
@@ -1306,9 +1445,17 @@ const FOUNTAIN = { x: (PIAZZA.x0 + 4) * T, y: (PIAZZA.y0 + 1.62) * T };
 function drawPiazzaFloor(g, city, det) {
   const px = PIAZZA.x0 * T, py = PIAZZA.y0 * T;
   const w = (PIAZZA.x1 - PIAZZA.x0 + 1) * T, h = (PIAZZA.y1 - PIAZZA.y0 + 1) * T;
+  // Gradino verso la strada e ombra a destra: la piazza sta un po' più in alto.
+  const psh = g.createLinearGradient(px + w, 0, px + w + 7, 0);
+  psh.addColorStop(0, 'rgba(0,0,0,0.22)'); psh.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = psh; g.fillRect(px + w, py + 3, 7, h);
   g.fillStyle = det ? pats(g).paving : '#e4d8c0';
   g.fillRect(px, py, w, h);
   g.strokeStyle = '#bba98a'; g.lineWidth = 1.2; g.strokeRect(px + 0.6, py + 0.6, w - 1.2, h - 1.2);
+  const step = g.createLinearGradient(0, py + h - 3.2, 0, py + h);
+  step.addColorStop(0, '#c4b292'); step.addColorStop(1, '#a8957a');
+  g.fillStyle = step; g.fillRect(px, py + h - 3.2, w, 3.2);
+  g.fillStyle = 'rgba(255,255,255,0.45)'; g.fillRect(px, py + h - 3.4, w, 0.6);
   // Rosone di pietra attorno alla fontana.
   const { x: fx, y: fy } = FOUNTAIN;
   g.save();
@@ -1657,8 +1804,14 @@ function drawSite(g, P) {
 function drawHouse(g, style, { lit = false, night = false, founder = false, cantiere = false, flag = null, detail = true } = {}) {
   const P = detail ? pats(g) : null;
   const wins = [];
-  g.fillStyle = 'rgba(25,40,15,0.24)';
-  g.beginPath(); g.ellipse(19, 28.6, 14.5, 3.4, 0, 0, Math.PI * 2); g.fill();
+  // Ombra proiettata (sole da nord-ovest) e ombra di contatto alla base.
+  const tall = style.shape === 'torretta' ? 1.35 : style.shape === 'villetta' ? 0.85 : 1;
+  const cs = g.createLinearGradient(26, 0, 26 + 9 * tall, 0);
+  cs.addColorStop(0, 'rgba(25,40,15,0.3)'); cs.addColorStop(1, 'rgba(25,40,15,0)');
+  g.fillStyle = cs;
+  g.beginPath(); g.moveTo(26, 28.4); g.lineTo(26, 14); g.lineTo(26 + 7 * tall, 17 + 2 * tall); g.lineTo(26 + 9 * tall, 30.5); g.lineTo(8, 30.8); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(25,40,15,0.3)';
+  g.beginPath(); g.ellipse(17, 28.4, 14, 2.2, 0, 0, Math.PI * 2); g.fill();
   yard(g, style.garden, P);
   if (cantiere) { drawSite(g, P); return wins; }
   const c = { g, P, wall: style.wall, roof: roofColor(style.roof), door: doorColor(style.door), lit, night, wins, detail, plaque: null };
@@ -2012,6 +2165,52 @@ function drawAmbient(g, city, view, o, t) {
   }
 }
 
+/* Nuvole ------------------------------------------------------------------ */
+
+// Le nuvole stanno "più in alto" della città: scorrono più veloci del terreno quando si sposta
+// la mappa (parallasse) e proiettano un'ombra morbida a terra. Spariscono quando si guarda da vicino.
+let cloudSprites = null;
+function makeCloudSprites() {
+  const mk = (color, blur) => {
+    const cv = document.createElement('canvas');
+    cv.width = 360; cv.height = 180;
+    const c = cv.getContext('2d');
+    c.filter = `blur(${blur}px)`;
+    c.fillStyle = color;
+    for (const [x, y, r] of [[110, 105, 48], [165, 80, 62], [228, 100, 50], [270, 118, 34], [80, 122, 30], [185, 122, 52]]) { c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }
+    return cv;
+  };
+  return { cloud: mk('rgba(255,255,255,0.92)', 6), shadow: mk('rgba(20,40,30,1)', 14) };
+}
+const CLOUDS = Array.from({ length: 9 }, (_, i) => ({ x: ih(i, 1, 70) * W * T, y: ih(i, 2, 70) * H * T, s: 0.7 + ih(i, 3, 70) * 0.7, v: 5 + ih(i, 4, 70) * 6 }));
+function drawClouds(g, cam, vw, vh, dpr, t, night) {
+  const fade = clamp01((2.4 - cam.z) / 1.6);
+  if (fade <= 0.01) return;
+  if (!cloudSprites) cloudSprites = makeCloudSprites();
+  const s = t / 1000;
+  const span = W * T + 900;
+  g.save();
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const c of CLOUDS) {
+    const wx = ((c.x + s * c.v) % span) - 450;
+    const size = 300 * c.s;
+    const gx = (wx + 70 - cam.x) * cam.z + vw / 2, gy = (c.y + 110 - cam.y) * cam.z + vh / 2;
+    const gw = size * cam.z, gh = size * 0.5 * cam.z;
+    if (gx + gw / 2 > 0 && gx - gw / 2 < vw && gy + gh / 2 > 0 && gy - gh / 2 < vh) {
+      g.globalAlpha = (night ? 0.05 : 0.13) * fade;
+      g.drawImage(cloudSprites.shadow, gx - gw / 2, gy - gh / 2, gw, gh);
+    }
+    const k = 1.35;
+    const cx = (wx - cam.x) * cam.z * k + vw / 2, cy = (c.y - cam.y) * cam.z * k + vh / 2;
+    const cw = size * cam.z * k, ch = size * 0.5 * cam.z * k;
+    if (cx + cw / 2 > 0 && cx - cw / 2 < vw && cy + ch / 2 > 0 && cy - ch / 2 < vh) {
+      g.globalAlpha = (night ? 0.18 : 0.55) * fade;
+      g.drawImage(cloudSprites.cloud, cx - cw / 2, cy - ch / 2, cw, ch);
+    }
+  }
+  g.restore();
+}
+
 /* Mappa ------------------------------------------------------------------ */
 
 class CityMap {
@@ -2208,6 +2407,7 @@ class CityMap {
     g.fillRect(0, 0, this.cv.width, this.cv.height);
     g.setTransform(s, 0, 0, s, d * ((this.vw / 2) * (1 - s) + (L.x - c.x) * c.z), d * ((this.vh / 2) * (1 - s) + (L.y - c.y) * c.z));
     g.drawImage(this.layer, 0, 0);
+    drawClouds(g, c, this.vw, this.vh, d, this.still ? 0 : this.now, this.opts.night);
   }
   worldTransform(g) {
     const s = this.dpr * this.cam.z;
@@ -2240,6 +2440,8 @@ class CityMap {
     g.drawImage(this.layer, 0, 0);
     this.worldTransform(g);
     drawAmbient(g, this.city, view, o, this.still ? 0 : t);
+    drawClouds(g, this.cam, this.vw, this.vh, this.dpr, this.still ? 0 : t, o.night);
+    this.worldTransform(g);
     if (this.opts.mode === 'choose') {
       const pulse = 0.5 + 0.5 * Math.sin(t / 300);
       g.fillStyle = `rgba(255,236,160,${0.22 + pulse * 0.3})`;
@@ -2662,6 +2864,9 @@ const ICONS = {
   desk: '<path d="M4 6h16v10H4zM9 20h6M12 16v4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
+  fountain: '<path d="M4 15h16M6 15c0 3 2.7 5 6 5s6-2 6-5M12 15V8M12 8c-2 0-3.5 1.2-4 3M12 8c2 0 3.5 1.2 4 3M12 5v1"/>',
+  flask: '<path d="M10 3h4M10.5 3v5.5L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5.5-9.5V3M7.5 14h9"/>',
+  pin: '<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
 };
 const icon = (name) => h('span', { class: 'ico', 'aria-hidden': 'true', html: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>` });
 
@@ -2700,20 +2905,28 @@ function shell() {
   const app = $('#app');
   app.replaceChildren(
     h('canvas', { id: 'map', 'aria-label': `Mappa di ${CITY}` }),
-    h('header', { class: 'top' },
-      h('button', { class: 'brand', onclick: () => { closeSheet(); map.fitCentro(); map.dirty = true; }, 'aria-label': 'Torna al centro' },
-        h('span', { class: 'brand-name' }, 'Virtual', h('span', { class: 'brand-dash' }, '-'), 'Italy'),
-        h('span', { class: 'brand-count', id: 'count' })),
-      h('nav', { class: 'top-actions' },
-        h('button', { class: 'round', id: 'btn-night', onclick: toggleNight, 'aria-label': 'Giorno o notte' }),
-        h('button', { class: 'round', onclick: () => openGiornale(), 'aria-label': 'Il giornale' }, icon('paper')),
-        h('button', { class: 'round', id: 'btn-mail', onclick: () => openMailbox(), 'aria-label': 'Cassetta delle lettere' }, icon('mail'), h('span', { class: 'badge', id: 'mail-badge', hidden: true })),
-        h('button', { class: 'round', id: 'btn-me', onclick: () => (me() ? openProfile() : openLogin()), 'aria-label': 'Il mio profilo' }, icon('user')))),
-    DEMO ? demoBar() : null,
-    h('div', { class: 'notice', id: 'notice', hidden: true }),
+    h('div', { class: 'haze', 'aria-hidden': 'true' }),
+    h('div', { class: 'hud-top' },
+      h('header', { class: 'top' },
+        h('button', { class: 'brand', onclick: () => { closeSheet(); map.fitCentro(); }, 'aria-label': 'Torna al centro della città' },
+          h('span', { class: 'brand-mark', 'aria-hidden': 'true', html: BRAND_MARK }),
+          h('span', { class: 'brand-text' },
+            h('span', { class: 'brand-name' }, 'Virtual', h('span', { class: 'brand-dash' }, '-'), 'Italy'),
+            h('span', { class: 'brand-count', id: 'count' }))),
+        DEMO ? h('button', { class: 'demo-chip', id: 'demo-chip', 'aria-expanded': 'false', onclick: toggleDemoMenu }, icon('flask'), 'Demo') : null,
+        h('nav', { class: 'top-actions', 'aria-label': 'Comandi' },
+          h('button', { class: 'tab', id: 'btn-night', onclick: toggleNight, 'aria-label': 'Giorno o notte' }),
+          h('button', { class: 'tab', onclick: () => openGiornale(), 'aria-label': 'Il giornale' }, icon('paper')),
+          h('button', { class: 'tab', id: 'btn-mail', onclick: () => openMailbox(), 'aria-label': 'Cassetta delle lettere' }, icon('mail'), h('span', { class: 'badge', id: 'mail-badge', hidden: true })),
+          h('button', { class: 'tab', id: 'btn-me', onclick: () => (me() ? openProfile() : openLogin()), 'aria-label': 'Il mio profilo' }, icon('user')))),
+      DEMO ? demoMenu() : null,
+      h('button', { class: 'ticker', id: 'ticker', onclick: () => openGiornale(), 'aria-label': 'Ultime notizie: apri il giornale' },
+        h('span', { class: 'ticker-tag' }, 'Ultim\'ora'),
+        h('span', { class: 'ticker-text', id: 'ticker-text' })),
+      h('div', { class: 'notice', id: 'notice', hidden: true })),
     h('div', { class: 'zoom' },
-      h('button', { class: 'round small', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1.3), 'aria-label': 'Ingrandisci' }, icon('plus')),
-      h('button', { class: 'round small', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1 / 1.3), 'aria-label': 'Rimpicciolisci' }, icon('minus'))),
+      h('button', { class: 'tab', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1.3), 'aria-label': 'Ingrandisci' }, icon('plus')),
+      h('button', { class: 'tab', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1 / 1.3), 'aria-label': 'Rimpicciolisci' }, icon('minus'))),
     h('footer', { class: 'bottom', id: 'bottom' }),
     h('div', { class: 'scrim', id: 'scrim', hidden: true, onclick: closeSheet }),
     h('section', { class: 'sheet', id: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'true' }),
@@ -2723,14 +2936,38 @@ function shell() {
   window.__virtualItaly = { store, map }; // comodo per il debug dalla console
 }
 
-function demoBar() {
-  return h('div', { class: 'demobar' },
-    h('span', { class: 'demobar-label', title: 'La città vive solo in questo browser e le email sono finte.' }, 'Demo'),
-    h('span', { class: 'demobar-actions' },
-      h('button', { onclick: () => { store.addResidents(5); toast('Sono arrivati 5 nuovi abitanti'); } }, '+5 abitanti'),
-      h('button', { onclick: () => { if (!me()) return toast('Prima iscriviti: poi un vicino busserà alla tua porta.', 'err'); toast(store.knock() ? 'Qualcuno ha bussato: guarda la cassetta' : 'Hai già conosciuto tutti i vicini'); } }, 'Fai bussare un vicino'),
-      h('button', { onclick: openDemoInbox }, 'Email finte'),
-      h('button', { onclick: () => { store.reset(); ui.mode = 'browse'; closeSheet(); toast('Demo ripartita'); } }, 'Ricomincia')));
+const BRAND_MARK = '<svg viewBox="0 0 64 64" width="30" height="30"><rect width="64" height="64" rx="16" fill="#f2b632"/><path d="M15 44V28h34v16z" fill="#fbf3dc"/><path d="M11 29 32 12l21 17z" fill="#b5523b"/><path d="M28 44v-9h8v9z" fill="#2f5d50"/><path d="M19 31h6v5h-6zM39 31h6v5h-6z" fill="#2f5d50"/><path d="M6 48h52" stroke="#2f5d50" stroke-width="4" stroke-linecap="round"/></svg>';
+
+function toggleDemoMenu(force) {
+  const menu = $('#demo-menu');
+  const open = typeof force === 'boolean' ? force : menu.hidden;
+  menu.hidden = !open;
+  $('#demo-chip').setAttribute('aria-expanded', String(open));
+}
+function demoMenu() {
+  const act = (fn) => () => { toggleDemoMenu(false); fn(); };
+  return h('div', { class: 'demo-menu', id: 'demo-menu', hidden: true },
+    h('p', { class: 'small' }, 'La città vive solo in questo browser: gli altri abitanti sono finti e le email non partono davvero.'),
+    h('span', { class: 'demo-actions' },
+      h('button', { class: 'btn small', onclick: act(() => { store.addResidents(5); toast('Sono arrivati 5 nuovi abitanti'); }) }, '+5 abitanti'),
+      h('button', { class: 'btn small', onclick: act(() => { if (!me()) return toast('Prima iscriviti: poi un vicino busserà alla tua porta.', 'err'); toast(store.knock() ? 'Qualcuno ha bussato: guarda la cassetta' : 'Hai già conosciuto tutti i vicini'); }) }, 'Fai bussare un vicino'),
+      h('button', { class: 'btn small', onclick: act(openDemoInbox) }, 'Email finte'),
+      h('button', { class: 'btn small', onclick: act(() => { store.reset(); ui.mode = 'browse'; closeSheet(); toast('Demo ripartita'); }) }, 'Ricomincia')));
+}
+
+// Banner del giornale: fa girare i titoli più recenti.
+function renderTicker() {
+  const city = store.city;
+  const el = $('#ticker-text');
+  if (!city || !el) return;
+  const items = city.news.slice(0, 5);
+  if (!items.length) return;
+  ui.tick = ((ui.tick ?? -1) + 1) % items.length;
+  const f = formatNews(items[ui.tick], city);
+  el.classList.remove('in');
+  void el.offsetWidth;
+  el.textContent = f.title;
+  el.classList.add('in');
 }
 
 function toggleNight() {
@@ -2744,7 +2981,8 @@ function update() {
   const city = store.city;
   if (!city) return;
   const built = builtCount(city);
-  $('#count').textContent = `${built} ${built === 1 ? 'abitante' : 'abitanti'}`;
+  $('#count').textContent = `${built} ${built === 1 ? 'abitante' : 'abitanti'} · ${city.openDistricts} ${city.openDistricts === 1 ? 'quartiere' : 'quartieri'}`;
+  if (ui.newsTop !== city.news[0]?.id) { ui.newsTop = city.news[0]?.id; ui.tick = -1; renderTicker(); }
   const night = isNight();
   $('#btn-night').replaceChildren(icon(night ? 'sun' : 'moon'));
   $('#btn-night').setAttribute('aria-label', night ? 'Passa al giorno' : 'Passa alla notte');
@@ -2767,7 +3005,8 @@ function update() {
     const left = house ? Math.max(0, Math.ceil((house.reservedAt + RESERVE_MS - Date.now()) / 3600000)) : null;
     notice.hidden = false;
     notice.replaceChildren(
-      h('div', {}, h('strong', {}, 'Conferma la tua email'),
+      h('span', { class: 'notice-ico' }, icon('mail')),
+      h('div', { class: 'notice-text' }, h('strong', {}, 'Conferma la tua email'),
         h('span', {}, house ? ` per finire la casa: il cantiere resta tuo per altre ${left} ore.` : ` per diventare abitante a tutti gli effetti. L'abbiamo mandata a ${mine.email}.`)),
       h('div', { class: 'notice-actions' },
         DEMO ? h('button', { class: 'btn small primary', onclick: openDemoInbox }, 'Apri l\'email') : null,
@@ -2778,19 +3017,30 @@ function update() {
   const bottom = $('#bottom');
   if (ui.mode === 'choose') {
     bottom.replaceChildren(h('div', { class: 'bar choose' },
-      h('div', {}, h('strong', {}, 'Tocca un lotto libero'), h('span', {}, ' Quelli tratteggiati sono disponibili.')),
+      h('span', { class: 'goal-ico' }, icon('pin')),
+      h('div', { class: 'goal-body' }, h('strong', {}, 'Tocca un lotto libero'), h('span', { class: 'small' }, 'Quelli con il cartello "Libero" sono disponibili.')),
       h('button', { class: 'btn', onclick: () => { ui.mode = 'browse'; map.set({ selected: null }); update(); } }, 'Annulla')));
     return;
   }
   const g = goalProgress(built);
-  const goal = h('button', { class: 'goal', onclick: () => openMuro() },
-    h('span', { class: 'goal-text' }, nextGoal(city, built)),
-    h('span', { class: 'goal-track' }, h('span', { class: 'goal-fill', style: `width:${Math.round(g.ratio * 100)}%` })));
+  const goal = h('button', { class: 'goal', onclick: () => openMuro(), 'aria-label': `${nextGoal(city, built)} Apri il Muro dei Fondatori` },
+    h('span', { class: 'goal-ico' }, icon('fountain')),
+    h('span', { class: 'goal-body' },
+      h('span', { class: 'goal-head' }, h('span', { class: 'eyebrow' }, 'Prossimo traguardo'), h('span', { class: 'goal-num' }, `${built}/${g.target}`)),
+      h('span', { class: 'goal-text' }, goalText(built, g.target)),
+      h('span', { class: 'goal-track' }, h('span', { class: 'goal-fill', style: `width:${Math.round(g.ratio * 100)}%` }))));
   let cta;
   if (!mine) cta = h('button', { class: 'btn primary big', onclick: openRegister }, 'Vieni ad abitare qui');
   else if (!house) cta = h('button', { class: 'btn primary big', onclick: startChoosing }, 'Scegli il tuo lotto');
   else cta = h('button', { class: 'btn big', onclick: () => { map.focus(house.slot, 2); openHouse(house.slot); } }, icon('home'), 'La mia casa');
   bottom.replaceChildren(h('div', { class: 'bar' }, goal, cta));
+}
+
+// Cosa arriva al prossimo traguardo, detto in breve per la barra in basso.
+function goalText(built, target) {
+  const what = target === 25 ? 'la fontana in piazza' : target === 50 ? 'i tavolini del bar in piazza' : `quota ${target} abitanti`;
+  const left = Math.max(0, target - built);
+  return left ? `Ancora ${left} ${left === 1 ? 'abitante' : 'abitanti'} per ${what}` : 'Traguardo raggiunto!';
 }
 
 function devLinkToast(r) {
@@ -2804,6 +3054,7 @@ function openSheet(title, body, { wide = false, onClose } = {}) {
   ui.sheet = { onClose };
   sheet.className = 'sheet' + (wide ? ' wide' : '');
   sheet.replaceChildren(
+    h('div', { class: 'sheet-grab', 'aria-hidden': 'true' }),
     h('div', { class: 'sheet-head' },
       h('h2', { id: 'sheet-title' }, title),
       h('button', { class: 'round small ghost', onclick: closeSheet, 'aria-label': 'Chiudi' }, icon('x'))),
@@ -3362,6 +3613,12 @@ async function boot() {
 
 if ('serviceWorker' in navigator && !DEMO && location.protocol !== 'file:') navigator.serviceWorker.register('/sw.js').catch(() => {});
 setInterval(update, 60000);
+setInterval(renderTicker, 6000);
+// Il menu della demo si chiude toccando altrove.
+addEventListener('pointerdown', (e) => {
+  const menu = document.getElementById('demo-menu');
+  if (menu && !menu.hidden && !e.target.closest('#demo-menu, #demo-chip')) toggleDemoMenu(false);
+});
 boot();
 
 </script>

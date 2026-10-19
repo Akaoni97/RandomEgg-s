@@ -229,9 +229,59 @@ function getGround(open) {
     if (ih(x, y, 17) > 0.35) continue;
     trees.push({ x: x * T + 16, y: y * T + 28, kind: 'pino', s: 0.9 + ih(x, y, 18) * 0.3 });
   }
-  const gcache = { kind, color, crop, parcel, trees };
+  const high = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const d = districtAt(x, y);
+    if ((d && d <= open && y < SEA_Y) || inPiazza(x, y)) high[y * W + x] = 1;
+  }
+  const gcache = { kind, color, crop, parcel, trees, high };
   groundCache.set(open, gcache);
   return gcache;
+}
+
+// Il terrazzamento del paese: muro di pietra sul lato sud, ombra sulla campagna a est e a sud,
+// bordo illuminato a nord e a ovest. La spiaggia scende nel mare con una riva più scura.
+function drawTerrace(g, G, view, det) {
+  const { x0, y0, x1, y1 } = view;
+  const hi = (x, y) => x >= 0 && y >= 0 && x < W && y < H && G.high[y * W + x] === 1;
+  const WALL = 11;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (hi(x, y)) continue;
+      const px = x * T, py = y * T;
+      if (hi(x, y - 1)) {
+        const sh = g.createLinearGradient(0, py + WALL, 0, py + WALL + 14);
+        sh.addColorStop(0, 'rgba(30,40,15,0.4)'); sh.addColorStop(1, 'rgba(30,40,15,0)');
+        g.fillStyle = sh; g.fillRect(px, py + WALL, T, 14);
+        const wg = g.createLinearGradient(0, py, 0, py + WALL);
+        wg.addColorStop(0, '#d7c39c'); wg.addColorStop(1, '#a8916a');
+        g.fillStyle = wg; g.fillRect(px, py, T, WALL);
+        if (det) {
+          g.strokeStyle = 'rgba(90,70,40,0.35)'; g.lineWidth = 0.4;
+          for (let r = 0; r < 3; r++) for (let k = 0; k < 6; k++) g.strokeRect(px + k * 7 + (r % 2) * 3.5 - 3.5, py + 0.8 + r * 3.3, 7, 3.3);
+        }
+        g.fillStyle = '#ece0c4'; g.fillRect(px, py, T, 1);
+        g.fillStyle = 'rgba(40,30,15,0.35)'; g.fillRect(px, py + WALL - 0.8, T, 0.8);
+      }
+      if (hi(x - 1, y)) {
+        const sh = g.createLinearGradient(px, 0, px + 10, 0);
+        sh.addColorStop(0, 'rgba(30,40,15,0.28)'); sh.addColorStop(1, 'rgba(30,40,15,0)');
+        g.fillStyle = sh; g.fillRect(px, py + (hi(x, y - 1) ? WALL : 0), 10, T);
+      }
+    }
+  }
+  g.fillStyle = 'rgba(255,250,225,0.55)';
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    if (!hi(x, y)) continue;
+    if (!hi(x, y - 1)) g.fillRect(x * T, y * T, T, 1.2);
+    if (!hi(x - 1, y)) g.fillRect(x * T, y * T, 1.2, T);
+  }
+  if (SEA_Y + 1 >= y0 && SEA_Y + 1 <= y1) {
+    const py = (SEA_Y + 1) * T;
+    const rg = g.createLinearGradient(0, py, 0, py + 9);
+    rg.addColorStop(0, 'rgba(150,120,70,0.55)'); rg.addColorStop(1, 'rgba(40,90,130,0)');
+    g.fillStyle = rg; g.fillRect(x0 * T, py, (x1 - x0 + 1) * T, 9);
+  }
 }
 
 function drawGround(g, G, view, det) {
@@ -258,6 +308,7 @@ function drawGround(g, G, view, det) {
       }
     }
   }
+  drawTerrace(g, G, view, !!P);
   if (!P) return;
   // Siepi tra un campo e l'altro.
   g.fillStyle = '#6f9a4f';
@@ -372,6 +423,7 @@ function drawRoads(g, roads, view, det) {
   if (P) { g.save(); g.translate(0, -0.8); roadPass(g, roads, view, ['dorsal', 'main'], 'side', ROAD.main.sideColor); g.restore(); }
   roadPass(g, roads, view, ['dorsal', 'main'], 'surf', ROAD.main.surfColor);
   if (P) roadPass(g, roads, view, ['dorsal', 'main'], 'surf', P.asphalt);
+  curbs(g, roads, view);
   // Segnaletica: tratteggio centrale, linee di bordo, strisce pedonali dove arriva una via.
   const { x0, y0, x1, y1 } = view;
   for (let y = y0; y <= y1; y++) {
@@ -393,6 +445,35 @@ function drawRoads(g, roads, view, det) {
         }
       } else if (vert && !horiz) {
         g.fillRect(cx - 0.6, y * T + 7, 1.2, 16);
+      }
+    }
+  }
+}
+
+// Il marciapiede a nord mostra il suo cordolo e fa ombra sull'asfalto; quello a sud ha il bordo in luce.
+function curbs(g, roads, view) {
+  const { x0, y0, x1, y1 } = view;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const t = roads[key(x, y)];
+      if (t !== 'main' && t !== 'dorsal') continue;
+      const horiz = roads[key(x - 1, y)] === t || roads[key(x + 1, y)] === t;
+      const vert = roads[key(x, y - 1)] === t || roads[key(x, y + 1)] === t;
+      const hw = (ROAD[t].surf * T) / 2, cx = x * T + T / 2, cy = y * T + T / 2;
+      if (horiz && !vert) {
+        const openN = roads[key(x, y - 1)] && roads[key(x, y - 1)] !== 'piazza';
+        if (!openN) {
+          g.fillStyle = '#9d978b'; g.fillRect(x * T, cy - hw, T, 1.6);
+          const sh = g.createLinearGradient(0, cy - hw + 1.6, 0, cy - hw + 5);
+          sh.addColorStop(0, 'rgba(0,0,0,0.28)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+          g.fillStyle = sh; g.fillRect(x * T, cy - hw + 1.6, T, 3.4);
+        }
+        if (!roads[key(x, y + 1)]) { g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(x * T, cy + hw - 0.1, T, 0.7); }
+      } else if (vert && !horiz) {
+        const sh = g.createLinearGradient(cx - hw, 0, cx - hw + 4, 0);
+        sh.addColorStop(0, 'rgba(0,0,0,0.25)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = sh; g.fillRect(cx - hw, y * T, 4, T);
+        g.fillStyle = 'rgba(255,255,255,0.55)'; g.fillRect(cx + hw - 0.4, y * T, 0.6, T);
       }
     }
   }
@@ -426,9 +507,17 @@ const FOUNTAIN = { x: (PIAZZA.x0 + 4) * T, y: (PIAZZA.y0 + 1.62) * T };
 function drawPiazzaFloor(g, city, det) {
   const px = PIAZZA.x0 * T, py = PIAZZA.y0 * T;
   const w = (PIAZZA.x1 - PIAZZA.x0 + 1) * T, h = (PIAZZA.y1 - PIAZZA.y0 + 1) * T;
+  // Gradino verso la strada e ombra a destra: la piazza sta un po' più in alto.
+  const psh = g.createLinearGradient(px + w, 0, px + w + 7, 0);
+  psh.addColorStop(0, 'rgba(0,0,0,0.22)'); psh.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = psh; g.fillRect(px + w, py + 3, 7, h);
   g.fillStyle = det ? pats(g).paving : '#e4d8c0';
   g.fillRect(px, py, w, h);
   g.strokeStyle = '#bba98a'; g.lineWidth = 1.2; g.strokeRect(px + 0.6, py + 0.6, w - 1.2, h - 1.2);
+  const step = g.createLinearGradient(0, py + h - 3.2, 0, py + h);
+  step.addColorStop(0, '#c4b292'); step.addColorStop(1, '#a8957a');
+  g.fillStyle = step; g.fillRect(px, py + h - 3.2, w, 3.2);
+  g.fillStyle = 'rgba(255,255,255,0.45)'; g.fillRect(px, py + h - 3.4, w, 0.6);
   // Rosone di pietra attorno alla fontana.
   const { x: fx, y: fy } = FOUNTAIN;
   g.save();
@@ -777,8 +866,14 @@ function drawSite(g, P) {
 export function drawHouse(g, style, { lit = false, night = false, founder = false, cantiere = false, flag = null, detail = true } = {}) {
   const P = detail ? pats(g) : null;
   const wins = [];
-  g.fillStyle = 'rgba(25,40,15,0.24)';
-  g.beginPath(); g.ellipse(19, 28.6, 14.5, 3.4, 0, 0, Math.PI * 2); g.fill();
+  // Ombra proiettata (sole da nord-ovest) e ombra di contatto alla base.
+  const tall = style.shape === 'torretta' ? 1.35 : style.shape === 'villetta' ? 0.85 : 1;
+  const cs = g.createLinearGradient(26, 0, 26 + 9 * tall, 0);
+  cs.addColorStop(0, 'rgba(25,40,15,0.3)'); cs.addColorStop(1, 'rgba(25,40,15,0)');
+  g.fillStyle = cs;
+  g.beginPath(); g.moveTo(26, 28.4); g.lineTo(26, 14); g.lineTo(26 + 7 * tall, 17 + 2 * tall); g.lineTo(26 + 9 * tall, 30.5); g.lineTo(8, 30.8); g.closePath(); g.fill();
+  g.fillStyle = 'rgba(25,40,15,0.3)';
+  g.beginPath(); g.ellipse(17, 28.4, 14, 2.2, 0, 0, Math.PI * 2); g.fill();
   yard(g, style.garden, P);
   if (cantiere) { drawSite(g, P); return wins; }
   const c = { g, P, wall: style.wall, roof: roofColor(style.roof), door: doorColor(style.door), lit, night, wins, detail, plaque: null };
@@ -1132,6 +1227,52 @@ export function drawAmbient(g, city, view, o, t) {
   }
 }
 
+/* Nuvole ------------------------------------------------------------------ */
+
+// Le nuvole stanno "più in alto" della città: scorrono più veloci del terreno quando si sposta
+// la mappa (parallasse) e proiettano un'ombra morbida a terra. Spariscono quando si guarda da vicino.
+let cloudSprites = null;
+function makeCloudSprites() {
+  const mk = (color, blur) => {
+    const cv = document.createElement('canvas');
+    cv.width = 360; cv.height = 180;
+    const c = cv.getContext('2d');
+    c.filter = `blur(${blur}px)`;
+    c.fillStyle = color;
+    for (const [x, y, r] of [[110, 105, 48], [165, 80, 62], [228, 100, 50], [270, 118, 34], [80, 122, 30], [185, 122, 52]]) { c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }
+    return cv;
+  };
+  return { cloud: mk('rgba(255,255,255,0.92)', 6), shadow: mk('rgba(20,40,30,1)', 14) };
+}
+const CLOUDS = Array.from({ length: 9 }, (_, i) => ({ x: ih(i, 1, 70) * W * T, y: ih(i, 2, 70) * H * T, s: 0.7 + ih(i, 3, 70) * 0.7, v: 5 + ih(i, 4, 70) * 6 }));
+function drawClouds(g, cam, vw, vh, dpr, t, night) {
+  const fade = clamp01((2.4 - cam.z) / 1.6);
+  if (fade <= 0.01) return;
+  if (!cloudSprites) cloudSprites = makeCloudSprites();
+  const s = t / 1000;
+  const span = W * T + 900;
+  g.save();
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const c of CLOUDS) {
+    const wx = ((c.x + s * c.v) % span) - 450;
+    const size = 300 * c.s;
+    const gx = (wx + 70 - cam.x) * cam.z + vw / 2, gy = (c.y + 110 - cam.y) * cam.z + vh / 2;
+    const gw = size * cam.z, gh = size * 0.5 * cam.z;
+    if (gx + gw / 2 > 0 && gx - gw / 2 < vw && gy + gh / 2 > 0 && gy - gh / 2 < vh) {
+      g.globalAlpha = (night ? 0.05 : 0.13) * fade;
+      g.drawImage(cloudSprites.shadow, gx - gw / 2, gy - gh / 2, gw, gh);
+    }
+    const k = 1.35;
+    const cx = (wx - cam.x) * cam.z * k + vw / 2, cy = (c.y - cam.y) * cam.z * k + vh / 2;
+    const cw = size * cam.z * k, ch = size * 0.5 * cam.z * k;
+    if (cx + cw / 2 > 0 && cx - cw / 2 < vw && cy + ch / 2 > 0 && cy - ch / 2 < vh) {
+      g.globalAlpha = (night ? 0.18 : 0.55) * fade;
+      g.drawImage(cloudSprites.cloud, cx - cw / 2, cy - ch / 2, cw, ch);
+    }
+  }
+  g.restore();
+}
+
 /* Mappa ------------------------------------------------------------------ */
 
 export class CityMap {
@@ -1328,6 +1469,7 @@ export class CityMap {
     g.fillRect(0, 0, this.cv.width, this.cv.height);
     g.setTransform(s, 0, 0, s, d * ((this.vw / 2) * (1 - s) + (L.x - c.x) * c.z), d * ((this.vh / 2) * (1 - s) + (L.y - c.y) * c.z));
     g.drawImage(this.layer, 0, 0);
+    drawClouds(g, c, this.vw, this.vh, d, this.still ? 0 : this.now, this.opts.night);
   }
   worldTransform(g) {
     const s = this.dpr * this.cam.z;
@@ -1360,6 +1502,8 @@ export class CityMap {
     g.drawImage(this.layer, 0, 0);
     this.worldTransform(g);
     drawAmbient(g, this.city, view, o, this.still ? 0 : t);
+    drawClouds(g, this.cam, this.vw, this.vh, this.dpr, this.still ? 0 : t, o.night);
+    this.worldTransform(g);
     if (this.opts.mode === 'choose') {
       const pulse = 0.5 + 0.5 * Math.sin(t / 300);
       g.fillStyle = `rgba(255,236,160,${0.22 + pulse * 0.3})`;
