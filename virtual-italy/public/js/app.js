@@ -3,7 +3,7 @@
 import {
   CITY, PAPER, ROOFS, DOORS, GARDENS, DECOS, PLAN, FOUNDERS, RESERVE_MS, UNLOCK_RATIO,
   districtAt, districtById, parseKey, makeStyle, residentHouse, builtCount, isFounder, areFriends, friendsOf,
-  formatNews, nextGoal, goalProgress, lotsOpen, DomainError,
+  formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint,
 } from './core.js';
 import { CityMap, drawPreview, renderPoster } from './render.js';
 import { RemoteStore, LocalStore } from './store.js';
@@ -457,6 +457,7 @@ function openBuild(slot, { restyle = false } = {}) {
     ui.mode = 'browse';
     closeSheet();
     map.focus(slot, 2);
+    if (map.avatarOf(me().id)) walkTo(...frontOf(store.city, slot));
     if (r.status === 'casa') toast(`Benvenuto a ${CITY}, abitante n°${myResident().number}!`);
     else toast('Cantiere aperto! Conferma l\'email per finire la casa.');
     update();
@@ -750,12 +751,36 @@ function onTap(t) {
     if (t.kind === 'house') return toast('Questo lotto è già occupato.', 'err');
     return;
   }
-  if (t.kind === 'house') return openHouse(t.slot);
-  if (t.kind === 'lot') return openLot(t.slot);
-  if (t.kind === 'giornale') return openGiornale();
-  if (t.kind === 'muro' || t.kind === 'piazza') return openMuro();
-  if (t.kind === 'locked') return openLocked(t.district);
+  // Con il proprio omino in città, ogni tocco è anche una passeggiata.
+  const walker = me() && map.avatarOf(me().id);
+  const go = (x, y) => walker && walkTo(x, y);
+  if (t.kind === 'house') { go(...frontOf(store.city, t.slot)); return openHouse(t.slot); }
+  if (t.kind === 'lot') { go(t.x, t.y); return openLot(t.slot); }
+  if (t.kind === 'giornale') { go(t.x, t.y + 1); return openGiornale(); }
+  if (t.kind === 'muro') { go(t.x, t.y + 1); return openMuro(); }
+  if (t.kind === 'piazza') { if (walker) { closeSheet(); return go(t.x, t.y); } return openMuro(); }
+  if (t.kind === 'locked' && !walker) return openLocked(t.district);
   closeSheet();
+  if (walker && !go(t.x, t.y)) toast('Da qui non si passa: prova a seguire le strade.', 'err');
+}
+
+// Muove il proprio omino e lo racconta agli altri abitanti.
+function walkTo(x, y) {
+  const ok = map.walk(me().id, x, y);
+  if (ok) store.move(x, y);
+  return ok;
+}
+
+// Gli omini in città: chi è collegato (e io, se ho fatto l'accesso).
+function syncAvatars() {
+  const city = store.city;
+  if (!city) return;
+  const ids = new Set([...store.online].filter((id) => city.residents[id]));
+  if (me() && city.residents[me().id]) ids.add(me().id);
+  map.setAvatars([...ids].map((id) => ({
+    id, name: city.residents[id].username, me: id === me()?.id,
+    pos: store.avatars?.[id] || spawnPoint(city, id),
+  })));
 }
 
 /* Avvio ------------------------------------------------------------------- */
@@ -769,7 +794,13 @@ async function boot() {
     return;
   }
   map.setCity(store.city, { animateNew: false });
-  store.subscribe(() => { map.setCity(store.city); update(); });
+  store.subscribe((kind, data) => {
+    if (kind === 'move') { if (data.id !== me()?.id) map.walk(data.id, data.x, data.y); return; }
+    map.setCity(store.city);
+    syncAvatars();
+    update();
+  });
+  syncAvatars();
   update();
 
   // Link dalle email e provenienza (?da=instagram) dal link in bio.

@@ -313,3 +313,8 @@ a { color: var(--brand); font-weight: 700; }
   .demo-chip .ico { display: none; }
 }
 @media (max-width: 360px) { .brand-count { display: none; } }
+@media (max-width: 520px) {
+  .notice { padding: 8px 10px; font-size: 0.84rem; gap: 6px 10px; }
+  .notice-ico { display: none; }
+  .notice-text { min-width: 0; }
+}

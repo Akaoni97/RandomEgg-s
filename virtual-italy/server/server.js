@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import {
   applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey,
-  residentHouse, friendsOf, CITY, PAPER,
+  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y,
 } from '../public/js/core.js';
 import { seedResidents } from '../public/js/seed.js';
 
@@ -84,6 +84,9 @@ setInterval(housekeeping, 60000).unref();
 /* Tempo reale ---------------------------------------------------------- */
 
 const streams = new Set(); // { res, userId }
+// Dove si trovano gli omini di chi è in città (solo in memoria: chi esce sparisce).
+const avatars = new Map(); // userId → [x, y]
+const lastMove = new Map();
 const onlineIds = () => [...new Set([...streams].map((c) => c.userId).filter(Boolean))];
 function broadcast() {
   const data = `event: city\ndata: ${JSON.stringify({ rev: state.rev, online: onlineIds() })}\n\n`;
@@ -192,7 +195,7 @@ async function readJson(req) {
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new DomainError('validation', 'Richiesta non valida.'); }
 }
 const STATUS = { validation: 400, auth: 401, forbidden: 403, notfound: 404, conflict: 409 };
-const cityFor = (u) => ({ city: publicView(state, u?.id, isAdmin(u)), online: onlineIds() });
+const cityFor = (u) => ({ city: publicView(state, u?.id, isAdmin(u)), online: onlineIds(), avatars: Object.fromEntries(avatars) });
 
 const routes = {
   'GET /api/session': (req, res, user) => send(res, 200, { mode: 'server', me: meView(user), devMail: DEV_MAIL }),
@@ -203,9 +206,14 @@ const routes = {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     const c = { res, userId: user?.id || null };
     streams.add(c);
+    if (c.userId && !avatars.has(c.userId) && state.residents[c.userId]) avatars.set(c.userId, spawnPoint(state, c.userId));
     res.write(`retry: 3000\nevent: city\ndata: ${JSON.stringify({ rev: state.rev, online: onlineIds() })}\n\n`);
     broadcast();
-    req.on('close', () => { streams.delete(c); broadcast(); });
+    req.on('close', () => {
+      streams.delete(c);
+      if (c.userId && ![...streams].some((o) => o.userId === c.userId)) avatars.delete(c.userId);
+      broadcast();
+    });
   },
 
   'POST /api/register': async (req, res) => {
@@ -305,6 +313,20 @@ const routes = {
     persist(r.state);
     if (op.type === 'suspend' && op.on) db.prepare('DELETE FROM sessions WHERE user_id = ?').run(String(op.id));
     send(res, 200, { ok: true, result: r.result, ...cityFor(user) });
+  },
+
+  // Il proprio omino cammina verso una casella: lo raccontiamo a tutti quelli collegati.
+  'POST /api/move': async (req, res, user) => {
+    const b = await readJson(req);
+    const x = Number(b.x), y = Number(b.y);
+    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= W || y > SEA_Y) throw new DomainError('validation', 'Destinazione non valida.');
+    const now = Date.now();
+    if (now - (lastMove.get(user.id) || 0) < 150) return send(res, 200, { ok: true, skipped: true });
+    lastMove.set(user.id, now);
+    avatars.set(user.id, [x, y]);
+    const data = `event: move\ndata: ${JSON.stringify({ id: user.id, x, y })}\n\n`;
+    for (const c of streams) if (c.userId !== user.id) c.res.write(data);
+    send(res, 200, { ok: true });
   },
 
   'GET /api/me/export': (req, res, user) => {

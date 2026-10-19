@@ -122,6 +122,25 @@ test('percorso completo di due abitanti e della redazione', async () => {
   assert.equal((await client()('POST', '/api/register', form('anna@example.com', 'anna.b'))).status, 200, 'email e nome tornano liberi');
 });
 
+test('gli omini: posizione iniziale, movimento raccontato agli altri', async () => {
+  const a = client();
+  const reg = await a('POST', '/api/register', form('omino@example.com', 'omino.a'));
+  assert.equal(reg.status, 200);
+  assert.equal((await a('POST', '/api/move', { x: 9999, y: 1 })).status, 400);
+  assert.equal((await client()('POST', '/api/move', { x: 40, y: 28 })).status, 401, 'serve l\'accesso');
+  // Un altro visitatore ascolta gli eventi e vede arrivare il movimento.
+  const ctrl = new AbortController();
+  const res = await fetch(`${BASE}/api/events`, { signal: ctrl.signal });
+  const reader = res.body.getReader();
+  await reader.read();
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal((await a('POST', '/api/move', { x: 40, y: 28 })).status, 200);
+  let text = '';
+  for (let i = 0; i < 5 && !text.includes('event: move'); i++) text += new TextDecoder().decode((await reader.read()).value);
+  assert.match(text, /event: move\ndata: \{"id":"u_[0-9a-f]+","x":40,"y":28\}/);
+  ctrl.abort();
+});
+
 test('aggiornamenti in tempo reale', async () => {
   const ctrl = new AbortController();
   const res = await fetch(`${BASE}/api/events`, { signal: ctrl.signal });

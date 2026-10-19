@@ -177,3 +177,23 @@ test('i dati dimostrativi passano dalle stesse regole', () => {
     assert.ok(s.doors[h.slot], 'ogni casa ha la sua porta sulla strada');
   }
 });
+
+test('livelli del terreno e passeggiate: si cambia livello solo dalle strade', async () => {
+  const { levelAt, walkPath, canStep, spawnPoint, frontOf, PIAZZA_CENTER } = await import('../public/js/core.js');
+  let s = seedResidents(emptyState(0), 12, 10_000_000);
+  assert.equal(levelAt(40, 28, 1), 1, 'il paese è rialzato');
+  assert.equal(levelAt(40, 20, 1), 2, 'la collina è più in alto');
+  assert.equal(levelAt(40, 2, 1), 3, 'le montagne in fondo');
+  assert.equal(levelAt(40, 55, 1), -1, 'il mare');
+  assert.equal(canStep(s, 34, 33, 34, 34), false, 'non si scavalca il muro del paese');
+  const id = Object.keys(s.residents)[0];
+  const home = spawnPoint(s, id);
+  assert.deepEqual(home, frontOf(s, Object.values(s.houses).find((h) => h.residentId === id).slot));
+  const toPiazza = walkPath(s, home, PIAZZA_CENTER);
+  assert.ok(toPiazza && toPiazza.length > 0);
+  for (let i = 1; i < toPiazza.length; i++) assert.ok(canStep(s, ...toPiazza[i - 1], ...toPiazza[i]));
+  const someHouse = Object.keys(s.houses)[0].split(',').map(Number);
+  assert.equal(walkPath(s, home, someHouse), null, 'dentro le case non si entra');
+  assert.equal(walkPath(s, home, [40, 55]), null, 'nel mare non si cammina');
+  assert.deepEqual(walkPath(s, home, home), []);
+});

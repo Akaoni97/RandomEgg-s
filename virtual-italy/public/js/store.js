@@ -1,13 +1,13 @@
 // Due archivi con la stessa interfaccia:
 // - RemoteStore: il server vero (server/server.js), una sola città per tutti.
 // - LocalStore: demo nel browser. La città vive solo in questo browser e le email sono finte.
-import { applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey, residentHouse, friendsOf, uid } from './core.js';
+import { applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey, residentHouse, friendsOf, uid, spawnPoint, walkPath, W, SEA_Y } from './core.js';
 import { seedResidents, DEMO_TAG } from './seed.js';
 
 class Base {
-  constructor() { this.listeners = new Set(); this.city = null; this.me = null; this.online = new Set(); }
+  constructor() { this.listeners = new Set(); this.city = null; this.me = null; this.online = new Set(); this.avatars = {}; }
   subscribe(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
-  emit(kind) { for (const fn of this.listeners) fn(kind); }
+  emit(kind, data) { for (const fn of this.listeners) fn(kind, data); }
 }
 
 /* Server ------------------------------------------------------------------ */
@@ -41,6 +41,7 @@ export class RemoteStore extends Base {
   take(d) {
     if (d.city) this.city = d.city;
     if (d.online) this.online = new Set(d.online);
+    if (d.avatars) this.avatars = d.avatars;
     this.emit('city');
   }
   listen() {
@@ -51,6 +52,11 @@ export class RemoteStore extends Base {
       this.online = new Set(d.online);
       if (!this.city || d.rev !== this.city.rev) this.refresh().catch(() => {});
       else this.emit('online');
+    });
+    this.es.addEventListener('move', (e) => {
+      const d = JSON.parse(e.data);
+      this.avatars[d.id] = [d.x, d.y];
+      this.emit('move', d);
     });
   }
   async afterAuth(d) {
@@ -71,6 +77,13 @@ export class RemoteStore extends Base {
   exportData() { return this.call('GET', '/api/me/export'); }
   async deleteAccount(password) { await this.call('POST', '/api/me/delete', { password }); this.me = null; await this.refresh(); this.emit('me'); }
   admin() { return this.call('GET', '/api/admin'); }
+  // Il proprio omino: si muove subito qui, il server lo racconta agli altri.
+  move(x, y) {
+    if (!this.me) return;
+    this.avatars[this.me.id] = [x, y];
+    this.emit('move', { id: this.me.id, x, y });
+    this.call('POST', '/api/move', { x, y }).catch(() => {});
+  }
 }
 
 /* Demo nel browser ---------------------------------------------------------- */
@@ -88,8 +101,9 @@ export class LocalStore extends Base {
     this.db = saved?.version === 1 ? saved : this.fresh();
     this.me = this.db.session ? this.meView(this.db.session) : null;
     this.publish();
-    // Qualche abitante finto entra ed esce, per vedere le finestre accese di sera.
+    // Qualche abitante finto entra ed esce, per vedere le finestre accese di sera, e passeggia.
     this.timer = setInterval(() => this.shuffleOnline(), 15000);
+    this.walker = setInterval(() => this.wander(), 2200);
   }
   fresh() {
     const now = Date.now();
@@ -105,6 +119,8 @@ export class LocalStore extends Base {
     const ids = Object.keys(this.db.state.residents).filter((id) => id.startsWith(DEMO_TAG));
     this.online = new Set(ids.filter((id, i) => (i * 7 + Math.floor(Date.now() / 15000)) % 3 === 0));
     if (this.me) this.online.add(this.me.id);
+    for (const id of this.online) if (!this.avatars[id]) this.avatars[id] = spawnPoint(this.db.state, id);
+    for (const id of Object.keys(this.avatars)) if (!this.online.has(id)) delete this.avatars[id];
     this.emit('online');
   }
   publish() {
@@ -223,6 +239,26 @@ export class LocalStore extends Base {
       s.n++; if (a.confirmed) s.confirmed++;
     }
     return { sources: Object.values(sources), outbox: this.db.inbox.map((m) => ({ to: m.to, subject: m.subject, body: m.body, at: m.at })), mailConfigured: false };
+  }
+
+  move(x, y) {
+    if (!this.me) return;
+    this.avatars[this.me.id] = [x, y];
+    this.emit('move', { id: this.me.id, x, y });
+  }
+  // Gli abitanti finti in città fanno due passi qua e là.
+  wander() {
+    const s = this.db.state;
+    const ids = [...this.online].filter((id) => id.startsWith(DEMO_TAG) && this.avatars[id]);
+    if (!ids.length) return;
+    const id = ids[Math.floor(Math.random() * ids.length)];
+    const [x, y] = this.avatars[id];
+    for (let i = 0; i < 12; i++) {
+      const tx = Math.max(0, Math.min(W - 1, x + Math.round((Math.random() - 0.5) * 14)));
+      const ty = Math.max(0, Math.min(SEA_Y, y + Math.round((Math.random() - 0.5) * 10)));
+      const p = walkPath(s, [x, y], [tx, ty], 1500);
+      if (p && p.length > 2 && p.length < 22) { this.avatars[id] = [tx, ty]; this.emit('move', { id, x: tx, y: ty }); return; }
+    }
   }
 
   // Solo demo: la casella email finta, nuovi abitanti finti, ripartenza.

@@ -191,6 +191,75 @@ export function canReach(lotKey, houses, openDistricts) {
   return !!routeFrom(lotKey, new Map(Object.entries(roads)), openDistricts);
 }
 
+/* Livelli del terreno e passeggiate ------------------------------------ */
+
+// Il mondo è a gradoni come nei Pokémon: -1 mare, 0 pianura e spiaggia, 1 paese,
+// 2 Collina Nord e prime alture, 3 montagne in fondo alla mappa.
+export function levelAt(x, y, openDistricts) {
+  if (y > SEA_Y) return -1;
+  if (y === SEA_Y) return 0;
+  const d = districtAt(x, y);
+  if (d === 4 && y <= 23) return 2;
+  if (inPiazza(x, y) || (d && d <= openDistricts)) return 1;
+  if (!d) {
+    const edge = 7 + (hash('monte' + Math.floor(x / 4)) % 3);
+    if (y < edge - 3) return 3;
+    if (y < edge) return 2;
+  }
+  return 0;
+}
+
+// Dove si può camminare: ovunque sulla terraferma tranne dentro le case.
+// Si cambia livello solo su strade, vialetti e piazza, dove ci sono le scale.
+export function walkable(s, x, y) {
+  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)];
+}
+export function canStep(s, ax, ay, bx, by) {
+  if (!walkable(s, bx, by)) return false;
+  if (levelAt(ax, ay, s.openDistricts) === levelAt(bx, by, s.openDistricts)) return true;
+  return !!(s.roads[key(ax, ay)] && s.roads[key(bx, by)]);
+}
+
+// Percorso a piedi più breve tra due caselle (ricerca in ampiezza). Restituisce le caselle da
+// attraversare, esclusa la partenza; vuoto se si è già arrivati, null se non ci si arriva.
+export function walkPath(s, from, to, limit = 6000) {
+  const [sx, sy] = from, [tx, ty] = to;
+  if (sx === tx && sy === ty) return [];
+  if (!walkable(s, tx, ty)) return null;
+  const start = key(sx, sy), goal = key(tx, ty);
+  const prev = new Map([[start, null]]);
+  const queue = [[sx, sy]];
+  for (let i = 0; i < queue.length && prev.size < limit; i++) {
+    const [x, y] = queue[i];
+    for (const [dx, dy] of STEPS) {
+      const nx = x + dx, ny = y + dy, nk = key(nx, ny);
+      if (prev.has(nk) || !canStep(s, x, y, nx, ny)) continue;
+      prev.set(nk, key(x, y));
+      if (nk === goal) {
+        const path = [];
+        for (let k = goal; k !== start; k = prev.get(k)) path.push(parseKey(k));
+        return path.reverse();
+      }
+      queue.push([nx, ny]);
+    }
+  }
+  return null;
+}
+
+// La casella davanti alla porta di una casa: lì compare l'omino del suo abitante.
+export function frontOf(s, slot) {
+  const [x, y] = parseKey(slot);
+  const d = s.doors?.[slot] || 'S';
+  const [dx, dy] = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] }[d];
+  return [x + dx, y + dy];
+}
+export const PIAZZA_CENTER = [PIAZZA.x0 + 3, PIAZZA.y0 + 2];
+
+export function spawnPoint(s, residentId) {
+  const h = residentHouse(s, residentId);
+  return h ? frontOf(s, h.slot) : PIAZZA_CENTER;
+}
+
 /* Nomi, frasi e filtri ------------------------------------------------ */
 
 const BAD_WORDS = ['cazz', 'merd', 'stronz', 'puttan', 'troia', 'vaffanc', 'fancul', 'coglion', 'frocio', 'froci',

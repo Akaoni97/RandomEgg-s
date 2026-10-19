@@ -4,7 +4,7 @@
 // sopra, uno strato leggero anima onde, fontana, barche e automobili.
 import {
   W, H, MAIN_Y, SEA_Y, PIAZZA, DISTRICTS, PLAN, ROOFS, DOORS, FOUNTAIN_AT,
-  key, parseKey, districtAt, districtById, inPiazza, builtCount, isFounder, formatNews, CITY, PAPER,
+  key, parseKey, districtAt, districtById, inPiazza, builtCount, isFounder, formatNews, CITY, PAPER, levelAt, hash, walkPath,
 } from './core.js';
 
 export const T = 32; // lato di una casella in unità del mondo
@@ -229,59 +229,104 @@ function getGround(open) {
     if (ih(x, y, 17) > 0.35) continue;
     trees.push({ x: x * T + 16, y: y * T + 28, kind: 'pino', s: 0.9 + ih(x, y, 18) * 0.3 });
   }
-  const high = new Uint8Array(W * H);
+  const level = new Int8Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) level[y * W + x] = levelAt(x, y, open);
+  // In alto e in montagna l'erba è più scura e fitta di pini e cipressi.
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = districtAt(x, y);
-    if ((d && d <= open && y < SEA_Y) || inPiazza(x, y)) high[y * W + x] = 1;
+    const i = y * W + x, L = level[i];
+    if (L >= 2 && kind[i] === 1) {
+      color[i] = mix(color[i], L === 3 ? '#5f8f4a' : '#7aa85a', 0.55);
+      if (ih(x, y, 77) < (L === 3 ? 0.55 : 0.35)) trees.push({ x: x * T + 16 + (ih(x, y, 78) - 0.5) * 10, y: y * T + 24, kind: ih(x, y, 79) > 0.5 ? 'cipresso' : 'tondo', s: 0.9 + ih(x, y, 80) * 0.35 });
+    }
   }
-  const gcache = { kind, color, crop, parcel, trees, high };
+  const gcache = { kind, color, crop, parcel, trees, level };
   groundCache.set(open, gcache);
   return gcache;
 }
 
-// Il terrazzamento del paese: muro di pietra sul lato sud, ombra sulla campagna a est e a sud,
-// bordo illuminato a nord e a ovest. La spiaggia scende nel mare con una riva più scura.
-function drawTerrace(g, G, view, det) {
+// Scarpate tra un livello e l'altro, viste di fronte come nei Pokémon: sul lato sud di ogni gradone
+// si vede la parete (muro di pietra per il paese, roccia e terra per colline e montagne),
+// con l'ombra sotto e verso est. Dove passa una strada al posto della parete c'è una scalinata.
+const STEP_H = 13;
+function drawCliffs(g, G, roads, view, det) {
   const { x0, y0, x1, y1 } = view;
-  const hi = (x, y) => x >= 0 && y >= 0 && x < W && y < H && G.high[y * W + x] === 1;
-  const WALL = 11;
+  const L = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : G.level[y * W + x]);
+  // Bordo luminoso in cima ai gradoni (nord e ovest, da dove viene la luce).
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const l = L(x, y);
+    if (l <= 0) continue;
+    g.fillStyle = 'rgba(255,250,220,0.5)';
+    if (L(x, y - 1) < l) g.fillRect(x * T, y * T, T, 1.4);
+  }
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
-      if (hi(x, y)) continue;
+      const here = L(x, y), up = L(x, y - 1);
       const px = x * T, py = y * T;
-      if (hi(x, y - 1)) {
-        const sh = g.createLinearGradient(0, py + WALL, 0, py + WALL + 14);
-        sh.addColorStop(0, 'rgba(30,40,15,0.4)'); sh.addColorStop(1, 'rgba(30,40,15,0)');
-        g.fillStyle = sh; g.fillRect(px, py + WALL, T, 14);
-        const wg = g.createLinearGradient(0, py, 0, py + WALL);
-        wg.addColorStop(0, '#d7c39c'); wg.addColorStop(1, '#a8916a');
-        g.fillStyle = wg; g.fillRect(px, py, T, WALL);
-        if (det) {
+      if (L(x - 1, y) > here) {
+        const sh = g.createLinearGradient(px, 0, px + 12, 0);
+        sh.addColorStop(0, 'rgba(25,35,15,0.3)'); sh.addColorStop(1, 'rgba(25,35,15,0)');
+        g.fillStyle = sh; g.fillRect(px, py, 12, T);
+      }
+      if (up <= here) continue;
+      const hgt = Math.min(T * 0.85, (up - here) * STEP_H);
+      const stairs = roads[key(x, y)] && roads[key(x, y - 1)];
+      // Ombra portata ai piedi della parete
+      const sh = g.createLinearGradient(0, py + hgt, 0, py + hgt + 14);
+      sh.addColorStop(0, 'rgba(25,35,15,0.38)'); sh.addColorStop(1, 'rgba(25,35,15,0)');
+      g.fillStyle = sh; g.fillRect(px, py + hgt, T, 14);
+      if (stairs) { drawStairs(g, px, py, hgt, roads[key(x, y)], det); continue; }
+      if (here === -1) {
+        // Riva: la sabbia scende nel mare.
+        const rg = g.createLinearGradient(0, py, 0, py + 8);
+        rg.addColorStop(0, '#d9c28c'); rg.addColorStop(1, '#a98f5e');
+        g.fillStyle = rg; g.fillRect(px, py, T, 8);
+        g.fillStyle = 'rgba(255,255,255,0.6)'; g.fillRect(px, py + 7, T, 1.4);
+        continue;
+      }
+      const town = up === 1 && here < 1;
+      const top = town ? '#dcc8a2' : '#b98b5c', bottom = town ? '#a48c66' : '#7b5636';
+      const wg = g.createLinearGradient(0, py, 0, py + hgt);
+      wg.addColorStop(0, top); wg.addColorStop(1, bottom);
+      g.fillStyle = wg; g.fillRect(px, py, T, hgt);
+      if (det) {
+        if (town) {
           g.strokeStyle = 'rgba(90,70,40,0.35)'; g.lineWidth = 0.4;
-          for (let r = 0; r < 3; r++) for (let k = 0; k < 6; k++) g.strokeRect(px + k * 7 + (r % 2) * 3.5 - 3.5, py + 0.8 + r * 3.3, 7, 3.3);
+          for (let r = 0; r * 3.4 < hgt - 1; r++) for (let k = 0; k < 6; k++) g.strokeRect(px + k * 7 + (r % 2) * 3.5 - 3.5, py + 1 + r * 3.4, 7, 3.4);
+        } else {
+          // Roccia: venature verticali e qualche sasso.
+          for (let k = 0; k < 7; k++) {
+            const vx = px + 2 + k * 4.4 + (ih(x, k, 90) - 0.5) * 2;
+            g.fillStyle = 'rgba(60,35,15,0.28)'; g.fillRect(vx, py + 3 + ih(x, k, 91) * 3, 0.9, hgt - 6 - ih(x, k, 92) * 4);
+            g.fillStyle = 'rgba(255,230,190,0.18)'; g.fillRect(vx + 1, py + 3, 0.6, hgt - 8);
+          }
+          for (let k = 0; k < 3; k++) { g.fillStyle = 'rgba(70,45,25,0.35)'; g.beginPath(); g.ellipse(px + 5 + ih(x, y + k, 93) * 22, py + hgt - 2.5, 2.2, 1.2, 0, 0, 7); g.fill(); }
         }
-        g.fillStyle = '#ece0c4'; g.fillRect(px, py, T, 1);
-        g.fillStyle = 'rgba(40,30,15,0.35)'; g.fillRect(px, py + WALL - 0.8, T, 0.8);
       }
-      if (hi(x - 1, y)) {
-        const sh = g.createLinearGradient(px, 0, px + 10, 0);
-        sh.addColorStop(0, 'rgba(30,40,15,0.28)'); sh.addColorStop(1, 'rgba(30,40,15,0)');
-        g.fillStyle = sh; g.fillRect(px, py + (hi(x, y - 1) ? WALL : 0), 10, T);
+      // Orlo superiore: muretto chiaro per il paese, erba che sporge per le alture.
+      if (town) { g.fillStyle = '#f0e4c8'; g.fillRect(px, py, T, 1.6); }
+      else {
+        g.fillStyle = G.color[(y - 1) * W + x] || '#7aa85a';
+        g.beginPath(); g.moveTo(px, py);
+        for (let k = 0; k <= 8; k++) g.lineTo(px + k * 4, py + 1.8 + (k % 2 ? 1.6 : 0.4));
+        g.lineTo(px + T, py); g.closePath(); g.fill();
       }
+      g.fillStyle = 'rgba(30,20,10,0.35)'; g.fillRect(px, py + hgt - 0.8, T, 0.8);
     }
   }
-  g.fillStyle = 'rgba(255,250,225,0.55)';
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-    if (!hi(x, y)) continue;
-    if (!hi(x, y - 1)) g.fillRect(x * T, y * T, T, 1.2);
-    if (!hi(x - 1, y)) g.fillRect(x * T, y * T, 1.2, T);
+}
+function drawStairs(g, px, py, hgt, type, det) {
+  const w = (type === 'lane' ? 0.42 : type === 'piazza' ? 1 : type === 'main' ? 0.96 : 0.8) * T;
+  const x = px + (T - w) / 2;
+  const n = Math.max(3, Math.round(hgt / 2.6));
+  for (let i = 0; i < n; i++) {
+    const sy = py + (i * hgt) / n;
+    g.fillStyle = i % 2 ? '#cbbd9f' : '#ddd1b8';
+    g.fillRect(x, sy, w, hgt / n + 0.3);
+    g.fillStyle = 'rgba(80,60,35,0.35)'; g.fillRect(x, sy + hgt / n - 0.5, w, 0.5);
   }
-  if (SEA_Y + 1 >= y0 && SEA_Y + 1 <= y1) {
-    const py = (SEA_Y + 1) * T;
-    const rg = g.createLinearGradient(0, py, 0, py + 9);
-    rg.addColorStop(0, 'rgba(150,120,70,0.55)'); rg.addColorStop(1, 'rgba(40,90,130,0)');
-    g.fillStyle = rg; g.fillRect(x0 * T, py, (x1 - x0 + 1) * T, 9);
-  }
+  // Muretti laterali della scala
+  g.fillStyle = '#a48c66'; g.fillRect(x - 1.6, py, 1.6, hgt); g.fillRect(x + w, py, 1.6, hgt);
+  if (det) { g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(x - 1.6, py, 0.5, hgt); }
 }
 
 function drawGround(g, G, view, det) {
@@ -308,7 +353,6 @@ function drawGround(g, G, view, det) {
       }
     }
   }
-  drawTerrace(g, G, view, !!P);
   if (!P) return;
   // Siepi tra un campo e l'altro.
   g.fillStyle = '#6f9a4f';
@@ -712,53 +756,74 @@ function chimney(c, x, y) {
   g.fillStyle = '#8c4a35'; g.fillRect(x - 0.6, y - 1, 4.2, 1.3);
 }
 
+// Forme delle case in stile Pokémon: tetto grande visto dall'alto (falda posteriore più chiara,
+// colmo, falda anteriore) e facciata alta sotto. Le case sporgono un po' sopra la loro casella.
+function ridge(c, x, y, w) {
+  c.g.fillStyle = shade(c.roof, 0.28); c.g.fillRect(x, y, w, 1);
+  c.g.fillStyle = 'rgba(0,0,0,0.12)'; c.g.fillRect(x, y + 1, w, 0.5);
+}
+function eaveEdge(c, x, y, w) {
+  c.g.fillStyle = shade(c.roof, -0.3); c.g.fillRect(x, y, w, 1.3);
+  c.g.fillStyle = 'rgba(255,255,255,0.18)'; c.g.fillRect(x, y, w, 0.35);
+}
+function doormat(g, x, y) { g.fillStyle = '#a5483a'; g.beginPath(); g.roundRect(x, y, 5.6, 1.5, 0.5); g.fill(); }
+
 const SHAPES_DRAW = {
   casa(c) {
     const { g } = c;
-    sideFace(c, [[26, 14.5], [29.2, 12.8], [29.2, 26.4], [26, 28]]);
-    wallFace(c, 6, 14.5, 20, 13.5);
-    roofPoly(c, [[16, 3.2], [19.4, 1.6], [30.8, 12.9], [27.7, 14.9]], shade(c.roof, -0.12));
-    chimney(c, 21.5, 2.6);
-    roofPoly(c, [[4.3, 14.9], [16, 3.2], [27.7, 14.9]], c.roof);
-    eaveShadow(g, 6, 14.9, 20);
-    windowAt(c, 8.2, 17.4, 3.9, 4.4);
-    windowAt(c, 20, 17.4, 3.9, 4.4);
+    sideFace(c, [[28, 15], [30.6, 13.6], [30.6, 26.8], [28, 28]]);
+    wallFace(c, 4, 14.5, 24, 13.5);
+    roofPoly(c, [[5.5, -3.6], [26.5, -3.6], [29.6, 2.6], [2.4, 2.6]], shade(c.roof, 0.14));
+    chimney(c, 20, -6.2);
+    roofPoly(c, [[2.4, 2.6], [29.6, 2.6], [31.6, 15.2], [0.4, 15.2]], c.roof);
+    ridge(c, 2.4, 2.1, 27.2);
+    eaveEdge(c, 0.4, 14.4, 31.2);
+    eaveShadow(g, 4, 15.7, 24);
+    windowAt(c, 6.8, 18.2, 4, 4.4);
+    windowAt(c, 21.2, 18.2, 4, 4.4);
     doorAt(c, 13.9, 19.4, 4.2, 8.6);
-    c.plaque = [11.2, 23.4];
+    doormat(g, 13.2, 28.2);
+    c.plaque = [11.3, 24];
   },
   villetta(c) {
     const { g } = c;
-    sideFace(c, [[27, 16.5], [30, 15], [30, 26.6], [27, 28]]);
-    wallFace(c, 3, 16.5, 24, 11.5);
-    roofPoly(c, [[25.2, 7.4], [28.2, 6], [31.7, 15.2], [29, 16.9]], shade(c.roof, -0.12));
-    chimney(c, 8.6, 4.4);
-    roofPoly(c, [[1, 16.9], [6.8, 7.4], [25.2, 7.4], [29, 16.9]], c.roof);
-    eaveShadow(g, 3, 16.9, 24);
-    windowAt(c, 5.6, 19.4, 3.5, 4.2);
-    windowAt(c, 21, 19.4, 3.5, 4.2);
-    doorAt(c, 13.4, 20, 4.2, 8);
-    // Pensilina sopra la porta
-    roofPoly(c, [[11.6, 19.6], [19.2, 19.6], [18.3, 17.6], [12.5, 17.6]], shade(c.roof, 0.06));
-    c.plaque = [10.8, 23.6];
+    sideFace(c, [[29, 17], [31.4, 15.6], [31.4, 26.8], [29, 28]]);
+    wallFace(c, 2, 16.6, 27, 11.4);
+    roofPoly(c, [[8, -1.6], [24, -1.6], [29, 3.6], [3, 3.6]], shade(c.roof, 0.14));
+    chimney(c, 9.5, -4);
+    roofPoly(c, [[3, 3.6], [29, 3.6], [31.6, 17], [0.4, 17]], c.roof);
+    ridge(c, 8, -1.9, 16);
+    eaveEdge(c, 0.4, 16.2, 31.2);
+    eaveShadow(g, 2, 17.5, 27);
+    windowAt(c, 4.8, 19.8, 3.6, 4.2);
+    windowAt(c, 23.6, 19.8, 3.6, 4.2);
+    doorAt(c, 13.4, 20.4, 4.2, 7.6);
+    roofPoly(c, [[11.4, 20.4], [19.6, 20.4], [18.8, 18.4], [12.2, 18.4]], shade(c.roof, 0.06));
+    doormat(g, 12.7, 28.2);
+    c.plaque = [10.4, 24.4];
   },
   torretta(c) {
     const { g } = c;
-    wallFace(c, 4, 15.5, 15, 12.5);
-    roofPoly(c, [[2.4, 15.9], [11.5, 6.4], [20.6, 15.9]], c.roof);
-    eaveShadow(g, 4, 15.9, 15);
-    sideFace(c, [[27, 7], [29.6, 5.6], [29.6, 26.6], [27, 28]]);
-    wallFace(c, 18, 7, 9, 21);
-    roofPoly(c, [[22.5, -1.6], [30, 5.9], [28.2, 7.4]], shade(c.roof, -0.12));
-    roofPoly(c, [[16.8, 7.4], [22.5, -1.6], [28.2, 7.4]], c.roof);
-    eaveShadow(g, 18, 7.4, 9);
-    windowAt(c, 20.6, 9.6, 3.8, 4.8, { shutters: false, arch: true });
-    windowAt(c, 20.6, 16.6, 3.8, 4.4);
-    // Balconcino con ringhiera
-    g.fillStyle = '#e8e0cf'; g.fillRect(19.2, 21.6, 6.6, 1);
-    if (c.detail) { g.fillStyle = '#3b3f45'; for (let k = 0; k < 7; k++) g.fillRect(19.4 + k * 1.05, 19.6, 0.3, 2); g.fillRect(19.2, 19.4, 6.6, 0.4); }
-    windowAt(c, 6.9, 18.6, 3.6, 4.2);
-    doorAt(c, 12.9, 20, 4.2, 8);
-    c.plaque = [10.3, 24.2];
+    wallFace(c, 3, 16, 16, 12);
+    roofPoly(c, [[4, -0.6], [17, -0.6], [20, 4], [1.5, 4]], shade(c.roof, 0.14));
+    roofPoly(c, [[1.5, 4], [20, 4], [21.5, 16.6], [0, 16.6]], c.roof);
+    ridge(c, 1.5, 3.5, 18.5);
+    eaveEdge(c, 0, 16, 21.5);
+    eaveShadow(g, 3, 17.3, 16);
+    sideFace(c, [[29, 6], [31.2, 4.8], [31.2, 26.8], [29, 28]]);
+    wallFace(c, 18.5, 6, 10.5, 22);
+    roofPoly(c, [[23.75, -7], [31.6, 5.2], [29.9, 6.6]], shade(c.roof, -0.12));
+    roofPoly(c, [[17.6, 6.6], [23.75, -7], [29.9, 6.6]], c.roof);
+    g.fillStyle = shade(c.roof, 0.25); g.beginPath(); g.moveTo(23.75, -7); g.lineTo(21, 1.5); g.lineTo(22.2, 1.5); g.closePath(); g.fill();
+    eaveShadow(g, 18.5, 6.6, 10.5);
+    windowAt(c, 21.7, 8.8, 4, 5, { shutters: false, arch: true });
+    windowAt(c, 21.7, 16.2, 4, 4.4);
+    g.fillStyle = '#e8e0cf'; g.fillRect(20, 21.6, 7.4, 1);
+    if (c.detail) { g.fillStyle = '#3b3f45'; for (let k = 0; k < 8; k++) g.fillRect(20.2 + k * 1, 19.6, 0.3, 2); g.fillRect(20, 19.4, 7.4, 0.4); }
+    windowAt(c, 6.2, 19.6, 3.6, 4.2);
+    doorAt(c, 12.6, 20.2, 4.2, 7.8);
+    doormat(g, 11.9, 28.2);
+    c.plaque = [4.6, 25.4];
   },
 };
 
@@ -925,6 +990,7 @@ export function drawWorld(g, city, view, o) {
   drawRoads(g, city.roads, view, det);
   const piazzaVisible = PIAZZA.x1 >= x0 && PIAZZA.x0 <= x1 && PIAZZA.y1 >= y0 && PIAZZA.y0 <= y1;
   if (piazzaVisible) drawPiazzaFloor(g, city, det);
+  drawCliffs(g, G, city.roads, view, det);
 
   // Lotti liberi: contorno tratteggiato e, da vicino, il picchetto "libero".
   g.save();
@@ -1227,6 +1293,72 @@ export function drawAmbient(g, city, view, o, t) {
   }
 }
 
+/* Abitanti a passeggio ------------------------------------------------------ */
+
+const SKINS = ['#f3d2b3', '#e8b98f', '#c98d63', '#8d5b3d', '#f6dcc6'];
+const HAIRS = ['#3b2a1e', '#6b4226', '#d9a441', '#1f1a17', '#a4532e', '#8a8a8a'];
+const SHIRTS = ['#d9442f', '#3f6aa1', '#2f7d4f', '#e0a92a', '#7a4a6b', '#e86b8a', '#4fb3c8', '#f1ede4'];
+export function avatarLook(name) {
+  const h = hash(String(name));
+  return {
+    skin: SKINS[h % SKINS.length], hair: HAIRS[(h >>> 3) % HAIRS.length], shirt: SHIRTS[(h >>> 6) % SHIRTS.length],
+    pants: ['#2d3a4a', '#4b4f56', '#6b4a2f', '#2f4f6f'][(h >>> 9) % 4], cap: (h >>> 12) % 3 === 0, long: (h >>> 14) % 2 === 0,
+  };
+}
+
+// L'omino in stile Pokémon: testa grande, quattro direzioni, due pose di camminata.
+// (x, y) sono i piedi, in unità del mondo; `step` alterna le gambe.
+export function drawAvatar(g, x, y, dir, step, look, { me = false, night = false, bob = 0 } = {}) {
+  g.save();
+  g.translate(x, y);
+  g.fillStyle = 'rgba(20,30,15,0.3)'; g.beginPath(); g.ellipse(0, 0, 5.4, 1.9, 0, 0, 7); g.fill();
+  const lift = step ? 1.1 : 0;
+  const side = dir === 'E' || dir === 'W';
+  if (dir === 'W') g.scale(-1, 1);
+  // Gambe
+  g.fillStyle = look.pants;
+  if (side) { g.fillRect(-2.2 + (step ? 1.2 : -0.6), -6, 2.4, 6); g.fillRect(-0.2 - (step ? 1.2 : -0.6), -6, 2.4, 6 - lift); }
+  else { g.fillRect(-3, -6, 2.5, 6 - (step === 1 ? lift : 0)); g.fillRect(0.5, -6, 2.5, 6 - (step === 2 ? lift : 0)); }
+  g.fillStyle = '#2b2b2b';
+  if (!side) { g.fillRect(-3.2, -0.9 - (step === 1 ? lift : 0), 2.9, 1.1); g.fillRect(0.3, -0.9 - (step === 2 ? lift : 0), 2.9, 1.1); }
+  // Corpo e braccia
+  g.fillStyle = look.shirt; g.beginPath(); g.roundRect(-4.4, -13.4, 8.8, 8.2, 2.4); g.fill();
+  g.fillStyle = shade(look.shirt, -0.15);
+  if (side) g.fillRect(-1, -12.5 + (step ? 0.6 : 0), 2.4, 6);
+  else { g.fillRect(-5.6, -12.4 + (step === 1 ? 0.8 : 0), 1.6, 5.6); g.fillRect(4, -12.4 + (step === 2 ? 0.8 : 0), 1.6, 5.6); }
+  g.fillStyle = look.skin;
+  if (!side) { g.fillRect(-5.6, -7, 1.6, 1.4); g.fillRect(4, -7, 1.6, 1.4); }
+  // Testa
+  const hy = -18.4 + bob;
+  g.fillStyle = look.skin; g.beginPath(); g.arc(0, hy, 5.4, 0, 7); g.fill();
+  g.fillStyle = look.hair;
+  if (dir === 'N') { g.beginPath(); g.arc(0, hy, 5.6, 0, 7); g.fill(); if (look.long) g.fillRect(-4.6, hy, 9.2, 5); }
+  else {
+    g.beginPath(); g.arc(0, hy - 0.6, 5.6, Math.PI * 1.05, Math.PI * 1.95); g.lineTo(5.4, hy - 0.5); g.lineTo(-5.4, hy - 0.5); g.closePath(); g.fill();
+    if (look.long) { g.fillRect(-5.6, hy - 1, 2, 6); if (!side) g.fillRect(3.6, hy - 1, 2, 6); }
+    g.fillStyle = '#1f1f1f';
+    if (side) g.fillRect(2.4, hy + 0.2, 1.1, 1.8);
+    else { g.fillRect(-2.4, hy + 0.2, 1.1, 1.8); g.fillRect(1.3, hy + 0.2, 1.1, 1.8); }
+    g.fillStyle = 'rgba(230,110,110,0.35)';
+    if (!side) { g.fillRect(-3.8, hy + 2.2, 1.4, 0.8); g.fillRect(2.4, hy + 2.2, 1.4, 0.8); }
+  }
+  if (look.cap) {
+    g.fillStyle = shade(look.shirt, -0.05);
+    g.beginPath(); g.arc(0, hy - 1.4, 5.7, Math.PI, 0); g.closePath(); g.fill();
+    g.fillStyle = '#ffffff'; g.fillRect(-1.4, hy - 6, 2.8, 1.6);
+    g.fillStyle = shade(look.shirt, -0.25);
+    if (side) g.fillRect(2, hy - 2, 5, 1.4);
+    else if (dir === 'S') g.fillRect(-5, hy - 1.6, 10, 1.5);
+  }
+  g.restore();
+  if (me) {
+    // Indicatore giallo sopra la testa: sei tu.
+    g.fillStyle = '#ffd34d'; g.strokeStyle = 'rgba(60,40,0,0.5)'; g.lineWidth = 0.5;
+    g.beginPath(); g.moveTo(x - 2.6, y - 29 + bob); g.lineTo(x + 2.6, y - 29 + bob); g.lineTo(x, y - 25.6 + bob); g.closePath(); g.fill(); g.stroke();
+  }
+  if (night) glow(g, x, y - 10, 12, 0.12, '255,240,200');
+}
+
 /* Nuvole ------------------------------------------------------------------ */
 
 // Le nuvole stanno "più in alto" della città: scorrono più veloci del terreno quando si sposta
@@ -1287,6 +1419,8 @@ export class CityMap {
     this.opts = { mode: 'browse', meId: null, friends: new Set(), online: new Set(), night: false, selected: null };
     this.cam = { x: 41.5 * T, y: 30 * T, z: 1 };
     this.born = new Map();   // lotto → istante in cui è comparsa (animazione di costruzione)
+    this.avatars = new Map(); // id abitante → { x, y (caselle), path, dir, look, name, me }
+    this.lastTick = 0;
     this.dirty = true;
     this.lastAmbient = 0;
     this.pointers = new Map();
@@ -1302,12 +1436,83 @@ export class CityMap {
       this.now = t;
       const interacting = this.pointers.size > 0 || t < this.interactUntil;
       const growing = this.animating(t);
+      const walking = this.tickAvatars(t);
       if ((this.dirty || growing) && interacting && this.layerCam && !this.stale()) this.fast();
       else if (this.dirty || growing) { this.dirty = false; this.render(t, true); this.lastFull = this.lastAmbient = t; }
-      else if (!this.still && this.ambientVisible && t - this.lastAmbient > 66) { this.render(t, false); this.lastAmbient = t; }
+      else if (walking && t - this.lastAmbient > 30) { this.render(t, false); this.lastAmbient = t; }
+      else if (this.avatarsDirty || (!this.still && this.ambientVisible && t - this.lastAmbient > 66)) { this.avatarsDirty = false; this.render(t, false); this.lastAmbient = t; }
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
+  }
+
+  // Allinea gli omini a chi è in città: chi entra compare, chi esce sparisce.
+  setAvatars(list) {
+    const ids = new Set(list.map((a) => a.id));
+    for (const id of this.avatars.keys()) if (!ids.has(id)) this.avatars.delete(id);
+    for (const a of list) {
+      const cur = this.avatars.get(a.id);
+      if (cur) { cur.name = a.name; cur.me = a.me; continue; }
+      this.avatars.set(a.id, { id: a.id, x: a.pos[0], y: a.pos[1], path: [], dir: 'S', look: avatarLook(a.name), name: a.name, me: a.me, walked: 0 });
+    }
+    this.avatarsDirty = true;
+  }
+  // Fa camminare un omino fino alla casella indicata, seguendo strade e scale.
+  walk(id, tx, ty) {
+    const a = this.avatars.get(id);
+    if (!a || !this.city) return false;
+    const from = [Math.round(a.x), Math.round(a.y)];
+    const path = walkPath(this.city, from, [tx, ty]);
+    if (!path) return false;
+    a.path = path;
+    this.avatarsDirty = true;
+    return true;
+  }
+  avatarOf(id) { return this.avatars.get(id); }
+  tickAvatars(t) {
+    const dt = Math.min(0.1, (t - (this.lastTick || t)) / 1000);
+    this.lastTick = t;
+    let moving = false;
+    for (const a of this.avatars.values()) {
+      if (!a.path.length) continue;
+      moving = true;
+      let left = dt * 4.2; // caselle al secondo
+      while (left > 0 && a.path.length) {
+        const [nx, ny] = a.path[0];
+        const dx = nx - a.x, dy = ny - a.y, d = Math.hypot(dx, dy);
+        if (d > 0.001) a.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'E' : 'W') : (dy > 0 ? 'S' : 'N');
+        if (d <= left) { a.x = nx; a.y = ny; a.path.shift(); left -= d; } else { a.x += (dx / d) * left; a.y += (dy / d) * left; left = 0; }
+        a.walked += dt * 4.2;
+      }
+      // La telecamera segue il proprio omino quando esce dal centro dello schermo.
+      if (a.me && !this.pointers.size) {
+        const sx = ((a.x + 0.5) * T - this.cam.x) * this.cam.z, sy = ((a.y + 0.5) * T - this.cam.y) * this.cam.z;
+        const mx = this.vw * 0.28, my = this.vh * 0.22;
+        if (Math.abs(sx) > mx || Math.abs(sy) > my) {
+          this.cam.x += (sx - Math.sign(sx) * Math.min(Math.abs(sx), mx)) / this.cam.z * 0.12;
+          this.cam.y += (sy - Math.sign(sy) * Math.min(Math.abs(sy), my)) / this.cam.z * 0.12;
+          this.clamp();
+          this.interactUntil = t + 200;
+          this.dirty = true;
+        }
+      }
+    }
+    if (!moving && this.wasWalking) this.dirty = true; // a fine passeggiata, un ridisegno nitido
+    this.wasWalking = moving;
+    return moving;
+  }
+  drawAvatars(g, night) {
+    const list = [...this.avatars.values()].sort((a, b) => a.y - b.y);
+    const z = this.cam.z;
+    for (const a of list) {
+      const x = (a.x + 0.5) * T, y = (a.y + 0.5) * T + 6;
+      const step = a.path.length ? (Math.floor(a.walked * 2.2) % 2) + 1 : 0;
+      // Proporzioni da Pokémon: l'omino è alto circa metà di una casa.
+      g.save(); g.translate(x, y); g.scale(0.62, 0.62);
+      drawAvatar(g, 0, 0, a.dir, step, a.look, { me: a.me, night, bob: a.path.length ? 0 : Math.sin((this.now || 0) / 500) * 0.3 });
+      g.restore();
+      if (a.me || z >= 2.8) label(g, x, y + 3.5, a.name, a.me, z);
+    }
   }
 
   setCity(city, { animateNew = true } = {}) {
@@ -1433,17 +1638,18 @@ export class CityMap {
     if (!this.city.houses[key(x, y)] && this.city.houses[key(x, y + 1)] && wy - y * T > T * 0.4) y += 1;
     const k = key(x, y);
     const h = this.city.houses[k];
-    if (h) return this.onTap?.({ kind: 'house', slot: k, house: h });
+    const at = { x, y };
+    if (h) return this.onTap?.({ kind: 'house', slot: k, house: h, ...at });
     if (inPiazza(x, y)) {
       const [ex, ey] = PIAZZA_SPOTS.edicola;
-      if (x === ex && y === ey) return this.onTap?.({ kind: 'giornale' });
-      if (PIAZZA_SPOTS.muro.some(([mx, my]) => mx === x && my === y)) return this.onTap?.({ kind: 'muro' });
-      return this.onTap?.({ kind: 'piazza' });
+      if (x === ex && y === ey) return this.onTap?.({ kind: 'giornale', ...at });
+      if (PIAZZA_SPOTS.muro.some(([mx, my]) => mx === x && my === y)) return this.onTap?.({ kind: 'muro', ...at });
+      return this.onTap?.({ kind: 'piazza', ...at });
     }
     const d = districtAt(x, y);
-    if (PLAN.lots.has(k) && d && d <= this.city.openDistricts) return this.onTap?.({ kind: 'lot', slot: k });
-    if (d && d > this.city.openDistricts) return this.onTap?.({ kind: 'locked', district: d });
-    this.onTap?.({ kind: 'none' });
+    if (PLAN.lots.has(k) && d && d <= this.city.openDistricts) return this.onTap?.({ kind: 'lot', slot: k, ...at });
+    if (d && d > this.city.openDistricts) return this.onTap?.({ kind: 'locked', district: d, ...at });
+    this.onTap?.({ kind: 'none', ...at });
   }
 
   view() {
@@ -1469,6 +1675,8 @@ export class CityMap {
     g.fillRect(0, 0, this.cv.width, this.cv.height);
     g.setTransform(s, 0, 0, s, d * ((this.vw / 2) * (1 - s) + (L.x - c.x) * c.z), d * ((this.vh / 2) * (1 - s) + (L.y - c.y) * c.z));
     g.drawImage(this.layer, 0, 0);
+    this.worldTransform(g);
+    this.drawAvatars(g, this.opts.night);
     drawClouds(g, c, this.vw, this.vh, d, this.still ? 0 : this.now, this.opts.night);
   }
   worldTransform(g) {
@@ -1502,6 +1710,7 @@ export class CityMap {
     g.drawImage(this.layer, 0, 0);
     this.worldTransform(g);
     drawAmbient(g, this.city, view, o, this.still ? 0 : t);
+    this.drawAvatars(g, o.night);
     drawClouds(g, this.cam, this.vw, this.vh, this.dpr, this.still ? 0 : t, o.night);
     this.worldTransform(g);
     if (this.opts.mode === 'choose') {
@@ -1563,19 +1772,19 @@ function easeOutBack(p) {
 
 export function drawPreview(canvas, style, { cantiere = false } = {}) {
   const g = canvas.getContext('2d');
-  const s = canvas.width / 40;
+  const s = canvas.width / 46;
   g.setTransform(1, 0, 0, 1, 0, 0);
   const sky = g.createLinearGradient(0, 0, 0, canvas.height);
   sky.addColorStop(0, '#bfe0a0'); sky.addColorStop(1, '#93c26b');
   g.fillStyle = sky;
   g.fillRect(0, 0, canvas.width, canvas.height);
   g.setTransform(s, 0, 0, s, 0, 0);
-  g.fillStyle = pats(g).grass; g.fillRect(0, 0, 40, 30);
-  g.fillStyle = '#a8936d'; g.fillRect(0, 26.2, 40, 4);
-  g.fillStyle = pats(g).cobble; g.fillRect(0, 26.6, 40, 3.4);
-  drawTree(g, { x: 1.5, y: 18, kind: 'cipresso', s: 0.7 }, true);
-  drawTree(g, { x: 38.5, y: 19, kind: 'tondo', s: 0.6 }, true);
-  g.setTransform(s, 0, 0, s, 4 * s, -3.2 * s);
+  g.fillStyle = pats(g).grass; g.fillRect(0, 0, 46, 35);
+  g.fillStyle = '#a8936d'; g.fillRect(0, 31.6, 46, 4);
+  g.fillStyle = pats(g).cobble; g.fillRect(0, 32, 46, 3.4);
+  drawTree(g, { x: 2.5, y: 24, kind: 'cipresso', s: 0.8 }, true);
+  drawTree(g, { x: 43.5, y: 25, kind: 'tondo', s: 0.7 }, true);
+  g.setTransform(s, 0, 0, s, 7 * s, 4.2 * s);
   drawHouse(g, style, { cantiere });
 }
 
