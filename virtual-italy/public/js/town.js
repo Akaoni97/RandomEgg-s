@@ -133,7 +133,7 @@ function dots(g, X, Y, seed, n, colors, w = 2, h = 1) {
 const isRoad = (city, x, y) => !!city.roads[key(x, y)];
 
 // Il piano di una casella: (X, Y) è l'angolo in alto a sinistra sullo schermo.
-export function tileTop(g, city, G, x, y, X, Y, det) {
+export function tileTop(g, city, G, x, y, X, Y, det, lotMarks = true) {
   const i = y * W + x;
   const k = G.kind[i];
   const road = city.roads[key(x, y)];
@@ -278,7 +278,7 @@ export function tileTop(g, city, G, x, y, X, Y, det) {
   }
   // Lotto libero: riquadro tratteggiato
   const lk = key(x, y);
-  if (PLAN.lots.has(lk) && !city.houses[lk] && districtAt(x, y) <= city.openDistricts) {
+  if (lotMarks && PLAN.lots.has(lk) && !city.houses[lk] && districtAt(x, y) <= city.openDistricts) {
     fill('rgba(255,255,255,0.16)', 3, 3, T - 6, T - 6);
     g.save(); g.setLineDash([3, 2]); g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 1; g.strokeRect(X + 3.5, Y + 3.5, T - 7, T - 7); g.restore();
   }

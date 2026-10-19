@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import {
   applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey,
-  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y, checkSay, ROOM, canVisit, isShopRoom, ACTS,
+  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y, checkSay, ROOM, canVisit, isShopRoom, ACTS, migratePlan,
 } from '../public/js/core.js';
 import { seedResidents } from '../public/js/seed.js';
 
@@ -46,8 +46,15 @@ db.exec(`
 let state;
 {
   const row = db.prepare('SELECT json FROM store WHERE id = 1').get();
-  if (row) state = JSON.parse(row.json);
-  else {
+  if (row) {
+    state = JSON.parse(row.json);
+    // Città salvata con la pianta di prima: le case si spostano sui lotti giusti
+    if (migratePlan(state)) {
+      state.rev++;
+      db.prepare('UPDATE store SET json = ?, rev = ?, updated_at = ? WHERE id = 1').run(JSON.stringify(state), state.rev, Date.now());
+      console.log('Pianta della città aggiornata: case spostate sui lotti nuovi.');
+    }
+  } else {
     state = emptyState();
     if (process.env.DEMO_DATA === '1') state = seedResidents(state, Number(process.env.DEMO_COUNT || 18));
     db.prepare('INSERT INTO store (id, json, rev, updated_at) VALUES (1, ?, ?, ?)').run(JSON.stringify(state), state.rev, Date.now());

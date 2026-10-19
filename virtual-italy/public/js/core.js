@@ -18,28 +18,34 @@ export const FOUNTAIN_AT = 25;
 export const MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
 
 // Il tracciato segue una griglia di passo 5: righe e colonne multiple di 5 sono vie, in mezzo
-// restano isolati di 4×4 caselle. In ogni isolato ci sono due lotti affacciati sulla via a sud,
-// separati da un giardino; dietro le case ci sono orti e un cortile alberato.
+// restano isolati di 4×4 caselle. Ogni isolato ha quattro lotti: due affacciati sulla via a nord e
+// due sulla via a sud, schiena contro schiena, così ogni via ha case su tutti e due i lati.
+// Ogni quartiere ha il suo carattere: forme delle case e colori dei muri.
 // Le dorsali sono le vie principali di ogni quartiere, tratteggiate finché il quartiere è chiuso.
 export const DISTRICTS = [
-  { id: 1, name: 'Centro', rect: [30, 20, 55, 35], dorsal: null,
+  // Centro storico: palazzine a due piani e torrette, intonaci caldi
+  { id: 1, name: 'Centro', rect: [30, 20, 55, 35], dorsal: null, shapes: ['casa', 'casa', 'torretta'],
     walls: ['#e8b86a', '#d98b5f', '#f0d39a', '#e3a27a'] },
-  { id: 2, name: 'Borgo Est', rect: [55, 20, 75, 35], dorsal: { x: 65, y0: 15, y1: 45 },
+  // Borghi: case a schiera dai colori tenui, qualche villetta
+  { id: 2, name: 'Borgo Est', rect: [55, 20, 75, 35], dorsal: { x: 65, y0: 15, y1: 45 }, shapes: ['casa', 'casa', 'villetta'],
     walls: ['#f3d6d0', '#d7e6ef', '#f4e7b8', '#dcebd2'] },
-  { id: 3, name: 'Borgo Ovest', rect: [10, 20, 30, 35], dorsal: { x: 20, y0: 15, y1: 45 },
+  { id: 3, name: 'Borgo Ovest', rect: [10, 20, 30, 35], dorsal: { x: 20, y0: 15, y1: 45 }, shapes: ['casa', 'villetta', 'casa'],
     walls: ['#d8cfc0', '#c9bba4', '#e6dccb', '#bfb5a6'] },
-  { id: 4, name: 'Collina Nord', rect: [10, 8, 75, 20], dorsal: { y: 15, x0: 10, x1: 75 },
+  // Collina: ville basse color terra con il giardino
+  { id: 4, name: 'Collina Nord', rect: [10, 8, 75, 20], dorsal: { y: 15, x0: 10, x1: 75 }, shapes: ['villetta', 'villetta', 'torretta'],
     walls: ['#c99a6b', '#b98a5e', '#e0c49e', '#a8794f'] },
-  { id: 5, name: 'Marina Sud', rect: [10, 35, 75, 51], dorsal: { y: 45, x0: 10, x1: 75 },
-    walls: ['#f5f3ee', '#dbe8f1', '#f7efe0', '#e5eef0'] },
+  // Marina: case di pescatori dai colori vivaci, come a Burano
+  { id: 5, name: 'Marina Sud', rect: [10, 35, 75, 51], dorsal: { y: 45, x0: 10, x1: 75 }, shapes: ['casa', 'casa', 'villetta'],
+    walls: ['#e8604c', '#f2b632', '#4f8fc8', '#7bbf6a', '#e88fb4', '#f2ead6'] },
 ];
 export const isStreet = (x, y) => x % STREET === 0 || y % STREET === 0;
 // Il canale scende dalla collina al mare tra Borgo Ovest e il Centro; le vie lo passano sui ponti.
 export const CANAL = { x0: 26, x1: 28, y0: 8 };
 export const isCanal = (x, y) => x >= CANAL.x0 && x <= CANAL.x1 && y >= CANAL.y0 && y <= SEA_Y;
-// Posizione dentro l'isolato (1..4): le case stanno sul lato sud, con la facciata sulla via e il
-// giardino dietro (nella vista di tre quarti il tetto sale verso il giardino, non sopra un'altra via).
-const LOT_SPOTS = ['1,4', '4,4'];
+// Posizione dentro l'isolato (1..4): due lotti sul lato nord (porta a nord) e due sul lato sud.
+const LOT_SPOTS = ['1,1', '4,1', '1,4', '4,4'];
+// Da che parte guarda la porta di un lotto
+export const lotFacing = (k) => (parseKey(k)[1] % STREET === 1 ? 'N' : 'S');
 
 export const ROOFS = [
   { id: 'coppi', label: 'Coppi', color: '#b5523b' },
@@ -196,6 +202,8 @@ export const PLAN = (() => {
       const [rx0, ry0, rx1, ry1] = d.rect;
       if (x - bx < rx0 || x - bx + STREET > rx1 || y - by < ry0 || y - by + STREET > Math.min(ry1, SEA_Y)) continue;
       if (!LOT_SPOTS.includes(bx + ',' + by)) continue;
+      // Niente case negli isolati tagliati dal canale
+      if ([1, 2, 3, 4].some((i) => [1, 2, 3, 4].some((j) => isCanal(x - bx + i, y - by + j)))) continue;
       lots.add(k);
       lotsByDistrict.get(d.id).push(k);
     }
@@ -271,7 +279,9 @@ export function computeRoads(houses, openDistricts) {
   for (const h of ordered) {
     // Di solito la casa sta già sulla via: la porta guarda la via (meglio se verso chi guarda).
     const [hx, hy] = parseKey(h.slot);
-    const side = [['S', 0, 1], ['E', 1, 0], ['W', -1, 0], ['N', 0, -1]].find(([, dx, dy]) => net.has(key(hx + dx, hy + dy)));
+    const face = lotFacing(h.slot);
+    const sides = [['S', 0, 1], ['E', 1, 0], ['W', -1, 0], ['N', 0, -1]].sort((a, b) => (b[0] === face) - (a[0] === face));
+    const side = sides.find(([, dx, dy]) => net.has(key(hx + dx, hy + dy)));
     if (side) { doors[h.slot] = side[0]; continue; }
     const r = routeFrom(h.slot, net, openDistricts);
     if (!r) continue;
@@ -312,11 +322,15 @@ export function levelAt(x, y, openDistricts) {
   return 0;
 }
 
-// Dove si può camminare: ovunque sulla terraferma tranne dentro le case.
-// Si cambia livello solo su strade, vialetti e piazza, dove ci sono le scale.
+// Dove si può camminare: in campagna ovunque; nei quartieri aperti su vie, vialetti e piazza
+// (dentro gli isolati ci sono le case). Si cambia livello solo su strade e piazza, dove ci sono le scale.
 export function walkable(s, x, y) {
-  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)] && !shopAt(x, y) && !PIAZZA_BLOCKED.has(key(x, y))
-    && !(isCanal(x, y) && !s.roads[key(x, y)]);
+  if (x < 0 || y < 0 || x >= W || y > SEA_Y) return false;
+  const k = key(x, y);
+  if (s.houses[k] || shopAt(x, y) || PIAZZA_BLOCKED.has(k) || (isCanal(x, y) && !s.roads[k])) return false;
+  const d = districtAt(x, y);
+  if (d && d <= s.openDistricts && !s.roads[k] && !inPiazza(x, y) && !isStreet(x, y) && y < SEA_Y) return false;
+  return true;
 }
 export function canStep(s, ax, ay, bx, by) {
   if (!walkable(s, bx, by)) return false;
@@ -694,7 +708,7 @@ export function makeStyle(slot, choice = {}) {
     garden: pick(GARDENS, choice.garden, 'prato'),
     deco: pick(DECOS, choice.deco, 'nessuno'),
     wall: d.walls[(h >>> 6) % d.walls.length],
-    shape: SHAPES[(h >>> 9) % SHAPES.length],
+    shape: (d.shapes || SHAPES)[(h >>> 9) % (d.shapes || SHAPES).length],
   };
 }
 
@@ -746,6 +760,37 @@ export const builtCount = (s) => Object.values(s.houses).filter((h) => h.status 
 export const isFounder = (r) => !!r && r.number !== null && r.number <= FOUNDERS;
 export const areFriends = (s, a, b) => s.friendships.some((f) => (f.a === a && f.b === b) || (f.a === b && f.b === a));
 export const friendsOf = (s, id) => s.friendships.filter((f) => f.a === id || f.b === id).map((f) => (f.a === id ? f.b : f.a));
+
+// Una città salvata con una pianta più vecchia: ogni casa che non sta su un lotto valido si sposta
+// sul lotto libero più vicino (dello stesso quartiere se possibile), con le notizie che la citano;
+// poi si rifanno strade e porte. Restituisce true se qualcosa è cambiato.
+export function migratePlan(s) {
+  const moved = {};
+  const wrong = Object.keys(s.houses).filter((k) => !PLAN.lots.has(k)).sort((a, b) => s.houses[a].reservedAt - s.houses[b].reservedAt);
+  for (const k of wrong) {
+    const [x, y] = parseKey(k);
+    const d = districtAt(x, y);
+    let best = null, bestD = Infinity;
+    for (const lot of PLAN.lots) {
+      if (s.houses[lot]) continue;
+      const [lx, ly] = parseKey(lot);
+      const ld = districtAt(lx, ly);
+      if (ld > Math.max(s.openDistricts, d || 1)) continue;
+      const dist = Math.hypot(lx - x, ly - y) + (ld === d ? 0 : 40);
+      if (dist < bestD) { bestD = dist; best = lot; }
+    }
+    if (!best) continue;
+    const h = s.houses[k];
+    delete s.houses[k];
+    s.houses[best] = { ...h, slot: best, style: makeStyle(best, h.style) };
+    moved[k] = best;
+  }
+  const changed = Object.keys(moved).length > 0;
+  if (changed) for (const n of s.news) if (n.slot && moved[n.slot]) n.slot = moved[n.slot];
+  const before = JSON.stringify([s.roads, s.doors]);
+  refresh(s);
+  return changed || JSON.stringify([s.roads, s.doors]) !== before;
+}
 
 // Dopo ogni modifica alle case: quartieri da aprire, traguardi, strade.
 function refresh(s, now = Date.now()) {

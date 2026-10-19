@@ -1425,7 +1425,7 @@ export class CityMap {
     const near = t3.view.dist < 22;
     if (o.selected && this.city.houses[o.selected]) {
       const b = t3.houses.get(o.selected), r = this.city.residents[this.city.houses[o.selected].residentId];
-      if (b && r) { const p = b.group.position; const [x, y, z] = t3.project(p.x, p.z + 0.35, p.y); if (z < 1) label(g, x, y + 10, r.username, this.city.houses[o.selected].residentId === o.meId, 1); }
+      if (b && r) { const p = b.group.position; const [x, y, z] = t3.project(p.x, p.z + (b.north ? -0.35 : 0.35), p.y); if (z < 1) label(g, x, y + 10, r.username, this.city.houses[o.selected].residentId === o.meId, 1); }
     }
     for (const a of this.visibleAvatars()) {
       const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
@@ -1447,7 +1447,7 @@ export class CityMap {
     for (const [slot, t0] of this.born) {
       const b = t3.houses.get(slot);
       if (!b || t - t0 >= 1400) continue;
-      const p = b.group.position, [x, y, z] = t3.project(p.x, p.z - 1, p.y + 1.5);
+      const p = b.group.position, [x, y, z] = t3.project(p.x, p.z + (b.north ? 1 : -1), p.y + 1.5);
       if (z < 1) sparkle(g, x, y, t - t0);
     }
   }

@@ -1,7 +1,7 @@
 // Due archivi con la stessa interfaccia:
 // - RemoteStore: il server vero (server/server.js), una sola città per tutti.
 // - LocalStore: demo nel browser. La città vive solo in questo browser e le email sono finte.
-import { applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey, residentHouse, friendsOf, uid, spawnPoint, walkPath, W, SEA_Y, checkSay, SAY_PRESETS } from './core.js';
+import { applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey, residentHouse, friendsOf, uid, spawnPoint, walkPath, W, SEA_Y, checkSay, SAY_PRESETS, migratePlan } from './core.js';
 import { seedResidents, DEMO_TAG } from './seed.js';
 
 class Base {
@@ -103,6 +103,8 @@ export class LocalStore extends Base {
   async init() {
     const saved = load();
     this.db = saved?.version === 1 ? saved : this.fresh();
+    // Una demo salvata con la pianta di prima si sistema da sola
+    if (migratePlan(this.db.state)) { this.db.state.rev++; this.persist(); }
     this.me = this.db.session ? this.meView(this.db.session) : null;
     // A settimana finita il giornale annuncia la Casa della settimana.
     if (applyOp(this.db.state, { type: 'weekly' }, { system: true, now: Date.now() }).result.changed) this.apply({ type: 'weekly' }, { system: true });

@@ -4,8 +4,8 @@
 // Una casella è un'unità; 32 pixel d'arte fanno un'unità, come nella vista piatta.
 // La telecamera guarda dall'alto inclinata e gira attorno al punto che si sta guardando.
 import {
-  W, H, MAIN_Y, SEA_Y, PIAZZA, PLAN, FOUNTAIN_AT, key, districtAt, inPiazza, builtCount, isFounder, hash,
-  shopAt, BENCHES, PIAZZA_DECOR, STREET, isStreet, isCanal, CANAL, SHOPS,
+  W, H, SEA_Y, PIAZZA, PLAN, FOUNTAIN_AT, key, districtAt, inPiazza, builtCount, isFounder, hash,
+  shopAt, BENCHES, PIAZZA_DECOR, STREET, isStreet, isCanal, CANAL, SHOPS, lotFacing,
 } from './core.js';
 import { rgb, mix, shade, ih } from './art.js';
 import {
@@ -163,6 +163,18 @@ function waveTex() {
   waveTexC.repeat.set(24, 24);
   return waveTexC;
 }
+let signTexC = null;
+function signTex() {
+  if (signTexC) return signTexC;
+  const cv = canvas2d(64, 32), g = cv.getContext('2d');
+  g.fillStyle = '#7a5434'; g.fillRect(0, 0, 64, 32);
+  g.fillStyle = '#f3e3c0'; g.fillRect(2, 2, 60, 28);
+  g.fillStyle = 'rgba(120,80,40,0.25)'; for (let y = 8; y < 30; y += 7) g.fillRect(2, y, 60, 1);
+  g.fillStyle = '#2f6b4f'; g.font = '800 15px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('LIBERO', 32, 17);
+  signTexC = pixTex(cv, { smooth: true });
+  return signTexC;
+}
 let glowTexC = null;
 function glowTex() {
   if (glowTexC) return glowTexC;
@@ -187,7 +199,7 @@ function stripeTex(a, b, n = 8, scallop = true) {
 // Il terreno di tutta la mappa in un'unica immagine (32 pixel per casella), come la vista piatta.
 function paintGround(city, G) {
   const cv = canvas2d(W * PX, H * PX), g = cv.getContext('2d');
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) tileTop(g, city, G, x, y, x * PX, y * PX, true);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) tileTop(g, city, G, x, y, x * PX, y * PX, true, false);
   // Cerchi di pietra attorno alla fontana (qui visti dall'alto: tondi)
   const [fx, fy] = PIAZZA_DECOR.fountain, cx = (fx + 0.5) * PX, cy = (fy + 0.5) * PX;
   const rings = [[78, '#d8c19c'], [70, '#e7d5b6'], [62, '#cfb48d'], [56, '#ead9bc'], [48, '#dcc5a1']];
@@ -350,7 +362,7 @@ export function buildHouse(style, { cantiere = false, founder = false, flag = nu
   const tw = shape === 'torretta' ? 18 : 0;
   const bodyW = HW - (tw ? tw - 2 : 0);
   const Hh = shape === 'villetta' ? 40 : 66;
-  const D = shape === 'villetta' ? 70 : 76;
+  const D = shape === 'villetta' ? 56 : 60;            // due case schiena contro schiena nell'isolato
   const th = Hh + 20;
   // Atlante: davanti | fianco | retro | (torretta: davanti | fianco), con 2 pixel di margine
   const regions = [];
@@ -471,13 +483,19 @@ function bushIn(m, x, y, z, s, col, flower) {
   m.prim('ico1', x, y + 0.16 * s, z, 0.26 * s, 0.2 * s, 0.26 * s, col);
   if (flower) for (let k = 0; k < 5; k++) { const a = k * 1.3; m.prim('ico0', x + Math.cos(a) * 0.17 * s, y + (0.24 + (k % 2) * 0.08) * s, z + Math.sin(a) * 0.17 * s, 0.05, 0.05, 0.05, flower); }
 }
+// Il giardino sta davanti all'angolo sinistro della casa (dietro c'è la casa dell'altra via)
 function gardenIn(m, garden, x0, x1, z0, seed) {
-  if (garden === 'fiori') { bushIn(m, x0 + 0.3, 0, z0 - 0.4, 0.8, '#4c973d', '#e85d75'); bushIn(m, x1 - 0.3, 0, z0 - 0.4, 0.8, '#4c973d', '#f6d84a'); }
-  else if (garden === 'orto') {
-    m.box(x0 - 0.05, 0, z0 - 0.7, x0 + 0.85, 0.12, z0 - 0.15, '#6e4a2c');
-    for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) m.prim('ico0', x0 + 0.08 + c * 0.22, 0.16, z0 - 0.6 + r * 0.18, 0.07, 0.06, 0.07, r === 1 && c % 2 ? '#e8423a' : '#5f9a3c');
-  } else if (garden === 'ulivo') treeIn(m, 'ulivo', (x0 + x1) / 2 + 0.3, 0, z0 - 0.55, 0.9, seed);
-  else if (garden !== 'nessuno') bushIn(m, x1 - 0.3, 0, z0 - 0.4, 0.9, '#5f9a3c', null);
+  const gx = x0 + 0.22, gz = 0.24;
+  if (garden === 'fiori') {
+    m.box(gx - 0.2, 0, gz - 0.12, gx + 0.2, 0.12, gz + 0.12, '#8e3f2b');
+    bushIn(m, gx - 0.08, 0.1, gz, 0.55, '#4c973d', '#e85d75'); bushIn(m, gx + 0.1, 0.1, gz, 0.5, '#4c973d', '#f6d84a');
+  } else if (garden === 'orto') {
+    m.box(gx - 0.2, 0, gz - 0.13, gx + 0.2, 0.12, gz + 0.13, '#6e4a2c');
+    for (let c = 0; c < 3; c++) m.prim('ico0', gx - 0.12 + c * 0.12, 0.16, gz, 0.06, 0.07, 0.06, c === 1 ? '#e8423a' : '#5f9a3c');
+  } else if (garden === 'ulivo') { m.prim('cyl6', gx, 0, gz, 0.15, 0.22, 0.15, '#c66a3c'); treeIn(m, 'ulivo', gx, 0.2, gz, 0.55, seed); }
+  else if (garden === 'nessuno') m.box(gx - 0.2, 0, gz - 0.12, gx + 0.2, 0.03, gz + 0.12, '#d8cfbd');
+  else bushIn(m, gx, 0, gz, 0.6, '#5f9a3c', null);
+  void x1; void z0;
 }
 function decoIn(m, deco, x, z) {
   if (deco === 'vespa') {
@@ -767,11 +785,15 @@ export class Town3D {
       const b = buildHouse(h.style, { cantiere: h.status === 'cantiere', founder: isFounder(r), flag });
       const bx = x % STREET;
       const cx = x + 0.5 + (bx === 1 ? 0.5 : bx === STREET - 1 ? -0.5 : 0);
-      b.group.position.set(cx, G.level[y * W + x] < 0 ? 0 : townSurface(G, ramps, x + 0.5, y + 0.5) / PX, y + 0.97);
+      // La facciata guarda la sua via: a sud (bordo basso del lotto) o a nord (casa girata)
+      const north = lotFacing(slot) === 'N';
+      b.group.position.set(cx, G.level[y * W + x] < 0 ? 0 : townSurface(G, ramps, x + 0.5, y + 0.5) / PX, north ? y + 0.03 : y + 0.97);
+      if (north) b.group.rotation.y = Math.PI;
+      b.north = north;
       b.group.userData.pick = { kind: 'house', slot, x, y };
       b.residentId = h.residentId;
       this.world.add(b.group);
-      this.houses.set(slot, { ...b, sig, x, y, residentId: h.residentId });
+      this.houses.set(slot, { ...b, sig, x, y, residentId: h.residentId, north: b.north });
       if (cur || opts.animateNew) this.born.set(slot, performance.now());
       this.shadowDirty = true;
     }
@@ -845,7 +867,7 @@ export class Town3D {
     const T = T3();
     if (this.decor) { for (const m of this.decor) { this.world.remove(m); m.geometry.dispose(); } }
     if (this.lampGlow) { this.scene.remove(this.lampGlow); this.lampGlow.geometry.dispose(); }
-    const m = new Mesher(), glass = new Mesher(), brick = new Mesher();
+    const m = new Mesher(), glass = new Mesher(), brick = new Mesher(), sign = new Mesher();
     const gH = (x, y) => townSurface(G, ramps, Math.max(0, Math.min(W - 0.01, x)), Math.max(0, Math.min(H - 0.01, y))) / PX;
     const lamps = [];
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -858,9 +880,19 @@ export class Town3D {
       const bx = x % STREET, by = y % STREET;
       // Nei quartieri aperti: un albero o un cespuglio nella fila di cortili dietro le case
       let t = tree && !road ? tree : null;
-      if (!t && inner && by === 1) {
-        if (bx === 2) t = { kind: ['tondo', 'cipresso', 'fiorito', 'tondo'][Math.floor(ih(x, y, 31) * 4)], s: 0.9 + ih(x, y, 32) * 0.2 };
-        else if (ih(x, y, 30) < 0.45) t = { kind: 'cespuglio', s: 1, flowers: ih(x, y, 33) < 0.6 ? ['#e85d75', '#f28cbf', '#ffffff', '#b46ad6'][Math.floor(ih(x, y, 34) * 4)] : null };
+      // Dentro gli isolati: dove la casa non c'è ancora, prato con qualche cespuglio
+      if (!t && inner) {
+        const lot = key(x - bx + (bx <= 2 ? 1 : 4), y - by + (by <= 2 ? 1 : 4));
+        if (!city.houses[lot] && ih(x, y, 30) < 0.25) t = { kind: 'cespuglio', s: 0.9, flowers: ih(x, y, 33) < 0.6 ? ['#e85d75', '#f28cbf', '#ffffff', '#b46ad6'][Math.floor(ih(x, y, 34) * 4)] : null };
+      }
+      // Lotto libero: un cartello di legno con la scritta "Libero"
+      if (PLAN.lots.has(k) && !city.houses[k] && dd && dd <= city.openDistricts) {
+        const north = lotFacing(k) === 'N';
+        const px = x + 0.5 + (bx === 1 ? 0.5 : -0.5), pz = north ? y + 0.25 : y + 0.75, h0 = gH(x + 0.5, y + 0.5);
+        m.box(px - 0.025, h0, pz - 0.025, px + 0.025, h0 + 0.62, pz + 0.025, '#6b4a2f');
+        const zf = north ? -1 : 1;
+        sign.quad([px - 0.3 * zf, h0 + 0.4, pz + 0.03 * zf], [px + 0.3 * zf, h0 + 0.4, pz + 0.03 * zf], [px + 0.3 * zf, h0 + 0.7, pz + 0.03 * zf], [px - 0.3 * zf, h0 + 0.7, pz + 0.03 * zf]);
+        sign.quad([px + 0.3 * zf, h0 + 0.4, pz], [px - 0.3 * zf, h0 + 0.4, pz], [px - 0.3 * zf, h0 + 0.7, pz], [px + 0.3 * zf, h0 + 0.7, pz], '#ffffff', [0, 0, 0.02, 0.02]);
       }
       if (t) {
         const px = x + 0.5 + (ih(x, y, 81) - 0.5) * 0.3, pz = y + 0.5 + (ih(x, y, 82) - 0.5) * 0.3;
@@ -956,6 +988,7 @@ export class Town3D {
     this.scene.add(this.pools);
     const meshes = [new T.Mesh(m.build(), mats().vcFlat), new T.Mesh(glass.build(), mats().lantern), ...this.props];
     if (!brick.empty) { const b = brick.build(); const bm = new T.Mesh(b, mats().brick); fixBrickUV(b); meshes.push(bm); }
+    if (!sign.empty) meshes.push(new T.Mesh(sign.build(), new T.MeshLambertMaterial({ map: signTex() })));
     for (const me of meshes) { me.castShadow = true; me.receiveShadow = true; this.world.add(me); }
     meshes[1].castShadow = false;
     this.decor = meshes;
@@ -1207,7 +1240,7 @@ function disposeTree(obj) {
     const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
     for (const m of ms) {
       if (Object.values(MAT || {}).includes(m) || [...roofMats.values()].includes(m)) continue;
-      if (m.map && ![...roofTexCache.values()].includes(m.map) && m.map !== stoneTexC && m.map !== brickTexC && m.map !== waveTexC && m.map !== glowTexC) m.map.dispose();
+      if (m.map && ![...roofTexCache.values()].includes(m.map) && ![stoneTexC, brickTexC, waveTexC, glowTexC, signTexC].includes(m.map)) m.map.dispose();
       if (m.emissiveMap) m.emissiveMap.dispose();
       m.dispose();
     }

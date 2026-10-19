@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   PLAN, DISTRICTS, emptyState, applyOp, computeRoads, publicView, formatNews, checkUsername, cleanInstagram,
   residentHouse, builtCount, lotsOpen, RESERVE_MS, FRIEND_REQUESTS_PER_DAY, isLot, parseKey, districtAt,
+  lotFacing, walkable, migratePlan,
 } from '../public/js/core.js';
 import { seedResidents } from '../public/js/seed.js';
 
@@ -380,4 +381,24 @@ test('piano della città: vie ogni 5 caselle, lotti distanziati sulle vie, piazz
   s = applyOp(s, { type: 'ride', id: null }, as('z')).state;
   assert.equal(s.residents.z.ride, undefined);
   assert.throws(() => applyOp(s, { type: 'ride', id: 'razzo' }, as('z')), /sconosciuto/);
+});
+
+test('pianta: case su tutti e due i lati delle vie, città vecchie sistemate', () => {
+  // Ogni casa guarda la sua via: i lotti a nord dell'isolato hanno la porta a nord
+  let s = seedResidents(emptyState(0), 24, 10_000_000);
+  for (const h of Object.values(s.houses)) assert.equal(s.doors[h.slot], lotFacing(h.slot), `porta della casa ${h.slot}`);
+  assert.ok(Object.values(s.houses).some((h) => lotFacing(h.slot) === 'N') && Object.values(s.houses).some((h) => lotFacing(h.slot) === 'S'));
+  // Dentro gli isolati non si cammina
+  assert.ok(!walkable(s, 37, 32) && walkable(s, 35, 32) && walkable(s, 37, 30));
+  // Una casa salvata con la pianta di prima (sopra una via) torna su un lotto vero, e la notizia la segue
+  const k = Object.keys(s.houses)[0], h = s.houses[k];
+  delete s.houses[k];
+  s.houses['45,32'] = { ...h, slot: '45,32' };
+  for (const n of s.news) if (n.slot === k) n.slot = '45,32';
+  assert.ok(migratePlan(s));
+  assert.ok(!s.houses['45,32'] && Object.keys(s.houses).every((slot) => isLot(slot)));
+  const moved = Object.values(s.houses).find((x) => x.residentId === h.residentId);
+  assert.ok(moved && s.doors[moved.slot]);
+  assert.ok(!s.news.some((n) => n.slot === '45,32'));
+  assert.ok(!migratePlan(s), 'una città già a posto non cambia');
 });

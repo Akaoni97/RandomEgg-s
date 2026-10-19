@@ -430,28 +430,34 @@ const FOUNTAIN_AT = 25;
 const MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
 
 // Il tracciato segue una griglia di passo 5: righe e colonne multiple di 5 sono vie, in mezzo
-// restano isolati di 4×4 caselle. In ogni isolato ci sono due lotti affacciati sulla via a sud,
-// separati da un giardino; dietro le case ci sono orti e un cortile alberato.
+// restano isolati di 4×4 caselle. Ogni isolato ha quattro lotti: due affacciati sulla via a nord e
+// due sulla via a sud, schiena contro schiena, così ogni via ha case su tutti e due i lati.
+// Ogni quartiere ha il suo carattere: forme delle case e colori dei muri.
 // Le dorsali sono le vie principali di ogni quartiere, tratteggiate finché il quartiere è chiuso.
 const DISTRICTS = [
-  { id: 1, name: 'Centro', rect: [30, 20, 55, 35], dorsal: null,
+  // Centro storico: palazzine a due piani e torrette, intonaci caldi
+  { id: 1, name: 'Centro', rect: [30, 20, 55, 35], dorsal: null, shapes: ['casa', 'casa', 'torretta'],
     walls: ['#e8b86a', '#d98b5f', '#f0d39a', '#e3a27a'] },
-  { id: 2, name: 'Borgo Est', rect: [55, 20, 75, 35], dorsal: { x: 65, y0: 15, y1: 45 },
+  // Borghi: case a schiera dai colori tenui, qualche villetta
+  { id: 2, name: 'Borgo Est', rect: [55, 20, 75, 35], dorsal: { x: 65, y0: 15, y1: 45 }, shapes: ['casa', 'casa', 'villetta'],
     walls: ['#f3d6d0', '#d7e6ef', '#f4e7b8', '#dcebd2'] },
-  { id: 3, name: 'Borgo Ovest', rect: [10, 20, 30, 35], dorsal: { x: 20, y0: 15, y1: 45 },
+  { id: 3, name: 'Borgo Ovest', rect: [10, 20, 30, 35], dorsal: { x: 20, y0: 15, y1: 45 }, shapes: ['casa', 'villetta', 'casa'],
     walls: ['#d8cfc0', '#c9bba4', '#e6dccb', '#bfb5a6'] },
-  { id: 4, name: 'Collina Nord', rect: [10, 8, 75, 20], dorsal: { y: 15, x0: 10, x1: 75 },
+  // Collina: ville basse color terra con il giardino
+  { id: 4, name: 'Collina Nord', rect: [10, 8, 75, 20], dorsal: { y: 15, x0: 10, x1: 75 }, shapes: ['villetta', 'villetta', 'torretta'],
     walls: ['#c99a6b', '#b98a5e', '#e0c49e', '#a8794f'] },
-  { id: 5, name: 'Marina Sud', rect: [10, 35, 75, 51], dorsal: { y: 45, x0: 10, x1: 75 },
-    walls: ['#f5f3ee', '#dbe8f1', '#f7efe0', '#e5eef0'] },
+  // Marina: case di pescatori dai colori vivaci, come a Burano
+  { id: 5, name: 'Marina Sud', rect: [10, 35, 75, 51], dorsal: { y: 45, x0: 10, x1: 75 }, shapes: ['casa', 'casa', 'villetta'],
+    walls: ['#e8604c', '#f2b632', '#4f8fc8', '#7bbf6a', '#e88fb4', '#f2ead6'] },
 ];
 const isStreet = (x, y) => x % STREET === 0 || y % STREET === 0;
 // Il canale scende dalla collina al mare tra Borgo Ovest e il Centro; le vie lo passano sui ponti.
 const CANAL = { x0: 26, x1: 28, y0: 8 };
 const isCanal = (x, y) => x >= CANAL.x0 && x <= CANAL.x1 && y >= CANAL.y0 && y <= SEA_Y;
-// Posizione dentro l'isolato (1..4): le case stanno sul lato sud, con la facciata sulla via e il
-// giardino dietro (nella vista di tre quarti il tetto sale verso il giardino, non sopra un'altra via).
-const LOT_SPOTS = ['1,4', '4,4'];
+// Posizione dentro l'isolato (1..4): due lotti sul lato nord (porta a nord) e due sul lato sud.
+const LOT_SPOTS = ['1,1', '4,1', '1,4', '4,4'];
+// Da che parte guarda la porta di un lotto
+const lotFacing = (k) => (parseKey(k)[1] % STREET === 1 ? 'N' : 'S');
 
 const ROOFS = [
   { id: 'coppi', label: 'Coppi', color: '#b5523b' },
@@ -608,6 +614,8 @@ const PLAN = (() => {
       const [rx0, ry0, rx1, ry1] = d.rect;
       if (x - bx < rx0 || x - bx + STREET > rx1 || y - by < ry0 || y - by + STREET > Math.min(ry1, SEA_Y)) continue;
       if (!LOT_SPOTS.includes(bx + ',' + by)) continue;
+      // Niente case negli isolati tagliati dal canale
+      if ([1, 2, 3, 4].some((i) => [1, 2, 3, 4].some((j) => isCanal(x - bx + i, y - by + j)))) continue;
       lots.add(k);
       lotsByDistrict.get(d.id).push(k);
     }
@@ -683,7 +691,9 @@ function computeRoads(houses, openDistricts) {
   for (const h of ordered) {
     // Di solito la casa sta già sulla via: la porta guarda la via (meglio se verso chi guarda).
     const [hx, hy] = parseKey(h.slot);
-    const side = [['S', 0, 1], ['E', 1, 0], ['W', -1, 0], ['N', 0, -1]].find(([, dx, dy]) => net.has(key(hx + dx, hy + dy)));
+    const face = lotFacing(h.slot);
+    const sides = [['S', 0, 1], ['E', 1, 0], ['W', -1, 0], ['N', 0, -1]].sort((a, b) => (b[0] === face) - (a[0] === face));
+    const side = sides.find(([, dx, dy]) => net.has(key(hx + dx, hy + dy)));
     if (side) { doors[h.slot] = side[0]; continue; }
     const r = routeFrom(h.slot, net, openDistricts);
     if (!r) continue;
@@ -724,11 +734,15 @@ function levelAt(x, y, openDistricts) {
   return 0;
 }
 
-// Dove si può camminare: ovunque sulla terraferma tranne dentro le case.
-// Si cambia livello solo su strade, vialetti e piazza, dove ci sono le scale.
+// Dove si può camminare: in campagna ovunque; nei quartieri aperti su vie, vialetti e piazza
+// (dentro gli isolati ci sono le case). Si cambia livello solo su strade e piazza, dove ci sono le scale.
 function walkable(s, x, y) {
-  return x >= 0 && y >= 0 && x < W && y <= SEA_Y && !s.houses[key(x, y)] && !shopAt(x, y) && !PIAZZA_BLOCKED.has(key(x, y))
-    && !(isCanal(x, y) && !s.roads[key(x, y)]);
+  if (x < 0 || y < 0 || x >= W || y > SEA_Y) return false;
+  const k = key(x, y);
+  if (s.houses[k] || shopAt(x, y) || PIAZZA_BLOCKED.has(k) || (isCanal(x, y) && !s.roads[k])) return false;
+  const d = districtAt(x, y);
+  if (d && d <= s.openDistricts && !s.roads[k] && !inPiazza(x, y) && !isStreet(x, y) && y < SEA_Y) return false;
+  return true;
 }
 function canStep(s, ax, ay, bx, by) {
   if (!walkable(s, bx, by)) return false;
@@ -1106,7 +1120,7 @@ function makeStyle(slot, choice = {}) {
     garden: pick(GARDENS, choice.garden, 'prato'),
     deco: pick(DECOS, choice.deco, 'nessuno'),
     wall: d.walls[(h >>> 6) % d.walls.length],
-    shape: SHAPES[(h >>> 9) % SHAPES.length],
+    shape: (d.shapes || SHAPES)[(h >>> 9) % (d.shapes || SHAPES).length],
   };
 }
 
@@ -1158,6 +1172,37 @@ const builtCount = (s) => Object.values(s.houses).filter((h) => h.status === 'ca
 const isFounder = (r) => !!r && r.number !== null && r.number <= FOUNDERS;
 const areFriends = (s, a, b) => s.friendships.some((f) => (f.a === a && f.b === b) || (f.a === b && f.b === a));
 const friendsOf = (s, id) => s.friendships.filter((f) => f.a === id || f.b === id).map((f) => (f.a === id ? f.b : f.a));
+
+// Una città salvata con una pianta più vecchia: ogni casa che non sta su un lotto valido si sposta
+// sul lotto libero più vicino (dello stesso quartiere se possibile), con le notizie che la citano;
+// poi si rifanno strade e porte. Restituisce true se qualcosa è cambiato.
+function migratePlan(s) {
+  const moved = {};
+  const wrong = Object.keys(s.houses).filter((k) => !PLAN.lots.has(k)).sort((a, b) => s.houses[a].reservedAt - s.houses[b].reservedAt);
+  for (const k of wrong) {
+    const [x, y] = parseKey(k);
+    const d = districtAt(x, y);
+    let best = null, bestD = Infinity;
+    for (const lot of PLAN.lots) {
+      if (s.houses[lot]) continue;
+      const [lx, ly] = parseKey(lot);
+      const ld = districtAt(lx, ly);
+      if (ld > Math.max(s.openDistricts, d || 1)) continue;
+      const dist = Math.hypot(lx - x, ly - y) + (ld === d ? 0 : 40);
+      if (dist < bestD) { bestD = dist; best = lot; }
+    }
+    if (!best) continue;
+    const h = s.houses[k];
+    delete s.houses[k];
+    s.houses[best] = { ...h, slot: best, style: makeStyle(best, h.style) };
+    moved[k] = best;
+  }
+  const changed = Object.keys(moved).length > 0;
+  if (changed) for (const n of s.news) if (n.slot && moved[n.slot]) n.slot = moved[n.slot];
+  const before = JSON.stringify([s.roads, s.doors]);
+  refresh(s);
+  return changed || JSON.stringify([s.roads, s.doors]) !== before;
+}
 
 // Dopo ogni modifica alle case: quartieri da aprire, traguardi, strade.
 function refresh(s, now = Date.now()) {
@@ -1828,7 +1873,7 @@ function dots(g, X, Y, seed, n, colors, w = 2, h = 1) {
 const isRoad = (city, x, y) => !!city.roads[key(x, y)];
 
 // Il piano di una casella: (X, Y) è l'angolo in alto a sinistra sullo schermo.
-function tileTop(g, city, G, x, y, X, Y, det) {
+function tileTop(g, city, G, x, y, X, Y, det, lotMarks = true) {
   const i = y * W + x;
   const k = G.kind[i];
   const road = city.roads[key(x, y)];
@@ -1973,7 +2018,7 @@ function tileTop(g, city, G, x, y, X, Y, det) {
   }
   // Lotto libero: riquadro tratteggiato
   const lk = key(x, y);
-  if (PLAN.lots.has(lk) && !city.houses[lk] && districtAt(x, y) <= city.openDistricts) {
+  if (lotMarks && PLAN.lots.has(lk) && !city.houses[lk] && districtAt(x, y) <= city.openDistricts) {
     fill('rgba(255,255,255,0.16)', 3, 3, T - 6, T - 6);
     g.save(); g.setLineDash([3, 2]); g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 1; g.strokeRect(X + 3.5, Y + 3.5, T - 7, T - 7); g.restore();
   }
@@ -3236,6 +3281,18 @@ function waveTex() {
   waveTexC.repeat.set(24, 24);
   return waveTexC;
 }
+let signTexC = null;
+function signTex() {
+  if (signTexC) return signTexC;
+  const cv = canvas2d(64, 32), g = cv.getContext('2d');
+  g.fillStyle = '#7a5434'; g.fillRect(0, 0, 64, 32);
+  g.fillStyle = '#f3e3c0'; g.fillRect(2, 2, 60, 28);
+  g.fillStyle = 'rgba(120,80,40,0.25)'; for (let y = 8; y < 30; y += 7) g.fillRect(2, y, 60, 1);
+  g.fillStyle = '#2f6b4f'; g.font = '800 15px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('LIBERO', 32, 17);
+  signTexC = pixTex(cv, { smooth: true });
+  return signTexC;
+}
 let glowTexC = null;
 function glowTex() {
   if (glowTexC) return glowTexC;
@@ -3260,7 +3317,7 @@ function stripeTex(a, b, n = 8, scallop = true) {
 // Il terreno di tutta la mappa in un'unica immagine (32 pixel per casella), come la vista piatta.
 function paintGround(city, G) {
   const cv = canvas2d(W * PX, H * PX), g = cv.getContext('2d');
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) tileTop(g, city, G, x, y, x * PX, y * PX, true);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) tileTop(g, city, G, x, y, x * PX, y * PX, true, false);
   // Cerchi di pietra attorno alla fontana (qui visti dall'alto: tondi)
   const [fx, fy] = PIAZZA_DECOR.fountain, cx = (fx + 0.5) * PX, cy = (fy + 0.5) * PX;
   const rings = [[78, '#d8c19c'], [70, '#e7d5b6'], [62, '#cfb48d'], [56, '#ead9bc'], [48, '#dcc5a1']];
@@ -3423,7 +3480,7 @@ function buildHouse(style, { cantiere = false, founder = false, flag = null } = 
   const tw = shape === 'torretta' ? 18 : 0;
   const bodyW = HW - (tw ? tw - 2 : 0);
   const Hh = shape === 'villetta' ? 40 : 66;
-  const D = shape === 'villetta' ? 70 : 76;
+  const D = shape === 'villetta' ? 56 : 60;            // due case schiena contro schiena nell'isolato
   const th = Hh + 20;
   // Atlante: davanti | fianco | retro | (torretta: davanti | fianco), con 2 pixel di margine
   const regions = [];
@@ -3544,13 +3601,19 @@ function bushIn(m, x, y, z, s, col, flower) {
   m.prim('ico1', x, y + 0.16 * s, z, 0.26 * s, 0.2 * s, 0.26 * s, col);
   if (flower) for (let k = 0; k < 5; k++) { const a = k * 1.3; m.prim('ico0', x + Math.cos(a) * 0.17 * s, y + (0.24 + (k % 2) * 0.08) * s, z + Math.sin(a) * 0.17 * s, 0.05, 0.05, 0.05, flower); }
 }
+// Il giardino sta davanti all'angolo sinistro della casa (dietro c'è la casa dell'altra via)
 function gardenIn(m, garden, x0, x1, z0, seed) {
-  if (garden === 'fiori') { bushIn(m, x0 + 0.3, 0, z0 - 0.4, 0.8, '#4c973d', '#e85d75'); bushIn(m, x1 - 0.3, 0, z0 - 0.4, 0.8, '#4c973d', '#f6d84a'); }
-  else if (garden === 'orto') {
-    m.box(x0 - 0.05, 0, z0 - 0.7, x0 + 0.85, 0.12, z0 - 0.15, '#6e4a2c');
-    for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) m.prim('ico0', x0 + 0.08 + c * 0.22, 0.16, z0 - 0.6 + r * 0.18, 0.07, 0.06, 0.07, r === 1 && c % 2 ? '#e8423a' : '#5f9a3c');
-  } else if (garden === 'ulivo') treeIn(m, 'ulivo', (x0 + x1) / 2 + 0.3, 0, z0 - 0.55, 0.9, seed);
-  else if (garden !== 'nessuno') bushIn(m, x1 - 0.3, 0, z0 - 0.4, 0.9, '#5f9a3c', null);
+  const gx = x0 + 0.22, gz = 0.24;
+  if (garden === 'fiori') {
+    m.box(gx - 0.2, 0, gz - 0.12, gx + 0.2, 0.12, gz + 0.12, '#8e3f2b');
+    bushIn(m, gx - 0.08, 0.1, gz, 0.55, '#4c973d', '#e85d75'); bushIn(m, gx + 0.1, 0.1, gz, 0.5, '#4c973d', '#f6d84a');
+  } else if (garden === 'orto') {
+    m.box(gx - 0.2, 0, gz - 0.13, gx + 0.2, 0.12, gz + 0.13, '#6e4a2c');
+    for (let c = 0; c < 3; c++) m.prim('ico0', gx - 0.12 + c * 0.12, 0.16, gz, 0.06, 0.07, 0.06, c === 1 ? '#e8423a' : '#5f9a3c');
+  } else if (garden === 'ulivo') { m.prim('cyl6', gx, 0, gz, 0.15, 0.22, 0.15, '#c66a3c'); treeIn(m, 'ulivo', gx, 0.2, gz, 0.55, seed); }
+  else if (garden === 'nessuno') m.box(gx - 0.2, 0, gz - 0.12, gx + 0.2, 0.03, gz + 0.12, '#d8cfbd');
+  else bushIn(m, gx, 0, gz, 0.6, '#5f9a3c', null);
+  void x1; void z0;
 }
 function decoIn(m, deco, x, z) {
   if (deco === 'vespa') {
@@ -3840,11 +3903,15 @@ class Town3D {
       const b = buildHouse(h.style, { cantiere: h.status === 'cantiere', founder: isFounder(r), flag });
       const bx = x % STREET;
       const cx = x + 0.5 + (bx === 1 ? 0.5 : bx === STREET - 1 ? -0.5 : 0);
-      b.group.position.set(cx, G.level[y * W + x] < 0 ? 0 : townSurface(G, ramps, x + 0.5, y + 0.5) / PX, y + 0.97);
+      // La facciata guarda la sua via: a sud (bordo basso del lotto) o a nord (casa girata)
+      const north = lotFacing(slot) === 'N';
+      b.group.position.set(cx, G.level[y * W + x] < 0 ? 0 : townSurface(G, ramps, x + 0.5, y + 0.5) / PX, north ? y + 0.03 : y + 0.97);
+      if (north) b.group.rotation.y = Math.PI;
+      b.north = north;
       b.group.userData.pick = { kind: 'house', slot, x, y };
       b.residentId = h.residentId;
       this.world.add(b.group);
-      this.houses.set(slot, { ...b, sig, x, y, residentId: h.residentId });
+      this.houses.set(slot, { ...b, sig, x, y, residentId: h.residentId, north: b.north });
       if (cur || opts.animateNew) this.born.set(slot, performance.now());
       this.shadowDirty = true;
     }
@@ -3918,7 +3985,7 @@ class Town3D {
     const T = T3();
     if (this.decor) { for (const m of this.decor) { this.world.remove(m); m.geometry.dispose(); } }
     if (this.lampGlow) { this.scene.remove(this.lampGlow); this.lampGlow.geometry.dispose(); }
-    const m = new Mesher(), glass = new Mesher(), brick = new Mesher();
+    const m = new Mesher(), glass = new Mesher(), brick = new Mesher(), sign = new Mesher();
     const gH = (x, y) => townSurface(G, ramps, Math.max(0, Math.min(W - 0.01, x)), Math.max(0, Math.min(H - 0.01, y))) / PX;
     const lamps = [];
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -3931,9 +3998,19 @@ class Town3D {
       const bx = x % STREET, by = y % STREET;
       // Nei quartieri aperti: un albero o un cespuglio nella fila di cortili dietro le case
       let t = tree && !road ? tree : null;
-      if (!t && inner && by === 1) {
-        if (bx === 2) t = { kind: ['tondo', 'cipresso', 'fiorito', 'tondo'][Math.floor(ih(x, y, 31) * 4)], s: 0.9 + ih(x, y, 32) * 0.2 };
-        else if (ih(x, y, 30) < 0.45) t = { kind: 'cespuglio', s: 1, flowers: ih(x, y, 33) < 0.6 ? ['#e85d75', '#f28cbf', '#ffffff', '#b46ad6'][Math.floor(ih(x, y, 34) * 4)] : null };
+      // Dentro gli isolati: dove la casa non c'è ancora, prato con qualche cespuglio
+      if (!t && inner) {
+        const lot = key(x - bx + (bx <= 2 ? 1 : 4), y - by + (by <= 2 ? 1 : 4));
+        if (!city.houses[lot] && ih(x, y, 30) < 0.25) t = { kind: 'cespuglio', s: 0.9, flowers: ih(x, y, 33) < 0.6 ? ['#e85d75', '#f28cbf', '#ffffff', '#b46ad6'][Math.floor(ih(x, y, 34) * 4)] : null };
+      }
+      // Lotto libero: un cartello di legno con la scritta "Libero"
+      if (PLAN.lots.has(k) && !city.houses[k] && dd && dd <= city.openDistricts) {
+        const north = lotFacing(k) === 'N';
+        const px = x + 0.5 + (bx === 1 ? 0.5 : -0.5), pz = north ? y + 0.25 : y + 0.75, h0 = gH(x + 0.5, y + 0.5);
+        m.box(px - 0.025, h0, pz - 0.025, px + 0.025, h0 + 0.62, pz + 0.025, '#6b4a2f');
+        const zf = north ? -1 : 1;
+        sign.quad([px - 0.3 * zf, h0 + 0.4, pz + 0.03 * zf], [px + 0.3 * zf, h0 + 0.4, pz + 0.03 * zf], [px + 0.3 * zf, h0 + 0.7, pz + 0.03 * zf], [px - 0.3 * zf, h0 + 0.7, pz + 0.03 * zf]);
+        sign.quad([px + 0.3 * zf, h0 + 0.4, pz], [px - 0.3 * zf, h0 + 0.4, pz], [px - 0.3 * zf, h0 + 0.7, pz], [px + 0.3 * zf, h0 + 0.7, pz], '#ffffff', [0, 0, 0.02, 0.02]);
       }
       if (t) {
         const px = x + 0.5 + (ih(x, y, 81) - 0.5) * 0.3, pz = y + 0.5 + (ih(x, y, 82) - 0.5) * 0.3;
@@ -4029,6 +4106,7 @@ class Town3D {
     this.scene.add(this.pools);
     const meshes = [new T.Mesh(m.build(), mats().vcFlat), new T.Mesh(glass.build(), mats().lantern), ...this.props];
     if (!brick.empty) { const b = brick.build(); const bm = new T.Mesh(b, mats().brick); fixBrickUV(b); meshes.push(bm); }
+    if (!sign.empty) meshes.push(new T.Mesh(sign.build(), new T.MeshLambertMaterial({ map: signTex() })));
     for (const me of meshes) { me.castShadow = true; me.receiveShadow = true; this.world.add(me); }
     meshes[1].castShadow = false;
     this.decor = meshes;
@@ -4280,7 +4358,7 @@ function disposeTree(obj) {
     const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
     for (const m of ms) {
       if (Object.values(MAT || {}).includes(m) || [...roofMats.values()].includes(m)) continue;
-      if (m.map && ![...roofTexCache.values()].includes(m.map) && m.map !== stoneTexC && m.map !== brickTexC && m.map !== waveTexC && m.map !== glowTexC) m.map.dispose();
+      if (m.map && ![...roofTexCache.values()].includes(m.map) && ![stoneTexC, brickTexC, waveTexC, glowTexC, signTexC].includes(m.map)) m.map.dispose();
       if (m.emissiveMap) m.emissiveMap.dispose();
       m.dispose();
     }
@@ -5761,7 +5839,7 @@ class CityMap {
     const near = t3.view.dist < 22;
     if (o.selected && this.city.houses[o.selected]) {
       const b = t3.houses.get(o.selected), r = this.city.residents[this.city.houses[o.selected].residentId];
-      if (b && r) { const p = b.group.position; const [x, y, z] = t3.project(p.x, p.z + 0.35, p.y); if (z < 1) label(g, x, y + 10, r.username, this.city.houses[o.selected].residentId === o.meId, 1); }
+      if (b && r) { const p = b.group.position; const [x, y, z] = t3.project(p.x, p.z + (b.north ? -0.35 : 0.35), p.y); if (z < 1) label(g, x, y + 10, r.username, this.city.houses[o.selected].residentId === o.meId, 1); }
     }
     for (const a of this.visibleAvatars()) {
       const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
@@ -5783,7 +5861,7 @@ class CityMap {
     for (const [slot, t0] of this.born) {
       const b = t3.houses.get(slot);
       if (!b || t - t0 >= 1400) continue;
-      const p = b.group.position, [x, y, z] = t3.project(p.x, p.z - 1, p.y + 1.5);
+      const p = b.group.position, [x, y, z] = t3.project(p.x, p.z + (b.north ? 1 : -1), p.y + 1.5);
       if (z < 1) sparkle(g, x, y, t - t0);
     }
   }
@@ -6066,6 +6144,8 @@ class LocalStore extends Base {
   async init() {
     const saved = load();
     this.db = saved?.version === 1 ? saved : this.fresh();
+    // Una demo salvata con la pianta di prima si sistema da sola
+    if (migratePlan(this.db.state)) { this.db.state.rev++; this.persist(); }
     this.me = this.db.session ? this.meView(this.db.session) : null;
     // A settimana finita il giornale annuncia la Casa della settimana.
     if (applyOp(this.db.state, { type: 'weekly' }, { system: true, now: Date.now() }).result.changed) this.apply({ type: 'weekly' }, { system: true });
