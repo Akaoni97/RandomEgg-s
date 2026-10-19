@@ -1,7 +1,7 @@
 // Due archivi con la stessa interfaccia:
 // - RemoteStore: il server vero (server/server.js), una sola città per tutti.
 // - LocalStore: demo nel browser. La città vive solo in questo browser e le email sono finte.
-import { applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey, residentHouse, friendsOf, uid, spawnPoint, walkPath, W, SEA_Y } from './core.js';
+import { applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey, residentHouse, friendsOf, uid, spawnPoint, walkPath, W, SEA_Y, checkSay, SAY_PRESETS } from './core.js';
 import { seedResidents, DEMO_TAG } from './seed.js';
 
 class Base {
@@ -53,6 +53,7 @@ export class RemoteStore extends Base {
       if (!this.city || d.rev !== this.city.rev) this.refresh().catch(() => {});
       else this.emit('online');
     });
+    this.es.addEventListener('say', (e) => this.emit('say', JSON.parse(e.data)));
     this.es.addEventListener('move', (e) => {
       const d = JSON.parse(e.data);
       this.avatars[d.id] = [d.x, d.y];
@@ -84,6 +85,7 @@ export class RemoteStore extends Base {
     this.emit('move', { id: this.me.id, x, y });
     this.call('POST', '/api/move', { x, y }).catch(() => {});
   }
+  say(text) { checkSay(text); return this.call('POST', '/api/say', { text }); }
 }
 
 /* Demo nel browser ---------------------------------------------------------- */
@@ -246,8 +248,13 @@ export class LocalStore extends Base {
     this.avatars[this.me.id] = [x, y];
     this.emit('move', { id: this.me.id, x, y });
   }
-  // Gli abitanti finti in città fanno due passi qua e là.
+  async say(text) { checkSay(text); return { ok: true }; }
+  // Gli abitanti finti in città fanno due passi qua e là, e ogni tanto salutano.
   wander() {
+    if (Math.random() < 0.18) {
+      const talkers = [...this.online].filter((x) => x.startsWith(DEMO_TAG) && this.avatars[x]);
+      if (talkers.length) this.emit('say', { id: talkers[Math.floor(Math.random() * talkers.length)], text: SAY_PRESETS[Math.floor(Math.random() * SAY_PRESETS.length)] });
+    }
     const s = this.db.state;
     const ids = [...this.online].filter((id) => id.startsWith(DEMO_TAG) && this.avatars[id]);
     if (!ids.length) return;

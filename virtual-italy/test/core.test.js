@@ -210,3 +210,12 @@ test("editor del personaggio: valori controllati, aspetto di partenza stabile", 
   assert.ok(d.skin < LOOK.skin.length && LOOK.style.some((o) => o.id === d.style));
   assert.throws(() => applyOp(s, { type: 'look', look: {} }, as('nessuno')), { code: 'auth' });
 });
+
+test('nuvolette: testo ripulito, lungo al massimo 60 caratteri, niente parole offensive', async () => {
+  const { checkSay, SAY_PRESETS } = await import('../public/js/core.js');
+  assert.equal(checkSay('  Ciao   a tutti '), 'Ciao a tutti');
+  for (const p of SAY_PRESETS) assert.equal(checkSay(p), p);
+  assert.throws(() => checkSay(''), /Scrivi/);
+  assert.throws(() => checkSay('a'.repeat(61)), /60/);
+  assert.throws(() => checkSay('vaffanculo'), /non ammesse/);
+});

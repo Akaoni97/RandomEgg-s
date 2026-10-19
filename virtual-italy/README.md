@@ -15,7 +15,7 @@ Serve **Node.js 22.5 o successivo**. Non ci sono dipendenze da installare.
 npm start            # città vera, vuota                        → http://localhost:8080
 npm run dev          # come sopra, con i link delle email in console e redazione@example.com come redazione
 npm run demo         # città già abitata da 18 abitanti finti (archivio separato in data-demo/)
-npm test             # 16 prove: regole della città + server (iscrizione, email, permessi, tempo reale)
+npm test             # 20 prove: regole della città + server (iscrizione, email, permessi, omini, nuvolette, tempo reale)
 npm run build:demo   # genera dist/virtual-italy-demo.html: demo in un solo file, senza server
 ```
 
@@ -40,7 +40,8 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 
 ## Cosa c'è in questa versione
 
-- **Mappa** a tutto schermo con trascinamento, pizzico e zoom. Il centro ha la piazza con l'edicola del giornale, il Muro dei Fondatori e la fontana, che arriva a 25 abitanti.
+- **Mappa isometrica in pixel art** (stile Habbo), con trascinamento, pizzico e zoom a scatti nitidi. Il terreno è a gradoni (pianura, paese, collina, montagne) con scarpate e scale. Il centro ha la piazza a scacchi con l'edicola del giornale, il Muro dei Fondatori e la fontana, che arriva a 25 abitanti.
+- **Omini e nuvolette:** ogni abitante in città ha un omino personalizzabile (editor del personaggio) che cammina dove tocchi. Si parla con la barra in basso o salutando chi si incontra, e i messaggi compaiono a tutti in tempo reale.
 - **Iscrizione** con email, nome utente e password, conferma via email entro 24 ore, accesso con email o nome utente, password dimenticata.
 - **Anti-bot**: campo nascosto, tempo minimo di compilazione, limiti per IP. Filtro su nomi e frasi offensive, nomi riservati (sindaco, redazione…).
 - **Lotti e case**: si sceglie lo slot, si personalizzano tetto, porta, giardino e oggetto davanti casa. Forma e muri seguono lo stile del quartiere. Senza email confermata la casa resta un cantiere, e il lotto si libera dopo 24 ore.

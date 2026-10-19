@@ -288,6 +288,17 @@ export function spawnPoint(s, residentId) {
   return h ? frontOf(s, h.slot) : PIAZZA_CENTER;
 }
 
+// Le nuvolette sopra la testa: frasi pronte oppure un messaggio breve e filtrato.
+export const SAY_PRESETS = ['Ciao!', 'Buongiorno!', 'Buonasera!', 'Come va?', 'Benvenuto!', 'Bella casa!', 'Ci vediamo in piazza', 'A dopo!', '👋', '😄', '❤️', '👍'];
+export const SAY_MAX = 60;
+export function checkSay(raw) {
+  const t = String(raw ?? '').replace(/\s+/g, ' ').trim();
+  if (!t) throw invalid('Scrivi qualcosa da dire.');
+  if (t.length > SAY_MAX) throw invalid(`Al massimo ${SAY_MAX} caratteri.`);
+  if (isOffensive(t)) throw invalid('Il messaggio contiene parole non ammesse.');
+  return t;
+}
+
 /* Nomi, frasi e filtri ------------------------------------------------ */
 
 const BAD_WORDS = ['cazz', 'merd', 'stronz', 'puttan', 'troia', 'vaffanc', 'fancul', 'coglion', 'frocio', 'froci',

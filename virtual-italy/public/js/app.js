@@ -3,9 +3,9 @@
 import {
   CITY, PAPER, ROOFS, DOORS, GARDENS, DECOS, PLAN, FOUNDERS, RESERVE_MS, UNLOCK_RATIO,
   districtAt, districtById, parseKey, makeStyle, residentHouse, builtCount, isFounder, areFriends, friendsOf,
-  formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook,
+  formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook, SAY_PRESETS, SAY_MAX,
 } from './core.js';
-import { CityMap, drawPreview, renderPoster, drawAvatar, avatarLook } from './render.js';
+import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook } from './render.js';
 import { RemoteStore, LocalStore } from './store.js';
 
 const DEMO = window.__VI_MODE === 'demo' || new URLSearchParams(location.search).has('demo');
@@ -99,8 +99,8 @@ function shell() {
         h('span', { class: 'ticker-text', id: 'ticker-text' })),
       h('div', { class: 'notice', id: 'notice', hidden: true })),
     h('div', { class: 'zoom' },
-      h('button', { class: 'tab', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1.3), 'aria-label': 'Ingrandisci' }, icon('plus')),
-      h('button', { class: 'tab', onclick: () => map.zoomAt(map.vw / 2, map.vh / 2, 1 / 1.3), 'aria-label': 'Rimpicciolisci' }, icon('minus'))),
+      h('button', { class: 'tab', onclick: () => map.zoomStep(1), 'aria-label': 'Ingrandisci' }, icon('plus')),
+      h('button', { class: 'tab', onclick: () => map.zoomStep(-1), 'aria-label': 'Rimpicciolisci' }, icon('minus'))),
     h('footer', { class: 'bottom', id: 'bottom' }),
     h('div', { class: 'scrim', id: 'scrim', hidden: true, onclick: closeSheet }),
     h('section', { class: 'sheet', id: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'true' }),
@@ -187,8 +187,9 @@ function update() {
         h('button', { class: 'btn small', onclick: (e) => run(e.currentTarget, async () => { const r = await store.resend(); devLinkToast(r); toast('Ti abbiamo mandato un nuovo link.'); }) }, 'Invia di nuovo')));
   } else notice.hidden = true;
 
-  // Barra in basso.
+  // Barra in basso (non si tocca mentre si sta scrivendo un messaggio).
   const bottom = $('#bottom');
+  if (document.activeElement?.id === 'chat-input') return;
   if (ui.mode === 'choose') {
     bottom.replaceChildren(h('div', { class: 'bar choose' },
       h('span', { class: 'goal-ico' }, icon('pin')),
@@ -207,7 +208,8 @@ function update() {
   if (!mine) cta = h('button', { class: 'btn primary big', onclick: openRegister }, 'Vieni ad abitare qui');
   else if (!house) cta = h('button', { class: 'btn primary big', onclick: startChoosing }, 'Scegli il tuo lotto');
   else cta = h('button', { class: 'btn big', onclick: () => { map.focus(house.slot, 2); openHouse(house.slot); } }, icon('home'), 'La mia casa');
-  bottom.replaceChildren(h('div', { class: 'bar' }, goal, cta));
+  const talk = mine && map.avatarOf(mine.id) ? chatBar() : null;
+  bottom.replaceChildren(h('div', { class: 'bar' }, talk, goal, cta));
 }
 
 // Cosa arriva al prossimo traguardo, detto in breve per la barra in basso.
@@ -215,6 +217,36 @@ function goalText(built, target) {
   const what = target === 25 ? 'la fontana in piazza' : target === 50 ? 'i tavolini del bar in piazza' : `quota ${target} abitanti`;
   const left = Math.max(0, target - built);
   return left ? `Ancora ${left} ${left === 1 ? 'abitante' : 'abitanti'} per ${what}` : 'Traguardo raggiunto!';
+}
+
+// Barra per parlare, come in Habbo: quello che scrivi compare in una nuvoletta sopra il tuo omino.
+function chatBar() {
+  const input = h('input', { id: 'chat-input', class: 'chat-input', maxlength: SAY_MAX, placeholder: 'Scrivi qualcosa…', autocomplete: 'off', enterkeyhint: 'send', 'aria-label': 'Messaggio da dire' });
+  const form = h('form', { class: 'chat', onsubmit: (e) => { e.preventDefault(); sayIt(input.value).then((ok) => { if (ok) input.value = ''; }); } },
+    input, h('button', { class: 'btn small primary', type: 'submit' }, 'Di\''));
+  if (ui.chatDraft) input.value = ui.chatDraft;
+  input.addEventListener('input', () => { ui.chatDraft = input.value; });
+  return form;
+}
+async function sayIt(text) {
+  const ok = await run(null, async () => { await store.say(text); return true; });
+  if (ok) { ui.chatDraft = ''; map.say(me().id, String(text).replace(/\s+/g, ' ').trim()); }
+  return !!ok;
+}
+// Toccando un omino: salutalo con una frase pronta, o vai a casa sua.
+function openSay(id) {
+  const city = store.city;
+  const r = city.residents[id];
+  if (!r) return;
+  const mine = me();
+  const self = mine && mine.id === id;
+  const house = residentHouse(city, id);
+  const canTalk = mine && map.avatarOf(mine.id);
+  openSheet(self ? 'Di\' qualcosa' : r.username, h('div', { class: 'stack' },
+    self ? h('p', { class: 'small' }, 'Tocca una frase: comparirà in una nuvoletta sopra la tua testa, la vedono tutti quelli in città.')
+      : h('p', { class: 'small' }, `${r.username} è in città adesso.${r.bio ? ` “${r.bio}”` : ''}`),
+    canTalk ? h('div', { class: 'chips' }, SAY_PRESETS.map((t) => h('button', { class: 'chip', onclick: async () => { if (await sayIt(t)) closeSheet(); } }, t))) : h('button', { class: 'btn primary', onclick: openRegister }, 'Iscriviti per salutare'),
+    !self && house ? h('button', { class: 'btn', onclick: () => { closeSheet(); map.focus(house.slot); openHouse(house.slot); } }, icon('home'), 'Vedi la sua casa') : null));
 }
 
 function devLinkToast(r) {
@@ -476,19 +508,10 @@ function openCharacter({ first = false } = {}) {
   const preview = h('canvas', { class: 'avatar-preview', width: 360, height: 360, 'aria-label': 'Anteprima del tuo personaggio' });
   const groups = h('div', { class: 'stack' });
   // L'omino cammina sul posto e si gira nelle quattro direzioni.
-  const dirs = ['S', 'E', 'N', 'W'];
   const t0 = performance.now();
   const animate = (t) => {
     if (!preview.isConnected) return;
-    const g = preview.getContext('2d');
-    const k = (t - t0) / 1000;
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.clearRect(0, 0, 360, 360);
-    const sky = g.createRadialGradient(180, 230, 20, 180, 230, 200);
-    sky.addColorStop(0, '#d9ecbf'); sky.addColorStop(1, '#a9cf7f');
-    g.fillStyle = sky; g.beginPath(); g.ellipse(180, 270, 150, 60, 0, 0, 7); g.fill();
-    g.setTransform(7.2, 0, 0, 7.2, 180, 282);
-    drawAvatar(g, 0, 0, dirs[Math.floor(k / 1.4) % 4], (Math.floor(k * 4.5) % 2) + 1, avatarLook(r.username, look), { bob: 0 });
+    drawAvatarPreview(preview, avatarLook(r.username, look), t - t0);
     requestAnimationFrame(animate);
   };
   const colorRow = (label, key, list) => h('div', {}, h('p', { class: 'field-label' }, label),
@@ -814,6 +837,7 @@ function onTap(t) {
     if (t.kind === 'house') return toast('Questo lotto è già occupato.', 'err');
     return;
   }
+  if (t.kind === 'avatar') return openSay(t.id);
   // Con il proprio omino in città, ogni tocco è anche una passeggiata.
   const walker = me() && map.avatarOf(me().id);
   const go = (x, y) => walker && walkTo(x, y);
@@ -859,6 +883,7 @@ async function boot() {
   map.setCity(store.city, { animateNew: false });
   store.subscribe((kind, data) => {
     if (kind === 'move') { if (data.id !== me()?.id) map.walk(data.id, data.x, data.y); return; }
+    if (kind === 'say') { if (data.id !== me()?.id) map.say(data.id, data.text); return; }
     map.setCity(store.city);
     syncAvatars();
     update();

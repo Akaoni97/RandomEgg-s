@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import {
   applyOp, emptyState, publicView, DomainError, checkEmail, checkPassword, checkUsername, usernameKey,
-  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y,
+  residentHouse, friendsOf, CITY, PAPER, spawnPoint, W, SEA_Y, checkSay,
 } from '../public/js/core.js';
 import { seedResidents } from '../public/js/seed.js';
 
@@ -325,6 +325,16 @@ const routes = {
     lastMove.set(user.id, now);
     avatars.set(user.id, [x, y]);
     const data = `event: move\ndata: ${JSON.stringify({ id: user.id, x, y })}\n\n`;
+    for (const c of streams) if (c.userId !== user.id) c.res.write(data);
+    send(res, 200, { ok: true });
+  },
+
+  // Nuvoletta sopra il proprio omino, raccontata a tutti quelli collegati.
+  'POST /api/say': async (req, res, user) => {
+    const b = await readJson(req);
+    const text = checkSay(b.text);
+    throttle('say:' + user.id, 12, 1);
+    const data = `event: say\ndata: ${JSON.stringify({ id: user.id, text })}\n\n`;
     for (const c of streams) if (c.userId !== user.id) c.res.write(data);
     send(res, 200, { ok: true });
   },

@@ -138,6 +138,13 @@ test('gli omini: posizione iniziale, movimento raccontato agli altri', async () 
   let text = '';
   for (let i = 0; i < 5 && !text.includes('event: move'); i++) text += new TextDecoder().decode((await reader.read()).value);
   assert.match(text, /event: move\ndata: \{"id":"u_[0-9a-f]+","x":40,"y":28\}/);
+  // Nuvolette: arrivano agli altri, le parole offensive no.
+  assert.equal((await a('POST', '/api/say', { text: 'sei uno stronzo' })).status, 400);
+  assert.equal((await a('POST', '/api/say', { text: 'x'.repeat(61) })).status, 400);
+  assert.equal((await a('POST', '/api/say', { text: '  Ciao   a tutti! ' })).status, 200);
+  text = '';
+  for (let i = 0; i < 5 && !text.includes('event: say'); i++) text += new TextDecoder().decode((await reader.read()).value);
+  assert.match(text, /event: say\ndata: \{"id":"u_[0-9a-f]+","text":"Ciao a tutti!"\}/);
   ctrl.abort();
 });
 
