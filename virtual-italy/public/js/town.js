@@ -496,10 +496,10 @@ function plaster(g, x, y, w, h, color, seed, det) {
   }
 }
 // Finestra con cornice di pietra, persiane a stecche del colore della porta, davanzale e fioriera
-function window3(g, x, y, w, h, o, { box = true } = {}) {
+function window3(g, x, y, w, h, o, { box = true, shut = true } = {}) {
   const sh = o.door === '#f1ede4' ? '#d9d3c4' : o.door;
   const sw = Math.round(w / 2);
-  for (const sx of [x - sw - 1, x + w + 1]) {
+  if (shut) for (const sx of [x - sw - 1, x + w + 1]) {
     g.fillStyle = shade(sh, -0.35); g.fillRect(sx - 1, y - 2, sw + 2, h + 4);
     g.fillStyle = sh; g.fillRect(sx, y - 1, sw, h + 2);
     if (o.detail) { g.fillStyle = shade(sh, -0.18); for (let s = 1; s < h + 1; s += 2) g.fillRect(sx, y + s, sw, 1); g.fillStyle = shade(sh, 0.15); g.fillRect(sx, y - 1, 1, h + 2); }
@@ -561,130 +561,146 @@ function tiledRoof(g, x0, x1, yEave, yRidge, color, det, clip) {
   }
   g.restore();
 }
-// Casa vista di fronte, grande come una vera palazzina rispetto alle persone (la porta è più alta di
-// un omino). (cx, by): centro della casella e base della facciata sullo schermo.
+// Casa vista di fronte. Deve stare nel suo mezzo isolato: al massimo HOUSE_W di larghezza e alta
+// meno di quattro caselle, così non copre le vie di lato né la strada dietro.
+// (cx, by): centro della facciata e sua base sullo schermo.
 // Restituisce le finestre (per la notte), la quota più alta e il riquadro occupato.
+export const HOUSE_W = 58;
 export function drawHouse3(g, style, cx, by, { lit = false, night = false, founder = false, cantiere = false, flag = null, detail = true } = {}) {
   const wins = [];
   const wall = style.wall, roof = roofOf(style.roof), dcol = doorOf(style.door);
   const hs = hash(style.wall + style.roof + style.door + style.shape);
   const o = { lit, night, door: dcol, detail, wins, flowers: hs % 3 !== 2 ? [['#e85d75', '#f6d84a'], ['#b46ad6', '#f28cbf'], ['#e8423a', '#ffffff']][hs % 3] : null };
   const shape = style.shape;
-  const w = shape === 'villetta' ? 84 : shape === 'torretta' ? 70 : 76;
-  const Hh = shape === 'villetta' ? 44 : 80;
-  const D = 30;
-  const x0 = Math.round(cx - w / 2), x1 = x0 + w, y0 = by - Hh;
-  // Ombra lunga verso destra (luce del pomeriggio)
+  const W = HOUSE_W, X0 = Math.round(cx - W / 2), X1 = X0 + W;
+  // La torretta prende il lato sinistro, il corpo della casa il resto
+  const tw = shape === 'torretta' ? 18 : 0;
+  const x0 = X0 + (tw ? tw - 2 : 0), x1 = X1, w = x1 - x0, mx = Math.round((x0 + x1) / 2);
+  const Hh = shape === 'villetta' ? 40 : 66;
+  const D = 22;
+  const y0 = by - Hh;
+  // Ombra corta verso destra (resta dentro il lotto)
   g.fillStyle = 'rgba(25,40,15,0.28)';
-  poly(g, [[x1, y0 + 6], [x1 + 14, y0 + 16], [x1 + 14, by + 3], [x0 + 6, by + 3], [x0 + 6, by]]); g.fill();
+  poly(g, [[X1, y0 + 6], [X1 + 4, y0 + 10], [X1 + 4, by + 3], [X0 + 6, by + 3], [X0 + 6, by]]); g.fill();
   if (cantiere) {
     // Cantiere: fondamenta, muri a metà, impalcatura, telo e gru
-    g.fillStyle = '#b9aa8c'; g.fillRect(x0, by - 8, w, 8);
-    plaster(g, x0 + 4, by - 36, w - 8, 28, mix(wall, '#c9bba4', 0.5), hs, detail);
+    g.fillStyle = '#b9aa8c'; g.fillRect(X0, by - 8, W, 8);
+    plaster(g, X0 + 4, by - 34, W - 8, 26, mix(wall, '#c9bba4', 0.5), hs, detail);
     g.fillStyle = '#b8873c';
-    for (const px of [x0, x0 + w / 3, x0 + (2 * w) / 3, x1 - 2]) g.fillRect(Math.round(px), by - 62, 2, 62);
-    for (const py of [by - 20, by - 40, by - 60]) { g.fillRect(x0 - 2, py, w + 4, 2); g.fillStyle = '#8a6a3e'; g.fillRect(x0 - 2, py + 2, w + 4, 1); g.fillStyle = '#b8873c'; }
-    g.fillStyle = 'rgba(80,140,200,0.55)'; g.fillRect(x0 + 6, by - 58, w / 2 - 8, 34);
-    g.fillStyle = '#e0a92a'; g.fillRect(x1 - 12, by - 80, 3, 20); g.fillRect(x1 - 30, by - 80, 34, 3);
-    g.fillStyle = '#c0392b'; for (let k = 0; k < 5; k++) g.fillRect(x0 + 4 + k * 16, by - 4, 8, 3);
-    return { wins, top: by - 84, box: [x0 - 6, by - 88, x1 + 16, by + 6] };
+    for (const px of [X0, X0 + W / 3, X0 + (2 * W) / 3, X1 - 2]) g.fillRect(Math.round(px), by - 58, 2, 58);
+    for (const py of [by - 20, by - 38, by - 56]) { g.fillRect(X0 - 1, py, W + 2, 2); g.fillStyle = '#8a6a3e'; g.fillRect(X0 - 1, py + 2, W + 2, 1); g.fillStyle = '#b8873c'; }
+    g.fillStyle = 'rgba(80,140,200,0.55)'; g.fillRect(X0 + 5, by - 54, W / 2 - 7, 32);
+    g.fillStyle = '#e0a92a'; g.fillRect(X1 - 10, by - 80, 3, 24); g.fillRect(X1 - 32, by - 80, 32, 3);
+    g.fillStyle = '#c0392b'; for (let k = 0; k < 4; k++) g.fillRect(X0 + 3 + k * 15, by - 4, 8, 3);
+    return { wins, top: by - 84, box: [X0 - 4, by - 88, X1 + 8, by + 8] };
   }
   // Tetto: falda posteriore e comignolo, falda davanti con i coppi, colmo, gronda
   const yR = y0 - D;
   if (shape === 'villetta') {
-    const clip = [[x0 - 5, y0 + 2], [x1 + 5, y0 + 2], [x1 - 18, yR], [x0 + 18, yR]];
-    tiledRoof(g, x0 - 5, x1 + 5, y0 + 2, yR, roof, detail, clip);
+    const clip = [[x0 - 3, y0 + 2], [x1 + 3, y0 + 2], [x1 - 14, yR], [x0 + 14, yR]];
+    tiledRoof(g, x0 - 3, x1 + 3, y0 + 2, yR, roof, detail, clip);
     g.fillStyle = shade(roof, -0.2);
-    poly(g, [[x0 - 5, y0 + 2], [x0 + 18, yR], [x0 + 18, y0 + 2]]); g.fill();
-    poly(g, [[x1 + 5, y0 + 2], [x1 - 18, yR], [x1 - 18, y0 + 2]]); g.fill();
+    poly(g, [[x0 - 3, y0 + 2], [x0 + 14, yR], [x0 + 14, y0 + 2]]); g.fill();
+    poly(g, [[x1 + 3, y0 + 2], [x1 - 14, yR], [x1 - 14, y0 + 2]]); g.fill();
     g.strokeStyle = shade(roof, -0.45); g.lineWidth = 1; poly(g, clip); g.stroke();
-    g.fillStyle = shade(roof, 0.25); g.fillRect(x0 + 18, yR, w - 36, 2);
+    g.fillStyle = shade(roof, 0.25); g.fillRect(x0 + 14, yR, w - 28, 2);
   } else {
-    g.fillStyle = shade(roof, -0.32); g.fillRect(x0 - 3, yR - 7, w + 6, 8);
+    g.fillStyle = shade(roof, -0.32); g.fillRect(x0 - 2, yR - 6, w + 4, 7);
     if (detail) {
       // Comignolo in mattoni con il cappello
-      const kx = x1 - 22;
-      g.fillStyle = shade(wall, -0.35); g.fillRect(kx - 1, yR - 21, 11, 18);
-      g.fillStyle = shade(wall, -0.18); g.fillRect(kx, yR - 20, 9, 17);
-      g.fillStyle = '#7a3f22'; g.fillRect(kx - 2, yR - 23, 13, 3);
-      g.fillStyle = 'rgba(0,0,0,0.15)'; for (let r = 0; r < 4; r++) g.fillRect(kx, yR - 17 + r * 4, 9, 1);
+      const kx = x1 - 17;
+      g.fillStyle = shade(wall, -0.35); g.fillRect(kx - 1, yR - 18, 10, 15);
+      g.fillStyle = shade(wall, -0.18); g.fillRect(kx, yR - 17, 8, 14);
+      g.fillStyle = '#7a3f22'; g.fillRect(kx - 2, yR - 20, 12, 3);
+      g.fillStyle = 'rgba(0,0,0,0.15)'; for (let r = 0; r < 3; r++) g.fillRect(kx, yR - 14 + r * 4, 8, 1);
     }
-    tiledRoof(g, x0 - 5, x1 + 5, y0 + 2, yR, roof, detail);
-    g.fillStyle = shade(roof, -0.45); g.fillRect(x0 - 5, yR - 1, w + 10, 1); g.fillRect(x0 - 5, yR, 1, D + 2); g.fillRect(x1 + 4, yR, 1, D + 2);
-    g.fillStyle = shade(roof, 0.28); g.fillRect(x0 - 4, yR, w + 8, 2);
+    tiledRoof(g, x0 - 3, x1 + 3, y0 + 2, yR, roof, detail);
+    g.fillStyle = shade(roof, -0.45); g.fillRect(x0 - 3, yR - 1, w + 6, 1); g.fillRect(x0 - 3, yR, 1, D + 2); g.fillRect(x1 + 2, yR, 1, D + 2);
+    g.fillStyle = shade(roof, 0.28); g.fillRect(x0 - 2, yR, w + 4, 2);
   }
   // Facciata
   plaster(g, x0, y0, w, Hh, wall, hs, detail);
   // Gronda: sporgenza scura e ombra sulla facciata
-  g.fillStyle = shade(roof, -0.4); g.fillRect(x0 - 5, y0 + 1, w + 10, 2);
-  g.fillStyle = 'rgba(30,15,5,0.25)'; g.fillRect(x0, y0 + 3, w, 4);
+  g.fillStyle = shade(roof, -0.4); g.fillRect(x0 - 3, y0 + 1, w + 6, 2);
+  g.fillStyle = 'rgba(30,15,5,0.25)'; g.fillRect(x0, y0 + 3, w, 3);
   // Zoccolo di pietra a blocchi
-  g.fillStyle = '#b3a487'; g.fillRect(x0, by - 7, w, 7);
-  if (detail) { g.fillStyle = '#9c8c6e'; for (let k = 0; k < w; k += 9) g.fillRect(x0 + k, by - 7, 1, 7); g.fillRect(x0, by - 4, w, 1); g.fillStyle = '#cbbd9f'; g.fillRect(x0, by - 7, w, 1); }
+  g.fillStyle = '#b3a487'; g.fillRect(x0, by - 6, w, 6);
+  if (detail) { g.fillStyle = '#9c8c6e'; for (let k = 0; k < w; k += 8) g.fillRect(x0 + k, by - 6, 1, 6); g.fillRect(x0, by - 3, w, 1); g.fillStyle = '#cbbd9f'; g.fillRect(x0, by - 6, w, 1); }
   const floors = shape === 'villetta' ? 1 : 2;
   if (floors === 2 && detail) {
     // Cornice marcapiano con la sua ombra
-    g.fillStyle = shade(wall, 0.14); g.fillRect(x0 - 1, by - 44, w + 2, 3);
-    g.fillStyle = 'rgba(30,15,5,0.2)'; g.fillRect(x0, by - 41, w, 2);
+    g.fillStyle = shade(wall, 0.14); g.fillRect(x0 - 1, by - 36, w + 2, 2);
+    g.fillStyle = 'rgba(30,15,5,0.2)'; g.fillRect(x0, by - 34, w, 1);
   }
-  // Porta al centro, lampada accanto, finestre ai lati
-  const dw = 16, dh = 28, dx = Math.round(cx - dw / 2);
+  // Porta (al centro, o di lato nella torretta), finestre ai lati
+  const dw = 12, dh = 24;
+  const dx = tw ? x0 + 6 : Math.round(mx - dw / 2);
   door3(g, dx, by - dh - 3, dw, dh, dcol);
+  const ww = 8, wh = 13;
+  if (tw) window3(g, x1 - 6 - ww - 5, by - 29, ww + 4, wh, o);
+  else { window3(g, x0 + 6, by - 29, ww, wh, o); window3(g, x1 - 6 - ww, by - 29, ww, wh, o); }
   if (detail) {
-    g.fillStyle = '#1f2a26'; g.fillRect(dx - 9, by - 26, 1, 4); g.fillRect(dx - 11, by - 30, 5, 4);
-    g.fillStyle = night ? '#ffe2a0' : '#f6e7c1'; g.fillRect(dx - 10, by - 29, 3, 2);
-    if (night) wins.push([[dx - 11, by - 30], [dx - 6, by - 30], [dx - 6, by - 26], [dx - 11, by - 26]]);
+    // Lanterna sopra la porta
+    const lx = dx + dw / 2;
+    g.fillStyle = '#1f2a26'; g.fillRect(lx - 0.5, by - dh - 14, 1, 2); g.fillRect(lx - 2, by - dh - 12, 4, 3);
+    g.fillStyle = night ? '#ffe2a0' : '#f6e7c1'; g.fillRect(lx - 1, by - dh - 11, 2, 1);
+    if (night) wins.push([[lx - 2, by - dh - 12], [lx + 2, by - dh - 12], [lx + 2, by - dh - 9], [lx - 2, by - dh - 9]]);
   }
-  const ww = 12, wh = 17;
-  window3(g, x0 + 11, by - 32, ww, wh, o);
-  window3(g, x1 - 11 - ww, by - 32, ww, wh, o);
   if (floors === 2) {
-    window3(g, x0 + 11, y0 + 12, ww, wh, o);
-    window3(g, x1 - 11 - ww, y0 + 12, ww, wh, o);
-    // Portafinestra con il balcone in ferro e le piante che ricadono
-    window3(g, Math.round(cx - 6), y0 + 10, 12, 23, o, { box: false });
-    if (detail) {
-      g.fillStyle = '#d6cbb3'; g.fillRect(Math.round(cx) - 14, y0 + 33, 28, 3); g.fillStyle = 'rgba(30,15,5,0.3)'; g.fillRect(Math.round(cx) - 14, y0 + 36, 28, 2);
-      g.fillStyle = '#1f2a26'; g.fillRect(Math.round(cx) - 14, y0 + 24, 28, 1);
-      for (let k = 0; k <= 9; k++) g.fillRect(Math.round(cx) - 14 + k * 3, y0 + 24, 1, 9);
-      if (o.flowers) for (let k = 0; k < 9; k++) { g.fillStyle = k % 2 ? '#3f8634' : o.flowers[k % 2 ? 1 : 0]; g.fillRect(Math.round(cx) - 13 + k * 3, y0 + 31, 2, 2); if (k % 3 === 0) { g.fillStyle = '#56a043'; g.fillRect(Math.round(cx) - 13 + k * 3, y0 + 36, 1, 4 + (k % 2) * 2); } }
+    if (tw) {
+      window3(g, x0 + 7, y0 + 9, ww, wh, o);
+      window3(g, x1 - 6 - ww - 5, y0 + 9, ww + 4, wh, o);
+    } else {
+      window3(g, x0 + 6, y0 + 9, ww, wh, o);
+      window3(g, x1 - 6 - ww, y0 + 9, ww, wh, o);
+      // Portafinestra con il balcone in ferro e le piante che ricadono
+      window3(g, mx - 5, y0 + 7, 10, 20, o, { box: false, shut: false });
+      if (detail) {
+        const bx = mx - 10, bw = 20, ry = y0 + 19;
+        g.fillStyle = '#d6cbb3'; g.fillRect(bx, ry + 8, bw, 2); g.fillStyle = 'rgba(30,15,5,0.3)'; g.fillRect(bx, ry + 10, bw, 2);
+        g.fillStyle = '#1f2a26'; g.fillRect(bx, ry, bw, 1);
+        for (let k = 0; k <= 6; k++) g.fillRect(Math.min(bx + k * 3, bx + bw - 1), ry, 1, 8);
+        if (o.flowers) for (let k = 0; k < 6; k++) { g.fillStyle = k % 2 ? '#3f8634' : o.flowers[k % 2 ? 1 : 0]; g.fillRect(bx + 1 + k * 3, ry + 6, 2, 2); if (k % 3 === 0) { g.fillStyle = '#56a043'; g.fillRect(bx + 1 + k * 3, ry + 10, 1, 3 + (k % 2) * 2); } }
+      }
     }
   } else if (detail) {
     // Villetta: abbaino sul tetto
-    const ax = Math.round(cx - 7);
-    g.fillStyle = shade(wall, -0.3); g.fillRect(ax - 1, yR + 6, 16, 14);
-    g.fillStyle = wall; g.fillRect(ax, yR + 7, 14, 12);
-    g.fillStyle = o.lit ? '#ffcf6a' : '#5f97b8'; g.fillRect(ax + 4, yR + 10, 6, 7);
-    poly(g, [[ax - 2, yR + 7], [ax + 16, yR + 7], [ax + 7, yR + 1]]); g.fillStyle = roof; g.fill();
+    const ax = Math.round(mx - 6);
+    g.fillStyle = shade(wall, -0.3); g.fillRect(ax - 1, yR + 5, 14, 12);
+    g.fillStyle = wall; g.fillRect(ax, yR + 6, 12, 10);
+    g.fillStyle = o.lit ? '#ffcf6a' : '#5f97b8'; g.fillRect(ax + 3, yR + 8, 6, 6);
+    poly(g, [[ax - 2, yR + 6], [ax + 14, yR + 6], [ax + 6, yR]]); g.fillStyle = roof; g.fill();
   }
-  if (founder) { g.fillStyle = '#7a5a1a'; g.fillRect(dx + dw + 5, by - 22, 7, 5); g.fillStyle = '#e2bf4f'; g.fillRect(dx + dw + 6, by - 21, 5, 3); }
+  if (founder) { g.fillStyle = '#7a5a1a'; g.fillRect(dx + dw + 3, by - 20, 6, 5); g.fillStyle = '#e2bf4f'; g.fillRect(dx + dw + 4, by - 19, 4, 3); }
   // Torretta sul lato sinistro, più alta, con il tettino a punta
-  if (shape === 'torretta') {
-    const tw = 26, tx0 = x0 - 8, th = Hh + 34;
-    g.fillStyle = 'rgba(25,40,15,0.2)'; g.fillRect(tx0 + tw, by - th + 10, 6, th - 10);
+  if (tw) {
+    const tx0 = X0, th = Hh + 20;
     plaster(g, tx0, by - th, tw, th, shade(wall, 0.04), hs + 1, detail);
-    g.fillStyle = '#b3a487'; g.fillRect(tx0, by - 7, tw, 7);
-    window3(g, tx0 + 9, by - th + 12, 8, 13, o, { box: false });
-    window3(g, tx0 + 9, by - 32, 8, 14, o);
-    poly(g, [[tx0 - 4, by - th + 1], [tx0 + tw + 4, by - th + 1], [tx0 + tw / 2, by - th - 30]]); g.fillStyle = roof; g.fill();
-    poly(g, [[tx0 + tw / 2, by - th - 30], [tx0 + tw + 4, by - th + 1], [tx0 + tw / 2, by - th + 1]]); g.fillStyle = shade(roof, -0.18); g.fill();
-    g.strokeStyle = shade(roof, -0.45); g.lineWidth = 1; poly(g, [[tx0 - 4, by - th + 1], [tx0 + tw + 4, by - th + 1], [tx0 + tw / 2, by - th - 30]]); g.stroke();
-    g.fillStyle = '#3b3f45'; g.fillRect(tx0 + tw / 2 - 0.5, by - th - 36, 1, 6);
+    g.fillStyle = 'rgba(30,15,5,0.18)'; g.fillRect(tx0 + tw - 2, by - th, 2, th);
+    g.fillStyle = '#b3a487'; g.fillRect(tx0, by - 6, tw, 6);
+    window3(g, tx0 + 6, by - th + 9, 6, 11, o, { box: false, shut: false });
+    window3(g, tx0 + 6, y0 + 9, 6, 13, o, { shut: false });
+    window3(g, tx0 + 6, by - 29, 6, 13, o, { shut: false });
+    const ty = by - th;
+    poly(g, [[tx0 - 3, ty + 1], [tx0 + tw + 3, ty + 1], [tx0 + tw / 2, ty - 22]]); g.fillStyle = roof; g.fill();
+    poly(g, [[tx0 + tw / 2, ty - 22], [tx0 + tw + 3, ty + 1], [tx0 + tw / 2, ty + 1]]); g.fillStyle = shade(roof, -0.18); g.fill();
+    g.strokeStyle = shade(roof, -0.45); g.lineWidth = 1; poly(g, [[tx0 - 3, ty + 1], [tx0 + tw + 3, ty + 1], [tx0 + tw / 2, ty - 22]]); g.stroke();
+    g.fillStyle = '#3b3f45'; g.fillRect(tx0 + tw / 2 - 0.5, ty - 27, 1, 5);
   }
-  // Verde: edera e buganvillea su alcune case, vasi alla porta, aiuole e oggetto in giardino
-  if (detail && hs % 4 === 0) ivy(g, x1 - 16, x1 - 1, y0 + 4, by - 6, hs);
-  if (detail && hs % 3 === 0) { bougainvillea(g, x0 - 3, y0 + 4, x0 + 12, by - 8, hs, 36); bougainvillea(g, dx - 10, by - dh - 12, dx + dw + 10, by - dh - 3, hs + 7, 18); }
-  if (detail) { pot(g, dx - 8, by + 2, hs); pot(g, dx + dw + 8, by + 2, hs + 1); }
-  drawGarden3(g, style.garden, x0, x1, by, hs, detail);
-  drawDeco3(g, style.deco, x1 + 12, by);
-  let top = shape === 'torretta' ? by - Hh - 34 - 36 : yR - 24;
+  // Verde: edera e buganvillea su alcune case, vasi alla porta, aiuole e oggetto davanti
+  if (detail && hs % 4 === 0) ivy(g, x1 - 12, x1 - 1, y0 + 4, by - 6, hs);
+  if (detail && hs % 3 === 0) { bougainvillea(g, x0 - 2, y0 + 4, x0 + 8, by - 8, hs, 26); bougainvillea(g, dx - 7, by - dh - 10, dx + dw + 7, by - dh - 3, hs + 7, 14); }
+  if (detail) { pot(g, dx - 6, by + 2, hs); pot(g, dx + dw + 6, by + 2, hs + 1); }
+  drawGarden3(g, style.garden, X0, X1, by, hs, detail);
+  drawDeco3(g, style.deco, X1 - 8, by + 7);
+  let top = tw ? by - Hh - 20 - 27 : shape === 'villetta' ? yR - 2 : yR - 20;
   if (flag) {
-    const fx = x0 + 8, fy = yR - 2;
-    g.fillStyle = '#3b3f45'; g.fillRect(fx, fy - 18, 1, 18);
-    poly(g, [[fx + 1, fy - 18], [fx + 12, fy - 14], [fx + 1, fy - 10]]); g.fillStyle = flag; g.fill();
-    top = Math.min(top, fy - 18);
+    const fx = X0 + (tw ? tw + 4 : 6), fy = yR - 2;
+    g.fillStyle = '#3b3f45'; g.fillRect(fx, fy - 16, 1, 16);
+    poly(g, [[fx + 1, fy - 16], [fx + 10, fy - 13], [fx + 1, fy - 10]]); g.fillStyle = flag; g.fill();
+    top = Math.min(top, fy - 16);
   }
-  return { wins, top, box: [x0 - 14, top - 2, x1 + 22, by + 6] };
+  return { wins, top, box: [X0 - 4, top - 2, X1 + 8, by + 10] };
 }
 function drawGarden3(g, garden, x0, x1, by, seed, det) {
   if (!det) return;
@@ -695,12 +711,13 @@ function drawGarden3(g, garden, x0, x1, by, seed, det) {
       for (let k = 0; k < 9; k++) { g.fillStyle = ['#e85d75', '#f6d84a', '#ffffff', '#b46ad6'][k % 4]; g.fillRect(a + 1 + k * 2, by - 8 + (k % 2) * 2, 2, 2); }
     }
   } else if (garden === 'orto') {
-    g.fillStyle = '#6e4a2c'; g.fillRect(x0 - 20, by - 14, 16, 14);
-    g.fillStyle = '#8b6a43'; g.fillRect(x0 - 19, by - 13, 14, 12);
-    g.fillStyle = '#5f9a3c'; for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) g.fillRect(x0 - 18 + c * 5, by - 12 + r * 4, 3, 2);
-    g.fillStyle = '#e8423a'; g.fillRect(x0 - 13, by - 8, 2, 2); g.fillRect(x0 - 8, by - 12, 2, 2);
+    // Cassetta dell'orto sul marciapiede, davanti all'angolo
+    g.fillStyle = '#6e4a2c'; g.fillRect(x0 + 1, by + 1, 13, 7);
+    g.fillStyle = '#8b6a43'; g.fillRect(x0 + 2, by + 2, 11, 5);
+    g.fillStyle = '#5f9a3c'; for (let c = 0; c < 3; c++) g.fillRect(x0 + 3 + c * 4, by - 1, 3, 4);
+    g.fillStyle = '#e8423a'; g.fillRect(x0 + 4, by + 1, 2, 2); g.fillRect(x0 + 10, by, 2, 2);
   } else if (garden === 'ulivo') {
-    drawTree(g, { kind: 'ulivo', s: 1 }, x0 - 10, by);
+    drawTree(g, { kind: 'ulivo', s: 0.55 }, x0 + 6, by + 6);
   } else if (garden === 'nessuno') {
     g.fillStyle = '#ddcfab'; g.fillRect(x0 + 4, by, x1 - x0 - 8, 3);
   } else {
@@ -763,61 +780,62 @@ function vitrine3(g, x, y, w, h, kind, night, seed, wins) {
   wins.push([[x, y], [x + w, y], [x + w, y + h], [x, y + h]]);
 }
 // Negozio su due caselle, visto di fronte: piano terra con vetrine e tenda, insegna, primo piano
-// con le finestre fiorite, tetto piano.
+// con le finestre fiorite, tetto piano. Largo quanto le sue due caselle, per lasciare libere le vie.
 export function drawShop3(g, shop, cx, by, { night = false, detail = true } = {}) {
   const st = SHOP_LOOK[shop.id];
   const wins = [];
-  const w = 88, Hh = 92, D = 26;
+  const w = 60, Hh = 80, D = 20;
   const x0 = Math.round(cx - w / 2), x1 = x0 + w, y0 = by - Hh;
   g.fillStyle = 'rgba(25,40,15,0.28)';
-  poly(g, [[x1, y0 + 6], [x1 + 14, y0 + 16], [x1 + 14, by + 3], [x0 + 6, by + 3], [x0 + 6, by]]); g.fill();
-  // Tetto piano con parapetto, ghiaia, un condizionatore e un vaso
+  poly(g, [[x1, y0 + 6], [x1 + 4, y0 + 10], [x1 + 4, by + 3], [x0 + 6, by + 3], [x0 + 6, by]]); g.fill();
+  // Tetto piano con parapetto, ghiaia e un condizionatore
   g.fillStyle = shade(st.wall, -0.35); g.fillRect(x0 - 2, y0 - D - 1, w + 4, D + 2);
   g.fillStyle = shade(st.wall, -0.12); g.fillRect(x0 - 1, y0 - D, w + 2, D);
   g.fillStyle = '#9d978b'; g.fillRect(x0 + 3, y0 - D + 3, w - 6, D - 5);
   if (detail) {
-    for (let k = 0; k < 60; k++) { g.fillStyle = k % 2 ? '#b3ad9f' : '#8a8478'; g.fillRect(x0 + 4 + ih(k, shop.x0, 1) * (w - 9), y0 - D + 4 + ih(k, shop.y0, 2) * (D - 8), 1, 1); }
-    g.fillStyle = '#7d786e'; g.fillRect(x1 - 23, y0 - D + 6, 15, 11); g.fillStyle = '#c9c3b5'; g.fillRect(x1 - 22, y0 - D + 7, 13, 9); g.fillStyle = '#8f8a80'; for (let k = 0; k < 4; k++) g.fillRect(x1 - 21, y0 - D + 8 + k * 2, 11, 1);
+    for (let k = 0; k < 40; k++) { g.fillStyle = k % 2 ? '#b3ad9f' : '#8a8478'; g.fillRect(x0 + 4 + ih(k, shop.x0, 1) * (w - 9), y0 - D + 4 + ih(k, shop.y0, 2) * (D - 8), 1, 1); }
+    g.fillStyle = '#7d786e'; g.fillRect(x1 - 19, y0 - D + 5, 13, 10); g.fillStyle = '#c9c3b5'; g.fillRect(x1 - 18, y0 - D + 6, 11, 8); g.fillStyle = '#8f8a80'; for (let k = 0; k < 3; k++) g.fillRect(x1 - 17, y0 - D + 7 + k * 2, 9, 1);
   }
   // Facciata: primo piano con finestre, piano terra con vetrine
   plaster(g, x0, y0, w, Hh, st.wall, shop.x0, detail);
   g.fillStyle = shade(st.wall, 0.12); g.fillRect(x0 - 2, y0, w + 4, 3);
   g.fillStyle = 'rgba(30,15,5,0.2)'; g.fillRect(x0, y0 + 3, w, 3);
   const o = { lit: night, night, door: st.trim, detail, wins, flowers: ['#e85d75', '#f6d84a'] };
-  for (const wx of [x0 + 12, Math.round(cx - 6), x1 - 24]) window3(g, wx, y0 + 9, 12, 16, o);
+  for (const wx of [x0 + 7, Math.round(cx - 4), x1 - 15]) window3(g, wx, y0 + 9, 8, 13, o, { shut: false });
   // Insegna sopra la tenda
-  g.fillStyle = shade(st.sign, -0.35); g.fillRect(x0 + 7, by - 61, w - 14, 16);
-  g.fillStyle = st.sign; g.fillRect(x0 + 8, by - 60, w - 16, 14);
-  g.fillStyle = shade(st.sign, 0.25); g.fillRect(x0 + 8, by - 60, w - 16, 1);
-  g.fillStyle = st.ink; g.font = '800 10px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText(shop.sign, cx, by - 52.5); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  const sy = by - 52;
+  g.fillStyle = shade(st.sign, -0.35); g.fillRect(x0 + 4, sy, w - 8, 13);
+  g.fillStyle = st.sign; g.fillRect(x0 + 5, sy + 1, w - 10, 11);
+  g.fillStyle = shade(st.sign, 0.25); g.fillRect(x0 + 5, sy + 1, w - 10, 1);
+  g.fillStyle = st.ink; g.font = '800 8px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(shop.sign, cx, sy + 7); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
   // Piano terra: zoccolo, vetrine, porta a vetri
-  g.fillStyle = st.trim; g.fillRect(x0, by - 6, w, 6); g.fillStyle = shade(st.trim, 0.2); g.fillRect(x0, by - 6, w, 1);
-  vitrine3(g, x0 + 5, by - 36, 26, 30, shop.kind, night, 0, wins);
-  vitrine3(g, x1 - 31, by - 36, 26, 30, shop.kind, night, 3, wins);
-  g.fillStyle = shade(st.trim, -0.3); g.fillRect(cx - 10, by - 40, 20, 34);
-  g.fillStyle = st.trim; g.fillRect(cx - 9, by - 39, 18, 33);
-  g.fillStyle = night ? '#f4cf7a' : '#a9d3e4'; g.fillRect(cx - 7, by - 37, 14, 31);
-  g.fillStyle = st.trim; g.fillRect(cx - 0.5, by - 37, 1, 31);
-  if (detail) { g.fillStyle = 'rgba(255,255,255,0.45)'; g.fillRect(cx - 6, by - 36, 1, 20); g.fillStyle = '#f6efe0'; g.fillRect(cx - 6, by - 24, 4, 3); g.fillStyle = '#2f7d4f'; g.fillRect(cx - 5, by - 23, 2, 1); }
+  g.fillStyle = st.trim; g.fillRect(x0, by - 5, w, 5); g.fillStyle = shade(st.trim, 0.2); g.fillRect(x0, by - 5, w, 1);
+  vitrine3(g, x0 + 4, by - 30, 17, 25, shop.kind, night, 0, wins);
+  vitrine3(g, x1 - 21, by - 30, 17, 25, shop.kind, night, 3, wins);
+  g.fillStyle = shade(st.trim, -0.3); g.fillRect(cx - 8, by - 33, 16, 28);
+  g.fillStyle = st.trim; g.fillRect(cx - 7, by - 32, 14, 27);
+  g.fillStyle = night ? '#f4cf7a' : '#a9d3e4'; g.fillRect(cx - 5, by - 30, 10, 25);
+  g.fillStyle = st.trim; g.fillRect(cx - 0.5, by - 30, 1, 25);
+  if (detail) { g.fillStyle = 'rgba(255,255,255,0.45)'; g.fillRect(cx - 4, by - 29, 1, 16); g.fillStyle = '#f6efe0'; g.fillRect(cx - 4, by - 19, 3, 3); g.fillStyle = '#2f7d4f'; g.fillRect(cx - 3, by - 18, 1, 1); }
   // Tenda a strisce che sporge sul marciapiede, con il bordo a festoni
-  const ay = by - 44;
-  for (let k = 0; k < 11; k++) {
-    const ax = x0 + k * 8;
+  const ay = by - 38, n = 8, sw = w / n;
+  for (let k = 0; k < n; k++) {
+    const ax = x0 + k * sw;
     g.fillStyle = st.awning[k % 2];
-    poly(g, [[ax, ay], [ax + 8, ay], [ax + 8.8, ay + 10], [ax - 0.8, ay + 10]]); g.fill();
-    g.beginPath(); g.arc(ax + 4, ay + 10, 4, 0, Math.PI); g.fill();
+    poly(g, [[ax, ay], [ax + sw, ay], [ax + sw + 0.6, ay + 8], [ax - 0.6, ay + 8]]); g.fill();
+    g.beginPath(); g.arc(ax + sw / 2, ay + 8, sw / 2, 0, Math.PI); g.fill();
   }
-  g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(x0, ay, w, 2); g.fillRect(x0 + 1, ay + 15, w - 2, 3);
+  g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(x0, ay, w, 2); g.fillRect(x0 + 1, ay + 12, w - 2, 2);
   g.fillStyle = 'rgba(255,255,255,0.2)'; g.fillRect(x0, ay + 2, w, 1);
   if (detail) {
-    for (const [px, i] of [[cx - 15, 0], [cx + 15, 2]]) pot(g, px, by + 4, i + shop.id.length);
-    chalkboard(g, x1 - 7, by + 8);
-    if (shop.kind === 'wear') { bougainvillea(g, x0 - 4, y0 - 2, x0 + 6, by - 8, 3, 40); bougainvillea(g, x1 - 6, y0 - 2, x1 + 4, by - 8, 9, 40); bougainvillea(g, x0, y0 - 6, x1, y0 + 4, 12, 30); }
-    if (shop.kind === 'furni') ivy(g, x0 + 1, x0 + 10, y0 + 4, by - 8, 21);
-    if (shop.kind === 'ride') { drawDeco3(g, 'bici', x0 - 10, by + 2); drawDeco3(g, 'bici', x1 + 10, by + 2); }
+    for (const [px, i] of [[cx - 12, 0], [cx + 12, 2]]) pot(g, px, by + 4, i + shop.id.length);
+    chalkboard(g, x1 - 5, by + 9);
+    if (shop.kind === 'wear') { bougainvillea(g, x0 - 2, y0 - 2, x0 + 5, by - 8, 3, 28); bougainvillea(g, x1 - 5, y0 - 2, x1 + 2, by - 8, 9, 28); bougainvillea(g, x0, y0 - 5, x1, y0 + 3, 12, 22); }
+    if (shop.kind === 'furni') ivy(g, x0 + 1, x0 + 8, y0 + 4, by - 8, 21);
+    if (shop.kind === 'ride') { drawDeco3(g, 'bici', x0 + 4, by + 8); drawDeco3(g, 'bici', x1 - 16, by + 8); }
   }
-  return { wins, top: y0 - D - 2, box: [x0 - 14, y0 - D - 4, x1 + 16, by + 10] };
+  return { wins, top: y0 - D - 2, box: [x0 - 4, y0 - D - 4, x1 + 8, by + 12] };
 }
 /* Piazza -------------------------------------------------------------------- */
 
@@ -1029,7 +1047,8 @@ export function drawTown(g, city, view, o) {
           lit: night && online, night, founder: isFounder(r), cantiere: h.status === 'cantiere', detail: det,
           flag: h.residentId === o.meId ? '#e0a92a' : o.friends?.has(h.residentId) ? '#3f6aa1' : null,
         };
-        const cx = X + T / 2, by = Y + T - 1;
+        // I due lotti dell'isolato stanno ai lati: ogni casa si sposta verso il centro del suo mezzo isolato
+        const cx = X + T / 2 + (x % STREET === 1 ? T / 2 : x % STREET === STREET - 1 ? -T / 2 : 0), by = Y + T - 1;
         const draw = (gg) => {
           if (grow === 1) return drawHouse3(gg, h.style, cx, by, opts);
           gg.save(); gg.translate(cx, by); gg.scale(grow, grow); gg.translate(-cx, -by);
