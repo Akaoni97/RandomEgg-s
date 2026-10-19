@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pub = path.join(root, 'public');
-const order = ['core.js', 'seed.js', 'render.js', 'store.js', 'app.js'];
+const order = ['core.js', 'seed.js', 'art.js', 'town.js', 'render.js', 'store.js', 'app.js'];
 
 const js = order.map((f) => {
   const src = fs.readFileSync(path.join(pub, 'js', f), 'utf8')

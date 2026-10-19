@@ -18,8 +18,8 @@ export const FOUNTAIN_AT = 25;
 export const MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
 
 // Il tracciato segue una griglia di passo 5: righe e colonne multiple di 5 sono vie, in mezzo
-// restano isolati di 4×4 caselle. In ogni isolato ci sono tre lotti affacciati su una via
-// (gli angoli verso chi guarda), separati da giardini; l'angolo in fondo è un cortile alberato.
+// restano isolati di 4×4 caselle. In ogni isolato ci sono due lotti affacciati sulla via a sud,
+// separati da un giardino; dietro le case ci sono orti e un cortile alberato.
 // Le dorsali sono le vie principali di ogni quartiere, tratteggiate finché il quartiere è chiuso.
 export const DISTRICTS = [
   { id: 1, name: 'Centro', rect: [30, 20, 55, 35], dorsal: null,
@@ -37,8 +37,9 @@ export const isStreet = (x, y) => x % STREET === 0 || y % STREET === 0;
 // Il canale scende dalla collina al mare tra Borgo Ovest e il Centro; le vie lo passano sui ponti.
 export const CANAL = { x0: 26, x1: 28, y0: 8 };
 export const isCanal = (x, y) => x >= CANAL.x0 && x <= CANAL.x1 && y >= CANAL.y0 && y <= SEA_Y;
-// Posizione dentro l'isolato (1..4): i lotti sono gli angoli che guardano a sud o a est.
-const LOT_SPOTS = ['4,1', '1,4', '4,4'];
+// Posizione dentro l'isolato (1..4): le case stanno sul lato sud, con la facciata sulla via e il
+// giardino dietro (nella vista di tre quarti il tetto sale verso il giardino, non sopra un'altra via).
+const LOT_SPOTS = ['1,4', '4,4'];
 
 export const ROOFS = [
   { id: 'coppi', label: 'Coppi', color: '#b5523b' },
