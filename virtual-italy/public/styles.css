@@ -390,3 +390,30 @@ body.in-room .toasts { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 1
 .ranking ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .ranking li { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
 .ranking .small { margin: 0; }
+
+/* Editor del personaggio: palco 3D, uomo o donna, schede */
+.char-editor { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 720px) { .char-editor { grid-template-columns: 300px minmax(0, 1fr); align-items: start; } .char-stage { position: sticky; top: 0; } }
+.char-stage { display: grid; gap: 6px; background: linear-gradient(180deg, #d7eef7, #bfe0ec); border-radius: 18px; padding: 8px; position: sticky; top: 0; z-index: 2; box-shadow: 0 6px 12px -8px rgba(0,0,0,0.25); }
+.avatar-stage { width: 100%; height: 300px; display: block; cursor: grab; touch-action: none; }
+@media (max-width: 719px) { .avatar-stage { height: 210px; } }
+.char-stage-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 2px; }
+.char-stage-bar .small { color: #33524a; }
+.gender-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gender { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 64px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; font-size: 1.05rem; color: var(--ink); cursor: pointer; }
+.gender.on { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, var(--surface)); }
+.gender-ico { font-size: 1.6rem; line-height: 1; }
+.steps { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+/* Carta d'identità */
+.id-card { border-radius: 16px; padding: 14px; background: linear-gradient(135deg, #f3ead2, #e5d6b2); border: 1px solid #c9b48f; box-shadow: 0 6px 18px rgba(60,40,10,0.18); color: #3a2f1f; display: grid; gap: 10px; }
+.id-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px dashed #b49a6c; padding-bottom: 8px; }
+.id-top strong { font-family: "Abril Fatface", Georgia, serif; font-size: 1.1rem; letter-spacing: 0.04em; color: #7a2c2c; }
+.id-top span:last-child { margin-left: auto; }
+.id-body { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; align-items: start; }
+.id-photo { width: 110px; height: 134px; border-radius: 8px; background: #cfe6ef; border: 1px solid #b49a6c; }
+.id-data { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; font-size: 0.9rem; }
+.id-data dt { color: #7a6a4f; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; align-self: center; }
+.id-data dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
+.id-sign { display: flex; align-items: baseline; gap: 10px; font-size: 0.75rem; color: #7a6a4f; }
+.id-sign em { font-family: "Abril Fatface", Georgia, serif; font-size: 1.1rem; color: #2a3f6a; }

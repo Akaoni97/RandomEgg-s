@@ -13,6 +13,7 @@ const as = (id, now = 1000) => ({ user: { id }, now });
 function join(s, id, username, { confirm = true, now = 1000 } = {}) {
   s = applyOp(s, { type: 'join', id, username }, sys(now)).state;
   if (confirm) s = applyOp(s, { type: 'confirm', id }, sys(now)).state;
+  s = applyOp(s, { type: 'anagrafe' }, as(id, now)).state;
   return s;
 }
 const freeLots = (s, district = 1) => PLAN.lotsByDistrict.get(district).filter((k) => !s.houses[k]);
@@ -205,7 +206,13 @@ test("editor del personaggio: valori controllati, aspetto di partenza stabile", 
   let s = join(emptyState(0), 'a', 'anna.b');
   assert.deepEqual(cleanLook(undefined, 'anna.b'), defaultLook('anna.b'));
   s = applyOp(s, { type: 'look', look: { skin: 2, hair: 4, style: 'ricci', shirt: 1, pants: 0, extra: 'occhiali' } }, as('a')).state;
-  assert.deepEqual(s.residents.a.look, { skin: 2, hair: 4, style: 'ricci', shirt: 1, pants: 0, extra: 'occhiali', top: 'maglietta', bottom: 'pantaloni' });
+  const d0 = defaultLook('anna.b');
+  assert.deepEqual(s.residents.a.look, { ...d0, skin: 2, hair: 4, style: 'ricci', shirt: 1, pants: 0, extra: 'occhiali', top: 'maglietta', bottom: 'pantaloni' });
+  // Uomo e donna, con barba o rossetto; i valori sconosciuti tornano a quelli di partenza
+  s = applyOp(s, { type: 'look', look: { gender: 'donna', style: 'chignon', lips: 'rosso', eyes: 2, shoes: 3, top: 'vestito', bottom: 'gonna' } }, as('a')).state;
+  assert.equal(s.residents.a.look.gender, 'donna'); assert.equal(s.residents.a.look.lips, 'rosso'); assert.equal(s.residents.a.look.top, 'vestito');
+  s = applyOp(s, { type: 'look', look: { gender: 'alieno', beard: 'treccia', lips: 'blu' } }, as('a')).state;
+  assert.ok(['uomo', 'donna'].includes(s.residents.a.look.gender) && s.residents.a.look.lips === 'naturale');
   s = applyOp(s, { type: 'look', look: { skin: 99, hair: -1, style: '<script>', shirt: 'rosso', extra: 'trono', top: 'armatura' } }, as('a')).state;
   const d = defaultLook('anna.b');
   assert.deepEqual(s.residents.a.look, d, 'valori sbagliati tornano a quelli di partenza');
@@ -217,13 +224,13 @@ test('negozi: edifici fissi accanto alla piazza, vestiti e mobili si prendono e 
   const { SHOPS, shopAt, walkable, roomOf, canVisit, invOf, STARTER_KIT, MAX_STOCK } = await import('../public/js/core.js');
   let s = join(emptyState(0), 'a', 'anna.b');
   for (const sh of SHOPS) {
-    for (const k of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+    for (const k of [[0, 0], [sh.w - 1, 0], [0, sh.d - 1], [sh.w - 1, sh.d - 1]]) {
       const x = sh.x0 + k[0], y = sh.y0 + k[1];
       assert.equal(shopAt(x, y), sh);
       assert.ok(!isLot(`${x},${y}`), 'il negozio non è un lotto');
       assert.ok(!walkable(s, x, y), 'nel negozio si entra dalla porta');
     }
-    assert.equal(s.roads[sh.front.join(',')], 'main', 'la porta dà sulla strada principale');
+    assert.ok(['main', 'piazza'].includes(s.roads[sh.front.join(',')]), 'la porta dà sulla strada principale o sulla piazza');
     assert.ok(canVisit(s, 'a', sh.room) && roomOf(s, sh.room).items.length > 5, 'il negozio è aperto e ha la merce esposta');
   }
   // Vestiti: prima si prendono, poi si indossano.
@@ -401,4 +408,24 @@ test('pianta: case su tutti e due i lati delle vie, città vecchie sistemate', (
   assert.ok(moved && s.doors[moved.slot]);
   assert.ok(!s.news.some((n) => n.slot === '45,32'));
   assert.ok(!migratePlan(s), 'una città già a posto non cambia');
+});
+
+test('municipio: prima di costruire ci si iscrive all\'anagrafe', async () => {
+  const { shopById, COMUNE, shopAt } = await import('../public/js/core.js');
+  let s = emptyState(0);
+  s = applyOp(s, { type: 'join', id: 'n', username: 'nina.c' }, sys()).state;
+  s = applyOp(s, { type: 'confirm', id: 'n' }, sys()).state;
+  assert.throws(() => applyOp(s, { type: 'chooseSlot', slot: freeLots(s)[0] }, as('n')), /Municipio/);
+  const sh = shopById(COMUNE);
+  assert.equal(shopAt(40, 21), sh, 'il municipio chiude la piazza a nord');
+  s = applyOp(s, { type: 'anagrafe', look: { gender: 'donna', style: 'coda' } }, as('n', 5000)).state;
+  assert.equal(s.residents.n.anagrafe, 5000);
+  assert.equal(s.residents.n.look.style, 'coda');
+  assert.ok(applyOp(s, { type: 'anagrafe' }, as('n', 9000)).result.already, 'ci si iscrive una volta sola');
+  s = applyOp(s, { type: 'chooseSlot', slot: freeLots(s)[0] }, as('n')).state;
+  // Chi aveva casa prima del Municipio risulta già iscritto
+  const old = seedResidents(emptyState(0), 3, 10_000_000);
+  for (const r of Object.values(old.residents)) delete r.anagrafe;
+  migratePlan(old);
+  assert.ok(Object.values(old.residents).every((r) => r.anagrafe));
 });

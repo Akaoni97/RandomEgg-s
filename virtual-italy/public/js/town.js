@@ -751,6 +751,7 @@ export const SHOP_LOOK = {
   mobili: { wall: '#e6cfa3', trim: '#8a5a36', awning: ['#2f6b4f', '#f6efe0'], sign: '#2f4f3f', ink: '#f6e7b8' },
   moda: { wall: '#f1dcd8', trim: '#3b3f45', awning: ['#2d2d2d', '#f6efe0'], sign: '#2d2d2d', ink: '#e2bf4f' },
   bici: { wall: '#d7e6ef', trim: '#2f6b9f', awning: ['#e0a92a', '#2f6b9f'], sign: '#2f6b9f', ink: '#f6efe0' },
+  comune: { wall: '#ead2a2', trim: '#7a5a3a', awning: ['#2f6b4f', '#f6efe0'], sign: '#7a2c2c', ink: '#f6e7b8' },
 };
 export function vitrine3(g, x, y, w, h, kind, night, seed, wins) {
   g.fillStyle = '#5a4a38'; g.fillRect(x - 2, y - 2, w + 4, h + 4);
@@ -994,8 +995,8 @@ function piazzaItems(city) {
   const put = (x, y, draw, depth = 0.6) => { const k = key(x, y); if (!out.has(k)) out.set(k, []); out.get(k).push({ draw, depth }); };
   const D = PIAZZA_DECOR;
   put(...D.edicola, (g, X, Y) => edicola3(g, X + 16, Y + 26));
-  const [m0] = D.muro, mLast = D.muro[D.muro.length - 1];
-  put(...mLast, (g, X, Y) => muro3(g, X - (mLast[0] - m0[0]) * T + 2, X + T - 2, Y + 22, founders));
+  const [m0] = D.muro.length ? D.muro : [[0, 0]], mLast = D.muro[D.muro.length - 1];
+  if (mLast) put(...mLast, (g, X, Y) => muro3(g, X - (mLast[0] - m0[0]) * T + 2, X + T - 2, Y + 22, founders));
   put(D.fountain[0], D.fountain[1] + 1, (g, X, Y) => fountain3(g, X + 16, Y - 16, built >= FOUNTAIN_AT), 0.9);
   put(...D.campanile, (g, X, Y) => campanile3(g, X + 16, Y + 28));
   for (const [x, y] of BENCHES) put(x, y, (g, X, Y) => bench(g, X + 16, Y + 22));
@@ -1003,7 +1004,7 @@ function piazzaItems(city) {
   for (const [x, y] of D.lamps) put(x, y, (g, X, Y) => lampPost(g, X + 16, Y + 20, true));
   for (const [x, y] of D.trees) put(x, y, (g, X, Y) => drawTree(g, { kind: 'tondo', s: 0.85 }, X + 16, Y + 22));
   for (const [x, y] of D.cafe) put(x, y, (g, X, Y) => cafeTable(g, X + 16, Y + 22));
-  for (const [x, y, i] of [[36, 21, 0], [38, 21, 1], [42, 21, 2], [36, 28, 3], [44, 23, 0], [44, 27, 1], [38, 29, 2], [42, 29, 3], [39, 23, 1], [41, 27, 2]]) put(x, y, (g, X, Y) => pot(g, X + 16, Y + 22, i));
+  for (const [x, y, i] of [[36, 21, 0], [37, 21, 1], [43, 22, 2], [36, 28, 3], [44, 23, 0], [44, 27, 1], [38, 29, 2], [42, 29, 3], [39, 23, 1], [41, 27, 2]]) put(x, y, (g, X, Y) => pot(g, X + 16, Y + 22, i));
   put(42, 26, (g, X, Y) => chalkboard(g, X + 22, Y + 22));
   return out;
 }
@@ -1062,8 +1063,8 @@ export function drawTown(g, city, view, o) {
       }
       const shop = shopAt(x, y);
       if (shop) {
-        if (x !== shop.x0 + 1 || y !== shop.y0 + 1) continue;
-        const cx = (shop.x0 + 1) * T, by = Y + T - 1;
+        if (x !== shop.x0 + 1 || y !== shop.y0 + shop.d - 1) continue;
+        const cx = (shop.x0 + shop.w / 2) * T, by = Y + T - 1;
         add(y + 0.98, x, (gg) => drawShop3(gg, shop, cx, by, { night, detail: det }), null, { type: 'shop', shop: shop.id });
         continue;
       }

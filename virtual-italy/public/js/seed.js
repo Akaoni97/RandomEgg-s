@@ -30,6 +30,7 @@ export function seedResidents(state, n, now = Date.now(), salt = 0) {
     if (!slot) break;
     const h = hash(name);
     const style = { roof: ROOFS[h % 6].id, door: DOORS[(h >>> 4) % 6].id, garden: GARDENS[(h >>> 8) % GARDENS.length].id, deco: DECOS[(h >>> 12) % DECOS.length].id };
+    s = applyOp(s, { type: 'anagrafe' }, { user: { id }, now: t }).state;
     s = applyOp(s, { type: 'chooseSlot', slot, style }, { user: { id }, now: t }).state;
     s = applyOp(s, { type: 'profile', bio: BIOS[h % BIOS.length] }, { user: { id }, now: t }).state;
   }

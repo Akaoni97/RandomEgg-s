@@ -15,7 +15,7 @@ Serve **Node.js 22.5 o successivo**. Non ci sono dipendenze da installare.
 npm start            # città vera, vuota                        → http://localhost:8080
 npm run dev          # come sopra, con i link delle email in console e redazione@example.com come redazione
 npm run demo         # città già abitata da 18 abitanti finti (archivio separato in data-demo/)
-npm test             # 25 prove: regole della città + server (iscrizione, email, permessi, omini, negozi, missioni, tempo reale)
+npm test             # 27 prove: regole della città + server (iscrizione, email, permessi, omini, negozi, missioni, tempo reale)
 npm run build:demo   # genera dist/virtual-italy-demo.html: demo in un solo file, senza server
 ```
 
@@ -40,7 +40,7 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 
 ## Cosa c'è in questa versione
 
-- **Città in 3D** che si gira: due dita (o i tasti ↺ ↻) ruotano la veduta, così niente resta nascosto dietro le case. Terreno, strade, piazza e campi portano la pixel art di sempre come texture; case e negozi sono solidi con le facciate dipinte in pixel (persiane, fiori alle finestre, buganvillee), tetti a coppi, ombre vere e luce calda; di notte si accendono finestre, vetrine e lampioni. Il terreno è a gradoni con muretti e rampe che seguono anche auto e bici; un canale con il ponte e un cigno scende fino al mare. Gli abitanti restano omini in pixel. Senza WebGL si torna alla vista piatta di tre quarti. Gli interni delle case restano stanze isometriche come in Habbo.
+- **Città in 3D** che si gira: due dita (o i tasti ↺ ↻) ruotano la veduta, così niente resta nascosto dietro le case. Terreno, strade, piazza e campi portano la pixel art di sempre come texture; case e negozi sono solidi con le facciate dipinte in pixel (persiane, fiori alle finestre, buganvillee), tetti a coppi, ombre vere e luce calda; di notte si accendono finestre, vetrine e lampioni. Il terreno è a gradoni con muretti e rampe che seguono anche auto e bici; un canale con il ponte e un cigno scende fino al mare. Senza WebGL si torna alla vista piatta di tre quarti. Gli interni delle case restano stanze isometriche come in Habbo.
 - **Piano della città con respiro:** vie in sampietrini ogni 5 caselle, collegate alla strada principale e alle dorsali dei quartieri; in ogni isolato due lotti affacciati sulla via a sud, separati da un giardino, con il cortile alberato dietro. La **piazza** è grande (9×9): lastre di pietra con cornice in cotto, fontana al centro (l'acqua arriva a 25 abitanti), campanile, edicola del giornale, Muro dei Fondatori, panchine, lampioni e i tavolini del bar con gli ombrelloni.
 - **Traffico e passanti:** utilitarie, berline, furgoni, Ape e autobus girano sulla corsia di destra di statale, vie del Centro e dorsali, coperti da case e alberi che stanno davanti. Qualche passante passeggia, si siede in piazza e saluta, così la città è viva anche con pochi abitanti.
 - **Ciclofficina Ruota Libera:** a piedi si va a passo d'uomo; skateboard, bicicletta e monopattino elettrico fanno girare la città più svelti. Si sale e si scende dal pannello dei gesti.
@@ -49,7 +49,9 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 - **Missioni:** sette missioni di benvenuto che accompagnano il nuovo abitante (omino, casa, mobili, Sartoria, panchina in piazza, visita a un vicino, giornale), con la Targa di benvenuto come premio. Poi una missione del giorno, uguale per tutti, con la serie di giorni di fila 🔥.
 - **Gesti e sedute:** l'omino saluta, balla, salta e manda faccine; si siede sulle panchine della piazza e su sedie, poltrone, divani e pouf. Tutti lo vedono in tempo reale.
 - **Libro degli ospiti e cuori:** chi visita una casa firma il libro (una volta al giorno) e lascia un ❤️ (uno a settimana). Il giornale tiene la classifica della settimana e il lunedì annuncia la **Casa della settimana**, con la cartolina pronta per Instagram.
-- **Omini e nuvolette:** ogni abitante in città ha un omino personalizzabile (editor del personaggio) che cammina dove tocchi. Si parla con la barra in basso o salutando chi si incontra, e i messaggi compaiono a tutti in tempo reale.
+- **Abitanti in 3D:** omini low-poly nello stesso stile della città, con la faccia ben leggibile (occhi con la luce, sopracciglia, guance, bocca), che camminano, salutano, ballano, saltano, si siedono e vanno in bici, skate o monopattino. Da fermi si girano verso chi guarda; il proprio omino si intravede anche dietro le case. Nelle stanze e nelle anteprime si usa lo stesso modello. Si parla con la barra in basso e i messaggi compaiono a tutti in tempo reale.
+- **Editor del personaggio:** uomo o donna, carnagione, occhi, undici pettinature, colore dei capelli, barba e baffi o rossetto, maglia o vestito, pantaloni, pantaloncini o gonna, scarpe e accessori, con un palco 3D che si gira col dito e il tasto "A caso".
+- **Municipio e anagrafe:** il palazzo comunale chiude la piazza a nord, accanto al campanile, con il portico, le bandiere e il Muro dei Fondatori sotto gli archi. Chi arriva in città va prima in Municipio: allo sportello Carla lo iscrive all'anagrafe (lì si sceglie l'aspetto) e gli consegna la carta d'identità con la foto; solo dopo si sceglie il lotto. Chi aveva già casa risulta iscritto.
 - **Iscrizione** con email, nome utente e password, conferma via email entro 24 ore, accesso con email o nome utente, password dimenticata.
 - **Anti-bot**: campo nascosto, tempo minimo di compilazione, limiti per IP. Filtro su nomi e frasi offensive, nomi riservati (sindaco, redazione…).
 - **Lotti e case**: si sceglie lo slot, si personalizzano tetto, porta, giardino e oggetto davanti casa. Forma e muri seguono lo stile del quartiere. Senza email confermata la casa resta un cantiere, e il lotto si libera dopo 24 ore.
@@ -65,6 +67,7 @@ Metti nella bio un link con la provenienza, ad esempio `https://tuosito.it/?da=b
 
 ```
 public/js/core.js    regole: piano regolatore, strade, lotti, abitanti, amicizie, notizie (browser e server)
+public/js/avatar3d.js gli abitanti in 3D: modello, pose, immagini per stanze e anteprime, palco dell'editor
 public/js/town3d.js  la città in 3D (three.js): terreno a gradoni, case, negozi, piazza, alberi, acqua, traffico, notte
 public/js/town.js    la pixel art della città (texture del terreno, facciate) e la vista piatta di riserva
 public/js/render.js  mappa (telecamera, tocchi, omini), stanze isometriche e mobili, cartoline per Instagram

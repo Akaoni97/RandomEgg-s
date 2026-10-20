@@ -55,7 +55,9 @@ test('percorso completo di due abitanti e della redazione', async () => {
   assert.equal((await bruno('POST', '/api/register', form('ANNA@example.com', 'altro'))).status, 400, 'email già usata');
   assert.equal((await bruno('POST', '/api/register', form('b@example.com', 'Anna.B'))).status, 400, 'nome già preso');
 
-  // Cantiere prima della conferma, casa dopo
+  // Prima l'anagrafe in Municipio, poi il cantiere (prima della conferma) e la casa (dopo)
+  assert.equal((await anna('POST', '/api/op', { op: { type: 'chooseSlot', slot: lots[0] } })).status, 400, 'senza anagrafe non si costruisce');
+  assert.equal((await anna('POST', '/api/op', { op: { type: 'anagrafe', look: { gender: 'donna' } } })).status, 200);
   const choose = await anna('POST', '/api/op', { op: { type: 'chooseSlot', slot: lots[0], style: { roof: 'verde' } } });
   assert.equal(choose.status, 200);
   assert.equal(choose.body.result.status, 'cantiere');
@@ -73,6 +75,7 @@ test('percorso completo di due abitanti e della redazione', async () => {
   assert.equal((await bruno('POST', '/api/login', { login: 'anna.b', password: 'sbagliata' })).status, 401);
   const regB = await bruno('POST', '/api/register', form('bruno@example.com', 'bruno.c'));
   await bruno('POST', '/api/confirm', { token: tokenOf(regB.body.devLink) });
+  await bruno('POST', '/api/op', { op: { type: 'anagrafe' } });
   assert.equal((await bruno('POST', '/api/op', { op: { type: 'chooseSlot', slot: lots[0] } })).status, 409, 'lotto già preso');
   assert.equal((await bruno('POST', '/api/op', { op: { type: 'chooseSlot', slot: lots[1] } })).body.result.status, 'casa');
 
@@ -157,6 +160,7 @@ test('dentro casa: si entra solo nelle case aperte, si arreda solo la propria', 
   await host('POST', '/api/confirm', { token: tokenOf(rh.body.devLink) });
   let city = (await host('GET', '/api/city')).body.city;
   const free = PLAN.lotsByDistrict.get(1).find((k) => !city.houses[k]);
+  await host('POST', '/api/op', { op: { type: 'anagrafe' } });
   assert.equal((await host('POST', '/api/op', { op: { type: 'chooseSlot', slot: free } })).status, 200);
   const hostId = rh.body.me.id;
   assert.equal((await host('POST', '/api/move', { x: 3, y: 3, room: hostId })).status, 200, 'a casa propria si entra');

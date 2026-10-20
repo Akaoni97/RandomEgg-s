@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pub = path.join(root, 'public');
-const order = ['core.js', 'seed.js', 'art.js', 'town.js', 'town3d.js', 'render.js', 'store.js', 'app.js'];
+const order = ['core.js', 'seed.js', 'art.js', 'town.js', 'town3d.js', 'avatar3d.js', 'render.js', 'store.js', 'app.js'];
 // three.js (licenza MIT, in public/vendor) va dentro la pagina: la demo funziona anche senza rete.
 const three = fs.readFileSync(path.join(pub, 'vendor', 'three.min.js'), 'utf8');
 

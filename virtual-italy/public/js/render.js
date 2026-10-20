@@ -11,6 +11,7 @@ import {
   TILE, townCenter, TOWN_WORLD, townElev, surfaceOf, drawTown, drawTownLights, drawTownAmbient, townTileAt, drawHouse3, townVisible, warmLight,
 } from './town.js';
 import { Town3D, has3D, renderHouseStill, renderTownStill } from './town3d.js';
+import { avatarSprite, avatarPortrait, AvatarStage } from './avatar3d.js';
 
 
 /* Geometria isometrica --------------------------------------------------- */
@@ -44,7 +45,10 @@ function nightTint(g, w, h) {
 
 export function avatarLook(name, chosen) {
   const l = cleanLook(chosen, name);
-  return { skin: LOOK.skin[l.skin], hair: LOOK.hair[l.hair], shirt: LOOK.shirt[l.shirt], pants: LOOK.pants[l.pants], style: l.style, extra: l.extra, top: l.top, bottom: l.bottom };
+  return {
+    gender: l.gender, skin: LOOK.skin[l.skin], eyes: LOOK.eyes[l.eyes], hair: LOOK.hair[l.hair], shirt: LOOK.shirt[l.shirt], pants: LOOK.pants[l.pants],
+    shoes: LOOK.shoes[l.shoes], style: l.style, beard: l.beard, lips: l.lips, extra: l.extra, top: l.top, bottom: l.bottom,
+  };
 }
 function rectO(g, x, y, w, h, fill, line) {
   g.fillStyle = fill; g.fillRect(x, y, w, h);
@@ -252,7 +256,16 @@ export function drawRideIcon(canvas, kind) {
   drawRide(g, kind, 'all', false);
 }
 // Anteprima per l'editor del personaggio: cammina sul posto e si gira nelle quattro direzioni.
+// Con il 3D l'anteprima è un palco vivo (si gira col dito); la si aggiorna a ogni chiamata.
+const stages = new WeakMap();
 export function drawAvatarPreview(canvas, look, t, ride = null) {
+  if (has3D()) {
+    try {
+      const st = stages.get(canvas);
+      if (st) st.set(look, ride); else stages.set(canvas, new AvatarStage(canvas, look, { ride }));
+      return;
+    } catch { /* si ripiega sul disegno piatto */ }
+  }
   const g = canvas.getContext('2d');
   const dirs = ['SE', 'SW', 'NW', 'NE'];
   const k = t / 1000;
@@ -265,8 +278,14 @@ export function drawAvatarPreview(canvas, look, t, ride = null) {
   drawAvatar(g, 0, 0, dirs[Math.floor(k / 1.4) % 4], (Math.floor(k * 4.5) % 2) + 1, look, { ride });
 }
 
+// Primo piano per la carta d'identità (testa e spalle).
+export function drawAvatarBust(canvas, look) {
+  if (has3D()) { try { return avatarPortrait(canvas, look, { full: false }); } catch { /* disegno piatto */ } }
+  return drawAvatarIcon(canvas, look);
+}
 // Figurina ferma per i cataloghi (vestiti dei negozi).
 export function drawAvatarIcon(canvas, look) {
+  if (has3D()) { try { return avatarPortrait(canvas, look, { full: true }); } catch { /* disegno piatto */ } }
   const g = canvas.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvas.width, canvas.height);
@@ -721,6 +740,8 @@ const ACT_MS = { saluta: 2000, balla: 6000, salta: 1600 };
 // Verso dell'omino: nelle stanze isometriche segue gli assi del rombo; in città (vista di tre
 // quarti) di fronte quando scende o va di lato, di spalle quando sale.
 const DIR_OF = (dx, dy) => (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'SE' : 'NW') : (dy > 0 ? 'SW' : 'NE'));
+// Verso (nel mondo) di chi guarda in una delle quattro direzioni
+const DIR_VEC = { SE: [0.35, 1], SW: [-0.35, 1], NE: [0.35, -1], NW: [-0.35, -1] };
 const DIR_TOWN = (dx, dy) => (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'SE' : 'SW') : (dy > 0 ? 'SE' : 'NE'));
 
 export class CityMap {
@@ -849,7 +870,7 @@ export class CityMap {
   }
   setRoomUI(ui) { this.roomUI = { ...this.roomUI, ...ui }; this.dirty = true; }
   tickAvatars(t) {
-    const dt = Math.min(0.1, (t - (this.lastTick || t)) / 1000);
+    const dt = Math.min(0.25, (t - (this.lastTick || t)) / 1000);
     this.lastTick = t;
     let moving = false;
     for (const a of this.avatars.values()) {
@@ -903,6 +924,13 @@ export class CityMap {
     else if (kind === 'salta') { lift = Math.abs(Math.sin((t / 800) * Math.PI)) * 9; }
     else if (kind === 'balla') { pose = 'dance'; lift = Math.floor(t / 260) % 2 ? 1 : 0; }
     else if (kind === 'saluta') pose = 'wave';
+    if (this.scene && this.t3) {
+      // Nelle stanze l'omino 3D diventa un'immagine vista di sbieco, come i mobili
+      const sit = pose === 'sit';
+      const cv = avatarSprite(a.look, { dir: a.dir, moving: a.path.length > 0, phase: a.walked * Math.PI * 1.6, act: kind, at: t, sit, seatH: sit ? a.sit.h / 50 : 0 });
+      g.drawImage(cv, Math.round(x) - 32, Math.round(y) - 72);
+      return;
+    }
     g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(k, k);
     if (lift) g.translate(0, -Math.round(lift));
     drawAvatar(g, 0, 0, a.dir, step, a.look, { night, pose, t, ride: a.room || a.sit ? null : a.ride, flatRide: !a.room });
@@ -1159,7 +1187,7 @@ export class CityMap {
     for (const a of this.visibleAvatars()) {
       const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
       const [fx, fy, fz] = t3.project(a.x + 0.5, a.y + 0.5, h);
-      const [, hy] = t3.project(a.x + 0.5, a.y + 0.5, h + 0.85);
+      const [, hy] = t3.project(a.x + 0.5, a.y + 0.5, h + 1.05);
       const hw = Math.max(8, (fy - hy) * 0.35);
       if (sx > fx - hw && sx < fx + hw && sy > hy - 6 && sy < fy + 4 && (!best || fz < best.d)) best = { d: fz, id: a.id };
     }
@@ -1384,37 +1412,27 @@ export class CityMap {
     g.clearRect(0, 0, this.cv.width, this.cv.height);
     this.overlay3d(g, t);
   }
-  // Ogni omino è un piccolo disegno in pixel che si ridisegna solo quando cambia posa o passo.
+  // Ogni omino è un modellino 3D: si gira verso dove va e prende la posa del momento.
   syncAvatars3d(t) {
-    const t3 = this.t3, night = !!this.opts.night;
-    const az = t3.view.az;
+    const t3 = this.t3;
     for (const a of this.visibleAvatars()) {
-      const step = a.path.length ? (Math.floor(a.walked * 2.6) % 2) + 1 : 0;
       const at = (this.now || 0) - (a.act?.t0 || 0);
-      const kind = a.act && at < ACT_MS[a.act.kind] ? a.act.kind : null;
-      let lift = 0, pose = null;
-      if (a.sit && !a.path.length) { pose = 'sit'; lift = a.sit.h / 0.62 - 15; }
-      else if (kind === 'salta') lift = Math.abs(Math.sin((at / 800) * Math.PI)) * 9;
-      else if (kind === 'balla') { pose = 'dance'; lift = Math.floor(at / 260) % 2 ? 1 : 0; }
-      else if (kind === 'saluta') pose = 'wave';
-      // Verso dello sguardo rispetto alla telecamera: di fronte o di spalle, a destra o a sinistra
-      const [mx, my] = a.mv || ({ SE: [0.3, 1], SW: [-0.3, 1], NE: [0.3, -1], NW: [-0.3, -1] })[a.dir] || [0, 1];
-      const sx = mx * Math.cos(az) - my * Math.sin(az), sd = mx * Math.sin(az) + my * Math.cos(az);
-      const dir = Math.abs(sx) > Math.abs(sd) * 1.2 ? (sx > 0 ? 'SE' : 'SW') : sd > 0 ? (sx >= 0 ? 'SE' : 'SW') : (sx >= 0 ? 'NE' : 'NW');
+      const act = a.act && at < ACT_MS[a.act.kind] ? a.act.kind : null;
+      const sit = !!(a.sit && !a.path.length);
+      const [mx, my] = a.mv || DIR_VEC[a.dir] || [0, 1];
       const ride = a.sit ? null : a.ride;
-      const tt = pose === 'dance' || pose === 'wave' ? Math.floor(at / 130) : 0;
-      const k = [dir, step, pose, Math.round(lift), ride, tt, JSON.stringify(a.look)].join('|');
-      if (!a.cv) { a.cv = document.createElement('canvas'); a.cv.width = 96; a.cv.height = 112; }
-      const changed = k !== a.cvKey;
-      if (changed) {
-        a.cvKey = k;
-        const g = a.cv.getContext('2d');
-        g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 96, 112);
-        g.translate(48, 96 - Math.round(lift));
-        drawAvatar(g, 0, 0, dir, step, a.look, { pose, t: at, ride, flatRide: true });
-      }
       const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
-      t3.setAvatar(a.id, { x: a.x + 0.5, y: a.y + 0.5, h, cv: a.cv, changed, me: a.me, night });
+      // Chi cammina guarda dove va; chi è fermo si gira piano verso chi guarda lo schermo
+      const moving = a.path.length > 0;
+      const want = moving || sit ? Math.atan2(mx, my) : t3.view.az;
+      let f = a.face3 ?? want;
+      let d = want - f; d = Math.atan2(Math.sin(d), Math.cos(d));
+      f += moving ? d : d * 0.08;
+      a.face3 = f;
+      t3.setAvatar(a.id, {
+        x: a.x + 0.5, y: a.y + 0.5, h, look: a.look, ride, me: a.me, facing: f,
+        pose: { moving, phase: a.walked * Math.PI * 1.6, act, at: act ? at : t, sit, seatH: 0.3, lookUp: 0.28 },
+      });
     }
     t3.sweepAvatars();
   }
@@ -1431,7 +1449,7 @@ export class CityMap {
       const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
       const [x, y, z] = t3.project(a.x + 0.5, a.y + 0.5, h);
       if (z > 1 || x < -60 || x > this.vw + 60 || y < -60 || y > this.vh + 80) continue;
-      const [, head] = t3.project(a.x + 0.5, a.y + 0.5, h + 0.86);
+      const [, head] = t3.project(a.x + 0.5, a.y + 0.5, h + 1.12);
       if (a.me) {
         const bob = Math.sin(t / 300) * 1.5;
         g.fillStyle = '#ffd34d'; g.strokeStyle = 'rgba(60,40,0,0.6)'; g.lineWidth = 1;

@@ -12,12 +12,22 @@ import {
   townGround, townRamps, townSurface, tileTop, plaster, window3, door3, tiledRoof, ivy, bougainvillea, vitrine3, SHOP_LOOK,
   traffic, carAt, CAR_MODELS, roofOf, doorOf,
 } from './town.js';
+import { Avatar3D } from './avatar3d.js';
 
 const PX = 32;
 const T3 = () => globalThis.THREE;
+// Si controlla una volta sola (ogni prova crea un contesto grafico, e i telefoni ne reggono pochi)
+let gl3D = null;
 export const has3D = () => {
-  if (!T3()) return false;
-  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; }
+  if (gl3D !== null) return gl3D;
+  if (!T3()) return (gl3D = false);
+  try {
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl2') || c.getContext('webgl');
+    gl3D = !!gl;
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+  } catch { gl3D = false; }
+  return gl3D;
 };
 
 /* Piccoli attrezzi ------------------------------------------------------------ */
@@ -28,8 +38,8 @@ function col3(hex) {
   if (!c) { const v = rgb(hex.startsWith('rgb') ? '#888888' : hex); c = [v[0] / 255, v[1] / 255, v[2] / 255]; colCache.set(hex, c); }
   return c;
 }
-function canvas2d(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
-function pixTex(cv, { repeat = false, smooth = false } = {}) {
+export function canvas2d(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+export function pixTex(cv, { repeat = false, smooth = false } = {}) {
   const T = T3();
   const t = new T.CanvasTexture(cv);
   t.magFilter = smooth ? T.LinearFilter : T.NearestFilter;
@@ -60,7 +70,7 @@ function prims() {
 }
 
 // Raccoglie triangoli (posizione, normale, uv, colore) e li trasforma in una sola geometria.
-class Mesher {
+export class Mesher {
   constructor() { this.p = []; this.n = []; this.uv = []; this.c = []; }
   get empty() { return this.p.length === 0; }
   tri(a, b, c, ua, ub, uc, col) {
@@ -559,6 +569,116 @@ export function buildShop(shop) {
   return { group: grp, wallMat, top: y1 + 0.3 };
 }
 
+/* Municipio ----------------------------------------------------------------------------- */
+
+// Facciata: portico ad archi in bugnato, piano nobile con balconi, fascia con la scritta.
+function paintMunicipio(g, w, Hh, founders) {
+  const wall = '#ead2a2';
+  plaster(g, 0, 0, w, Hh, wall, 777, true);
+  // Bugnato del portico
+  const pH = 40;
+  g.fillStyle = '#d9cdb4'; g.fillRect(0, Hh - pH, w, pH);
+  g.fillStyle = 'rgba(90,70,40,0.3)';
+  for (let r = 0; r < 5; r++) { g.fillRect(0, Hh - pH + r * 8 + 7, w, 1); for (let c = 0; c < w; c += 12) g.fillRect(c + (r % 2) * 6, Hh - pH + r * 8, 1, 7); }
+  // Archi: interno in ombra, lampada, targhe dei Fondatori
+  const n = 5, aw = 22, gap = (w - n * aw) / (n + 1);
+  const wins = [];
+  let plaques = Math.min(founders, 40);
+  for (let i = 0; i < n; i++) {
+    const x = Math.round(gap + i * (aw + gap)), y = Hh - pH + 6;
+    g.fillStyle = '#efe6d2'; g.fillRect(x - 2, y, aw + 4, pH - 6); g.beginPath(); g.arc(x + aw / 2, y + 2, aw / 2 + 2, Math.PI, 0); g.fill();
+    g.fillStyle = '#5a4634'; g.fillRect(x, y + 2, aw, pH - 8); g.beginPath(); g.arc(x + aw / 2, y + 2, aw / 2, Math.PI, 0); g.fill();
+    g.fillStyle = '#6e5842'; g.fillRect(x + 2, y + 10, aw - 4, pH - 16);
+    g.fillStyle = '#e2bf4f';
+    for (let k = 0; k < 8 && plaques > 0; k++, plaques--) g.fillRect(x + 3 + (k % 4) * 4.5, y + 12 + Math.floor(k / 4) * 5, 3, 3);
+    if (i === 2) { g.fillStyle = '#7a3f22'; g.fillRect(x + 4, y + 8, aw - 8, pH - 14); g.fillStyle = '#e2bf4f'; g.fillRect(x + aw / 2 - 1, y + 20, 2, 3); }
+    g.fillStyle = '#1f2a26'; g.fillRect(x + aw / 2 - 1, y - 6, 2, 3); g.fillStyle = '#ffe2a0'; g.fillRect(x + aw / 2 - 1, y - 3, 2, 2);
+    wins.push([[x + aw / 2 - 2, y - 4], [x + aw / 2 + 2, y - 4], [x + aw / 2 + 2, y], [x + aw / 2 - 2, y]]);
+  }
+  // Cornice sopra il portico
+  g.fillStyle = '#f4ead2'; g.fillRect(0, Hh - pH - 3, w, 3); g.fillStyle = 'rgba(30,15,5,0.25)'; g.fillRect(0, Hh - pH, w, 2);
+  // Piano nobile: finestre alte con le persiane e i balconcini
+  const o = { lit: false, night: false, door: '#2f6b4f', detail: true, wins, flowers: ['#e85d75', '#f6d84a'] };
+  for (let i = 0; i < n; i++) {
+    const x = Math.round(gap + i * (aw + gap)) + 6;
+    window3(g, x, 14, 10, 22, o, { box: i !== 2 });
+    if (i === 2) { g.fillStyle = '#1f2a26'; g.fillRect(x - 6, 30, 22, 1); for (let k = 0; k <= 7; k++) g.fillRect(x - 6 + k * 3, 30, 1, 7); }
+  }
+  // Fascia con la scritta
+  g.fillStyle = '#7a2c2c'; g.fillRect(w / 2 - 34, 2, 68, 10);
+  g.fillStyle = '#f6e7b8'; g.font = '800 8px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('MUNICIPIO', w / 2, 7.5); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  return wins;
+}
+export function buildMunicipio(founders) {
+  const T = T3();
+  const M = mats();
+  const grp = new T.Group();
+  const Wp = 152, Hh = 96, D = 54;
+  const AW = Wp + D + 8, AH = Hh + 4;
+  const atlas = canvas2d(AW, AH), g = atlas.getContext('2d');
+  g.fillStyle = '#ead2a2'; g.fillRect(0, 0, AW, AH);
+  g.save(); g.translate(2, 2);
+  const wins = paintMunicipio(g, Wp, Hh, founders).map((q) => q.map(([x, y]) => [x + 2, y + 2]));
+  g.restore();
+  wins.push(...paintSide(g, Wp + 6, 2, D, Hh, { wall: '#ead2a2', door: '#2f6b4f', flowers: ['#e85d75', '#f6d84a'], hs: 5 }, 1));
+  const tex = pixTex(atlas);
+  const wallMat = new T.MeshLambertMaterial({ map: tex, emissive: '#ffffff', emissiveIntensity: 0 });
+  wallMat.userData.lights = () => (wallMat.userData.lt ||= paintLights(AW, AH, wins));
+  const u = (px) => px / PX;
+  const x0 = -u(Wp / 2), x1 = u(Wp / 2), z1 = 0, z0 = -u(D), y1 = u(Hh);
+  const uvF = [2 / AW, 1 - (2 + Hh) / AH, (2 + Wp) / AW, 1 - 2 / AH], uvS = [(Wp + 6) / AW, 1 - (2 + Hh) / AH, (Wp + 6 + D) / AW, 1 - 2 / AH];
+  const wm = new Mesher();
+  wm.quad([x0, 0, z1], [x1, 0, z1], [x1, y1, z1], [x0, y1, z1], '#ffffff', uvF);
+  wm.quad([x1, 0, z1], [x1, 0, z0], [x1, y1, z0], [x1, y1, z1], '#ffffff', uvS);
+  wm.quad([x0, 0, z0], [x0, 0, z1], [x0, y1, z1], [x0, y1, z0], '#ffffff', uvS);
+  wm.quad([x1, 0, z0], [x0, 0, z0], [x0, y1, z0], [x1, y1, z0], '#ffffff', uvS);
+  const walls = new T.Mesh(wm.build(), wallMat); walls.castShadow = walls.receiveShadow = true; grp.add(walls);
+  // Tetto a padiglione, cornicione, timpano con l'orologio
+  const rm = new Mesher(), o = 0.14, zm = (z0 + z1) / 2, rh = 0.62, hx = (z1 - z0) / 2;
+  const sl = Math.hypot(hx + o, rh) * 0.5;
+  rm.quad([x0 - o, y1, z1 + o], [x1 + o, y1, z1 + o], [x1 - hx, y1 + rh, zm], [x0 + hx, y1 + rh, zm], '#ffffff', [0, 0, (x1 - x0) * 0.5, sl]);
+  rm.quad([x1 + o, y1, z0 - o], [x0 - o, y1, z0 - o], [x0 + hx, y1 + rh, zm], [x1 - hx, y1 + rh, zm], '#ffffff', [0, 0, (x1 - x0) * 0.5, sl]);
+  rm.tri([x0 - o, y1, z0 - o], [x0 - o, y1, z1 + o], [x0 + hx, y1 + rh, zm], [0, 0], [1, 0], [0.5, sl], '#ffffff');
+  rm.tri([x1 + o, y1, z1 + o], [x1 + o, y1, z0 - o], [x1 - hx, y1 + rh, zm], [0, 0], [1, 0], [0.5, sl], '#ffffff');
+  const roof = new T.Mesh(rm.build(), roofMat('#b5523b')); roof.castShadow = roof.receiveShadow = true; grp.add(roof);
+  const ex = new Mesher();
+  ex.box(x0 - 0.1, y1 - 0.06, z0 - 0.1, x1 + 0.1, y1 + 0.02, z1 + 0.1, '#f4ead2');
+  // Timpano sopra l'ingresso, con l'orologio e lo stemma
+  ex.tri([-0.75, y1, z1 + 0.06], [0.75, y1, z1 + 0.06], [0, y1 + 0.7, z1 + 0.06], [0, 0], [1, 0], [0, 1], '#f1e2c2');
+  ex.tri([0.75, y1, z1 - 0.3], [-0.75, y1, z1 - 0.3], [0, y1 + 0.7, z1 - 0.3], [0, 0], [1, 0], [0, 1], '#e2cfa6');
+  ex.quad([0.75, y1, z1 + 0.06], [0.75, y1, z1 - 0.3], [0, y1 + 0.7, z1 - 0.3], [0, y1 + 0.7, z1 + 0.06], '#b5523b');
+  ex.quad([0, y1 + 0.7, z1 + 0.06], [0, y1 + 0.7, z1 - 0.3], [-0.75, y1, z1 - 0.3], [-0.75, y1, z1 + 0.06], '#a8492f');
+  ex.prim('cyl10', 0, y1 + 0.26, z1 + 0.07, 0.17, 0.03, 0.17, '#f4efe3', 0, Math.PI / 2);
+  ex.prim('cyl10', 0, y1 + 0.26, z1 + 0.064, 0.185, 0.03, 0.185, '#3b3f45', 0, Math.PI / 2);
+  ex.box(-0.008, y1 + 0.26, z1 + 0.1, 0.008, y1 + 0.38, z1 + 0.11, '#1f1f1f');
+  ex.box(-0.008, y1 + 0.255, z1 + 0.1, 0.08, y1 + 0.27, z1 + 0.11, '#1f1f1f');
+  // Balcone centrale con le tre bandiere
+  ex.box(-0.5, u(Hh - 62), 0, 0.5, u(Hh - 60), 0.32, '#e6dcc6');
+  for (let k = 0; k <= 12; k++) ex.box(-0.5 + k * 0.083, u(Hh - 60), 0.29, -0.49 + k * 0.083, u(Hh - 60) + 0.26, 0.31, '#1f2a26');
+  ex.box(-0.5, u(Hh - 60) + 0.25, 0.28, 0.5, u(Hh - 60) + 0.28, 0.32, '#1f2a26');
+  const flag = (px, cols, star) => {
+    const fy = u(Hh - 60) + 0.25, fz = 0.3;
+    ex.prim('cyl6', px, fy, fz, 0.012, 1.1, 0.012, '#c9c3b5', 0, px > 0 ? -0.35 : px < 0 ? 0.35 : 0);
+    const tx = px + (px > 0 ? 1 : px < 0 ? -1 : 0) * 0.36 + (px === 0 ? 0 : 0), ty = fy + 1.0;
+    const w = 0.42, h = 0.28;
+    for (let i = 0; i < cols.length; i++) {
+      const a = tx + (i / cols.length) * w * 0.98, b = tx + ((i + 1) / cols.length) * w * 0.98;
+      ex.quad([a, ty - h, fz], [b, ty - h, fz], [b, ty, fz], [a, ty, fz], cols[i]);
+      ex.quad([b, ty - h, fz], [a, ty - h, fz], [a, ty, fz], [b, ty, fz], cols[i]);
+    }
+    if (star) for (let k = 0; k < 8; k++) { const a2 = (k / 8) * Math.PI * 2; ex.box(tx + w / 2 + Math.cos(a2) * 0.08 - 0.008, ty - h / 2 + Math.sin(a2) * 0.08 - 0.008, fz - 0.005, tx + w / 2 + Math.cos(a2) * 0.08 + 0.008, ty - h / 2 + Math.sin(a2) * 0.08 + 0.008, fz + 0.005, '#f2c94c'); }
+  };
+  flag(-0.36, ['#2f8f4f', '#f4efe3', '#c8283c']);
+  flag(0.0, ['#c8283c', '#e2bf4f']);
+  flag(0.36, ['#2e4f9f'], true);
+  // Scalinata, lampioni ai lati, fioriere
+  for (let k = 0; k < 3; k++) ex.box(-0.75 - k * 0.12, 0, 0.02 + k * 0.12, 0.75 + k * 0.12, 0.12 - k * 0.04, 0.16 + k * 0.12, k % 2 ? '#d9cdb4' : '#e6dcc6');
+  for (const px of [x0 + 0.25, x1 - 0.25]) { ex.box(px - 0.22, 0, 0.08, px + 0.22, 0.28, 0.42, '#c9b48f'); bushIn(ex, px, 0.26, 0.25, 1.0, '#4c8a3a', '#e85d75'); }
+  const extra = new T.Mesh(ex.build(), M.vcFlat); extra.castShadow = extra.receiveShadow = true; grp.add(extra);
+  return { group: grp, wallMat, top: y1 + 0.9 };
+}
+
 /* Alberi, lampioni, piazza: tutto in una geometria sola ----------------------------- */
 
 function treeIn(m, kind, x, y, z, s, seed) {
@@ -647,7 +767,7 @@ export class Town3D {
     this.r.shadowMap.autoUpdate = false;
     this.scene = new T.Scene();
     this.camera = new T.PerspectiveCamera(30, 1, 0.5, 600);
-    this.view = { x: 40.5, y: 27.5, dist: 34, az: 0, pitch: 0.92 };
+    this.view = { x: 40.5, y: 27.5, dist: 34, az: 0, pitch: 0.82 };
     this.aniso = this.r.capabilities.getMaxAnisotropy();
     // Luci: cielo e terra, sole caldo del pomeriggio da sud-ovest con le ombre
     this.hemi = new T.HemisphereLight('#fff4e0', '#8a9a6a', 0.52);
@@ -800,6 +920,7 @@ export class Town3D {
     for (const [slot, cur] of this.houses) if (!seen.has(slot)) { this.world.remove(cur.group); disposeTree(cur.group); this.houses.delete(slot); this.shadowDirty = true; }
     if (!this.shops.size) {
       for (const shop of SHOPS) {
+        if (shop.kind === 'comune') continue;     // il Municipio si costruisce con la piazza
         const b = buildShop(shop);
         const x = shop.x0 + 1, y = shop.y0 + 1;
         b.group.position.set(x, townSurface(G, ramps, x, y + 0.5) / PX, shop.y0 + 1.96);
@@ -945,7 +1066,7 @@ export class Town3D {
       m.prim('cyl6', cx, h0, cz, 0.018, 1.25, 0.018, '#6b4a2f');
       m.prim('cone8', cx, h0 + 1.05, cz, 0.62, 0.3, 0.62, '#f6ecd4');
     }
-    for (const [x, y, i] of [[36, 21, 0], [38, 21, 1], [42, 21, 2], [36, 28, 3], [44, 23, 0], [44, 27, 1], [38, 29, 2], [42, 29, 3], [39, 23, 1], [41, 27, 2]]) potIn(m, x + 0.5, pH(x, y), y + 0.5, i);
+    for (const [x, y, i] of [[36, 21, 0], [37, 21, 1], [43, 22, 2], [36, 28, 3], [44, 23, 0], [44, 27, 1], [38, 29, 2], [42, 29, 3], [39, 23, 1], [41, 27, 2]]) potIn(m, x + 0.5, pH(x, y), y + 0.5, i);
     // Edicola e Muro dei Fondatori: si possono toccare
     this.props = [];
     const pm = new Mesher();
@@ -962,15 +1083,15 @@ export class Town3D {
       this.props.push(ed);
     }
     {
-      const mm = new Mesher();
-      const [m0] = D.muro, mL = D.muro[D.muro.length - 1], h0 = pH(...m0), z = m0[1] + 0.5;
-      mm.box(m0[0] + 0.05, h0, z - 0.14, mL[0] + 0.95, h0 + 0.62, z + 0.14, '#c9b48f');
-      mm.box(m0[0], h0 + 0.62, z - 0.18, mL[0] + 1, h0 + 0.7, z + 0.18, '#e6d6b3');
-      const n = Math.min(founders, 18);
-      for (let k = 0; k < n; k++) { const px = m0[0] + 0.2 + (k % 9) * 0.29, py = h0 + 0.42 - Math.floor(k / 9) * 0.22; mm.box(px, py, z + 0.14, px + 0.2, py + 0.13, z + 0.16, '#e2bf4f'); }
-      const mu = new T.Mesh(mm.build(), mats().vcFlat); mu.castShadow = mu.receiveShadow = true;
-      mu.userData.pick = { kind: 'muro', x: m0[0] + 1, y: m0[1] };
-      this.props.push(mu);
+      // Municipio: chiude la piazza a nord; le targhe dei Fondatori stanno sotto il portico
+      const sh = SHOPS.find((q) => q.kind === 'comune');
+      if (this.municipio) { this.world.remove(this.municipio.group); disposeTree(this.municipio.group); }
+      const b = buildMunicipio(founders);
+      b.group.position.set(sh.x0 + sh.w / 2, pH(sh.x0 + 2, sh.y0 + 1), sh.y0 + sh.d - 0.04);
+      b.group.userData.pick = { kind: 'shop', shop: sh.id };
+      this.world.add(b.group);
+      this.municipio = b;
+      this.shops.set(sh.id, b);
     }
     // Pozze di luce sotto i lampioni (si vedono solo di notte)
     if (this.pools) { this.scene.remove(this.pools); this.pools.geometry.dispose(); }
@@ -1073,41 +1194,32 @@ export class Town3D {
     }
   }
 
-  /* Omini: sprite disegnati in pixel, sempre rivolti alla telecamera */
-  setAvatar(id, { x, y, h, cv, changed, me, night }) {
+  /* Omini in 3D: o = { x, y, h, look, ride, facing, pose, me } */
+  setAvatar(id, o) {
     const T = T3();
     let s = this.sprites.get(id);
     if (!s) {
-      const tex = pixTex(cv); tex.minFilter = T.LinearFilter; tex.generateMipmaps = false;
-      const mat = new T.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.4 });
-      const sp = new T.Sprite(mat);
-      sp.center.set(0.5, 16 / cv.height);
-      sp.scale.set(cv.width / 66, cv.height / 66, 1);
+      const av = new Avatar3D(o.look, { ride: o.ride, scale: 0.95 });
+      if (o.me) av.makeGhost();
       const blob = new T.Mesh(new T.CircleGeometry(0.2, 12), mats().shadow);
       blob.rotation.x = -Math.PI / 2;
-      this.scene.add(sp, blob);
-      s = { sp, blob, tex, ghost: null };
-      if (me) {
-        // Il proprio omino si intravede anche dietro le case
-        const gm = new T.SpriteMaterial({ map: tex, transparent: true, opacity: 0.32, depthTest: false, color: '#203040' });
-        s.ghost = new T.Sprite(gm); s.ghost.center.copy(sp.center); s.ghost.scale.copy(sp.scale); s.ghost.renderOrder = -1;
-        this.scene.add(s.ghost);
-      }
+      this.scene.add(av.group, blob);
+      s = { av, blob };
       this.sprites.set(id, s);
-    }
-    if (changed) s.tex.needsUpdate = true;
-    s.sp.position.set(x, h, y);
-    s.sp.material.color.set(night ? '#a9b1d6' : '#ffffff');
-    s.blob.position.set(x, this.groundAt(x, y) + 0.02, y);
-    if (s.ghost) s.ghost.position.copy(s.sp.position);
+    } else s.av.set(o.look, o.ride);
+    s.av.group.position.set(o.x, o.h, o.y);
+    s.av.group.rotation.y = o.facing;
+    s.av.pose(o.pose);
+    s.blob.position.set(o.x, this.groundAt(o.x, o.y) + 0.02, o.y);
     s.seen = true;
   }
   sweepAvatars() {
     for (const [id, s] of this.sprites) {
-      if (!s.seen) { this.scene.remove(s.sp, s.blob); if (s.ghost) this.scene.remove(s.ghost); s.tex.dispose(); s.sp.material.dispose(); this.sprites.delete(id); }
+      if (!s.seen) { this.scene.remove(s.av.group, s.blob); s.av.dispose(); s.blob.geometry.dispose(); this.sprites.delete(id); }
       else s.seen = false;
     }
   }
+  avatarHead(id) { const s = this.sprites.get(id); return s ? s.av.group.position.y + 1.0 : null; }
 
   setSelected(slot) {
     const T = T3();

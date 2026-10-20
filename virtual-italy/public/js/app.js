@@ -5,11 +5,11 @@ import {
   districtAt, districtById, parseKey, makeStyle, residentHouse, builtCount, isFounder, areFriends, friendsOf,
   formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook, SAY_PRESETS, SAY_MAX,
   FURNI, FLOORS, WALLS, ACCESS, ROOM_DOOR, furniById, roomOf, canVisit,
-  SHOPS, shopById, isShopRoom, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
+  SHOPS, COMUNE, shopById, isShopRoom, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
   seatAt, footprint, missionStatus, progressOf, dayKey, weekKey, heartsThisWeek, weekRanking, WELCOME_PRIZE,
   RIDES, rideById, walkable, W, SEA_Y, BENCHES, WALK_SPEED,
 } from './core.js';
-import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook, drawFurniIcon, drawAvatarIcon, drawRideIcon } from './render.js';
+import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook, drawFurniIcon, drawAvatarIcon, drawAvatarBust, drawRideIcon } from './render.js';
 import { RemoteStore, LocalStore } from './store.js';
 
 const DEMO = window.__VI_MODE === 'demo' || new URLSearchParams(location.search).has('demo');
@@ -119,7 +119,7 @@ function shell() {
   );
   map = new CityMap($('#map'), { onTap });
   if (!map.t3) for (const b of document.querySelectorAll('.zoom .turn')) b.hidden = true;
-  window.__virtualItaly = { store, map }; // comodo per il debug dalla console
+  window.__virtualItaly = { store, map, preview: drawAvatarPreview, look: avatarLook, icon: drawAvatarIcon }; // comodo per il debug dalla console
 }
 
 const BRAND_MARK = '<svg viewBox="0 0 64 64" width="30" height="30"><rect width="64" height="64" rx="16" fill="#f2b632"/><path d="M15 44V28h34v16z" fill="#fbf3dc"/><path d="M11 29 32 12l21 17z" fill="#b5523b"/><path d="M28 44v-9h8v9z" fill="#2f5d50"/><path d="M19 31h6v5h-6zM39 31h6v5h-6z" fill="#2f5d50"/><path d="M6 48h52" stroke="#2f5d50" stroke-width="4" stroke-linecap="round"/></svg>';
@@ -222,6 +222,7 @@ function update() {
       h('span', { class: 'goal-track' }, h('span', { class: 'goal-fill', style: `width:${Math.round(g.ratio * 100)}%` }))));
   let cta;
   if (!mine) cta = h('button', { class: 'btn primary big', onclick: openRegister }, 'Vieni ad abitare qui');
+  else if (!house && !registered()) cta = h('button', { class: 'btn primary big', onclick: goToComune }, icon('home'), 'Vai in Municipio');
   else if (!house) cta = h('button', { class: 'btn primary big', onclick: startChoosing }, 'Scegli il tuo lotto');
   else if (house.status === 'casa') cta = h('button', { class: 'btn primary big', onclick: () => enterHouse(mine.id) }, icon('home'), 'Entra in casa');
   else cta = h('button', { class: 'btn big', onclick: () => { map.focus(house.slot, 2); openHouse(house.slot); } }, icon('home'), 'La mia casa');
@@ -499,8 +500,8 @@ function openRegister() {
         });
         devLinkToast(r);
         closeSheet();
-        toast(`Account creato. Ti abbiamo mandato un'email per confermare.`);
-        openCharacter({ first: true });
+        toast(`Account creato. Prima tappa: il Municipio, per l'iscrizione all'anagrafe.`);
+        goToComune();
       } catch (ex) { showError(err, ex); }
     });
   });
@@ -584,6 +585,7 @@ async function confirmEmail(token) {
 function startChoosing() {
   if (!me()) return openRegister();
   if (myHouse()) return toast('Hai già una casa a Virtual-Italy.');
+  if (!registered()) { toast('Prima passa in Municipio per l\'iscrizione all\'anagrafe.'); return goToComune(); }
   closeSheet();
   ui.mode = 'choose';
   map.fitCentro({ wide: true });
@@ -658,19 +660,26 @@ function openBuild(slot, { restyle = false } = {}) {
 
 /* Editor del personaggio ------------------------------------------------- */
 
-function openCharacter({ first = false } = {}) {
+const registered = () => !!myResident()?.anagrafe;
+// Cosa cambia passando da uomo a donna (e viceversa): pettinatura, barba, rossetto, vestito.
+function switchGender(look, g) {
+  if (look.gender === g) return;
+  look.gender = g;
+  const st = LOOK.style.find((o) => o.id === look.style);
+  if (st && st.g !== g && st.g !== 'tutti') look.style = LOOK.style.find((o) => o.g === g).id;
+  if (g === 'donna') look.beard = 'nessuno';
+  else { look.lips = 'naturale'; if (look.top === 'vestito') look.top = 'maglietta'; if (look.bottom === 'gonna') look.bottom = 'pantaloni'; }
+}
+// Editor a schede con il palco 3D in alto: si gira col dito, l'omino saluta a ogni cambio.
+// mode: 'look' (dal profilo) o 'anagrafe' (in Municipio, la prima volta).
+function openCharacter({ first = false, anagrafe = false, onDone = null } = {}) {
   const r = myResident();
   if (!r) return openLogin();
   const look = cleanLook(r.look, r.username);
-  const preview = h('canvas', { class: 'avatar-preview', width: 360, height: 360, 'aria-label': 'Anteprima del tuo personaggio' });
+  const preview = h('canvas', { class: 'avatar-stage', width: 360, height: 420, 'aria-label': 'Il tuo personaggio: trascina per girarlo' });
   const groups = h('div', { class: 'stack' });
-  // L'omino cammina sul posto e si gira nelle quattro direzioni.
-  const t0 = performance.now();
-  const animate = (t) => {
-    if (!preview.isConnected) return;
-    drawAvatarPreview(preview, avatarLook(r.username, look), t - t0);
-    requestAnimationFrame(animate);
-  };
+  let tab = ui.charTab || 'corpo';
+  const owned = (slot) => WEAR.filter((w) => w.slot === slot && ownsWear(store.city, r.id, w.id) && (w.id !== 'vestito' || look.gender === 'donna' || look.top === 'vestito'));
   const colorRow = (label, key, list) => h('div', {}, h('p', { class: 'field-label' }, label),
     h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': label }, list.map((c, i) => h('button', {
       type: 'button', class: 'swatch color' + (look[key] === i ? ' on' : ''), style: `--sw:${c}`, role: 'radio',
@@ -681,38 +690,105 @@ function openCharacter({ first = false } = {}) {
       type: 'button', class: 'swatch' + (look[key] === o.id ? ' on' : ''), role: 'radio', 'aria-checked': String(look[key] === o.id),
       onclick: () => { look[key] = o.id; paint(); },
     }, o.label))));
-  // Nei vestiti compare solo quello che si ha: i capi base più quelli presi alla Sartoria.
-  const owned = (slot) => WEAR.filter((w) => w.slot === slot && ownsWear(store.city, r.id, w.id));
-  const paint = () => groups.replaceChildren(
-    colorRow('Carnagione', 'skin', LOOK.skin),
-    idRow('Pettinatura', 'style', LOOK.style),
-    colorRow('Colore dei capelli', 'hair', LOOK.hair),
-    idRow('Maglia', 'top', owned('top')),
-    colorRow('Colore della maglia', 'shirt', LOOK.shirt),
-    idRow('Sotto', 'bottom', owned('bottom')),
-    colorRow('Colore di pantaloni e gonne', 'pants', LOOK.pants),
-    idRow('Accessorio', 'extra', owned('extra')),
-    WEAR.some((w) => !ownsWear(store.city, r.id, w.id)) ? h('p', { class: 'small' }, 'Altri vestiti e accessori ti aspettano alla Sartoria Moda, accanto alla piazza.') : null);
+  const genderRow = () => h('div', { class: 'gender-pick', role: 'radiogroup', 'aria-label': 'Uomo o donna' }, LOOK.gender.map((o) => h('button', {
+    type: 'button', class: 'gender' + (look.gender === o.id ? ' on' : ''), role: 'radio', 'aria-checked': String(look.gender === o.id),
+    onclick: () => { switchGender(look, o.id); paint(); },
+  }, h('span', { class: 'gender-ico', 'aria-hidden': 'true' }, o.id === 'uomo' ? '♂' : '♀'), o.label)));
+  const TABS = [{ id: 'corpo', label: 'Corpo' }, { id: 'capelli', label: 'Capelli e viso' }, { id: 'vestiti', label: 'Vestiti' }, { id: 'accessori', label: 'Accessori' }];
+  const paint = () => {
+    drawAvatarPreview(preview, avatarLook(r.username, look));
+    const tabs = h('div', { class: 'seg', role: 'tablist' }, TABS.map((o) => h('button', { class: 'seg-btn' + (tab === o.id ? ' on' : ''), role: 'tab', 'aria-selected': String(tab === o.id), onclick: () => { tab = ui.charTab = o.id; paint(); } }, o.label)));
+    let body;
+    if (tab === 'corpo') body = [genderRow(), colorRow('Carnagione', 'skin', LOOK.skin), colorRow('Colore degli occhi', 'eyes', LOOK.eyes)];
+    else if (tab === 'capelli') {
+      const mineFirst = [...LOOK.style.filter((o) => o.g === look.gender || o.g === 'tutti'), ...LOOK.style.filter((o) => o.g !== look.gender && o.g !== 'tutti')];
+      body = [idRow('Pettinatura', 'style', mineFirst), colorRow('Colore dei capelli', 'hair', LOOK.hair),
+        look.gender === 'uomo' ? idRow('Barba e baffi', 'beard', LOOK.beard) : idRow('Rossetto', 'lips', LOOK.lips)];
+    } else if (tab === 'vestiti') {
+      body = [idRow('Maglia', 'top', owned('top')), colorRow(look.top === 'vestito' ? 'Colore del vestito' : 'Colore della maglia', 'shirt', LOOK.shirt),
+        look.top === 'vestito' ? null : idRow('Sotto', 'bottom', owned('bottom')),
+        look.top === 'vestito' ? null : colorRow('Colore di pantaloni e gonne', 'pants', LOOK.pants),
+        colorRow('Scarpe', 'shoes', LOOK.shoes)];
+    } else {
+      body = [idRow('Accessorio', 'extra', owned('extra')),
+        WEAR.some((w) => !ownsWear(store.city, r.id, w.id)) ? h('p', { class: 'small' }, 'Cappelli, cuffie, sciarpe e altri capi ti aspettano alla Sartoria Moda, accanto alla piazza.') : null];
+    }
+    groups.replaceChildren(tabs, ...body.filter(Boolean));
+  };
   const shuffle = () => {
     const pick = (n) => Math.floor(Math.random() * n);
     const any = (list) => list[pick(list.length)].id;
-    Object.assign(look, { skin: pick(LOOK.skin.length), hair: pick(LOOK.hair.length), style: LOOK.style[pick(LOOK.style.length)].id,
-      shirt: pick(LOOK.shirt.length), pants: pick(LOOK.pants.length), extra: any(owned('extra')), top: any(owned('top')), bottom: any(owned('bottom')) });
+    const styles = LOOK.style.filter((o) => o.g === look.gender || o.g === 'tutti');
+    Object.assign(look, { skin: pick(LOOK.skin.length), eyes: pick(LOOK.eyes.length), hair: pick(LOOK.hair.length), style: any(styles),
+      shirt: pick(LOOK.shirt.length), pants: pick(LOOK.pants.length), shoes: pick(LOOK.shoes.length), extra: any(owned('extra')), top: any(owned('top')), bottom: any(owned('bottom')),
+      beard: look.gender === 'uomo' ? any(LOOK.beard) : 'nessuno', lips: look.gender === 'donna' ? any(LOOK.lips) : 'naturale' });
     paint();
   };
   paint();
+  const label = anagrafe ? 'Avanti: la carta d\'identità' : first ? 'Avanti: scegli il lotto' : 'Salva il personaggio';
   const save = h('button', { class: 'btn primary big', onclick: (e) => run(e.currentTarget, async () => {
-    await store.op({ type: 'look', look });
+    await store.op({ type: anagrafe ? 'anagrafe' : 'look', look });
+    if (onDone) return onDone();
     if (first) { toast('Che stile! Ora scegli dove costruire casa.'); startChoosing(); }
     else { closeSheet(); toast('Personaggio aggiornato'); }
-  }) }, first ? 'Avanti: scegli il lotto' : 'Salva il personaggio');
-  openSheet(first ? 'Come sei?' : 'Il mio personaggio', h('div', { class: 'stack' },
-    h('div', { class: 'avatar-head' }, preview,
-      h('div', { class: 'stack' },
-        h('p', { class: 'small' }, first ? `Questo è ${r.username}: così ti vedranno gli altri abitanti mentre passeggi.` : 'Così ti vedono gli altri abitanti mentre passeggi.'),
-        h('button', { class: 'btn small', onclick: shuffle }, 'A caso'))),
-    groups, save), { wide: true, onClose: first ? () => { if (!myHouse() && ui.mode !== 'choose') startChoosing(); } : undefined });
-  requestAnimationFrame(animate);
+  }) }, label);
+  openSheet(anagrafe ? 'Ufficio anagrafe · Come sei?' : first ? 'Come sei?' : 'Il mio personaggio', h('div', { class: 'char-editor' },
+    h('div', { class: 'char-stage' }, preview,
+      h('div', { class: 'char-stage-bar' },
+        h('span', { class: 'small' }, anagrafe ? `${r.username}, così ti vedranno in città.` : 'Trascina per girarlo.'),
+        h('button', { class: 'btn small', onclick: shuffle }, '🎲 A caso'))),
+    h('div', { class: 'stack' }, groups, save)), { wide: true });
+}
+
+/* Municipio: ufficio anagrafe ---------------------------------------------- */
+
+// La prima volta in città: si va in Municipio, ci si iscrive all'anagrafe (scegliendo il proprio
+// aspetto) e si ritira la carta d'identità. Solo dopo si può scegliere il lotto.
+function goToComune() {
+  const sh = shopById(COMUNE);
+  if (ui.room === sh.room) return openAnagrafe();
+  if (ui.room) exitHouse();
+  closeSheet();
+  map.focus([sh.x0 + 2, sh.y0 + 2]);
+  if (me() && map.avatarOf(me().id)) walkTo(...sh.front);
+  setTimeout(() => enterHouse(sh.room), me() && map.avatarOf(me().id) ? 1400 : 0);
+}
+function openAnagrafe() {
+  const r = myResident();
+  if (!r) return openRegister();
+  if (r.anagrafe) return openCarta();
+  openSheet('Ufficio anagrafe', h('div', { class: 'stack' },
+    h('p', { class: 'eyebrow' }, `Comune di ${CITY}`),
+    h('p', { class: 'lead' }, `Benvenuto, ${r.username}! Per diventare cittadino di ${CITY} serve l'iscrizione all'anagrafe.`),
+    h('ol', { class: 'steps' },
+      h('li', {}, h('strong', {}, 'Come sei: '), 'uomo o donna, viso, capelli e vestiti.'),
+      h('li', {}, h('strong', {}, 'La carta d\'identità: '), 'con la tua foto e il numero di cittadino.'),
+      h('li', {}, h('strong', {}, 'Il lotto: '), 'poi scegli dove costruire casa.')),
+    h('button', { class: 'btn primary big', onclick: () => openCharacter({ anagrafe: true, onDone: () => openCarta({ fresh: true }) }) }, 'Inizia l\'iscrizione')));
+}
+// La carta d'identità con il ritratto 3D.
+function openCarta({ fresh = false } = {}) {
+  const r = myResident();
+  if (!r) return;
+  const photo = h('canvas', { class: 'id-photo', width: 180, height: 220, 'aria-label': `Foto di ${r.username}` });
+  try { drawAvatarBust(photo, avatarLook(r.username, r.look)); } catch { /* senza foto */ }
+  const look = cleanLook(r.look, r.username);
+  const date = new Date(r.anagrafe || Date.now()).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+  const house = myHouse();
+  openSheet('Carta d\'identità', h('div', { class: 'stack' },
+    h('div', { class: 'id-card' },
+      h('div', { class: 'id-top' }, h('span', {}, 'REPUBBLICA DI'), h('strong', {}, CITY.toUpperCase()), h('span', {}, 'Carta d\'identità')),
+      h('div', { class: 'id-body' }, photo,
+        h('dl', { class: 'id-data' },
+          h('dt', {}, 'Nome'), h('dd', {}, r.username),
+          h('dt', {}, 'Cittadino n°'), h('dd', {}, r.number ? String(r.number) : 'dopo la conferma email'),
+          h('dt', {}, 'Sesso'), h('dd', {}, look.gender === 'donna' ? 'F' : 'M'),
+          h('dt', {}, 'Iscritto il'), h('dd', {}, date),
+          h('dt', {}, 'Residenza'), h('dd', {}, house ? `${districtById(districtAt(...parseKey(house.slot))).name}` : 'da scegliere'))),
+      h('div', { class: 'id-sign' }, h('span', {}, 'Firma'), h('em', {}, r.username))),
+    fresh ? h('p', {}, 'Ecco fatto: sei iscritto all\'anagrafe. Ora scegli il lotto dove costruire la tua casa.') : null,
+    !house ? h('button', { class: 'btn primary big', onclick: () => { if (ui.room) exitHouse(); startChoosing(); } }, 'Scegli il tuo lotto')
+      : h('button', { class: 'btn', onclick: () => openCharacter() }, 'Cambia aspetto')));
 }
 
 /* Case e abitanti -------------------------------------------------------- */
@@ -1054,7 +1130,11 @@ function enterHouse(ownerId) {
   store.move(...ROOM_DOOR, ownerId);
   map.enterRoom(ownerId);
   const shop = shopById(ownerId);
-  if (shop) setTimeout(() => map.say('npc:' + shop.id, shop.kind === 'wear' ? `Ciao ${mine.username}! Tocca un manichino o il catalogo.` : `Benvenuto ${mine.username}! Tocca un mobile per prenderlo.`), 350);
+  if (shop?.kind === 'comune') {
+    const fresh = !registered();
+    setTimeout(() => map.say('npc:' + shop.id, fresh ? `Benvenuto in Comune, ${mine.username}! Vieni allo sportello per l'iscrizione.` : `Buongiorno ${mine.username}! Come posso aiutarti?`), 350);
+    if (fresh) setTimeout(() => { if (ui.room === shop.room) openAnagrafe(); }, 900);
+  } else if (shop) setTimeout(() => map.say('npc:' + shop.id, shop.kind === 'wear' ? `Ciao ${mine.username}! Tocca un manichino o il catalogo.` : `Benvenuto ${mine.username}! Tocca un mobile per prenderlo.`), 350);
   update();
 }
 function exitHouse() {
@@ -1067,7 +1147,7 @@ function exitHouse() {
   store.move(x, y, null);
   map.exitRoom();
   if (house) map.focus(house.slot);
-  if (shop) map.focus([shop.x0 + 1, shop.y0 + 1]);
+  if (shop) map.focus([shop.x0 + Math.floor(shop.w / 2), shop.y0 + shop.d]);
   update();
 }
 // Dalla stanza al Mobilificio: si esce e si va a piedi fino alla sua porta.
@@ -1083,6 +1163,14 @@ function goToShop(id) {
 
 function openShop(shop) {
   map.set({ selected: null });
+  if (shop.kind === 'comune') {
+    return openSheet(shop.name, h('div', { class: 'stack' },
+      h('p', {}, `Il palazzo comunale di ${CITY}: qui c'è l'ufficio anagrafe, dove ogni nuovo abitante si iscrive e ritira la carta d'identità.`),
+      h('p', { class: 'small' }, `Allo sportello c'è ${shop.keeper}. Sotto il portico c'è il Muro dei Fondatori, con le targhe dei primi abitanti.`),
+      me() ? h('button', { class: 'btn primary big', onclick: () => enterHouse(shop.room) }, registered() ? 'Entra in Municipio' : 'Entra e iscriviti all\'anagrafe')
+        : h('button', { class: 'btn primary', onclick: openRegister }, 'Iscriviti per abitare qui'),
+      h('button', { class: 'btn', onclick: openMuro }, 'Muro dei Fondatori')));
+  }
   const what = shop.kind === 'wear' ? 'Maglie, gonne, cappelli e accessori per il tuo omino.'
     : shop.kind === 'ride' ? 'Skateboard, biciclette e monopattini elettrici: a piedi si va a passo d\'uomo, con un mezzo si gira la città più svelti.'
       : 'Mobili e decorazioni da portare a casa e sistemare come vuoi.';
@@ -1147,6 +1235,7 @@ function onNpcTap(id) {
   if (id.startsWith('npc:p:')) { map.say(id, ['Buongiorno!', 'Bella giornata, eh?', 'Ciao!', 'Hai visto la fontana?', 'Vado a prendere un caffè'][Math.floor(Math.random() * 5)]); return; }
   const shop = shopById(ui.room);
   if (!shop) return;
+  if (shop.kind === 'comune') return registered() ? openCarta() : openAnagrafe();
   const m = /^npc:man:(\d+)$/.exec(id);
   if (m) {
     // Il manichino mostra un capo in vendita: si apre la prova di quello.
@@ -1156,7 +1245,22 @@ function onNpcTap(id) {
   map.say(id, shop.kind === 'wear' ? 'Prova quello che vuoi, oggi è tutto gratis!' : shop.kind === 'ride' ? 'Fatti un giro di prova, oggi è tutto gratis!' : 'Scegli pure: oggi è tutto gratis!');
 }
 // Barra in basso dentro un negozio: il catalogo completo, diviso per reparto.
+function comuneBar(shop) {
+  const head = h('div', { class: 'room-head' },
+    h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, 'Sei in Municipio'), h('strong', {}, 'Ufficio anagrafe')),
+    h('span', { class: 'row-actions' }, h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
+  const r = myResident();
+  const actions = r && r.anagrafe
+    ? h('div', { class: 'row-wrap' },
+      h('button', { class: 'btn primary', onclick: () => openCarta() }, '🪪 La mia carta d\'identità'),
+      h('button', { class: 'btn', onclick: () => openCharacter() }, 'Cambia aspetto'),
+      h('button', { class: 'btn', onclick: openMuro }, 'Muro dei Fondatori'))
+    : h('button', { class: 'btn primary big', onclick: openAnagrafe }, 'Iscriviti all\'anagrafe');
+  void shop;
+  return h('div', { class: 'bar room-bar' }, head, actions, chatBar());
+}
 function shopBar(shop) {
+  if (shop.kind === 'comune') return comuneBar(shop);
   const head = h('div', { class: 'room-head' },
     h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, 'Sei in negozio'), h('strong', {}, shop.name)),
     h('span', { class: 'row-actions' }, h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
@@ -1328,9 +1432,10 @@ function syncAvatars() {
   })), ...shopPeople(), ...passersby()]);
 }
 // Commessi e manichini dei negozi: esistono solo sullo schermo, stanno fermi al loro posto.
-const KEEPER_LOOKS = { mobili: { skin: 2, hair: 6, style: 'corti', shirt: 3, pants: 3, top: 'camicia', bottom: 'pantaloni', extra: 'occhiali' },
-  moda: { skin: 1, hair: 0, style: 'coda', shirt: 9, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'nessuno' },
-  bici: { skin: 3, hair: 2, style: 'ricci', shirt: 4, pants: 1, top: 'felpa', bottom: 'pantaloncini', extra: 'cuffie' } };
+const KEEPER_LOOKS = { mobili: { gender: 'uomo', skin: 2, hair: 6, style: 'corti', beard: 'baffi', shirt: 3, pants: 3, top: 'camicia', bottom: 'pantaloni', extra: 'occhiali' },
+  moda: { gender: 'donna', skin: 1, hair: 0, style: 'coda', lips: 'rosso', shirt: 9, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'nessuno' },
+  bici: { gender: 'uomo', skin: 3, hair: 2, style: 'ricci', beard: 'barbetta', shirt: 4, pants: 1, top: 'felpa', bottom: 'pantaloncini', extra: 'cuffie' },
+  comune: { gender: 'donna', skin: 2, hair: 1, style: 'chignon', lips: 'rosa', shirt: 5, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'occhiali' } };
 // Passanti: gente del paese che fa due passi, si siede in piazza, prende il caffè. Esistono solo
 // sullo schermo di chi guarda e servono a dare vita alla città anche quando gli abitanti sono pochi.
 const PASSERSBY = Array.from({ length: 8 }, (_, i) => ({
@@ -1367,7 +1472,7 @@ function strollPassersby() {
 function shopPeople() {
   const out = SHOPS.map((sh) => ({ id: 'npc:' + sh.id, name: sh.keeper, look: KEEPER_LOOKS[sh.id], pos: [...SHOP_KEEPER_AT, sh.room], dir: 'SW' }));
   MANNEQUINS.forEach((m, i) => {
-    const colors = { ...avatarLook('manichino', m.look), skin: '#e9e4da', hair: '#e9e4da', style: 'corti' };
+    const colors = { ...avatarLook('manichino', m.look), skin: '#e9e4da', hair: '#e9e4da', style: 'pelato', mannequin: true };
     out.push({ id: 'npc:man:' + i, name: '', colors, pos: [...m.at, 'shop:moda'], dir: i % 2 ? 'SW' : 'SE' });
   });
   return out;

@@ -396,6 +396,33 @@ body.in-room .toasts { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 1
 .ranking li { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
 .ranking .small { margin: 0; }
 
+/* Editor del personaggio: palco 3D, uomo o donna, schede */
+.char-editor { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 720px) { .char-editor { grid-template-columns: 300px minmax(0, 1fr); align-items: start; } .char-stage { position: sticky; top: 0; } }
+.char-stage { display: grid; gap: 6px; background: linear-gradient(180deg, #d7eef7, #bfe0ec); border-radius: 18px; padding: 8px; position: sticky; top: 0; z-index: 2; box-shadow: 0 6px 12px -8px rgba(0,0,0,0.25); }
+.avatar-stage { width: 100%; height: 300px; display: block; cursor: grab; touch-action: none; }
+@media (max-width: 719px) { .avatar-stage { height: 210px; } }
+.char-stage-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 2px; }
+.char-stage-bar .small { color: #33524a; }
+.gender-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gender { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 64px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); font-weight: 800; font-size: 1.05rem; color: var(--ink); cursor: pointer; }
+.gender.on { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 14%, var(--surface)); }
+.gender-ico { font-size: 1.6rem; line-height: 1; }
+.steps { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+
+/* Carta d'identità */
+.id-card { border-radius: 16px; padding: 14px; background: linear-gradient(135deg, #f3ead2, #e5d6b2); border: 1px solid #c9b48f; box-shadow: 0 6px 18px rgba(60,40,10,0.18); color: #3a2f1f; display: grid; gap: 10px; }
+.id-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px dashed #b49a6c; padding-bottom: 8px; }
+.id-top strong { font-family: "Abril Fatface", Georgia, serif; font-size: 1.1rem; letter-spacing: 0.04em; color: #7a2c2c; }
+.id-top span:last-child { margin-left: auto; }
+.id-body { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; align-items: start; }
+.id-photo { width: 110px; height: 134px; border-radius: 8px; background: #cfe6ef; border: 1px solid #b49a6c; }
+.id-data { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; font-size: 0.9rem; }
+.id-data dt { color: #7a6a4f; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; align-self: center; }
+.id-data dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
+.id-sign { display: flex; align-items: baseline; gap: 10px; font-size: 0.75rem; color: #7a6a4f; }
+.id-sign em { font-family: "Abril Fatface", Georgia, serif; font-size: 1.1rem; color: #2a3f6a; }
+
 </style>
 <div id="app"></div>
 <script>window.__VI_MODE = 'demo';</script>
@@ -493,23 +520,37 @@ const DECOS = [
 const SHAPES = ['casa', 'villetta', 'torretta'];
 
 // I negozi sono edifici veri ai lati della piazza, con la vetrina sulla strada principale.
-// Occupano un blocco 2×2 (x0..x0+1, y0..y0+1) e la porta dà sulla casella `front`.
+// Occupano un blocco w×d (di solito 2×2) e la porta dà sulla casella `front`.
+// Il Municipio chiude la piazza a nord, accanto al campanile: lì c'è l'ufficio anagrafe.
 const SHOPS = [
   { id: 'mobili', name: 'Mobilificio Bottega', sign: 'MOBILI', kind: 'furni', x0: 33, y0: 28, keeper: 'Gino' },
   { id: 'moda', name: 'Sartoria Moda', sign: 'MODA', kind: 'wear', x0: 46, y0: 28, keeper: 'Rosa' },
   { id: 'bici', name: 'Ciclofficina Ruota Libera', sign: 'BICI', kind: 'ride', x0: 51, y0: 28, keeper: 'Tonino' },
-].map((sh) => ({ ...sh, room: 'shop:' + sh.id, front: [sh.x0, MAIN_Y] }));
+  { id: 'comune', name: 'Municipio', sign: 'MUNICIPIO', kind: 'comune', x0: 38, y0: 21, w: 5, d: 2, keeper: 'Carla', front: [40, 23] },
+].map((sh) => ({ w: 2, d: 2, front: [sh.x0, MAIN_Y], ...sh, room: 'shop:' + sh.id }));
+const COMUNE = 'comune';
 const shopById = (id) => SHOPS.find((sh) => sh.id === id || sh.room === id) || null;
-const shopAt = (x, y) => SHOPS.find((sh) => x >= sh.x0 && x <= sh.x0 + 1 && y >= sh.y0 && y <= sh.y0 + 1) || null;
+const shopAt = (x, y) => SHOPS.find((sh) => x >= sh.x0 && x < sh.x0 + sh.w && y >= sh.y0 && y < sh.y0 + sh.d) || null;
 const isShopRoom = (room) => typeof room === 'string' && room.startsWith('shop:') && !!shopById(room);
 
 // Editor del personaggio: ogni scelta è un indice (colori) o un id (pettinatura, accessorio).
 const LOOK = {
+  gender: [{ id: 'uomo', label: 'Uomo' }, { id: 'donna', label: 'Donna' }],
   skin: ['#f6dcc6', '#f3d2b3', '#e8b98f', '#c98d63', '#a8714a', '#8d5b3d', '#5e3b26'],
+  eyes: ['#3b2a1e', '#6b4a2f', '#4f7fa8', '#4f8a52', '#7d8d9a'],
   hair: ['#1f1a17', '#3b2a1e', '#6b4226', '#a4532e', '#d9a441', '#efd9a0', '#8a8a8a', '#e86b8a', '#3f6aa1'],
-  style: [{ id: 'corti', label: 'Corti' }, { id: 'lunghi', label: 'Lunghi' }, { id: 'coda', label: 'Coda' }, { id: 'ricci', label: 'Ricci' }],
+  // Pettinature: `g` dice per chi sono pensate (si possono scegliere tutte)
+  style: [
+    { id: 'corti', label: 'Corti', g: 'uomo' }, { id: 'ciuffo', label: 'Ciuffo', g: 'uomo' }, { id: 'rasati', label: 'Rasati', g: 'uomo' },
+    { id: 'spettinati', label: 'Spettinati', g: 'uomo' }, { id: 'pelato', label: 'Pelato', g: 'uomo' },
+    { id: 'lunghi', label: 'Lunghi', g: 'donna' }, { id: 'coda', label: 'Coda', g: 'donna' }, { id: 'caschetto', label: 'Caschetto', g: 'donna' },
+    { id: 'chignon', label: 'Chignon', g: 'donna' }, { id: 'trecce', label: 'Trecce', g: 'donna' }, { id: 'ricci', label: 'Ricci', g: 'tutti' },
+  ],
+  beard: [{ id: 'nessuno', label: 'Niente' }, { id: 'barbetta', label: 'Barbetta' }, { id: 'barba', label: 'Barba' }, { id: 'baffi', label: 'Baffi' }, { id: 'pizzetto', label: 'Pizzetto' }],
+  lips: [{ id: 'naturale', label: 'Naturali' }, { id: 'rosa', label: 'Rosa' }, { id: 'rosso', label: 'Rosso' }],
   shirt: ['#d9442f', '#e88a3a', '#e0a92a', '#2f7d4f', '#4fb3c8', '#3f6aa1', '#7a4a6b', '#e86b8a', '#f1ede4', '#2d2d2d'],
-  pants: ['#2d3a4a', '#2f4f6f', '#4b4f56', '#6b4a2f', '#c9b48f', '#2d2d2d'],
+  pants: ['#2d3a4a', '#2f4f6f', '#4b4f56', '#6b4a2f', '#c9b48f', '#2d2d2d', '#7a4a6b', '#c0392b'],
+  shoes: ['#2b2b2b', '#6b4a2f', '#f1ede4', '#c0392b', '#3f6aa1'],
   extra: [{ id: 'nessuno', label: 'Niente' }, { id: 'cappellino', label: 'Cappellino' }, { id: 'occhiali', label: 'Occhiali' }, { id: 'fiore', label: 'Fiore' }],
 };
 // Vestiti: i capi base li hanno tutti, gli altri si prendono alla Sartoria Moda.
@@ -521,9 +562,10 @@ const WEAR = [
   { id: 'felpa', slot: 'top', label: 'Felpa', price: 45 },
   { id: 'giacca', slot: 'top', label: 'Giacca', price: 80 },
   { id: 'canotta', slot: 'top', label: 'Canottiera', price: 20 },
+  { id: 'vestito', slot: 'top', label: 'Vestito', base: true },
   { id: 'pantaloni', slot: 'bottom', label: 'Pantaloni', base: true },
   { id: 'pantaloncini', slot: 'bottom', label: 'Pantaloncini', price: 25 },
-  { id: 'gonna', slot: 'bottom', label: 'Gonna', price: 30 },
+  { id: 'gonna', slot: 'bottom', label: 'Gonna', base: true },
   { id: 'nessuno', slot: 'extra', label: 'Niente', base: true },
   { id: 'cappellino', slot: 'extra', label: 'Cappellino', base: true },
   { id: 'occhiali', slot: 'extra', label: 'Occhiali', base: true },
@@ -549,10 +591,13 @@ const wearOf = (slot) => WEAR.filter((w) => w.slot === slot);
 // Aspetto di partenza, uguale per sempre per lo stesso nome finché l'abitante non sceglie il suo.
 function defaultLook(name) {
   const h = hash(String(name));
+  const gender = (h >>> 17) % 2 ? 'donna' : 'uomo';
+  const styles = LOOK.style.filter((o) => o.g === gender);
   return {
-    skin: h % LOOK.skin.length, hair: (h >>> 3) % 6, style: LOOK.style[(h >>> 14) % 2].id,
-    shirt: (h >>> 6) % LOOK.shirt.length, pants: (h >>> 9) % 4, extra: (h >>> 12) % 3 === 0 ? 'cappellino' : 'nessuno',
-    top: 'maglietta', bottom: 'pantaloni',
+    gender, skin: h % LOOK.skin.length, eyes: (h >>> 20) % LOOK.eyes.length, hair: (h >>> 3) % 6, style: styles[(h >>> 14) % 3].id,
+    beard: gender === 'uomo' && (h >>> 22) % 3 === 0 ? 'barbetta' : 'nessuno', lips: 'naturale',
+    shirt: (h >>> 6) % LOOK.shirt.length, pants: (h >>> 9) % 4, shoes: (h >>> 24) % 3, extra: (h >>> 12) % 3 === 0 ? 'cappellino' : 'nessuno',
+    top: 'maglietta', bottom: gender === 'donna' && (h >>> 26) % 2 ? 'gonna' : 'pantaloni',
   };
 }
 function cleanLook(raw, name) {
@@ -560,10 +605,19 @@ function cleanLook(raw, name) {
   const r = raw && typeof raw === 'object' ? raw : {};
   const idx = (v, list, fb) => (Number.isInteger(v) && v >= 0 && v < list.length ? v : fb);
   const id = (v, list, fb) => (list.some((o) => o.id === v) ? v : fb);
+  // Chi ha scelto l'aspetto prima che ci fossero uomo e donna tiene la sua pettinatura
+  const gender = id(r.gender, LOOK.gender, r.style && LOOK.style.find((o) => o.id === r.style)?.g === 'donna' ? 'donna' : base.gender);
+  // Se il genere scelto non è quello di partenza, anche pettinatura e vestiti di partenza cambiano
+  if (gender !== base.gender) {
+    base.style = LOOK.style.find((o) => o.g === gender).id;
+    base.bottom = 'pantaloni';
+    base.beard = 'nessuno';
+  }
   return {
-    skin: idx(r.skin, LOOK.skin, base.skin), hair: idx(r.hair, LOOK.hair, base.hair), style: id(r.style, LOOK.style, base.style),
-    shirt: idx(r.shirt, LOOK.shirt, base.shirt), pants: idx(r.pants, LOOK.pants, base.pants), extra: id(r.extra, wearOf('extra'), base.extra),
-    top: id(r.top, wearOf('top'), base.top), bottom: id(r.bottom, wearOf('bottom'), base.bottom),
+    gender, skin: idx(r.skin, LOOK.skin, base.skin), eyes: idx(r.eyes, LOOK.eyes, base.eyes), hair: idx(r.hair, LOOK.hair, base.hair),
+    style: id(r.style, LOOK.style, base.style), beard: id(r.beard, LOOK.beard, gender === 'uomo' ? base.beard : 'nessuno'), lips: id(r.lips, LOOK.lips, 'naturale'),
+    shirt: idx(r.shirt, LOOK.shirt, base.shirt), pants: idx(r.pants, LOOK.pants, base.pants), shoes: idx(r.shoes, LOOK.shoes, base.shoes),
+    extra: id(r.extra, wearOf('extra'), base.extra), top: id(r.top, wearOf('top'), base.top), bottom: id(r.bottom, wearOf('bottom'), base.bottom),
   };
 }
 
@@ -854,6 +908,11 @@ const SHOP_ROOMS = {
     ['bancone', 4, 1, 0, 1], ['espositore', 2, 3, 0, 0], ['espositore', 4, 3, 0, 1], ['espositore', 6, 3, 0, 2],
     ['espositore', 2, 6, 0, 1], ['espositore', 4, 6, 0, 2], ['espositore', 6, 6, 0, 0], ['pianta', 0, 0], ['lampada', 7, 0], ['pianta', 7, 7],
   ] },
+  // Municipio: il bancone dell'anagrafe, le sedie d'attesa, la bandiera e il ritratto della città
+  'shop:comune': { floor: 'marmo', wall: '#efe6d2', access: 'tutti', items: [
+    ['bancone', 4, 1, 0, 0], ['scrivania', 2, 0], ['libreria', 6, 0], ['libreria', 7, 0], ['pendolo', 1, 0], ['statua', 0, 0],
+    ['tappeto', 3, 3, 0, 0], ['sedia', 1, 4, 0, 6], ['sedia', 1, 5, 0, 6], ['sedia', 1, 6, 0, 6], ['pianta', 0, 7], ['pianta', 7, 7], ['vaso', 7, 4, 0, 5],
+  ] },
   'shop:moda': { floor: 'parquet', wall: '#d9d0e8', access: 'tutti', items: [
     ['bancone', 4, 1, 0, 7], ['specchio', 2, 0], ['specchio', 3, 0], ['stender', 6, 3, 1, 0], ['stender', 6, 6, 1, 5],
     ['tappeto', 2, 3, 0, 5], ['pouf', 3, 4, 0, 1], ['pianta', 0, 0], ['pianta', 7, 7], ['vaso', 0, 7, 0, 3], ['lampada', 7, 0],
@@ -942,14 +1001,14 @@ const SEATS = { sedia: 15, poltrona: 12, divano: 11, pouf: 13 };
 const PIAZZA_DECOR = {
   fountain: [40, 25],                       // centro della vasca; occupa le 3×3 caselle attorno
   edicola: [37, 28],
-  muro: [[39, 21], [40, 21], [41, 21]],
+  muro: [],                                 // il Muro dei Fondatori ora sta sotto il portico del Municipio
   campanile: [44, 21],
   cafe: [[43, 24], [44, 25], [43, 26]],
   lamps: [[37, 23], [43, 23], [37, 27], [43, 27]],
   trees: [[36, 23], [36, 26]],
   planters: [[36, 29], [44, 29]],
 };
-const BENCHES = [[38, 25], [42, 25], [40, 23], [40, 27]];
+const BENCHES = [[38, 25], [42, 25], [40, 27]];
 const PIAZZA_BLOCKED = new Set([
   ...[-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => key(PIAZZA_DECOR.fountain[0] + dx, PIAZZA_DECOR.fountain[1] + dy))),
   key(...PIAZZA_DECOR.edicola), key(...PIAZZA_DECOR.campanile), ...PIAZZA_DECOR.muro.map((p) => key(...p)),
@@ -1178,6 +1237,9 @@ const friendsOf = (s, id) => s.friendships.filter((f) => f.a === id || f.b === i
 // poi si rifanno strade e porte. Restituisce true se qualcosa è cambiato.
 function migratePlan(s) {
   const moved = {};
+  // Chi aveva già casa prima del Municipio risulta iscritto all'anagrafe dal giorno in cui è arrivato
+  let enrolled = false;
+  for (const r of Object.values(s.residents)) if (!r.anagrafe && residentHouse(s, r.id)) { r.anagrafe = r.joinedAt || 1; enrolled = true; }
   const wrong = Object.keys(s.houses).filter((k) => !PLAN.lots.has(k)).sort((a, b) => s.houses[a].reservedAt - s.houses[b].reservedAt);
   for (const k of wrong) {
     const [x, y] = parseKey(k);
@@ -1201,7 +1263,7 @@ function migratePlan(s) {
   if (changed) for (const n of s.news) if (n.slot && moved[n.slot]) n.slot = moved[n.slot];
   const before = JSON.stringify([s.roads, s.doors]);
   refresh(s);
-  return changed || JSON.stringify([s.roads, s.doors]) !== before;
+  return changed || enrolled || JSON.stringify([s.roads, s.doors]) !== before;
 }
 
 // Dopo ogni modifica alle case: quartieri da aprire, traguardi, strade.
@@ -1279,9 +1341,23 @@ const OPS = {
     return { number: r.number };
   },
 
+  // Ufficio anagrafe del Municipio: chi arriva in città si iscrive (e lì sceglie com'è fatto).
+  anagrafe(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    const look = cleanLook(op.look ?? r.look, r.username);
+    for (const slot of ['top', 'bottom', 'extra']) {
+      if (!ownsWear(s, r.id, look[slot])) throw invalid(`${wearById(look[slot]).label}: prima prendilo alla Sartoria Moda.`);
+    }
+    r.look = look;
+    if (r.anagrafe) return { already: true };
+    r.anagrafe = now;
+    return { at: now };
+  },
+
   chooseSlot(s, op, ctx, now) {
     const r = needResident(s, ctx);
     if (residentHouse(s, r.id)) throw invalid('Hai già una casa a Virtual-Italy.');
+    if (!r.anagrafe) throw invalid('Prima passa in Municipio: serve l\'iscrizione all\'anagrafe.');
     const slot = String(op.slot || '');
     if (!isLot(slot)) throw invalid('Qui non si può costruire: scegli uno dei lotti liberi.');
     if (districtAt(...parseKey(slot)) > s.openDistricts) throw invalid('Questo quartiere non è ancora aperto.');
@@ -1684,6 +1760,7 @@ function seedResidents(state, n, now = Date.now(), salt = 0) {
     if (!slot) break;
     const h = hash(name);
     const style = { roof: ROOFS[h % 6].id, door: DOORS[(h >>> 4) % 6].id, garden: GARDENS[(h >>> 8) % GARDENS.length].id, deco: DECOS[(h >>> 12) % DECOS.length].id };
+    s = applyOp(s, { type: 'anagrafe' }, { user: { id }, now: t }).state;
     s = applyOp(s, { type: 'chooseSlot', slot, style }, { user: { id }, now: t }).state;
     s = applyOp(s, { type: 'profile', bio: BIOS[h % BIOS.length] }, { user: { id }, now: t }).state;
   }
@@ -2491,6 +2568,7 @@ const SHOP_LOOK = {
   mobili: { wall: '#e6cfa3', trim: '#8a5a36', awning: ['#2f6b4f', '#f6efe0'], sign: '#2f4f3f', ink: '#f6e7b8' },
   moda: { wall: '#f1dcd8', trim: '#3b3f45', awning: ['#2d2d2d', '#f6efe0'], sign: '#2d2d2d', ink: '#e2bf4f' },
   bici: { wall: '#d7e6ef', trim: '#2f6b9f', awning: ['#e0a92a', '#2f6b9f'], sign: '#2f6b9f', ink: '#f6efe0' },
+  comune: { wall: '#ead2a2', trim: '#7a5a3a', awning: ['#2f6b4f', '#f6efe0'], sign: '#7a2c2c', ink: '#f6e7b8' },
 };
 function vitrine3(g, x, y, w, h, kind, night, seed, wins) {
   g.fillStyle = '#5a4a38'; g.fillRect(x - 2, y - 2, w + 4, h + 4);
@@ -2734,8 +2812,8 @@ function piazzaItems(city) {
   const put = (x, y, draw, depth = 0.6) => { const k = key(x, y); if (!out.has(k)) out.set(k, []); out.get(k).push({ draw, depth }); };
   const D = PIAZZA_DECOR;
   put(...D.edicola, (g, X, Y) => edicola3(g, X + 16, Y + 26));
-  const [m0] = D.muro, mLast = D.muro[D.muro.length - 1];
-  put(...mLast, (g, X, Y) => muro3(g, X - (mLast[0] - m0[0]) * T + 2, X + T - 2, Y + 22, founders));
+  const [m0] = D.muro.length ? D.muro : [[0, 0]], mLast = D.muro[D.muro.length - 1];
+  if (mLast) put(...mLast, (g, X, Y) => muro3(g, X - (mLast[0] - m0[0]) * T + 2, X + T - 2, Y + 22, founders));
   put(D.fountain[0], D.fountain[1] + 1, (g, X, Y) => fountain3(g, X + 16, Y - 16, built >= FOUNTAIN_AT), 0.9);
   put(...D.campanile, (g, X, Y) => campanile3(g, X + 16, Y + 28));
   for (const [x, y] of BENCHES) put(x, y, (g, X, Y) => bench(g, X + 16, Y + 22));
@@ -2743,7 +2821,7 @@ function piazzaItems(city) {
   for (const [x, y] of D.lamps) put(x, y, (g, X, Y) => lampPost(g, X + 16, Y + 20, true));
   for (const [x, y] of D.trees) put(x, y, (g, X, Y) => drawTree(g, { kind: 'tondo', s: 0.85 }, X + 16, Y + 22));
   for (const [x, y] of D.cafe) put(x, y, (g, X, Y) => cafeTable(g, X + 16, Y + 22));
-  for (const [x, y, i] of [[36, 21, 0], [38, 21, 1], [42, 21, 2], [36, 28, 3], [44, 23, 0], [44, 27, 1], [38, 29, 2], [42, 29, 3], [39, 23, 1], [41, 27, 2]]) put(x, y, (g, X, Y) => pot(g, X + 16, Y + 22, i));
+  for (const [x, y, i] of [[36, 21, 0], [37, 21, 1], [43, 22, 2], [36, 28, 3], [44, 23, 0], [44, 27, 1], [38, 29, 2], [42, 29, 3], [39, 23, 1], [41, 27, 2]]) put(x, y, (g, X, Y) => pot(g, X + 16, Y + 22, i));
   put(42, 26, (g, X, Y) => chalkboard(g, X + 22, Y + 22));
   return out;
 }
@@ -2802,8 +2880,8 @@ function drawTown(g, city, view, o) {
       }
       const shop = shopAt(x, y);
       if (shop) {
-        if (x !== shop.x0 + 1 || y !== shop.y0 + 1) continue;
-        const cx = (shop.x0 + 1) * T, by = Y + T - 1;
+        if (x !== shop.x0 + 1 || y !== shop.y0 + shop.d - 1) continue;
+        const cx = (shop.x0 + shop.w / 2) * T, by = Y + T - 1;
         add(y + 0.98, x, (gg) => drawShop3(gg, shop, cx, by, { night, detail: det }), null, { type: 'shop', shop: shop.id });
         continue;
       }
@@ -3131,11 +3209,21 @@ function railing(g, x0, x1, y) {
 
 
 
+
 const PX = 32;
 const T3 = () => globalThis.THREE;
+// Si controlla una volta sola (ogni prova crea un contesto grafico, e i telefoni ne reggono pochi)
+let gl3D = null;
 const has3D = () => {
-  if (!T3()) return false;
-  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; }
+  if (gl3D !== null) return gl3D;
+  if (!T3()) return (gl3D = false);
+  try {
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl2') || c.getContext('webgl');
+    gl3D = !!gl;
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+  } catch { gl3D = false; }
+  return gl3D;
 };
 
 /* Piccoli attrezzi ------------------------------------------------------------ */
@@ -3677,6 +3765,116 @@ function buildShop(shop) {
   return { group: grp, wallMat, top: y1 + 0.3 };
 }
 
+/* Municipio ----------------------------------------------------------------------------- */
+
+// Facciata: portico ad archi in bugnato, piano nobile con balconi, fascia con la scritta.
+function paintMunicipio(g, w, Hh, founders) {
+  const wall = '#ead2a2';
+  plaster(g, 0, 0, w, Hh, wall, 777, true);
+  // Bugnato del portico
+  const pH = 40;
+  g.fillStyle = '#d9cdb4'; g.fillRect(0, Hh - pH, w, pH);
+  g.fillStyle = 'rgba(90,70,40,0.3)';
+  for (let r = 0; r < 5; r++) { g.fillRect(0, Hh - pH + r * 8 + 7, w, 1); for (let c = 0; c < w; c += 12) g.fillRect(c + (r % 2) * 6, Hh - pH + r * 8, 1, 7); }
+  // Archi: interno in ombra, lampada, targhe dei Fondatori
+  const n = 5, aw = 22, gap = (w - n * aw) / (n + 1);
+  const wins = [];
+  let plaques = Math.min(founders, 40);
+  for (let i = 0; i < n; i++) {
+    const x = Math.round(gap + i * (aw + gap)), y = Hh - pH + 6;
+    g.fillStyle = '#efe6d2'; g.fillRect(x - 2, y, aw + 4, pH - 6); g.beginPath(); g.arc(x + aw / 2, y + 2, aw / 2 + 2, Math.PI, 0); g.fill();
+    g.fillStyle = '#5a4634'; g.fillRect(x, y + 2, aw, pH - 8); g.beginPath(); g.arc(x + aw / 2, y + 2, aw / 2, Math.PI, 0); g.fill();
+    g.fillStyle = '#6e5842'; g.fillRect(x + 2, y + 10, aw - 4, pH - 16);
+    g.fillStyle = '#e2bf4f';
+    for (let k = 0; k < 8 && plaques > 0; k++, plaques--) g.fillRect(x + 3 + (k % 4) * 4.5, y + 12 + Math.floor(k / 4) * 5, 3, 3);
+    if (i === 2) { g.fillStyle = '#7a3f22'; g.fillRect(x + 4, y + 8, aw - 8, pH - 14); g.fillStyle = '#e2bf4f'; g.fillRect(x + aw / 2 - 1, y + 20, 2, 3); }
+    g.fillStyle = '#1f2a26'; g.fillRect(x + aw / 2 - 1, y - 6, 2, 3); g.fillStyle = '#ffe2a0'; g.fillRect(x + aw / 2 - 1, y - 3, 2, 2);
+    wins.push([[x + aw / 2 - 2, y - 4], [x + aw / 2 + 2, y - 4], [x + aw / 2 + 2, y], [x + aw / 2 - 2, y]]);
+  }
+  // Cornice sopra il portico
+  g.fillStyle = '#f4ead2'; g.fillRect(0, Hh - pH - 3, w, 3); g.fillStyle = 'rgba(30,15,5,0.25)'; g.fillRect(0, Hh - pH, w, 2);
+  // Piano nobile: finestre alte con le persiane e i balconcini
+  const o = { lit: false, night: false, door: '#2f6b4f', detail: true, wins, flowers: ['#e85d75', '#f6d84a'] };
+  for (let i = 0; i < n; i++) {
+    const x = Math.round(gap + i * (aw + gap)) + 6;
+    window3(g, x, 14, 10, 22, o, { box: i !== 2 });
+    if (i === 2) { g.fillStyle = '#1f2a26'; g.fillRect(x - 6, 30, 22, 1); for (let k = 0; k <= 7; k++) g.fillRect(x - 6 + k * 3, 30, 1, 7); }
+  }
+  // Fascia con la scritta
+  g.fillStyle = '#7a2c2c'; g.fillRect(w / 2 - 34, 2, 68, 10);
+  g.fillStyle = '#f6e7b8'; g.font = '800 8px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('MUNICIPIO', w / 2, 7.5); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  return wins;
+}
+function buildMunicipio(founders) {
+  const T = T3();
+  const M = mats();
+  const grp = new T.Group();
+  const Wp = 152, Hh = 96, D = 54;
+  const AW = Wp + D + 8, AH = Hh + 4;
+  const atlas = canvas2d(AW, AH), g = atlas.getContext('2d');
+  g.fillStyle = '#ead2a2'; g.fillRect(0, 0, AW, AH);
+  g.save(); g.translate(2, 2);
+  const wins = paintMunicipio(g, Wp, Hh, founders).map((q) => q.map(([x, y]) => [x + 2, y + 2]));
+  g.restore();
+  wins.push(...paintSide(g, Wp + 6, 2, D, Hh, { wall: '#ead2a2', door: '#2f6b4f', flowers: ['#e85d75', '#f6d84a'], hs: 5 }, 1));
+  const tex = pixTex(atlas);
+  const wallMat = new T.MeshLambertMaterial({ map: tex, emissive: '#ffffff', emissiveIntensity: 0 });
+  wallMat.userData.lights = () => (wallMat.userData.lt ||= paintLights(AW, AH, wins));
+  const u = (px) => px / PX;
+  const x0 = -u(Wp / 2), x1 = u(Wp / 2), z1 = 0, z0 = -u(D), y1 = u(Hh);
+  const uvF = [2 / AW, 1 - (2 + Hh) / AH, (2 + Wp) / AW, 1 - 2 / AH], uvS = [(Wp + 6) / AW, 1 - (2 + Hh) / AH, (Wp + 6 + D) / AW, 1 - 2 / AH];
+  const wm = new Mesher();
+  wm.quad([x0, 0, z1], [x1, 0, z1], [x1, y1, z1], [x0, y1, z1], '#ffffff', uvF);
+  wm.quad([x1, 0, z1], [x1, 0, z0], [x1, y1, z0], [x1, y1, z1], '#ffffff', uvS);
+  wm.quad([x0, 0, z0], [x0, 0, z1], [x0, y1, z1], [x0, y1, z0], '#ffffff', uvS);
+  wm.quad([x1, 0, z0], [x0, 0, z0], [x0, y1, z0], [x1, y1, z0], '#ffffff', uvS);
+  const walls = new T.Mesh(wm.build(), wallMat); walls.castShadow = walls.receiveShadow = true; grp.add(walls);
+  // Tetto a padiglione, cornicione, timpano con l'orologio
+  const rm = new Mesher(), o = 0.14, zm = (z0 + z1) / 2, rh = 0.62, hx = (z1 - z0) / 2;
+  const sl = Math.hypot(hx + o, rh) * 0.5;
+  rm.quad([x0 - o, y1, z1 + o], [x1 + o, y1, z1 + o], [x1 - hx, y1 + rh, zm], [x0 + hx, y1 + rh, zm], '#ffffff', [0, 0, (x1 - x0) * 0.5, sl]);
+  rm.quad([x1 + o, y1, z0 - o], [x0 - o, y1, z0 - o], [x0 + hx, y1 + rh, zm], [x1 - hx, y1 + rh, zm], '#ffffff', [0, 0, (x1 - x0) * 0.5, sl]);
+  rm.tri([x0 - o, y1, z0 - o], [x0 - o, y1, z1 + o], [x0 + hx, y1 + rh, zm], [0, 0], [1, 0], [0.5, sl], '#ffffff');
+  rm.tri([x1 + o, y1, z1 + o], [x1 + o, y1, z0 - o], [x1 - hx, y1 + rh, zm], [0, 0], [1, 0], [0.5, sl], '#ffffff');
+  const roof = new T.Mesh(rm.build(), roofMat('#b5523b')); roof.castShadow = roof.receiveShadow = true; grp.add(roof);
+  const ex = new Mesher();
+  ex.box(x0 - 0.1, y1 - 0.06, z0 - 0.1, x1 + 0.1, y1 + 0.02, z1 + 0.1, '#f4ead2');
+  // Timpano sopra l'ingresso, con l'orologio e lo stemma
+  ex.tri([-0.75, y1, z1 + 0.06], [0.75, y1, z1 + 0.06], [0, y1 + 0.7, z1 + 0.06], [0, 0], [1, 0], [0, 1], '#f1e2c2');
+  ex.tri([0.75, y1, z1 - 0.3], [-0.75, y1, z1 - 0.3], [0, y1 + 0.7, z1 - 0.3], [0, 0], [1, 0], [0, 1], '#e2cfa6');
+  ex.quad([0.75, y1, z1 + 0.06], [0.75, y1, z1 - 0.3], [0, y1 + 0.7, z1 - 0.3], [0, y1 + 0.7, z1 + 0.06], '#b5523b');
+  ex.quad([0, y1 + 0.7, z1 + 0.06], [0, y1 + 0.7, z1 - 0.3], [-0.75, y1, z1 - 0.3], [-0.75, y1, z1 + 0.06], '#a8492f');
+  ex.prim('cyl10', 0, y1 + 0.26, z1 + 0.07, 0.17, 0.03, 0.17, '#f4efe3', 0, Math.PI / 2);
+  ex.prim('cyl10', 0, y1 + 0.26, z1 + 0.064, 0.185, 0.03, 0.185, '#3b3f45', 0, Math.PI / 2);
+  ex.box(-0.008, y1 + 0.26, z1 + 0.1, 0.008, y1 + 0.38, z1 + 0.11, '#1f1f1f');
+  ex.box(-0.008, y1 + 0.255, z1 + 0.1, 0.08, y1 + 0.27, z1 + 0.11, '#1f1f1f');
+  // Balcone centrale con le tre bandiere
+  ex.box(-0.5, u(Hh - 62), 0, 0.5, u(Hh - 60), 0.32, '#e6dcc6');
+  for (let k = 0; k <= 12; k++) ex.box(-0.5 + k * 0.083, u(Hh - 60), 0.29, -0.49 + k * 0.083, u(Hh - 60) + 0.26, 0.31, '#1f2a26');
+  ex.box(-0.5, u(Hh - 60) + 0.25, 0.28, 0.5, u(Hh - 60) + 0.28, 0.32, '#1f2a26');
+  const flag = (px, cols, star) => {
+    const fy = u(Hh - 60) + 0.25, fz = 0.3;
+    ex.prim('cyl6', px, fy, fz, 0.012, 1.1, 0.012, '#c9c3b5', 0, px > 0 ? -0.35 : px < 0 ? 0.35 : 0);
+    const tx = px + (px > 0 ? 1 : px < 0 ? -1 : 0) * 0.36 + (px === 0 ? 0 : 0), ty = fy + 1.0;
+    const w = 0.42, h = 0.28;
+    for (let i = 0; i < cols.length; i++) {
+      const a = tx + (i / cols.length) * w * 0.98, b = tx + ((i + 1) / cols.length) * w * 0.98;
+      ex.quad([a, ty - h, fz], [b, ty - h, fz], [b, ty, fz], [a, ty, fz], cols[i]);
+      ex.quad([b, ty - h, fz], [a, ty - h, fz], [a, ty, fz], [b, ty, fz], cols[i]);
+    }
+    if (star) for (let k = 0; k < 8; k++) { const a2 = (k / 8) * Math.PI * 2; ex.box(tx + w / 2 + Math.cos(a2) * 0.08 - 0.008, ty - h / 2 + Math.sin(a2) * 0.08 - 0.008, fz - 0.005, tx + w / 2 + Math.cos(a2) * 0.08 + 0.008, ty - h / 2 + Math.sin(a2) * 0.08 + 0.008, fz + 0.005, '#f2c94c'); }
+  };
+  flag(-0.36, ['#2f8f4f', '#f4efe3', '#c8283c']);
+  flag(0.0, ['#c8283c', '#e2bf4f']);
+  flag(0.36, ['#2e4f9f'], true);
+  // Scalinata, lampioni ai lati, fioriere
+  for (let k = 0; k < 3; k++) ex.box(-0.75 - k * 0.12, 0, 0.02 + k * 0.12, 0.75 + k * 0.12, 0.12 - k * 0.04, 0.16 + k * 0.12, k % 2 ? '#d9cdb4' : '#e6dcc6');
+  for (const px of [x0 + 0.25, x1 - 0.25]) { ex.box(px - 0.22, 0, 0.08, px + 0.22, 0.28, 0.42, '#c9b48f'); bushIn(ex, px, 0.26, 0.25, 1.0, '#4c8a3a', '#e85d75'); }
+  const extra = new T.Mesh(ex.build(), M.vcFlat); extra.castShadow = extra.receiveShadow = true; grp.add(extra);
+  return { group: grp, wallMat, top: y1 + 0.9 };
+}
+
 /* Alberi, lampioni, piazza: tutto in una geometria sola ----------------------------- */
 
 function treeIn(m, kind, x, y, z, s, seed) {
@@ -3765,7 +3963,7 @@ class Town3D {
     this.r.shadowMap.autoUpdate = false;
     this.scene = new T.Scene();
     this.camera = new T.PerspectiveCamera(30, 1, 0.5, 600);
-    this.view = { x: 40.5, y: 27.5, dist: 34, az: 0, pitch: 0.92 };
+    this.view = { x: 40.5, y: 27.5, dist: 34, az: 0, pitch: 0.82 };
     this.aniso = this.r.capabilities.getMaxAnisotropy();
     // Luci: cielo e terra, sole caldo del pomeriggio da sud-ovest con le ombre
     this.hemi = new T.HemisphereLight('#fff4e0', '#8a9a6a', 0.52);
@@ -3918,6 +4116,7 @@ class Town3D {
     for (const [slot, cur] of this.houses) if (!seen.has(slot)) { this.world.remove(cur.group); disposeTree(cur.group); this.houses.delete(slot); this.shadowDirty = true; }
     if (!this.shops.size) {
       for (const shop of SHOPS) {
+        if (shop.kind === 'comune') continue;     // il Municipio si costruisce con la piazza
         const b = buildShop(shop);
         const x = shop.x0 + 1, y = shop.y0 + 1;
         b.group.position.set(x, townSurface(G, ramps, x, y + 0.5) / PX, shop.y0 + 1.96);
@@ -4063,7 +4262,7 @@ class Town3D {
       m.prim('cyl6', cx, h0, cz, 0.018, 1.25, 0.018, '#6b4a2f');
       m.prim('cone8', cx, h0 + 1.05, cz, 0.62, 0.3, 0.62, '#f6ecd4');
     }
-    for (const [x, y, i] of [[36, 21, 0], [38, 21, 1], [42, 21, 2], [36, 28, 3], [44, 23, 0], [44, 27, 1], [38, 29, 2], [42, 29, 3], [39, 23, 1], [41, 27, 2]]) potIn(m, x + 0.5, pH(x, y), y + 0.5, i);
+    for (const [x, y, i] of [[36, 21, 0], [37, 21, 1], [43, 22, 2], [36, 28, 3], [44, 23, 0], [44, 27, 1], [38, 29, 2], [42, 29, 3], [39, 23, 1], [41, 27, 2]]) potIn(m, x + 0.5, pH(x, y), y + 0.5, i);
     // Edicola e Muro dei Fondatori: si possono toccare
     this.props = [];
     const pm = new Mesher();
@@ -4080,15 +4279,15 @@ class Town3D {
       this.props.push(ed);
     }
     {
-      const mm = new Mesher();
-      const [m0] = D.muro, mL = D.muro[D.muro.length - 1], h0 = pH(...m0), z = m0[1] + 0.5;
-      mm.box(m0[0] + 0.05, h0, z - 0.14, mL[0] + 0.95, h0 + 0.62, z + 0.14, '#c9b48f');
-      mm.box(m0[0], h0 + 0.62, z - 0.18, mL[0] + 1, h0 + 0.7, z + 0.18, '#e6d6b3');
-      const n = Math.min(founders, 18);
-      for (let k = 0; k < n; k++) { const px = m0[0] + 0.2 + (k % 9) * 0.29, py = h0 + 0.42 - Math.floor(k / 9) * 0.22; mm.box(px, py, z + 0.14, px + 0.2, py + 0.13, z + 0.16, '#e2bf4f'); }
-      const mu = new T.Mesh(mm.build(), mats().vcFlat); mu.castShadow = mu.receiveShadow = true;
-      mu.userData.pick = { kind: 'muro', x: m0[0] + 1, y: m0[1] };
-      this.props.push(mu);
+      // Municipio: chiude la piazza a nord; le targhe dei Fondatori stanno sotto il portico
+      const sh = SHOPS.find((q) => q.kind === 'comune');
+      if (this.municipio) { this.world.remove(this.municipio.group); disposeTree(this.municipio.group); }
+      const b = buildMunicipio(founders);
+      b.group.position.set(sh.x0 + sh.w / 2, pH(sh.x0 + 2, sh.y0 + 1), sh.y0 + sh.d - 0.04);
+      b.group.userData.pick = { kind: 'shop', shop: sh.id };
+      this.world.add(b.group);
+      this.municipio = b;
+      this.shops.set(sh.id, b);
     }
     // Pozze di luce sotto i lampioni (si vedono solo di notte)
     if (this.pools) { this.scene.remove(this.pools); this.pools.geometry.dispose(); }
@@ -4191,41 +4390,32 @@ class Town3D {
     }
   }
 
-  /* Omini: sprite disegnati in pixel, sempre rivolti alla telecamera */
-  setAvatar(id, { x, y, h, cv, changed, me, night }) {
+  /* Omini in 3D: o = { x, y, h, look, ride, facing, pose, me } */
+  setAvatar(id, o) {
     const T = T3();
     let s = this.sprites.get(id);
     if (!s) {
-      const tex = pixTex(cv); tex.minFilter = T.LinearFilter; tex.generateMipmaps = false;
-      const mat = new T.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.4 });
-      const sp = new T.Sprite(mat);
-      sp.center.set(0.5, 16 / cv.height);
-      sp.scale.set(cv.width / 66, cv.height / 66, 1);
+      const av = new Avatar3D(o.look, { ride: o.ride, scale: 0.95 });
+      if (o.me) av.makeGhost();
       const blob = new T.Mesh(new T.CircleGeometry(0.2, 12), mats().shadow);
       blob.rotation.x = -Math.PI / 2;
-      this.scene.add(sp, blob);
-      s = { sp, blob, tex, ghost: null };
-      if (me) {
-        // Il proprio omino si intravede anche dietro le case
-        const gm = new T.SpriteMaterial({ map: tex, transparent: true, opacity: 0.32, depthTest: false, color: '#203040' });
-        s.ghost = new T.Sprite(gm); s.ghost.center.copy(sp.center); s.ghost.scale.copy(sp.scale); s.ghost.renderOrder = -1;
-        this.scene.add(s.ghost);
-      }
+      this.scene.add(av.group, blob);
+      s = { av, blob };
       this.sprites.set(id, s);
-    }
-    if (changed) s.tex.needsUpdate = true;
-    s.sp.position.set(x, h, y);
-    s.sp.material.color.set(night ? '#a9b1d6' : '#ffffff');
-    s.blob.position.set(x, this.groundAt(x, y) + 0.02, y);
-    if (s.ghost) s.ghost.position.copy(s.sp.position);
+    } else s.av.set(o.look, o.ride);
+    s.av.group.position.set(o.x, o.h, o.y);
+    s.av.group.rotation.y = o.facing;
+    s.av.pose(o.pose);
+    s.blob.position.set(o.x, this.groundAt(o.x, o.y) + 0.02, o.y);
     s.seen = true;
   }
   sweepAvatars() {
     for (const [id, s] of this.sprites) {
-      if (!s.seen) { this.scene.remove(s.sp, s.blob); if (s.ghost) this.scene.remove(s.ghost); s.tex.dispose(); s.sp.material.dispose(); this.sprites.delete(id); }
+      if (!s.seen) { this.scene.remove(s.av.group, s.blob); s.av.dispose(); s.blob.geometry.dispose(); this.sprites.delete(id); }
       else s.seen = false;
     }
   }
+  avatarHead(id) { const s = this.sprites.get(id); return s ? s.av.group.position.y + 1.0 : null; }
 
   setSelected(slot) {
     const T = T3();
@@ -4418,11 +4608,515 @@ function renderTownStill(city, x, y, w, h) {
   return out;
 }
 
+// ---- avatar3d.js ----
+// Abitanti in 3D, nello stesso stile low-poly della città: testa grande e faccia ben leggibile
+// (occhi con la luce, sopracciglia, bocca, guance), capelli, barba o rossetto, vestiti, scarpe e
+// accessori. Il corpo è fatto di pezzi che si muovono (gambe, braccia, testa) per camminare,
+// salutare, ballare, saltare, sedersi e andare in bici, skate o monopattino.
+// Lo stesso modello disegna gli omini in città, nelle stanze (come immagine) e nelle anteprime.
+
+
+const THR = () => globalThis.THREE;
+let avMat = null;
+const avatarMat = () => (avMat ||= new (THR().MeshLambertMaterial)({ vertexColors: true }));
+let ghostMat = null, meMat = null;
+// Il proprio omino si vede in trasparenza solo dove qualcosa gli sta davanti: la sagoma si disegna
+// prima dell'omino (che passa per ultimo), e solo dove la scena è più vicina di lui.
+function ghostMaterial() {
+  const T = THR();
+  return (ghostMat ||= new T.MeshBasicMaterial({ color: '#1d3557', transparent: true, opacity: 0.4, depthWrite: false, depthFunc: T.GreaterDepth }));
+}
+const meMaterial = () => (meMat ||= new (THR().MeshLambertMaterial)({ vertexColors: true, transparent: true, opacity: 1 }));
+
+const HAIR_FRONT = 0.152;
+const LIPS = { naturale: null, rosa: '#e46b8f', rosso: '#c8283c' };
+const EXTRA_COL = { cappellino: '#c0392b', coppola: '#6f6a60', basco: '#7a2c3a', cuffie: '#2b2b2b' };
+
+// Le misure del corpo (in unità della città prima della scala finale)
+function bodyOf(L) {
+  const donna = L.gender === 'donna';
+  return { tw: donna ? 0.125 : 0.15, hipW: donna ? 0.135 : 0.13, armX: donna ? 0.17 : 0.195, hipY: 0.34, shoulderY: 0.645, neckY: 0.69 };
+}
+
+/* Testa ------------------------------------------------------------------------------- */
+
+function buildHead(m, L) {
+  const S = L.skin, H = L.hair, dark = shade(S, -0.12);
+  const donna = L.gender === 'donna';
+  // Testa, orecchie, collo nascosto sotto (i manichini non hanno faccia né capelli)
+  m.box(-0.17, 0, -0.15, 0.17, 0.31, 0.15, S);
+  if (L.mannequin) { buildHeadwear(m, L); return; }
+  m.box(-0.19, 0.11, -0.03, -0.17, 0.18, 0.03, dark); m.box(0.17, 0.11, -0.03, 0.19, 0.18, 0.03, dark);
+  // Occhi: bianco, iride, pupilla e un punto di luce
+  const f = 0.151;
+  for (const s of [-1, 1]) {
+    const ex = s * 0.07;
+    m.box(ex - 0.038, 0.11, f - 0.004, ex + 0.038, 0.19, f + 0.004, '#ffffff');
+    m.box(ex - 0.028 - s * 0.006, 0.112, f + 0.004, ex + 0.024 - s * 0.006, 0.178, f + 0.008, L.eyes || '#3b2a1e');
+    m.box(ex - 0.013 - s * 0.006, 0.124, f + 0.008, ex + 0.009 - s * 0.006, 0.164, f + 0.011, '#141414');
+    m.box(ex + 0.002 - s * 0.006, 0.152, f + 0.011, ex + 0.014 - s * 0.006, 0.168, f + 0.013, '#ffffff');
+    // Sopracciglia (un po' inclinate) e ciglia per lei
+    m.box(ex - 0.042, 0.205, f - 0.002, ex + 0.042, 0.224, f + 0.012, shade(H, -0.1));
+    if (donna) { m.box(s > 0 ? ex + 0.03 : ex - 0.05, 0.178, f, s > 0 ? ex + 0.05 : ex - 0.03, 0.196, f + 0.012, '#141414'); }
+    // Guance rosate
+    m.box(ex + s * 0.015 - 0.025, 0.07, f - 0.004, ex + s * 0.015 + 0.025, 0.095, f + 0.004, mix(S, '#ff7f8a', 0.45));
+  }
+  // Naso e bocca (col rossetto se scelto)
+  m.box(-0.018, 0.085, f, 0.018, 0.12, f + 0.03, shade(S, -0.05));
+  const lip = LIPS[L.lips] || null;
+  if (lip) { m.box(-0.04, 0.035, f - 0.002, 0.04, 0.062, f + 0.01, lip); m.box(-0.025, 0.045, f + 0.01, 0.025, 0.05, f + 0.012, shade(lip, -0.25)); }
+  else m.box(-0.032, 0.042, f - 0.002, 0.032, 0.058, f + 0.008, '#8a3b33');
+  buildBeard(m, L);
+  buildHair(m, L);
+  buildHeadwear(m, L);
+}
+
+function buildBeard(m, L) {
+  const B = L.beard;
+  if (!B || B === 'nessuno') return;
+  const H = L.hair, f = 0.151;
+  if (B === 'barbetta') { m.box(-0.165, -0.005, 0.02, 0.165, 0.075, f + 0.006, mix(H, L.skin, 0.55)); return; }
+  if (B === 'barba') {
+    m.box(-0.172, -0.04, -0.02, 0.172, 0.08, f + 0.02, H);
+    m.box(-0.172, 0.04, -0.05, -0.15, 0.15, 0.1, H); m.box(0.15, 0.04, -0.05, 0.172, 0.15, 0.1, H);
+    m.box(-0.035, 0.03, f + 0.02, 0.035, 0.06, f + 0.024, '#7a3b33');
+  }
+  if (B === 'baffi' || B === 'pizzetto' || B === 'barba') m.box(-0.06, 0.06, f, 0.06, 0.085, f + 0.022, H);
+  if (B === 'pizzetto') m.box(-0.03, -0.015, f - 0.02, 0.03, 0.03, f + 0.018, H);
+}
+
+function buildHair(m, L) {
+  const H = L.hair, st = L.style, f = HAIR_FRONT;
+  const hi = shade(H, 0.12);
+  if (st === 'pelato') { m.box(-0.175, 0.08, -0.155, 0.175, 0.2, -0.1, H); return; }
+  // Calotta e frangia
+  const cap = (top = 0.35) => {
+    m.box(-0.18, 0.24, -0.16, 0.18, top, 0.16, H);
+    m.box(-0.18, 0.1, -0.165, 0.18, 0.26, -0.11, H);
+    m.box(-0.185, 0.15, -0.16, -0.16, 0.27, 0.06, H); m.box(0.16, 0.15, -0.16, 0.185, 0.27, 0.06, H);
+    m.box(-0.12, top - 0.015, -0.1, 0.06, top + 0.01, 0.06, hi);
+  };
+  if (st === 'rasati') { m.box(-0.175, 0.22, -0.155, 0.175, 0.33, 0.155, shade(H, 0.05)); m.box(-0.175, 0.1, -0.16, 0.175, 0.24, -0.12, shade(H, 0.05)); return; }
+  if (st === 'ricci') {
+    const balls = [];
+    for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2; balls.push([Math.cos(a) * 0.15, 0.3 + (i % 2) * 0.03, Math.sin(a) * 0.14 - 0.01]); }
+    for (let i = 0; i < 5; i++) balls.push([-0.1 + i * 0.05, 0.36, -0.03 + (i % 2) * 0.05]);
+    for (let i = 0; i < 6; i++) balls.push([-0.15 + i * 0.06, 0.16 + (i % 2) * 0.05, -0.15]);
+    if (L.gender === 'donna') for (const s of [-1, 1]) for (let i = 0; i < 3; i++) balls.push([s * 0.17, 0.06 + i * 0.06, -0.06]);
+    for (const [x, y, z] of balls) m.prim('ico0', x, y, z, 0.075, 0.07, 0.075, H);
+    m.box(-0.17, 0.24, -0.14, 0.17, 0.34, 0.12, H);
+    return;
+  }
+  cap(st === 'caschetto' || st === 'lunghi' ? 0.345 : 0.35);
+  if (st === 'corti') m.box(-0.17, 0.235, f - 0.04, 0.12, 0.29, f + 0.012, H);
+  else if (st === 'ciuffo') { m.box(-0.17, 0.25, f - 0.04, 0.17, 0.29, f + 0.01, H); m.prim('box', 0.02, 0.32, 0.06, 0.24, 0.1, 0.18, hi, -0.2, -0.25); }
+  else if (st === 'spettinati') { m.box(-0.17, 0.235, f - 0.04, 0.17, 0.28, f + 0.012, H); for (const [x, z, r] of [[-0.1, 0.05, 0.3], [0.02, 0.08, -0.1], [0.12, 0, -0.4], [-0.04, -0.07, 0.2], [0.08, -0.1, -0.2]]) m.prim('pyr', x, 0.33, z, 0.07, 0.1, 0.07, H, r, r * 0.6); }
+  else {
+    // Frangia piena (lunghi, coda, caschetto, chignon, trecce)
+    m.box(-0.175, 0.225, f - 0.04, 0.175, 0.29, f + 0.012, H);
+    m.box(-0.05, 0.27, f - 0.03, 0.08, 0.3, f + 0.016, hi);
+  }
+  if (st === 'lunghi') {
+    m.box(-0.19, -0.1, -0.17, 0.19, 0.26, -0.08, H);
+    for (const s of [-1, 1]) m.box(s > 0 ? 0.155 : -0.195, -0.06, -0.12, s > 0 ? 0.195 : -0.155, 0.24, 0.1, H);
+  } else if (st === 'caschetto') {
+    m.box(-0.19, 0.0, -0.17, 0.19, 0.26, -0.08, H);
+    for (const s of [-1, 1]) m.box(s > 0 ? 0.155 : -0.195, 0.02, -0.12, s > 0 ? 0.195 : -0.155, 0.24, 0.12, H);
+  } else if (st === 'coda') {
+    m.prim('ico1', 0, 0.26, -0.2, 0.07, 0.07, 0.07, H);
+    m.prim('cyl6', 0, 0.02, -0.23, 0.055, 0.24, 0.05, H, 0, 0);
+    m.box(-0.03, 0.22, -0.23, 0.03, 0.26, -0.2, '#e85d75');
+  } else if (st === 'chignon') {
+    m.prim('ball', 0, 0.36, -0.1, 0.1, 0.09, 0.1, H);
+    m.box(-0.02, 0.4, -0.12, 0.02, 0.46, -0.08, '#e2bf4f');
+  } else if (st === 'trecce') {
+    for (const s of [-1, 1]) {
+      for (let i = 0; i < 4; i++) m.prim('ico0', s * 0.15, 0.12 - i * 0.07, -0.08 + i * 0.02, 0.045, 0.045, 0.045, i % 2 ? hi : H);
+      m.box(s * 0.15 - 0.02, -0.17, -0.05, s * 0.15 + 0.02, -0.14, -0.01, '#e85d75');
+    }
+  }
+}
+
+function buildHeadwear(m, L) {
+  const x = L.extra;
+  const top = L.style === 'chignon' ? 0.4 : 0.35;
+  if (x === 'cappellino') {
+    m.box(-0.185, 0.27, -0.165, 0.185, 0.38, 0.165, EXTRA_COL.cappellino);
+    m.box(-0.15, 0.27, 0.15, 0.15, 0.29, 0.29, shade(EXTRA_COL.cappellino, -0.15));
+    m.box(-0.03, 0.38, -0.03, 0.03, 0.4, 0.03, '#f1ede4');
+  } else if (x === 'occhiali' || x === 'sole') {
+    const f = 0.165;
+    for (const s of [-1, 1]) {
+      const ex = s * 0.07;
+      m.box(ex - 0.05, 0.1, f, ex + 0.05, 0.112, f + 0.012, '#1f1f1f'); m.box(ex - 0.05, 0.198, f, ex + 0.05, 0.21, f + 0.012, '#1f1f1f');
+      m.box(ex - 0.05, 0.1, f, ex - 0.038, 0.21, f + 0.012, '#1f1f1f'); m.box(ex + 0.038, 0.1, f, ex + 0.05, 0.21, f + 0.012, '#1f1f1f');
+      m.box(s > 0 ? 0.17 : -0.18, 0.18, -0.08, s > 0 ? 0.18 : -0.17, 0.2, f, '#1f1f1f');
+    }
+    m.box(-0.02, 0.16, f, 0.02, 0.172, f + 0.012, '#1f1f1f');
+  } else if (x === 'fiore') {
+    const fx = 0.15, fy = 0.3, fz = 0.08;
+    for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2; m.prim('ico0', fx + 0.01, fy + Math.sin(a) * 0.035, fz + Math.cos(a) * 0.035, 0.03, 0.03, 0.03, '#f28cbf'); }
+    m.prim('ico0', fx + 0.025, fy, fz, 0.022, 0.022, 0.022, '#f6d84a');
+  } else if (x === 'paglia') {
+    m.prim('disc', 0, top - 0.02, 0, 0.34, 0.025, 0.34, '#e6c97a');
+    m.prim('cyl10', 0, top, 0, 0.17, 0.11, 0.17, '#e9d08a');
+    m.prim('cyl10', 0, top + 0.005, 0, 0.175, 0.035, 0.175, '#c0392b');
+  } else if (x === 'coppola') {
+    m.box(-0.19, 0.28, -0.17, 0.19, 0.37, 0.15, EXTRA_COL.coppola);
+    m.box(-0.17, 0.28, 0.12, 0.17, 0.32, 0.26, shade(EXTRA_COL.coppola, -0.12));
+  } else if (x === 'basco') {
+    m.prim('ball', 0.03, 0.32, 0, 0.22, 0.07, 0.2, EXTRA_COL.basco, 0, -0.2);
+    m.box(0.02, 0.38, -0.01, 0.04, 0.42, 0.01, EXTRA_COL.basco);
+  } else if (x === 'cuffie') {
+    m.box(-0.2, 0.33, -0.03, 0.2, 0.37, 0.03, EXTRA_COL.cuffie);
+    for (const s of [-1, 1]) { m.box(s > 0 ? 0.17 : -0.205, 0.17, -0.02, s > 0 ? 0.205 : -0.17, 0.35, 0.02, EXTRA_COL.cuffie); m.box(s > 0 ? 0.18 : -0.23, 0.08, -0.06, s > 0 ? 0.23 : -0.18, 0.2, 0.06, '#e85d4a'); }
+  } else if (x === 'corona') {
+    m.prim('cyl10', 0, top - 0.02, 0, 0.16, 0.07, 0.16, '#e2bf4f');
+    for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; m.prim('pyr', Math.cos(a) * 0.15, top + 0.05, Math.sin(a) * 0.15, 0.04, 0.07, 0.04, '#e2bf4f'); }
+    m.prim('ico0', 0, top + 0.02, 0.16, 0.025, 0.025, 0.02, '#c0392b');
+  }
+}
+
+/* Corpo -------------------------------------------------------------------------------- */
+
+function buildBody(m, L, B) {
+  const top = L.top || 'maglietta', bottom = L.bottom || 'pantaloni';
+  const S = L.skin, C = L.shirt, P = L.pants;
+  const dress = top === 'vestito';
+  const tw = top === 'canotta' ? B.tw - 0.01 : B.tw;
+  // Bacino
+  m.box(-B.hipW, 0.3, -0.075, B.hipW, 0.41, 0.075, dress ? C : bottom === 'gonna' ? P : P);
+  // Busto: per lei vita più stretta
+  const body = top === 'giacca' ? '#f4efe3' : C;
+  if (L.gender === 'donna') { m.box(-tw + 0.012, 0.4, -0.075, tw - 0.012, 0.5, 0.075, body); m.box(-tw, 0.5, -0.08, tw, 0.665, 0.08, body); }
+  else m.box(-tw, 0.4, -0.08, tw, 0.665, 0.08, body);
+  if (top === 'righe') for (let k = 0; k < 4; k++) m.box(-tw - 0.002, 0.43 + k * 0.06, -0.082, tw + 0.002, 0.455 + k * 0.06, 0.082, '#f4efe3');
+  if (top === 'camicia') {
+    m.box(-0.07, 0.62, 0.075, -0.005, 0.67, 0.088, '#f4efe3'); m.box(0.005, 0.62, 0.075, 0.07, 0.67, 0.088, '#f4efe3');
+    for (let k = 0; k < 3; k++) m.box(-0.008, 0.45 + k * 0.06, 0.08, 0.008, 0.465 + k * 0.06, 0.088, '#f4efe3');
+  }
+  if (top === 'felpa') {
+    m.box(-0.11, 0.6, -0.12, 0.11, 0.69, -0.06, shade(C, -0.08));
+    m.box(-0.08, 0.43, 0.08, 0.08, 0.5, 0.088, shade(C, -0.12));
+    m.box(-0.035, 0.55, 0.08, -0.025, 0.63, 0.09, '#f4efe3'); m.box(0.025, 0.55, 0.08, 0.035, 0.63, 0.09, '#f4efe3');
+  }
+  if (top === 'giacca') {
+    for (const s of [-1, 1]) {
+      m.box(s > 0 ? 0.035 : -tw - 0.006, 0.38, -0.086, s > 0 ? tw + 0.006 : -0.035, 0.67, 0.088, C);
+      m.prim('box', s * 0.055, 0.56, 0.088, 0.04, 0.1, 0.01, shade(C, -0.15), 0, s * 0.3);
+    }
+    m.box(-tw - 0.006, 0.38, -0.086, tw + 0.006, 0.67, -0.07, C);
+    m.box(-0.012, 0.47, 0.082, 0.012, 0.64, 0.09, '#c0392b');
+  }
+  if (top === 'canotta') { m.box(-tw - 0.002, 0.58, -0.06, -tw + 0.04, 0.665, 0.06, S); m.box(tw - 0.04, 0.58, -0.06, tw + 0.002, 0.665, 0.06, S); }
+  // Gonna o vestito: un tronco di cono che si allarga verso le ginocchia
+  if (dress) m.prim('cone8', 0, 0.15, 0, 0.21, 0.62, 0.17, C);
+  else if (bottom === 'gonna') m.prim('cone8', 0, 0.2, 0, 0.19, 0.5, 0.155, P);
+  // Collo
+  m.box(-0.045, 0.66, -0.04, 0.045, 0.71, 0.04, shade(S, -0.06));
+  if (L.extra === 'sciarpa') {
+    m.box(-0.1, 0.64, -0.08, 0.1, 0.71, 0.08, '#c0392b');
+    m.box(0.02, 0.48, 0.07, 0.07, 0.66, 0.09, '#c0392b');
+    for (let k = 0; k < 3; k++) m.box(0.02, 0.5 + k * 0.05, 0.088, 0.07, 0.515 + k * 0.05, 0.092, '#f1ede4');
+  }
+}
+function buildArm(m, L, side) {
+  const top = L.top || 'maglietta', S = L.skin;
+  const sleeve = top === 'giacca' || top === 'camicia' || top === 'felpa' || top === 'righe' ? 'lunga' : top === 'canotta' ? 'niente' : 'corta';
+  const C = L.shirt;
+  m.box(-0.042, -0.25, -0.045, 0.042, 0, 0.045, sleeve === 'niente' ? S : sleeve === 'corta' ? S : C);
+  if (sleeve === 'corta') m.box(-0.047, -0.1, -0.05, 0.047, 0.005, 0.05, C);
+  if (top === 'righe') for (let k = 0; k < 3; k++) m.box(-0.044, -0.06 - k * 0.07, -0.047, 0.044, -0.04 - k * 0.07, 0.047, '#f4efe3');
+  if (sleeve === 'lunga') m.box(-0.046, -0.235, -0.049, 0.046, -0.21, 0.049, top === 'giacca' ? '#f4efe3' : shade(C, -0.1));
+  m.box(-0.04, -0.31, -0.042, 0.04, -0.24, 0.042, S);
+  void side;
+}
+function buildLeg(m, L) {
+  const b = L.bottom || 'pantaloni', S = L.skin, P = L.pants;
+  const bare = L.top === 'vestito' || b === 'gonna';
+  m.box(-0.055, -0.3, -0.06, 0.055, 0, 0.06, bare ? S : P);
+  if (b === 'pantaloncini' && !bare) m.box(-0.055, -0.3, -0.06, 0.055, -0.14, 0.06, S);
+  if (b === 'pantaloncini' && !bare) m.box(-0.058, -0.16, -0.063, 0.058, -0.13, 0.063, shade(P, -0.1));
+  const sh = L.shoes || '#2b2b2b';
+  m.box(-0.062, -0.345, -0.07, 0.062, -0.285, 0.11, sh);
+  m.box(-0.062, -0.35, -0.07, 0.062, -0.335, 0.11, shade(sh, sh === '#f1ede4' ? -0.25 : 0.25));
+}
+
+/* Mezzi --------------------------------------------------------------------------------- */
+
+function buildRide(m, kind) {
+  if (kind === 'bici') {
+    const col = '#2f6b9f';
+    for (const z of [-0.33, 0.33]) {
+      m.prim('cyl10', 0.0175, 0.18, z, 0.18, 0.035, 0.18, '#1f1f1f', 0, Math.PI / 2);
+      m.prim('cyl10', 0.02, 0.18, z, 0.12, 0.04, 0.12, '#cfd3d6', 0, Math.PI / 2);
+    }
+    m.prim('box', 0, 0.3, 0, 0.035, 0.035, 0.62, col);
+    m.prim('box', 0, 0.3, -0.12, 0.035, 0.3, 0.035, col, 0, 0);
+    m.prim('box', 0, 0.22, 0.27, 0.03, 0.4, 0.03, '#9aa0a6');
+    m.box(-0.05, 0.5, -0.2, 0.05, 0.53, -0.08, '#2b2b2b');
+    m.box(-0.18, 0.6, 0.24, 0.18, 0.625, 0.27, '#2b2b2b');
+    m.box(-0.03, 0.42, 0.25, 0.03, 0.62, 0.28, '#9aa0a6');
+  } else if (kind === 'skate') {
+    m.box(-0.1, 0.05, -0.32, 0.1, 0.08, 0.32, '#2b2b2b');
+    m.box(-0.1, 0.045, -0.32, 0.1, 0.055, 0.32, '#c0392b');
+    for (const z of [-0.22, 0.22]) for (const x of [-0.08, 0.08]) m.prim('cyl10', x, 0.03, z, 0.03, 0.025, 0.03, '#e6dcc6', 0, Math.PI / 2);
+  } else if (kind === 'monopattino') {
+    m.box(-0.07, 0.05, -0.3, 0.07, 0.08, 0.26, '#3b3f45');
+    for (const z of [-0.27, 0.27]) m.prim('cyl10', 0.02, 0.05, z, 0.05, 0.04, 0.05, '#1f1f1f', 0, Math.PI / 2);
+    m.prim('box', 0, 0.06, 0.3, 0.035, 0.72, 0.035, '#3b3f45', 0, 0);
+    m.box(-0.17, 0.76, 0.28, 0.17, 0.79, 0.32, '#2b2b2b');
+    m.box(-0.025, 0.6, 0.315, 0.025, 0.66, 0.33, '#4fb3c8');
+  }
+}
+
+/* L'omino ---------------------------------------------------------------------------------- */
+
+const lookKey = (L, ride) => JSON.stringify([L.mannequin, L.gender, L.skin, L.eyes, L.hair, L.style, L.beard, L.lips, L.shirt, L.pants, L.shoes, L.top, L.bottom, L.extra, ride || null]);
+
+class Avatar3D {
+  constructor(look, { ride = null, scale = 0.8 } = {}) {
+    const T = THR();
+    this.group = new T.Group();
+    this.root = new T.Group();
+    this.group.add(this.root);
+    this.scale = scale;
+    this.group.scale.setScalar(scale);
+    this.wantGhost = false;
+    this.set(look, ride);
+  }
+  set(look, ride = null) {
+    const key = lookKey(look, ride);
+    if (key === this.key) return false;
+    this.key = key;
+    this.look = look; this.ride = ride;
+    const T = THR();
+    for (const c of [...this.root.children]) { this.root.remove(c); c.traverse((o) => o.geometry?.dispose()); }
+    const B = bodyOf(look);
+    const mesh = (m) => { const me = new T.Mesh(m.build(), avatarMat()); me.castShadow = true; return me; };
+    const part = (fill, x, y, z) => { const g = new T.Group(); g.position.set(x, y, z); const m = new Mesher(); fill(m); g.add(mesh(m)); this.root.add(g); return g; };
+    this.body = part((m) => buildBody(m, look, B), 0, 0, 0);
+    this.head = part((m) => buildHead(m, look), 0, B.neckY, 0);
+    this.armL = part((m) => buildArm(m, look, -1), -B.armX, B.shoulderY, 0);
+    this.armR = part((m) => buildArm(m, look, 1), B.armX, B.shoulderY, 0);
+    this.legL = part((m) => buildLeg(m, look), -0.07, B.hipY, 0);
+    this.legR = part((m) => buildLeg(m, look), 0.07, B.hipY, 0);
+    this.rideMesh = null;
+    if (ride) { const m = new Mesher(); buildRide(m, ride); this.rideMesh = mesh(m); this.group.add(this.rideMesh); }
+    if (this.wantGhost) this.makeGhost();
+    return true;
+  }
+  // Una copia scura, visibile solo dietro le case (per il proprio omino)
+  makeGhost() {
+    const T = THR();
+    this.wantGhost = true;
+    const meshes = [];
+    this.root.traverse((o) => { if (o.isMesh && !o.userData.ghost) meshes.push(o); });
+    for (const o of meshes) {
+      o.material = meMaterial(); o.renderOrder = 6;
+      const g = new T.Mesh(o.geometry, ghostMaterial()); g.renderOrder = 5; g.userData.ghost = true;
+      o.parent.add(g);
+    }
+  }
+  // Posa del momento. s: { moving, phase, act, at, sit, facing }
+  pose(s) {
+    const r = this.root, t = s.at || 0;
+    const parts = [this.armL, this.armR, this.legL, this.legR, this.head, this.body];
+    for (const p of parts) p.rotation.set(0, 0, 0);
+    r.position.set(0, 0, 0); r.rotation.set(0, 0, 0);
+    this.body.position.y = 0;
+    const ride = this.ride && !s.sit ? this.ride : null;
+    if (this.rideMesh) this.rideMesh.visible = !!ride;
+    if (s.sit) {
+      // Seduti: cosce in avanti, gambe giù dal bordo della seduta
+      this.legL.rotation.x = this.legR.rotation.x = -1.45;
+      this.armL.rotation.x = this.armR.rotation.x = -0.35;
+      r.position.y = (s.seatH ?? 0.26) - 0.32;
+      r.position.z = -0.08;
+    } else if (ride === 'bici') {
+      r.position.y = 0.2; r.position.z = -0.12;
+      const p = s.moving ? s.phase * 1.6 : 0;
+      this.legL.rotation.x = -1.1 + Math.sin(p) * 0.45; this.legR.rotation.x = -1.1 - Math.sin(p) * 0.45;
+      this.armL.rotation.x = this.armR.rotation.x = -1.15;
+      r.rotation.x = 0.18;
+    } else if (ride) {
+      r.position.y = 0.07;
+      this.armL.rotation.x = this.armR.rotation.x = ride === 'monopattino' ? -1.05 : -0.2;
+      if (ride === 'skate') { this.armL.rotation.z = -0.5; this.armR.rotation.z = 0.5; r.rotation.y = 0.5; }
+      this.legL.rotation.x = 0.1; this.legR.rotation.x = -0.1;
+    } else if (s.moving) {
+      const a = Math.sin(s.phase);
+      this.legL.rotation.x = a * 0.6; this.legR.rotation.x = -a * 0.6;
+      this.armL.rotation.x = -a * 0.55; this.armR.rotation.x = a * 0.55;
+      r.position.y = Math.abs(Math.cos(s.phase)) * 0.035;
+      this.head.rotation.y = a * 0.05;
+    } else {
+      // Fermo: respira e ogni tanto si guarda intorno
+      const b = Math.sin(t / 700);
+      this.body.position.y = b * 0.004;
+      this.armL.rotation.z = -0.04 - b * 0.02; this.armR.rotation.z = 0.04 + b * 0.02;
+      this.head.rotation.y = Math.sin(t / 2300) * 0.18;
+    }
+    // In città la telecamera sta in alto: la testa si alza un po' perché la faccia si veda
+    if (s.lookUp) this.head.rotation.x -= s.lookUp;
+    if (s.act === 'saluta') {
+      this.armR.rotation.z = 2.6 + Math.sin(t / 110) * 0.35; this.armR.rotation.x = 0;
+      this.head.rotation.z = -0.08;
+    } else if (s.act === 'balla') {
+      const k = Math.sin(t / 160);
+      this.armL.rotation.z = -2.4 + k * 0.4; this.armR.rotation.z = 2.4 + k * 0.4;
+      r.rotation.z = k * 0.12; r.position.y = Math.abs(k) * 0.06;
+      this.legL.rotation.z = Math.max(0, k) * 0.25; this.legR.rotation.z = Math.min(0, k) * 0.25;
+      this.head.rotation.z = -k * 0.15;
+    } else if (s.act === 'salta') {
+      const p = Math.abs(Math.sin((t / 800) * Math.PI));
+      r.position.y = p * 0.38;
+      this.armL.rotation.z = -2.5 * p; this.armR.rotation.z = 2.5 * p;
+      this.legL.rotation.x = this.legR.rotation.x = -0.3 * p;
+    }
+  }
+  dispose() {
+    this.group.traverse((o) => { if (o.geometry && !o.userData.ghost) o.geometry.dispose(); });
+  }
+}
+
+/* Immagini: omini nelle stanze e nelle anteprime ---------------------------------------- */
+
+let shot = null;
+function shotRenderer() {
+  const T = THR();
+  if (shot) return shot;
+  const cv = canvas2d(64, 80);
+  const r = new T.WebGLRenderer({ canvas: cv, antialias: false, alpha: true, preserveDrawingBuffer: true });
+  r.setClearColor(0x000000, 0);
+  const scene = new T.Scene();
+  scene.add(new T.HemisphereLight('#fff6e8', '#7d8a6a', 0.62));
+  const sun = new T.DirectionalLight('#ffe9cc', 0.6); sun.position.set(-2, 4, 3); scene.add(sun);
+  shot = { cv, r, scene, cams: new Map() };
+  return shot;
+}
+// Telecamera ortografica: `iso` come nelle stanze (dall'alto, di sbieco), `front` di tre quarti
+function shotCamera(kind, w, h) {
+  const T = THR();
+  const k = `${kind}:${w}x${h}`;
+  let c = shot.cams.get(k);
+  if (c) return c;
+  // 50 pixel per unità come gli omini piatti di prima; piedi a 8 pixel dal fondo; vista a 2:1
+  const hh = h / 100, hw = w / 100;
+  c = new T.OrthographicCamera(-hw, hw, hh, -hh, 0.1, 20);
+  const ty = (h / 2 - 8) / 50 / Math.cos(Math.atan(0.5));
+  c.position.set(4, ty + 5.657 * 0.5, 4); c.lookAt(0, ty, 0);
+  c.updateMatrixWorld();
+  shot.cams.set(k, c);
+  return c;
+}
+const ROOM_YAW = { SE: Math.PI / 2, SW: 0, NE: Math.PI, NW: -Math.PI / 2 };
+const shotCache = new Map();
+// L'omino come immagine 64×80 con i piedi in (32, 72): per le stanze isometriche.
+function avatarSprite(look, { dir = 'SE', moving = false, phase = 0, act = null, at = 0, sit = false, seatH = 0, ride = null } = {}) {
+  const frame = moving ? Math.floor(((phase / (Math.PI * 2)) % 1) * 8) : 0;
+  const af = act ? Math.floor(at / 90) : sit ? 0 : Math.floor(at / 1200) % 4;
+  const key = lookKey(look, ride) + dir + frame + (act || '') + af + (sit ? 's' + seatH.toFixed(2) : '');
+  let cv = shotCache.get(key);
+  if (cv) return cv;
+  const s = shotRenderer();
+  const av = new Avatar3D(look, { ride, scale: 1 });
+  av.group.rotation.y = ROOM_YAW[dir] ?? 0;
+  av.pose({ moving, phase: (frame / 8) * Math.PI * 2, act, at: act ? af * 90 : af * 1200, sit, seatH });
+  s.scene.add(av.group);
+  const cam = shotCamera('iso', 64, 80);
+  s.r.setSize(64, 80, false);
+  s.r.render(s.scene, cam);
+  s.scene.remove(av.group);
+  av.dispose();
+  cv = canvas2d(64, 80);
+  cv.getContext('2d').drawImage(s.cv, 0, 0);
+  shotCache.set(key, cv);
+  if (shotCache.size > 500) shotCache.delete(shotCache.keys().next().value);
+  return cv;
+}
+// Ritratto (mezzo busto o intero) di tre quarti, per icone e carta d'identità.
+function avatarPortrait(target, look, { full = false, bg = null } = {}) {
+  const s = shotRenderer();
+  const T = THR();
+  const w = target.width, h = target.height;
+  const av = new Avatar3D(look, { scale: 1 });
+  av.group.rotation.y = 0.35;
+  av.pose({ at: 0 });
+  s.scene.add(av.group);
+  const cam = new T.OrthographicCamera(-1, 1, 1, -1, 0.1, 20);
+  const hh = full ? 0.62 : 0.34, hw = hh * (w / h);
+  Object.assign(cam, { left: -hw, right: hw, top: hh, bottom: -hh });
+  cam.position.set(0.6, full ? 1.4 : 1.25, 4); cam.lookAt(0, full ? 0.55 : 0.82, 0);
+  cam.updateProjectionMatrix();
+  s.r.setSize(w, h, false);
+  s.r.render(s.scene, cam);
+  s.scene.remove(av.group); av.dispose();
+  const g = target.getContext('2d');
+  g.clearRect(0, 0, w, h);
+  if (bg) { g.fillStyle = bg; g.fillRect(0, 0, w, h); }
+  g.drawImage(s.cv, 0, 0);
+}
+
+/* Palco dell'editor: l'omino gira su un piedistallo e si può ruotare col dito ------------- */
+
+class AvatarStage {
+  constructor(canvas, look, { ride = null } = {}) {
+    const T = THR();
+    this.cv = canvas;
+    this.r = new T.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    this.r.shadowMap.enabled = true;
+    this.scene = new T.Scene();
+    this.scene.add(new T.HemisphereLight('#fff6e8', '#8a9a6a', 0.62));
+    const sun = new T.DirectionalLight('#ffe9cc', 0.62); sun.position.set(-2, 5, 4); sun.castShadow = true; sun.shadow.mapSize.set(512, 512);
+    Object.assign(sun.shadow.camera, { left: -1, right: 1, top: 1.5, bottom: -0.5 });
+    this.scene.add(sun);
+    // Piedistallo di pietra con il prato
+    const m = new Mesher();
+    m.prim('disc', 0, -0.12, 0, 0.62, 0.12, 0.62, '#d8c9a6');
+    m.prim('disc', 0, -0.02, 0, 0.56, 0.02, 0.56, '#7cb65a');
+    for (let k = 0; k < 14; k++) { const a = k * 2.4, rr = 0.2 + (k % 4) * 0.08; m.prim('ico0', Math.cos(a) * rr, 0.0, Math.sin(a) * rr, 0.025, 0.03, 0.025, ['#e85d75', '#f6d84a', '#ffffff', '#5f9a3c'][k % 4]); }
+    const base = new T.Mesh(m.build(), avatarMat()); base.receiveShadow = true; this.scene.add(base);
+    this.cam = new T.PerspectiveCamera(28, 1, 0.1, 50);
+    this.av = new Avatar3D(look, { ride, scale: 1 });
+    this.scene.add(this.av.group);
+    this.yaw = 0.35; this.spin = 0; this.t0 = performance.now(); this.act = null;
+    this.drag = null;
+    canvas.style.touchAction = 'none';
+    canvas.addEventListener('pointerdown', (e) => { this.drag = e.clientX; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener('pointermove', (e) => { if (this.drag === null) return; this.yaw += (e.clientX - this.drag) * 0.012; this.drag = e.clientX; this.lastDrag = performance.now(); });
+    canvas.addEventListener('pointerup', () => { this.drag = null; });
+    const loop = (t) => {
+      if (!canvas.isConnected) return this.dispose();
+      this.frame(t);
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+  set(look, ride = null) { if (this.av.set(look, ride)) this.wave(); }
+  wave() { this.act = { kind: 'saluta', t0: performance.now() }; }
+  frame(t) {
+    const w = this.cv.clientWidth || this.cv.width, h = this.cv.clientHeight || this.cv.height;
+    if (this.w !== w || this.h !== h) { this.w = w; this.h = h; this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); }
+    if (this.drag === null && t - (this.lastDrag || 0) > 2500) this.yaw += 0.006;
+    const at = this.act ? t - this.act.t0 : t - this.t0;
+    if (this.act && at > 1800) this.act = null;
+    const walking = !this.act && Math.floor((t - this.t0) / 4000) % 3 === 2;
+    this.av.group.rotation.y = this.yaw;
+    this.av.pose({ moving: walking && !this.av.ride, phase: t / 160, act: this.act?.kind || null, at });
+    this.cam.position.set(0, 1.0, 3.3); this.cam.lookAt(0, 0.5, 0);
+    this.r.render(this.scene, this.cam);
+  }
+  dispose() { this.av.dispose(); this.r.dispose(); this.r.forceContextLoss(); }
+}
+
 // ---- render.js ----
 // Mappa della città e interni delle case. La città si disegna con town.js, vista dall'alto di tre
 // quarti; le stanze restano isometriche come in Habbo. Tutto si disegna in un buffer a bassa
 // risoluzione e si ingrandisce a pixel interi, così resta nitido e leggero sui telefoni.
 // Uno strato fisso si ridisegna solo quando cambia qualcosa; sopra si muovono omini, acqua, auto.
+
 
 
 
@@ -4458,7 +5152,10 @@ function nightTint(g, w, h) {
 
 function avatarLook(name, chosen) {
   const l = cleanLook(chosen, name);
-  return { skin: LOOK.skin[l.skin], hair: LOOK.hair[l.hair], shirt: LOOK.shirt[l.shirt], pants: LOOK.pants[l.pants], style: l.style, extra: l.extra, top: l.top, bottom: l.bottom };
+  return {
+    gender: l.gender, skin: LOOK.skin[l.skin], eyes: LOOK.eyes[l.eyes], hair: LOOK.hair[l.hair], shirt: LOOK.shirt[l.shirt], pants: LOOK.pants[l.pants],
+    shoes: LOOK.shoes[l.shoes], style: l.style, beard: l.beard, lips: l.lips, extra: l.extra, top: l.top, bottom: l.bottom,
+  };
 }
 function rectO(g, x, y, w, h, fill, line) {
   g.fillStyle = fill; g.fillRect(x, y, w, h);
@@ -4666,7 +5363,16 @@ function drawRideIcon(canvas, kind) {
   drawRide(g, kind, 'all', false);
 }
 // Anteprima per l'editor del personaggio: cammina sul posto e si gira nelle quattro direzioni.
+// Con il 3D l'anteprima è un palco vivo (si gira col dito); la si aggiorna a ogni chiamata.
+const stages = new WeakMap();
 function drawAvatarPreview(canvas, look, t, ride = null) {
+  if (has3D()) {
+    try {
+      const st = stages.get(canvas);
+      if (st) st.set(look, ride); else stages.set(canvas, new AvatarStage(canvas, look, { ride }));
+      return;
+    } catch { /* si ripiega sul disegno piatto */ }
+  }
   const g = canvas.getContext('2d');
   const dirs = ['SE', 'SW', 'NW', 'NE'];
   const k = t / 1000;
@@ -4679,8 +5385,14 @@ function drawAvatarPreview(canvas, look, t, ride = null) {
   drawAvatar(g, 0, 0, dirs[Math.floor(k / 1.4) % 4], (Math.floor(k * 4.5) % 2) + 1, look, { ride });
 }
 
+// Primo piano per la carta d'identità (testa e spalle).
+function drawAvatarBust(canvas, look) {
+  if (has3D()) { try { return avatarPortrait(canvas, look, { full: false }); } catch { /* disegno piatto */ } }
+  return drawAvatarIcon(canvas, look);
+}
 // Figurina ferma per i cataloghi (vestiti dei negozi).
 function drawAvatarIcon(canvas, look) {
+  if (has3D()) { try { return avatarPortrait(canvas, look, { full: true }); } catch { /* disegno piatto */ } }
   const g = canvas.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, canvas.width, canvas.height);
@@ -5135,6 +5847,8 @@ const ACT_MS = { saluta: 2000, balla: 6000, salta: 1600 };
 // Verso dell'omino: nelle stanze isometriche segue gli assi del rombo; in città (vista di tre
 // quarti) di fronte quando scende o va di lato, di spalle quando sale.
 const DIR_OF = (dx, dy) => (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'SE' : 'NW') : (dy > 0 ? 'SW' : 'NE'));
+// Verso (nel mondo) di chi guarda in una delle quattro direzioni
+const DIR_VEC = { SE: [0.35, 1], SW: [-0.35, 1], NE: [0.35, -1], NW: [-0.35, -1] };
 const DIR_TOWN = (dx, dy) => (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'SE' : 'SW') : (dy > 0 ? 'SE' : 'NE'));
 
 class CityMap {
@@ -5263,7 +5977,7 @@ class CityMap {
   }
   setRoomUI(ui) { this.roomUI = { ...this.roomUI, ...ui }; this.dirty = true; }
   tickAvatars(t) {
-    const dt = Math.min(0.1, (t - (this.lastTick || t)) / 1000);
+    const dt = Math.min(0.25, (t - (this.lastTick || t)) / 1000);
     this.lastTick = t;
     let moving = false;
     for (const a of this.avatars.values()) {
@@ -5317,6 +6031,13 @@ class CityMap {
     else if (kind === 'salta') { lift = Math.abs(Math.sin((t / 800) * Math.PI)) * 9; }
     else if (kind === 'balla') { pose = 'dance'; lift = Math.floor(t / 260) % 2 ? 1 : 0; }
     else if (kind === 'saluta') pose = 'wave';
+    if (this.scene && this.t3) {
+      // Nelle stanze l'omino 3D diventa un'immagine vista di sbieco, come i mobili
+      const sit = pose === 'sit';
+      const cv = avatarSprite(a.look, { dir: a.dir, moving: a.path.length > 0, phase: a.walked * Math.PI * 1.6, act: kind, at: t, sit, seatH: sit ? a.sit.h / 50 : 0 });
+      g.drawImage(cv, Math.round(x) - 32, Math.round(y) - 72);
+      return;
+    }
     g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(k, k);
     if (lift) g.translate(0, -Math.round(lift));
     drawAvatar(g, 0, 0, a.dir, step, a.look, { night, pose, t, ride: a.room || a.sit ? null : a.ride, flatRide: !a.room });
@@ -5573,7 +6294,7 @@ class CityMap {
     for (const a of this.visibleAvatars()) {
       const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
       const [fx, fy, fz] = t3.project(a.x + 0.5, a.y + 0.5, h);
-      const [, hy] = t3.project(a.x + 0.5, a.y + 0.5, h + 0.85);
+      const [, hy] = t3.project(a.x + 0.5, a.y + 0.5, h + 1.05);
       const hw = Math.max(8, (fy - hy) * 0.35);
       if (sx > fx - hw && sx < fx + hw && sy > hy - 6 && sy < fy + 4 && (!best || fz < best.d)) best = { d: fz, id: a.id };
     }
@@ -5798,37 +6519,27 @@ class CityMap {
     g.clearRect(0, 0, this.cv.width, this.cv.height);
     this.overlay3d(g, t);
   }
-  // Ogni omino è un piccolo disegno in pixel che si ridisegna solo quando cambia posa o passo.
+  // Ogni omino è un modellino 3D: si gira verso dove va e prende la posa del momento.
   syncAvatars3d(t) {
-    const t3 = this.t3, night = !!this.opts.night;
-    const az = t3.view.az;
+    const t3 = this.t3;
     for (const a of this.visibleAvatars()) {
-      const step = a.path.length ? (Math.floor(a.walked * 2.6) % 2) + 1 : 0;
       const at = (this.now || 0) - (a.act?.t0 || 0);
-      const kind = a.act && at < ACT_MS[a.act.kind] ? a.act.kind : null;
-      let lift = 0, pose = null;
-      if (a.sit && !a.path.length) { pose = 'sit'; lift = a.sit.h / 0.62 - 15; }
-      else if (kind === 'salta') lift = Math.abs(Math.sin((at / 800) * Math.PI)) * 9;
-      else if (kind === 'balla') { pose = 'dance'; lift = Math.floor(at / 260) % 2 ? 1 : 0; }
-      else if (kind === 'saluta') pose = 'wave';
-      // Verso dello sguardo rispetto alla telecamera: di fronte o di spalle, a destra o a sinistra
-      const [mx, my] = a.mv || ({ SE: [0.3, 1], SW: [-0.3, 1], NE: [0.3, -1], NW: [-0.3, -1] })[a.dir] || [0, 1];
-      const sx = mx * Math.cos(az) - my * Math.sin(az), sd = mx * Math.sin(az) + my * Math.cos(az);
-      const dir = Math.abs(sx) > Math.abs(sd) * 1.2 ? (sx > 0 ? 'SE' : 'SW') : sd > 0 ? (sx >= 0 ? 'SE' : 'SW') : (sx >= 0 ? 'NE' : 'NW');
+      const act = a.act && at < ACT_MS[a.act.kind] ? a.act.kind : null;
+      const sit = !!(a.sit && !a.path.length);
+      const [mx, my] = a.mv || DIR_VEC[a.dir] || [0, 1];
       const ride = a.sit ? null : a.ride;
-      const tt = pose === 'dance' || pose === 'wave' ? Math.floor(at / 130) : 0;
-      const k = [dir, step, pose, Math.round(lift), ride, tt, JSON.stringify(a.look)].join('|');
-      if (!a.cv) { a.cv = document.createElement('canvas'); a.cv.width = 96; a.cv.height = 112; }
-      const changed = k !== a.cvKey;
-      if (changed) {
-        a.cvKey = k;
-        const g = a.cv.getContext('2d');
-        g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 96, 112);
-        g.translate(48, 96 - Math.round(lift));
-        drawAvatar(g, 0, 0, dir, step, a.look, { pose, t: at, ride, flatRide: true });
-      }
       const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
-      t3.setAvatar(a.id, { x: a.x + 0.5, y: a.y + 0.5, h, cv: a.cv, changed, me: a.me, night });
+      // Chi cammina guarda dove va; chi è fermo si gira piano verso chi guarda lo schermo
+      const moving = a.path.length > 0;
+      const want = moving || sit ? Math.atan2(mx, my) : t3.view.az;
+      let f = a.face3 ?? want;
+      let d = want - f; d = Math.atan2(Math.sin(d), Math.cos(d));
+      f += moving ? d : d * 0.08;
+      a.face3 = f;
+      t3.setAvatar(a.id, {
+        x: a.x + 0.5, y: a.y + 0.5, h, look: a.look, ride, me: a.me, facing: f,
+        pose: { moving, phase: a.walked * Math.PI * 1.6, act, at: act ? at : t, sit, seatH: 0.3, lookUp: 0.28 },
+      });
     }
     t3.sweepAvatars();
   }
@@ -5845,7 +6556,7 @@ class CityMap {
       const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
       const [x, y, z] = t3.project(a.x + 0.5, a.y + 0.5, h);
       if (z > 1 || x < -60 || x > this.vw + 60 || y < -60 || y > this.vh + 80) continue;
-      const [, head] = t3.project(a.x + 0.5, a.y + 0.5, h + 0.86);
+      const [, head] = t3.project(a.x + 0.5, a.y + 0.5, h + 1.12);
       if (a.me) {
         const bob = Math.sin(t / 300) * 1.5;
         g.fillStyle = '#ffd34d'; g.strokeStyle = 'rgba(60,40,0,0.6)'; g.lineWidth = 1;
@@ -6478,7 +7189,7 @@ function shell() {
   );
   map = new CityMap($('#map'), { onTap });
   if (!map.t3) for (const b of document.querySelectorAll('.zoom .turn')) b.hidden = true;
-  window.__virtualItaly = { store, map }; // comodo per il debug dalla console
+  window.__virtualItaly = { store, map, preview: drawAvatarPreview, look: avatarLook, icon: drawAvatarIcon }; // comodo per il debug dalla console
 }
 
 const BRAND_MARK = '<svg viewBox="0 0 64 64" width="30" height="30"><rect width="64" height="64" rx="16" fill="#f2b632"/><path d="M15 44V28h34v16z" fill="#fbf3dc"/><path d="M11 29 32 12l21 17z" fill="#b5523b"/><path d="M28 44v-9h8v9z" fill="#2f5d50"/><path d="M19 31h6v5h-6zM39 31h6v5h-6z" fill="#2f5d50"/><path d="M6 48h52" stroke="#2f5d50" stroke-width="4" stroke-linecap="round"/></svg>';
@@ -6581,6 +7292,7 @@ function update() {
       h('span', { class: 'goal-track' }, h('span', { class: 'goal-fill', style: `width:${Math.round(g.ratio * 100)}%` }))));
   let cta;
   if (!mine) cta = h('button', { class: 'btn primary big', onclick: openRegister }, 'Vieni ad abitare qui');
+  else if (!house && !registered()) cta = h('button', { class: 'btn primary big', onclick: goToComune }, icon('home'), 'Vai in Municipio');
   else if (!house) cta = h('button', { class: 'btn primary big', onclick: startChoosing }, 'Scegli il tuo lotto');
   else if (house.status === 'casa') cta = h('button', { class: 'btn primary big', onclick: () => enterHouse(mine.id) }, icon('home'), 'Entra in casa');
   else cta = h('button', { class: 'btn big', onclick: () => { map.focus(house.slot, 2); openHouse(house.slot); } }, icon('home'), 'La mia casa');
@@ -6858,8 +7570,8 @@ function openRegister() {
         });
         devLinkToast(r);
         closeSheet();
-        toast(`Account creato. Ti abbiamo mandato un'email per confermare.`);
-        openCharacter({ first: true });
+        toast(`Account creato. Prima tappa: il Municipio, per l'iscrizione all'anagrafe.`);
+        goToComune();
       } catch (ex) { showError(err, ex); }
     });
   });
@@ -6943,6 +7655,7 @@ async function confirmEmail(token) {
 function startChoosing() {
   if (!me()) return openRegister();
   if (myHouse()) return toast('Hai già una casa a Virtual-Italy.');
+  if (!registered()) { toast('Prima passa in Municipio per l\'iscrizione all\'anagrafe.'); return goToComune(); }
   closeSheet();
   ui.mode = 'choose';
   map.fitCentro({ wide: true });
@@ -7017,19 +7730,26 @@ function openBuild(slot, { restyle = false } = {}) {
 
 /* Editor del personaggio ------------------------------------------------- */
 
-function openCharacter({ first = false } = {}) {
+const registered = () => !!myResident()?.anagrafe;
+// Cosa cambia passando da uomo a donna (e viceversa): pettinatura, barba, rossetto, vestito.
+function switchGender(look, g) {
+  if (look.gender === g) return;
+  look.gender = g;
+  const st = LOOK.style.find((o) => o.id === look.style);
+  if (st && st.g !== g && st.g !== 'tutti') look.style = LOOK.style.find((o) => o.g === g).id;
+  if (g === 'donna') look.beard = 'nessuno';
+  else { look.lips = 'naturale'; if (look.top === 'vestito') look.top = 'maglietta'; if (look.bottom === 'gonna') look.bottom = 'pantaloni'; }
+}
+// Editor a schede con il palco 3D in alto: si gira col dito, l'omino saluta a ogni cambio.
+// mode: 'look' (dal profilo) o 'anagrafe' (in Municipio, la prima volta).
+function openCharacter({ first = false, anagrafe = false, onDone = null } = {}) {
   const r = myResident();
   if (!r) return openLogin();
   const look = cleanLook(r.look, r.username);
-  const preview = h('canvas', { class: 'avatar-preview', width: 360, height: 360, 'aria-label': 'Anteprima del tuo personaggio' });
+  const preview = h('canvas', { class: 'avatar-stage', width: 360, height: 420, 'aria-label': 'Il tuo personaggio: trascina per girarlo' });
   const groups = h('div', { class: 'stack' });
-  // L'omino cammina sul posto e si gira nelle quattro direzioni.
-  const t0 = performance.now();
-  const animate = (t) => {
-    if (!preview.isConnected) return;
-    drawAvatarPreview(preview, avatarLook(r.username, look), t - t0);
-    requestAnimationFrame(animate);
-  };
+  let tab = ui.charTab || 'corpo';
+  const owned = (slot) => WEAR.filter((w) => w.slot === slot && ownsWear(store.city, r.id, w.id) && (w.id !== 'vestito' || look.gender === 'donna' || look.top === 'vestito'));
   const colorRow = (label, key, list) => h('div', {}, h('p', { class: 'field-label' }, label),
     h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': label }, list.map((c, i) => h('button', {
       type: 'button', class: 'swatch color' + (look[key] === i ? ' on' : ''), style: `--sw:${c}`, role: 'radio',
@@ -7040,38 +7760,105 @@ function openCharacter({ first = false } = {}) {
       type: 'button', class: 'swatch' + (look[key] === o.id ? ' on' : ''), role: 'radio', 'aria-checked': String(look[key] === o.id),
       onclick: () => { look[key] = o.id; paint(); },
     }, o.label))));
-  // Nei vestiti compare solo quello che si ha: i capi base più quelli presi alla Sartoria.
-  const owned = (slot) => WEAR.filter((w) => w.slot === slot && ownsWear(store.city, r.id, w.id));
-  const paint = () => groups.replaceChildren(
-    colorRow('Carnagione', 'skin', LOOK.skin),
-    idRow('Pettinatura', 'style', LOOK.style),
-    colorRow('Colore dei capelli', 'hair', LOOK.hair),
-    idRow('Maglia', 'top', owned('top')),
-    colorRow('Colore della maglia', 'shirt', LOOK.shirt),
-    idRow('Sotto', 'bottom', owned('bottom')),
-    colorRow('Colore di pantaloni e gonne', 'pants', LOOK.pants),
-    idRow('Accessorio', 'extra', owned('extra')),
-    WEAR.some((w) => !ownsWear(store.city, r.id, w.id)) ? h('p', { class: 'small' }, 'Altri vestiti e accessori ti aspettano alla Sartoria Moda, accanto alla piazza.') : null);
+  const genderRow = () => h('div', { class: 'gender-pick', role: 'radiogroup', 'aria-label': 'Uomo o donna' }, LOOK.gender.map((o) => h('button', {
+    type: 'button', class: 'gender' + (look.gender === o.id ? ' on' : ''), role: 'radio', 'aria-checked': String(look.gender === o.id),
+    onclick: () => { switchGender(look, o.id); paint(); },
+  }, h('span', { class: 'gender-ico', 'aria-hidden': 'true' }, o.id === 'uomo' ? '♂' : '♀'), o.label)));
+  const TABS = [{ id: 'corpo', label: 'Corpo' }, { id: 'capelli', label: 'Capelli e viso' }, { id: 'vestiti', label: 'Vestiti' }, { id: 'accessori', label: 'Accessori' }];
+  const paint = () => {
+    drawAvatarPreview(preview, avatarLook(r.username, look));
+    const tabs = h('div', { class: 'seg', role: 'tablist' }, TABS.map((o) => h('button', { class: 'seg-btn' + (tab === o.id ? ' on' : ''), role: 'tab', 'aria-selected': String(tab === o.id), onclick: () => { tab = ui.charTab = o.id; paint(); } }, o.label)));
+    let body;
+    if (tab === 'corpo') body = [genderRow(), colorRow('Carnagione', 'skin', LOOK.skin), colorRow('Colore degli occhi', 'eyes', LOOK.eyes)];
+    else if (tab === 'capelli') {
+      const mineFirst = [...LOOK.style.filter((o) => o.g === look.gender || o.g === 'tutti'), ...LOOK.style.filter((o) => o.g !== look.gender && o.g !== 'tutti')];
+      body = [idRow('Pettinatura', 'style', mineFirst), colorRow('Colore dei capelli', 'hair', LOOK.hair),
+        look.gender === 'uomo' ? idRow('Barba e baffi', 'beard', LOOK.beard) : idRow('Rossetto', 'lips', LOOK.lips)];
+    } else if (tab === 'vestiti') {
+      body = [idRow('Maglia', 'top', owned('top')), colorRow(look.top === 'vestito' ? 'Colore del vestito' : 'Colore della maglia', 'shirt', LOOK.shirt),
+        look.top === 'vestito' ? null : idRow('Sotto', 'bottom', owned('bottom')),
+        look.top === 'vestito' ? null : colorRow('Colore di pantaloni e gonne', 'pants', LOOK.pants),
+        colorRow('Scarpe', 'shoes', LOOK.shoes)];
+    } else {
+      body = [idRow('Accessorio', 'extra', owned('extra')),
+        WEAR.some((w) => !ownsWear(store.city, r.id, w.id)) ? h('p', { class: 'small' }, 'Cappelli, cuffie, sciarpe e altri capi ti aspettano alla Sartoria Moda, accanto alla piazza.') : null];
+    }
+    groups.replaceChildren(tabs, ...body.filter(Boolean));
+  };
   const shuffle = () => {
     const pick = (n) => Math.floor(Math.random() * n);
     const any = (list) => list[pick(list.length)].id;
-    Object.assign(look, { skin: pick(LOOK.skin.length), hair: pick(LOOK.hair.length), style: LOOK.style[pick(LOOK.style.length)].id,
-      shirt: pick(LOOK.shirt.length), pants: pick(LOOK.pants.length), extra: any(owned('extra')), top: any(owned('top')), bottom: any(owned('bottom')) });
+    const styles = LOOK.style.filter((o) => o.g === look.gender || o.g === 'tutti');
+    Object.assign(look, { skin: pick(LOOK.skin.length), eyes: pick(LOOK.eyes.length), hair: pick(LOOK.hair.length), style: any(styles),
+      shirt: pick(LOOK.shirt.length), pants: pick(LOOK.pants.length), shoes: pick(LOOK.shoes.length), extra: any(owned('extra')), top: any(owned('top')), bottom: any(owned('bottom')),
+      beard: look.gender === 'uomo' ? any(LOOK.beard) : 'nessuno', lips: look.gender === 'donna' ? any(LOOK.lips) : 'naturale' });
     paint();
   };
   paint();
+  const label = anagrafe ? 'Avanti: la carta d\'identità' : first ? 'Avanti: scegli il lotto' : 'Salva il personaggio';
   const save = h('button', { class: 'btn primary big', onclick: (e) => run(e.currentTarget, async () => {
-    await store.op({ type: 'look', look });
+    await store.op({ type: anagrafe ? 'anagrafe' : 'look', look });
+    if (onDone) return onDone();
     if (first) { toast('Che stile! Ora scegli dove costruire casa.'); startChoosing(); }
     else { closeSheet(); toast('Personaggio aggiornato'); }
-  }) }, first ? 'Avanti: scegli il lotto' : 'Salva il personaggio');
-  openSheet(first ? 'Come sei?' : 'Il mio personaggio', h('div', { class: 'stack' },
-    h('div', { class: 'avatar-head' }, preview,
-      h('div', { class: 'stack' },
-        h('p', { class: 'small' }, first ? `Questo è ${r.username}: così ti vedranno gli altri abitanti mentre passeggi.` : 'Così ti vedono gli altri abitanti mentre passeggi.'),
-        h('button', { class: 'btn small', onclick: shuffle }, 'A caso'))),
-    groups, save), { wide: true, onClose: first ? () => { if (!myHouse() && ui.mode !== 'choose') startChoosing(); } : undefined });
-  requestAnimationFrame(animate);
+  }) }, label);
+  openSheet(anagrafe ? 'Ufficio anagrafe · Come sei?' : first ? 'Come sei?' : 'Il mio personaggio', h('div', { class: 'char-editor' },
+    h('div', { class: 'char-stage' }, preview,
+      h('div', { class: 'char-stage-bar' },
+        h('span', { class: 'small' }, anagrafe ? `${r.username}, così ti vedranno in città.` : 'Trascina per girarlo.'),
+        h('button', { class: 'btn small', onclick: shuffle }, '🎲 A caso'))),
+    h('div', { class: 'stack' }, groups, save)), { wide: true });
+}
+
+/* Municipio: ufficio anagrafe ---------------------------------------------- */
+
+// La prima volta in città: si va in Municipio, ci si iscrive all'anagrafe (scegliendo il proprio
+// aspetto) e si ritira la carta d'identità. Solo dopo si può scegliere il lotto.
+function goToComune() {
+  const sh = shopById(COMUNE);
+  if (ui.room === sh.room) return openAnagrafe();
+  if (ui.room) exitHouse();
+  closeSheet();
+  map.focus([sh.x0 + 2, sh.y0 + 2]);
+  if (me() && map.avatarOf(me().id)) walkTo(...sh.front);
+  setTimeout(() => enterHouse(sh.room), me() && map.avatarOf(me().id) ? 1400 : 0);
+}
+function openAnagrafe() {
+  const r = myResident();
+  if (!r) return openRegister();
+  if (r.anagrafe) return openCarta();
+  openSheet('Ufficio anagrafe', h('div', { class: 'stack' },
+    h('p', { class: 'eyebrow' }, `Comune di ${CITY}`),
+    h('p', { class: 'lead' }, `Benvenuto, ${r.username}! Per diventare cittadino di ${CITY} serve l'iscrizione all'anagrafe.`),
+    h('ol', { class: 'steps' },
+      h('li', {}, h('strong', {}, 'Come sei: '), 'uomo o donna, viso, capelli e vestiti.'),
+      h('li', {}, h('strong', {}, 'La carta d\'identità: '), 'con la tua foto e il numero di cittadino.'),
+      h('li', {}, h('strong', {}, 'Il lotto: '), 'poi scegli dove costruire casa.')),
+    h('button', { class: 'btn primary big', onclick: () => openCharacter({ anagrafe: true, onDone: () => openCarta({ fresh: true }) }) }, 'Inizia l\'iscrizione')));
+}
+// La carta d'identità con il ritratto 3D.
+function openCarta({ fresh = false } = {}) {
+  const r = myResident();
+  if (!r) return;
+  const photo = h('canvas', { class: 'id-photo', width: 180, height: 220, 'aria-label': `Foto di ${r.username}` });
+  try { drawAvatarBust(photo, avatarLook(r.username, r.look)); } catch { /* senza foto */ }
+  const look = cleanLook(r.look, r.username);
+  const date = new Date(r.anagrafe || Date.now()).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+  const house = myHouse();
+  openSheet('Carta d\'identità', h('div', { class: 'stack' },
+    h('div', { class: 'id-card' },
+      h('div', { class: 'id-top' }, h('span', {}, 'REPUBBLICA DI'), h('strong', {}, CITY.toUpperCase()), h('span', {}, 'Carta d\'identità')),
+      h('div', { class: 'id-body' }, photo,
+        h('dl', { class: 'id-data' },
+          h('dt', {}, 'Nome'), h('dd', {}, r.username),
+          h('dt', {}, 'Cittadino n°'), h('dd', {}, r.number ? String(r.number) : 'dopo la conferma email'),
+          h('dt', {}, 'Sesso'), h('dd', {}, look.gender === 'donna' ? 'F' : 'M'),
+          h('dt', {}, 'Iscritto il'), h('dd', {}, date),
+          h('dt', {}, 'Residenza'), h('dd', {}, house ? `${districtById(districtAt(...parseKey(house.slot))).name}` : 'da scegliere'))),
+      h('div', { class: 'id-sign' }, h('span', {}, 'Firma'), h('em', {}, r.username))),
+    fresh ? h('p', {}, 'Ecco fatto: sei iscritto all\'anagrafe. Ora scegli il lotto dove costruire la tua casa.') : null,
+    !house ? h('button', { class: 'btn primary big', onclick: () => { if (ui.room) exitHouse(); startChoosing(); } }, 'Scegli il tuo lotto')
+      : h('button', { class: 'btn', onclick: () => openCharacter() }, 'Cambia aspetto')));
 }
 
 /* Case e abitanti -------------------------------------------------------- */
@@ -7413,7 +8200,11 @@ function enterHouse(ownerId) {
   store.move(...ROOM_DOOR, ownerId);
   map.enterRoom(ownerId);
   const shop = shopById(ownerId);
-  if (shop) setTimeout(() => map.say('npc:' + shop.id, shop.kind === 'wear' ? `Ciao ${mine.username}! Tocca un manichino o il catalogo.` : `Benvenuto ${mine.username}! Tocca un mobile per prenderlo.`), 350);
+  if (shop?.kind === 'comune') {
+    const fresh = !registered();
+    setTimeout(() => map.say('npc:' + shop.id, fresh ? `Benvenuto in Comune, ${mine.username}! Vieni allo sportello per l'iscrizione.` : `Buongiorno ${mine.username}! Come posso aiutarti?`), 350);
+    if (fresh) setTimeout(() => { if (ui.room === shop.room) openAnagrafe(); }, 900);
+  } else if (shop) setTimeout(() => map.say('npc:' + shop.id, shop.kind === 'wear' ? `Ciao ${mine.username}! Tocca un manichino o il catalogo.` : `Benvenuto ${mine.username}! Tocca un mobile per prenderlo.`), 350);
   update();
 }
 function exitHouse() {
@@ -7426,7 +8217,7 @@ function exitHouse() {
   store.move(x, y, null);
   map.exitRoom();
   if (house) map.focus(house.slot);
-  if (shop) map.focus([shop.x0 + 1, shop.y0 + 1]);
+  if (shop) map.focus([shop.x0 + Math.floor(shop.w / 2), shop.y0 + shop.d]);
   update();
 }
 // Dalla stanza al Mobilificio: si esce e si va a piedi fino alla sua porta.
@@ -7442,6 +8233,14 @@ function goToShop(id) {
 
 function openShop(shop) {
   map.set({ selected: null });
+  if (shop.kind === 'comune') {
+    return openSheet(shop.name, h('div', { class: 'stack' },
+      h('p', {}, `Il palazzo comunale di ${CITY}: qui c'è l'ufficio anagrafe, dove ogni nuovo abitante si iscrive e ritira la carta d'identità.`),
+      h('p', { class: 'small' }, `Allo sportello c'è ${shop.keeper}. Sotto il portico c'è il Muro dei Fondatori, con le targhe dei primi abitanti.`),
+      me() ? h('button', { class: 'btn primary big', onclick: () => enterHouse(shop.room) }, registered() ? 'Entra in Municipio' : 'Entra e iscriviti all\'anagrafe')
+        : h('button', { class: 'btn primary', onclick: openRegister }, 'Iscriviti per abitare qui'),
+      h('button', { class: 'btn', onclick: openMuro }, 'Muro dei Fondatori')));
+  }
   const what = shop.kind === 'wear' ? 'Maglie, gonne, cappelli e accessori per il tuo omino.'
     : shop.kind === 'ride' ? 'Skateboard, biciclette e monopattini elettrici: a piedi si va a passo d\'uomo, con un mezzo si gira la città più svelti.'
       : 'Mobili e decorazioni da portare a casa e sistemare come vuoi.';
@@ -7506,6 +8305,7 @@ function onNpcTap(id) {
   if (id.startsWith('npc:p:')) { map.say(id, ['Buongiorno!', 'Bella giornata, eh?', 'Ciao!', 'Hai visto la fontana?', 'Vado a prendere un caffè'][Math.floor(Math.random() * 5)]); return; }
   const shop = shopById(ui.room);
   if (!shop) return;
+  if (shop.kind === 'comune') return registered() ? openCarta() : openAnagrafe();
   const m = /^npc:man:(\d+)$/.exec(id);
   if (m) {
     // Il manichino mostra un capo in vendita: si apre la prova di quello.
@@ -7515,7 +8315,22 @@ function onNpcTap(id) {
   map.say(id, shop.kind === 'wear' ? 'Prova quello che vuoi, oggi è tutto gratis!' : shop.kind === 'ride' ? 'Fatti un giro di prova, oggi è tutto gratis!' : 'Scegli pure: oggi è tutto gratis!');
 }
 // Barra in basso dentro un negozio: il catalogo completo, diviso per reparto.
+function comuneBar(shop) {
+  const head = h('div', { class: 'room-head' },
+    h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, 'Sei in Municipio'), h('strong', {}, 'Ufficio anagrafe')),
+    h('span', { class: 'row-actions' }, h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
+  const r = myResident();
+  const actions = r && r.anagrafe
+    ? h('div', { class: 'row-wrap' },
+      h('button', { class: 'btn primary', onclick: () => openCarta() }, '🪪 La mia carta d\'identità'),
+      h('button', { class: 'btn', onclick: () => openCharacter() }, 'Cambia aspetto'),
+      h('button', { class: 'btn', onclick: openMuro }, 'Muro dei Fondatori'))
+    : h('button', { class: 'btn primary big', onclick: openAnagrafe }, 'Iscriviti all\'anagrafe');
+  void shop;
+  return h('div', { class: 'bar room-bar' }, head, actions, chatBar());
+}
 function shopBar(shop) {
+  if (shop.kind === 'comune') return comuneBar(shop);
   const head = h('div', { class: 'room-head' },
     h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, 'Sei in negozio'), h('strong', {}, shop.name)),
     h('span', { class: 'row-actions' }, h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
@@ -7687,9 +8502,10 @@ function syncAvatars() {
   })), ...shopPeople(), ...passersby()]);
 }
 // Commessi e manichini dei negozi: esistono solo sullo schermo, stanno fermi al loro posto.
-const KEEPER_LOOKS = { mobili: { skin: 2, hair: 6, style: 'corti', shirt: 3, pants: 3, top: 'camicia', bottom: 'pantaloni', extra: 'occhiali' },
-  moda: { skin: 1, hair: 0, style: 'coda', shirt: 9, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'nessuno' },
-  bici: { skin: 3, hair: 2, style: 'ricci', shirt: 4, pants: 1, top: 'felpa', bottom: 'pantaloncini', extra: 'cuffie' } };
+const KEEPER_LOOKS = { mobili: { gender: 'uomo', skin: 2, hair: 6, style: 'corti', beard: 'baffi', shirt: 3, pants: 3, top: 'camicia', bottom: 'pantaloni', extra: 'occhiali' },
+  moda: { gender: 'donna', skin: 1, hair: 0, style: 'coda', lips: 'rosso', shirt: 9, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'nessuno' },
+  bici: { gender: 'uomo', skin: 3, hair: 2, style: 'ricci', beard: 'barbetta', shirt: 4, pants: 1, top: 'felpa', bottom: 'pantaloncini', extra: 'cuffie' },
+  comune: { gender: 'donna', skin: 2, hair: 1, style: 'chignon', lips: 'rosa', shirt: 5, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'occhiali' } };
 // Passanti: gente del paese che fa due passi, si siede in piazza, prende il caffè. Esistono solo
 // sullo schermo di chi guarda e servono a dare vita alla città anche quando gli abitanti sono pochi.
 const PASSERSBY = Array.from({ length: 8 }, (_, i) => ({
@@ -7726,7 +8542,7 @@ function strollPassersby() {
 function shopPeople() {
   const out = SHOPS.map((sh) => ({ id: 'npc:' + sh.id, name: sh.keeper, look: KEEPER_LOOKS[sh.id], pos: [...SHOP_KEEPER_AT, sh.room], dir: 'SW' }));
   MANNEQUINS.forEach((m, i) => {
-    const colors = { ...avatarLook('manichino', m.look), skin: '#e9e4da', hair: '#e9e4da', style: 'corti' };
+    const colors = { ...avatarLook('manichino', m.look), skin: '#e9e4da', hair: '#e9e4da', style: 'pelato', mannequin: true };
     out.push({ id: 'npc:man:' + i, name: '', colors, pos: [...m.at, 'shop:moda'], dir: i % 2 ? 'SW' : 'SE' });
   });
   return out;

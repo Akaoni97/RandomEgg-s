@@ -81,23 +81,37 @@ export const DECOS = [
 export const SHAPES = ['casa', 'villetta', 'torretta'];
 
 // I negozi sono edifici veri ai lati della piazza, con la vetrina sulla strada principale.
-// Occupano un blocco 2×2 (x0..x0+1, y0..y0+1) e la porta dà sulla casella `front`.
+// Occupano un blocco w×d (di solito 2×2) e la porta dà sulla casella `front`.
+// Il Municipio chiude la piazza a nord, accanto al campanile: lì c'è l'ufficio anagrafe.
 export const SHOPS = [
   { id: 'mobili', name: 'Mobilificio Bottega', sign: 'MOBILI', kind: 'furni', x0: 33, y0: 28, keeper: 'Gino' },
   { id: 'moda', name: 'Sartoria Moda', sign: 'MODA', kind: 'wear', x0: 46, y0: 28, keeper: 'Rosa' },
   { id: 'bici', name: 'Ciclofficina Ruota Libera', sign: 'BICI', kind: 'ride', x0: 51, y0: 28, keeper: 'Tonino' },
-].map((sh) => ({ ...sh, room: 'shop:' + sh.id, front: [sh.x0, MAIN_Y] }));
+  { id: 'comune', name: 'Municipio', sign: 'MUNICIPIO', kind: 'comune', x0: 38, y0: 21, w: 5, d: 2, keeper: 'Carla', front: [40, 23] },
+].map((sh) => ({ w: 2, d: 2, front: [sh.x0, MAIN_Y], ...sh, room: 'shop:' + sh.id }));
+export const COMUNE = 'comune';
 export const shopById = (id) => SHOPS.find((sh) => sh.id === id || sh.room === id) || null;
-export const shopAt = (x, y) => SHOPS.find((sh) => x >= sh.x0 && x <= sh.x0 + 1 && y >= sh.y0 && y <= sh.y0 + 1) || null;
+export const shopAt = (x, y) => SHOPS.find((sh) => x >= sh.x0 && x < sh.x0 + sh.w && y >= sh.y0 && y < sh.y0 + sh.d) || null;
 export const isShopRoom = (room) => typeof room === 'string' && room.startsWith('shop:') && !!shopById(room);
 
 // Editor del personaggio: ogni scelta è un indice (colori) o un id (pettinatura, accessorio).
 export const LOOK = {
+  gender: [{ id: 'uomo', label: 'Uomo' }, { id: 'donna', label: 'Donna' }],
   skin: ['#f6dcc6', '#f3d2b3', '#e8b98f', '#c98d63', '#a8714a', '#8d5b3d', '#5e3b26'],
+  eyes: ['#3b2a1e', '#6b4a2f', '#4f7fa8', '#4f8a52', '#7d8d9a'],
   hair: ['#1f1a17', '#3b2a1e', '#6b4226', '#a4532e', '#d9a441', '#efd9a0', '#8a8a8a', '#e86b8a', '#3f6aa1'],
-  style: [{ id: 'corti', label: 'Corti' }, { id: 'lunghi', label: 'Lunghi' }, { id: 'coda', label: 'Coda' }, { id: 'ricci', label: 'Ricci' }],
+  // Pettinature: `g` dice per chi sono pensate (si possono scegliere tutte)
+  style: [
+    { id: 'corti', label: 'Corti', g: 'uomo' }, { id: 'ciuffo', label: 'Ciuffo', g: 'uomo' }, { id: 'rasati', label: 'Rasati', g: 'uomo' },
+    { id: 'spettinati', label: 'Spettinati', g: 'uomo' }, { id: 'pelato', label: 'Pelato', g: 'uomo' },
+    { id: 'lunghi', label: 'Lunghi', g: 'donna' }, { id: 'coda', label: 'Coda', g: 'donna' }, { id: 'caschetto', label: 'Caschetto', g: 'donna' },
+    { id: 'chignon', label: 'Chignon', g: 'donna' }, { id: 'trecce', label: 'Trecce', g: 'donna' }, { id: 'ricci', label: 'Ricci', g: 'tutti' },
+  ],
+  beard: [{ id: 'nessuno', label: 'Niente' }, { id: 'barbetta', label: 'Barbetta' }, { id: 'barba', label: 'Barba' }, { id: 'baffi', label: 'Baffi' }, { id: 'pizzetto', label: 'Pizzetto' }],
+  lips: [{ id: 'naturale', label: 'Naturali' }, { id: 'rosa', label: 'Rosa' }, { id: 'rosso', label: 'Rosso' }],
   shirt: ['#d9442f', '#e88a3a', '#e0a92a', '#2f7d4f', '#4fb3c8', '#3f6aa1', '#7a4a6b', '#e86b8a', '#f1ede4', '#2d2d2d'],
-  pants: ['#2d3a4a', '#2f4f6f', '#4b4f56', '#6b4a2f', '#c9b48f', '#2d2d2d'],
+  pants: ['#2d3a4a', '#2f4f6f', '#4b4f56', '#6b4a2f', '#c9b48f', '#2d2d2d', '#7a4a6b', '#c0392b'],
+  shoes: ['#2b2b2b', '#6b4a2f', '#f1ede4', '#c0392b', '#3f6aa1'],
   extra: [{ id: 'nessuno', label: 'Niente' }, { id: 'cappellino', label: 'Cappellino' }, { id: 'occhiali', label: 'Occhiali' }, { id: 'fiore', label: 'Fiore' }],
 };
 // Vestiti: i capi base li hanno tutti, gli altri si prendono alla Sartoria Moda.
@@ -109,9 +123,10 @@ export const WEAR = [
   { id: 'felpa', slot: 'top', label: 'Felpa', price: 45 },
   { id: 'giacca', slot: 'top', label: 'Giacca', price: 80 },
   { id: 'canotta', slot: 'top', label: 'Canottiera', price: 20 },
+  { id: 'vestito', slot: 'top', label: 'Vestito', base: true },
   { id: 'pantaloni', slot: 'bottom', label: 'Pantaloni', base: true },
   { id: 'pantaloncini', slot: 'bottom', label: 'Pantaloncini', price: 25 },
-  { id: 'gonna', slot: 'bottom', label: 'Gonna', price: 30 },
+  { id: 'gonna', slot: 'bottom', label: 'Gonna', base: true },
   { id: 'nessuno', slot: 'extra', label: 'Niente', base: true },
   { id: 'cappellino', slot: 'extra', label: 'Cappellino', base: true },
   { id: 'occhiali', slot: 'extra', label: 'Occhiali', base: true },
@@ -137,10 +152,13 @@ const wearOf = (slot) => WEAR.filter((w) => w.slot === slot);
 // Aspetto di partenza, uguale per sempre per lo stesso nome finché l'abitante non sceglie il suo.
 export function defaultLook(name) {
   const h = hash(String(name));
+  const gender = (h >>> 17) % 2 ? 'donna' : 'uomo';
+  const styles = LOOK.style.filter((o) => o.g === gender);
   return {
-    skin: h % LOOK.skin.length, hair: (h >>> 3) % 6, style: LOOK.style[(h >>> 14) % 2].id,
-    shirt: (h >>> 6) % LOOK.shirt.length, pants: (h >>> 9) % 4, extra: (h >>> 12) % 3 === 0 ? 'cappellino' : 'nessuno',
-    top: 'maglietta', bottom: 'pantaloni',
+    gender, skin: h % LOOK.skin.length, eyes: (h >>> 20) % LOOK.eyes.length, hair: (h >>> 3) % 6, style: styles[(h >>> 14) % 3].id,
+    beard: gender === 'uomo' && (h >>> 22) % 3 === 0 ? 'barbetta' : 'nessuno', lips: 'naturale',
+    shirt: (h >>> 6) % LOOK.shirt.length, pants: (h >>> 9) % 4, shoes: (h >>> 24) % 3, extra: (h >>> 12) % 3 === 0 ? 'cappellino' : 'nessuno',
+    top: 'maglietta', bottom: gender === 'donna' && (h >>> 26) % 2 ? 'gonna' : 'pantaloni',
   };
 }
 export function cleanLook(raw, name) {
@@ -148,10 +166,19 @@ export function cleanLook(raw, name) {
   const r = raw && typeof raw === 'object' ? raw : {};
   const idx = (v, list, fb) => (Number.isInteger(v) && v >= 0 && v < list.length ? v : fb);
   const id = (v, list, fb) => (list.some((o) => o.id === v) ? v : fb);
+  // Chi ha scelto l'aspetto prima che ci fossero uomo e donna tiene la sua pettinatura
+  const gender = id(r.gender, LOOK.gender, r.style && LOOK.style.find((o) => o.id === r.style)?.g === 'donna' ? 'donna' : base.gender);
+  // Se il genere scelto non è quello di partenza, anche pettinatura e vestiti di partenza cambiano
+  if (gender !== base.gender) {
+    base.style = LOOK.style.find((o) => o.g === gender).id;
+    base.bottom = 'pantaloni';
+    base.beard = 'nessuno';
+  }
   return {
-    skin: idx(r.skin, LOOK.skin, base.skin), hair: idx(r.hair, LOOK.hair, base.hair), style: id(r.style, LOOK.style, base.style),
-    shirt: idx(r.shirt, LOOK.shirt, base.shirt), pants: idx(r.pants, LOOK.pants, base.pants), extra: id(r.extra, wearOf('extra'), base.extra),
-    top: id(r.top, wearOf('top'), base.top), bottom: id(r.bottom, wearOf('bottom'), base.bottom),
+    gender, skin: idx(r.skin, LOOK.skin, base.skin), eyes: idx(r.eyes, LOOK.eyes, base.eyes), hair: idx(r.hair, LOOK.hair, base.hair),
+    style: id(r.style, LOOK.style, base.style), beard: id(r.beard, LOOK.beard, gender === 'uomo' ? base.beard : 'nessuno'), lips: id(r.lips, LOOK.lips, 'naturale'),
+    shirt: idx(r.shirt, LOOK.shirt, base.shirt), pants: idx(r.pants, LOOK.pants, base.pants), shoes: idx(r.shoes, LOOK.shoes, base.shoes),
+    extra: id(r.extra, wearOf('extra'), base.extra), top: id(r.top, wearOf('top'), base.top), bottom: id(r.bottom, wearOf('bottom'), base.bottom),
   };
 }
 
@@ -442,6 +469,11 @@ const SHOP_ROOMS = {
     ['bancone', 4, 1, 0, 1], ['espositore', 2, 3, 0, 0], ['espositore', 4, 3, 0, 1], ['espositore', 6, 3, 0, 2],
     ['espositore', 2, 6, 0, 1], ['espositore', 4, 6, 0, 2], ['espositore', 6, 6, 0, 0], ['pianta', 0, 0], ['lampada', 7, 0], ['pianta', 7, 7],
   ] },
+  // Municipio: il bancone dell'anagrafe, le sedie d'attesa, la bandiera e il ritratto della città
+  'shop:comune': { floor: 'marmo', wall: '#efe6d2', access: 'tutti', items: [
+    ['bancone', 4, 1, 0, 0], ['scrivania', 2, 0], ['libreria', 6, 0], ['libreria', 7, 0], ['pendolo', 1, 0], ['statua', 0, 0],
+    ['tappeto', 3, 3, 0, 0], ['sedia', 1, 4, 0, 6], ['sedia', 1, 5, 0, 6], ['sedia', 1, 6, 0, 6], ['pianta', 0, 7], ['pianta', 7, 7], ['vaso', 7, 4, 0, 5],
+  ] },
   'shop:moda': { floor: 'parquet', wall: '#d9d0e8', access: 'tutti', items: [
     ['bancone', 4, 1, 0, 7], ['specchio', 2, 0], ['specchio', 3, 0], ['stender', 6, 3, 1, 0], ['stender', 6, 6, 1, 5],
     ['tappeto', 2, 3, 0, 5], ['pouf', 3, 4, 0, 1], ['pianta', 0, 0], ['pianta', 7, 7], ['vaso', 0, 7, 0, 3], ['lampada', 7, 0],
@@ -530,14 +562,14 @@ export const SEATS = { sedia: 15, poltrona: 12, divano: 11, pouf: 13 };
 export const PIAZZA_DECOR = {
   fountain: [40, 25],                       // centro della vasca; occupa le 3×3 caselle attorno
   edicola: [37, 28],
-  muro: [[39, 21], [40, 21], [41, 21]],
+  muro: [],                                 // il Muro dei Fondatori ora sta sotto il portico del Municipio
   campanile: [44, 21],
   cafe: [[43, 24], [44, 25], [43, 26]],
   lamps: [[37, 23], [43, 23], [37, 27], [43, 27]],
   trees: [[36, 23], [36, 26]],
   planters: [[36, 29], [44, 29]],
 };
-export const BENCHES = [[38, 25], [42, 25], [40, 23], [40, 27]];
+export const BENCHES = [[38, 25], [42, 25], [40, 27]];
 export const PIAZZA_BLOCKED = new Set([
   ...[-1, 0, 1].flatMap((dy) => [-1, 0, 1].map((dx) => key(PIAZZA_DECOR.fountain[0] + dx, PIAZZA_DECOR.fountain[1] + dy))),
   key(...PIAZZA_DECOR.edicola), key(...PIAZZA_DECOR.campanile), ...PIAZZA_DECOR.muro.map((p) => key(...p)),
@@ -766,6 +798,9 @@ export const friendsOf = (s, id) => s.friendships.filter((f) => f.a === id || f.
 // poi si rifanno strade e porte. Restituisce true se qualcosa è cambiato.
 export function migratePlan(s) {
   const moved = {};
+  // Chi aveva già casa prima del Municipio risulta iscritto all'anagrafe dal giorno in cui è arrivato
+  let enrolled = false;
+  for (const r of Object.values(s.residents)) if (!r.anagrafe && residentHouse(s, r.id)) { r.anagrafe = r.joinedAt || 1; enrolled = true; }
   const wrong = Object.keys(s.houses).filter((k) => !PLAN.lots.has(k)).sort((a, b) => s.houses[a].reservedAt - s.houses[b].reservedAt);
   for (const k of wrong) {
     const [x, y] = parseKey(k);
@@ -789,7 +824,7 @@ export function migratePlan(s) {
   if (changed) for (const n of s.news) if (n.slot && moved[n.slot]) n.slot = moved[n.slot];
   const before = JSON.stringify([s.roads, s.doors]);
   refresh(s);
-  return changed || JSON.stringify([s.roads, s.doors]) !== before;
+  return changed || enrolled || JSON.stringify([s.roads, s.doors]) !== before;
 }
 
 // Dopo ogni modifica alle case: quartieri da aprire, traguardi, strade.
@@ -867,9 +902,23 @@ const OPS = {
     return { number: r.number };
   },
 
+  // Ufficio anagrafe del Municipio: chi arriva in città si iscrive (e lì sceglie com'è fatto).
+  anagrafe(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    const look = cleanLook(op.look ?? r.look, r.username);
+    for (const slot of ['top', 'bottom', 'extra']) {
+      if (!ownsWear(s, r.id, look[slot])) throw invalid(`${wearById(look[slot]).label}: prima prendilo alla Sartoria Moda.`);
+    }
+    r.look = look;
+    if (r.anagrafe) return { already: true };
+    r.anagrafe = now;
+    return { at: now };
+  },
+
   chooseSlot(s, op, ctx, now) {
     const r = needResident(s, ctx);
     if (residentHouse(s, r.id)) throw invalid('Hai già una casa a Virtual-Italy.');
+    if (!r.anagrafe) throw invalid('Prima passa in Municipio: serve l\'iscrizione all\'anagrafe.');
     const slot = String(op.slot || '');
     if (!isLot(slot)) throw invalid('Qui non si può costruire: scegli uno dei lotti liberi.');
     if (districtAt(...parseKey(slot)) > s.openDistricts) throw invalid('Questo quartiere non è ancora aperto.');
