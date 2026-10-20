@@ -927,22 +927,42 @@ export class Town3D {
   }
 
   /* Telecamera */
+  // Terza persona: telecamera bassa dietro l'omino, obiettivo più largo
+  setTPS(on) {
+    this.tps = !!on;
+    this.camera.fov = on ? 52 : 30;
+    this.camera.updateProjectionMatrix();
+    if (on) Object.assign(this.view, { dist: 5.2, pitch: 0.36 });
+    else Object.assign(this.view, { dist: 22, pitch: 0.82 });
+    this.lastShadow = null;
+  }
   clampView() {
     const v = this.view;
-    v.dist = Math.max(6, Math.min(120, v.dist));
+    if (this.tps) { v.dist = Math.max(2.6, Math.min(12, v.dist)); v.pitch = Math.max(0.12, Math.min(1.1, v.pitch)); }
+    else v.dist = Math.max(6, Math.min(120, v.dist));
     v.x = Math.max(0, Math.min(W, v.x));
     v.y = Math.max(0, Math.min(H + 2, v.y));
   }
   groundAt(x, y) { return this.G ? townSurface(this.G, this.ramps, Math.max(0, Math.min(W - 0.01, x)), Math.max(0, Math.min(H - 0.01, y))) / PX : 0; }
   updateCamera() {
     const v = this.view;
-    const gy = this.groundAt(v.x, v.y);
+    const gy = this.groundAt(v.x, v.y) + (this.tps ? 0.85 : 0);
     const c = Math.cos(v.pitch), s = Math.sin(v.pitch);
-    this.camera.position.set(v.x + Math.sin(v.az) * c * v.dist, gy + s * v.dist, v.y + Math.cos(v.az) * c * v.dist);
+    let d = v.dist;
+    if (this.tps) {
+      // Se una casa sta tra l'omino e la telecamera, la telecamera si avvicina
+      const T = T3();
+      const dir = new T.Vector3(Math.sin(v.az) * c, s, Math.cos(v.az) * c);
+      const rc = new T.Raycaster(new T.Vector3(v.x, gy, v.y), dir, 0.3, d);
+      const solid = [...this.houses.values(), ...this.shops.values()].map((b) => b.group);
+      const hit = rc.intersectObjects(solid, true)[0];
+      if (hit) d = Math.max(1.2, hit.distance - 0.25);
+    }
+    this.camera.position.set(v.x + Math.sin(v.az) * c * d, gy + s * d, v.y + Math.cos(v.az) * c * d);
     this.camera.lookAt(v.x, gy, v.y);
     this.camera.updateMatrixWorld();
     // Ombre: il sole segue il punto guardato; la mappa delle ombre si rifà solo quando serve
-    const half = Math.max(10, Math.min(46, v.dist * 0.95));
+    const half = this.tps ? 16 : Math.max(10, Math.min(46, v.dist * 0.95));
     const key_ = `${Math.round(v.x / 3)},${Math.round(v.y / 3)},${Math.round(half / 4)}`;
     if (key_ !== this.lastShadow) {
       this.lastShadow = key_;
@@ -955,7 +975,8 @@ export class Town3D {
       sc.updateProjectionMatrix();
       this.shadowDirty = true;
     }
-    this.scene.fog.near = v.dist * 2.2; this.scene.fog.far = v.dist * 4.5 + 30;
+    if (this.tps) { this.scene.fog.near = 22; this.scene.fog.far = 70; }
+    else { this.scene.fog.near = v.dist * 2.2; this.scene.fog.far = v.dist * 4.5 + 30; }
   }
   // Distanza della telecamera per vedere `w` caselle da un bordo all'altro dello schermo
   distForWidth(w) { return w / (2 * Math.tan((this.camera.fov * Math.PI) / 360) * (this.vw / Math.max(1, this.vh))); }

@@ -6,7 +6,7 @@ import {
   formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook, SAY_PRESETS, SAY_MAX,
   FURNI, FLOORS, WALLS, ACCESS, ROOM_DOOR, furniById, roomOf, canVisit,
   SHOPS, COMUNE, shopById, isShopRoom, SOLDO, soldi, INCOME, dailyReward, walletOf, JOBS, workOf, jobLevel, shiftsLeft, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
-  seatAt, footprint, missionStatus, progressOf, dayKey, weekKey, heartsThisWeek, weekRanking, WELCOME_PRIZE,
+  seatAt, PIAZZA_DECOR, footprint, missionStatus, progressOf, dayKey, weekKey, heartsThisWeek, weekRanking, WELCOME_PRIZE,
   RIDES, rideById, walkable, W, SEA_Y, BENCHES, WALK_SPEED,
 } from './core.js';
 import { CityMap, drawPreview, renderPoster, drawAvatarPreview, avatarLook, drawFurniIcon, drawAvatarIcon, drawAvatarBust, drawRideIcon } from './render.js';
@@ -42,6 +42,8 @@ const ICONS = {
   desk: '<path d="M4 6h16v10H4zM9 20h6M12 16v4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
+  walk: '<circle cx="13" cy="4.5" r="2"/><path d="M11 21l2-6-2.5-3 1-5 3.5 3 3 1M10.5 7 7 9.5 6 13M13 15l3 6"/>',
+  map: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/>',
   turnL: '<path d="M8 4 4 8l4 4"/><path d="M4 8h9a6 6 0 0 1 0 12H9"/>',
   turnR: '<path d="m16 4 4 4-4 4"/><path d="M20 8h-9a6 6 0 0 0 0 12h4"/>',
   fountain: '<path d="M4 15h16M6 15c0 3 2.7 5 6 5s6-2 6-5M12 15V8M12 8c-2 0-3.5 1.2-4 3M12 8c2 0 3.5 1.2 4 3M12 5v1"/>',
@@ -103,7 +105,7 @@ function shell() {
     h('div', { class: 'haze', 'aria-hidden': 'true' }),
     h('div', { class: 'hud-top' },
       h('header', { class: 'top' },
-        h('button', { class: 'brand', onclick: () => { closeSheet(); map.fitCentro(); }, 'aria-label': 'Torna al centro della città' },
+        h('button', { class: 'brand', onclick: () => { closeSheet(); if (ui.tps) toggleTPS(false); map.fitCentro(); }, 'aria-label': 'Torna al centro della città' },
           h('span', { class: 'brand-mark', 'aria-hidden': 'true', html: BRAND_MARK }),
           h('span', { class: 'brand-text' },
             h('span', { class: 'brand-name' }, 'Virtual', h('span', { class: 'brand-dash' }, '-'), 'Italy'),
@@ -122,16 +124,18 @@ function shell() {
         h('span', { class: 'ticker-text', id: 'ticker-text' })),
       h('div', { class: 'notice', id: 'notice', hidden: true })),
     h('div', { class: 'zoom' },
+      h('button', { class: 'tab tps-toggle', id: 'btn-tps', onclick: () => toggleTPS(true), 'aria-label': 'Cammina in terza persona', hidden: true }, icon('walk')),
       h('button', { class: 'tab', onclick: () => map.zoomStep(1), 'aria-label': 'Ingrandisci' }, icon('plus')),
       h('button', { class: 'tab', onclick: () => map.zoomStep(-1), 'aria-label': 'Rimpicciolisci' }, icon('minus')),
       h('button', { class: 'tab turn', onclick: () => map.rotate(-1), 'aria-label': 'Gira la città a sinistra' }, icon('turnL')),
       h('button', { class: 'tab turn', onclick: () => map.rotate(1), 'aria-label': 'Gira la città a destra' }, icon('turnR'))),
     h('footer', { class: 'bottom', id: 'bottom' }),
+    tpsUI(),
     h('div', { class: 'scrim', id: 'scrim', hidden: true, onclick: closeSheet }),
     h('section', { class: 'sheet', id: 'sheet', hidden: true, role: 'dialog', 'aria-modal': 'true' }),
     h('div', { class: 'toasts', id: 'toasts' }),
   );
-  map = new CityMap($('#map'), { onTap });
+  map = new CityMap($('#map'), { onTap, onMove: (x, y) => store.move(x, y) });
   if (!map.t3) for (const b of document.querySelectorAll('.zoom .turn')) b.hidden = true;
   window.__virtualItaly = { store, map, preview: drawAvatarPreview, look: avatarLook, icon: drawAvatarIcon }; // comodo per il debug dalla console
 }
@@ -192,6 +196,7 @@ function update() {
   badge.hidden = !incoming;
   badge.textContent = incoming;
   $('#btn-mail').hidden = !mine;
+  $('#btn-tps').hidden = !(mine && map.t3 && !ui.room);
   // Borsellino: il saldo in alto, con un saltello quando entrano soldi
   const wallet = mine && city.residents[mine.id]?.anagrafe ? walletOf(city, mine.id) : null;
   $('#btn-wallet').hidden = wallet === null;
@@ -252,6 +257,123 @@ function update() {
   else cta = h('button', { class: 'btn big', onclick: () => { map.focus(house.slot, 2); openHouse(house.slot); } }, icon('home'), 'La mia casa');
   const talk = mine && map.avatarOf(mine.id) ? chatBar() : null;
   bottom.replaceChildren(h('div', { class: 'bar' }, talk, goal, cta));
+}
+
+/* Terza persona: joystick e tasto azione ------------------------------------- */
+
+// Il joystick sta in basso a sinistra, il tasto azione in basso a destra: il tasto cambia
+// scritta secondo quello che c'è vicino (entrare, sedersi, salutare, leggere il giornale...).
+function tpsUI() {
+  const knob = h('span', { class: 'joy-knob' });
+  const base = h('div', { class: 'joy', role: 'application', 'aria-label': 'Joystick: trascina per camminare' }, knob);
+  let id = null, cx = 0, cy = 0;
+  const R = 46;
+  const move = (e) => {
+    let dx = e.clientX - cx, dy = e.clientY - cy;
+    const d = Math.hypot(dx, dy);
+    if (d > R) { dx = (dx / d) * R; dy = (dy / d) * R; }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    map.tpsInput(dx / R, dy / R);
+  };
+  const stop = () => { id = null; knob.style.transform = ''; map.tpsInput(0, 0); };
+  base.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const r = base.getBoundingClientRect();
+    cx = r.left + r.width / 2; cy = r.top + r.height / 2; id = e.pointerId;
+    base.setPointerCapture(id); move(e);
+  });
+  base.addEventListener('pointermove', (e) => { if (e.pointerId === id) move(e); });
+  base.addEventListener('pointerup', stop);
+  base.addEventListener('pointercancel', stop);
+  const act = h('button', { class: 'tps-act', id: 'tps-act', disabled: true, onclick: () => tpsDo() },
+    h('span', { class: 'tps-act-ico', id: 'tps-act-ico' }, '✋'), h('span', { class: 'tps-act-label', id: 'tps-act-label' }, 'Avvicinati'));
+  return h('div', { class: 'tps', id: 'tps', hidden: true },
+    h('div', { class: 'tps-top' },
+      h('button', { class: 'btn small tps-chip', onclick: () => openSheet('Parla e gesti', h('div', { class: 'stack' }, actionsRow(), chatBar())) }, icon('smile'), 'Parla'),
+      h('button', { class: 'btn small tps-chip', onclick: () => toggleTPS(false) }, icon('map'), 'Vista dall\'alto')),
+    base, act,
+    h('p', { class: 'tps-hint small' }, 'Trascina lo schermo per girarti'));
+}
+function toggleTPS(on) {
+  if (on) {
+    if (!me()) return openRegister();
+    if (ui.room) return toast('Esci prima dalla stanza.');
+    if (!map.avatarOf(me().id)) syncAvatars();
+    closeSheet();
+    if (!map.setTPS(true)) return toast('Il tuo omino non è in città.', 'err');
+  } else map.setTPS(false);
+  ui.tps = !!on;
+  document.body.classList.toggle('in-tps', ui.tps);
+  $('#tps').hidden = !ui.tps;
+  ls.set('vi-tps', ui.tps ? '1' : '');
+  if (ui.tps) toast('Terza persona: joystick per camminare, tasto per interagire');
+  update();
+}
+// La cosa più vicina con cui si può fare qualcosa
+function tpsTarget() {
+  const mine = me();
+  const a = mine && map.avatarOf(mine.id);
+  if (!a || ui.room) return null;
+  const city = store.city;
+  const px = a.x, py = a.y;
+  const out = [];
+  const add = (x, y, r, label, ico, run) => { const d = Math.hypot(x - px, y - py); if (d <= r) out.push({ d, label, ico, run }); };
+  for (const o of map.visibleAvatars()) {
+    if (o.me) continue;
+    if (o.id.startsWith('npc:')) add(o.x, o.y, 1.6, o.name ? `Parla con ${o.name}` : 'Saluta', '👋', () => onNpcTap(o.id));
+    else add(o.x, o.y, 1.6, `Saluta ${o.name}`, '👋', () => { doAct('saluta'); openSay(o.id); });
+  }
+  for (const sh of SHOPS) {
+    const label = sh.kind === 'bar' ? 'Entra al bar' : sh.kind === 'comune' ? 'Entra in Municipio' : `Entra: ${sh.name.split(' ')[0]}`;
+    add(sh.front[0], sh.front[1], 1.4, label, sh.kind === 'bar' ? '☕' : sh.kind === 'comune' ? '🏛️' : '🛍️', () => enterHouse(sh.room));
+  }
+  for (const hh of Object.values(city.houses)) {
+    const [fx, fy] = frontOf(city, hh.slot);
+    const own = hh.residentId === mine.id;
+    const name = city.residents[hh.residentId]?.username || '';
+    add(fx, fy, 1.3, own ? (hh.status === 'casa' ? 'Entra in casa' : 'Il tuo cantiere') : `Casa di ${name}`, '🏠', () => (own && hh.status === 'casa' ? enterHouse(mine.id) : openHouse(hh.slot)));
+  }
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const x = Math.round(px) + dx, y = Math.round(py) + dy;
+    if (seatAt(city, null, x, y)) add(x, y, 1.2, 'Siediti', '🪑', () => sitOn(x, y));
+  }
+  const [ex, ey] = PIAZZA_DECOR.edicola;
+  add(ex, ey + 1, 1.5, 'Leggi il giornale', '📰', () => openGiornale());
+  if (!myHouse() && registered()) for (const k of PLAN.lots) {
+    if (city.houses[k]) continue;
+    const [lx, ly] = parseKey(k);
+    if (Math.abs(lx - px) > 2 || Math.abs(ly - py) > 2 || districtAt(lx, ly) > city.openDistricts) continue;
+    add(lx, ly, 1.6, 'Guarda questo lotto', '🪧', () => openLot(k));
+  }
+  out.sort((p, q) => p.d - q.d);
+  return out[0] || null;
+}
+function tpsDo() { const t = tpsTarget(); if (t) t.run(); }
+setInterval(() => {
+  if (!ui.tps) return;
+  const t = tpsTarget();
+  const btn = $('#tps-act');
+  if (!btn) return;
+  btn.disabled = !t;
+  $('#tps-act-ico').textContent = t ? t.ico : '✋';
+  $('#tps-act-label').textContent = t ? t.label : 'Avvicinati';
+}, 220);
+// Da tastiera: WASD o frecce per camminare, E o spazio per interagire
+{
+  const keys = new Set();
+  const typing = () => ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+  const apply = () => {
+    const jx = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
+    const jy = (keys.has('s') || keys.has('arrowdown') ? 1 : 0) - (keys.has('w') || keys.has('arrowup') ? 1 : 0);
+    map?.tpsInput(jx, jy);
+  };
+  addEventListener('keydown', (e) => {
+    if (!ui.tps || typing() || !$('#sheet').hidden) return;
+    const k = e.key.toLowerCase();
+    if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { keys.add(k); apply(); e.preventDefault(); }
+    else if (k === 'e' || k === ' ' || k === 'enter') { tpsDo(); e.preventDefault(); }
+  });
+  addEventListener('keyup', (e) => { keys.delete(e.key.toLowerCase()); if (ui.tps) apply(); });
 }
 
 /* Missioni, gesti, libro degli ospiti --------------------------------------- */

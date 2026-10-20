@@ -3,7 +3,7 @@
 // risoluzione e si ingrandisce a pixel interi, così resta nitido e leggero sui telefoni.
 // Uno strato fisso si ridisegna solo quando cambia qualcosa; sopra si muovono omini, acqua, auto.
 import {
-  W, H, PLAN, FOUNTAIN_AT, key, parseKey, districtAt, inPiazza, formatNews, CITY, PAPER, levelAt, walkPath, LOOK, cleanLook,
+  W, H, PLAN, FOUNTAIN_AT, key, parseKey, canStep, districtAt, inPiazza, formatNews, CITY, PAPER, levelAt, walkPath, LOOK, cleanLook,
   ROOM, ROOM_DOOR, FURNI_COLORS, furniById, footprint, roomOf, roomPath, shopAt, seatAt, PIAZZA_DECOR, WALK_SPEED, rideById,
 } from './core.js';
 import { shade, ih, clamp01, poly, add, lerp, blob, glow } from './art.js';
@@ -745,13 +745,15 @@ const DIR_VEC = { SE: [0.35, 1], SW: [-0.35, 1], NE: [0.35, -1], NW: [-0.35, -1]
 const DIR_TOWN = (dx, dy) => (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'SE' : 'SW') : (dy > 0 ? 'SE' : 'NE'));
 
 export class CityMap {
-  constructor(canvas, { onTap, onCamera } = {}) {
+  constructor(canvas, { onTap, onCamera, onMove } = {}) {
     this.cv = canvas;
     this.g = canvas.getContext('2d');
     this.layer = document.createElement('canvas');   // strato fisso, a bassa risoluzione
     this.frame = document.createElement('canvas');   // fotogramma completo, a bassa risoluzione
     this.onTap = onTap;
     this.onCamera = onCamera;
+    this.onMove = onMove;          // terza persona: la posizione va raccontata agli altri
+    this.tps = null;               // terza persona: { jx, jy } dal joystick o dai tasti
     this.city = null;
     this.opts = { mode: 'browse', meId: null, friends: new Set(), online: new Set(), night: false, selected: null };
     this.cam = { x: 0, y: 900, z: 1 };
@@ -789,6 +791,7 @@ export class CityMap {
       if (this.turning(t)) this.dirty = true;
       const growing = this.animating(t);
       const walking = this.tickAvatars(t);
+      if (this.tps && this.is3d()) { this.tpsStep(t); this.dirty = true; }
       if ((this.dirty || growing) && interacting && this.layerCam && !this.stale()) this.fast();
       else if (this.dirty || growing) { this.dirty = false; this.render(t, true); this.lastAmbient = t; }
       else if ((walking || this.bubbling(t) || this.acting(t)) && t - this.lastAmbient > 33) { this.render(t, false); this.lastAmbient = t; }
@@ -851,6 +854,7 @@ export class CityMap {
   /* Dentro casa */
   enterRoom(ownerId) {
     if (!this.scene) this.townCam = { ...this.cam };
+    if (this.tps) { this.tpsWas = true; this.setTPS(false); }
     this.scene = ownerId;
     if (this.gl) this.gl.hidden = true;
     this.roomUI = {};
@@ -863,6 +867,7 @@ export class CityMap {
   }
   exitRoom() {
     this.scene = null;
+    if (this.tpsWas) { this.tpsWas = false; setTimeout(() => this.setTPS(true), 50); }
     this.roomUI = {};
     if (this.townCam) this.cam = { ...this.townCam };
     this.clamp();
@@ -888,7 +893,9 @@ export class CityMap {
       if (!a.path.length) this.settle(a);
       a.walked += dt * speed;
       // La telecamera segue il proprio omino quando esce dal centro dello schermo.
-      if (a.me && this.is3d() && !this.pointers.size) {
+      if (a.me && this.is3d() && this.tps) {
+        // in terza persona la telecamera segue già l'omino
+      } else if (a.me && this.is3d() && !this.pointers.size) {
         const v = this.t3.view, h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
         const [sx, sy] = this.t3.project(a.x + 0.5, a.y + 0.5, h);
         if (Math.abs(sx - this.vw / 2) > this.vw * 0.26 || Math.abs(sy - this.vh / 2) > this.vh * 0.2) {
@@ -1074,6 +1081,61 @@ export class CityMap {
     this.dirty = true;
   }
 
+  /* Terza persona: telecamera dietro il proprio omino, joystick per muoversi */
+  setTPS(on) {
+    if (!this.t3) return false;
+    const a = [...this.avatars.values()].find((q) => q.me);
+    if (on && (!a || a.room)) return false;
+    this.tps = on ? { jx: 0, jy: 0, sent: 0, tile: null } : null;
+    this.t3.setTPS(on);
+    if (a) {
+      const v = this.t3.view;
+      v.x = a.x + 0.5; v.y = a.y + 0.5;
+      // Si parte con la telecamera alle spalle dell'omino
+      if (on) { const [mx, my] = a.mv || DIR_VEC[a.dir] || [0, 1]; v.az = Math.atan2(-mx, -my); a.path = []; }
+    }
+    this.turn = null;
+    this.dirty = true;
+    return true;
+  }
+  tpsInput(jx, jy) { if (this.tps) { this.tps.jx = jx; this.tps.jy = jy; } }
+  tpsStep(t) {
+    const a = [...this.avatars.values()].find((q) => q.me);
+    const v = this.t3.view;
+    if (!a || a.room) return;
+    const dt = Math.min(0.1, (t - (this.tps.last || t)) / 1000);
+    this.tps.last = t;
+    let { jx, jy } = this.tps;
+    const m = Math.hypot(jx, jy);
+    a.tpsMove = m > 0.12;
+    if (a.tpsMove) {
+      if (m > 1) { jx /= m; jy /= m; }
+      // Avanti è dove guarda la telecamera; destra è la sua destra
+      const fx = -Math.sin(v.az), fy = -Math.cos(v.az), rx = Math.cos(v.az), ry = -Math.sin(v.az);
+      const mx = rx * jx - fx * jy, my = ry * jx - fy * jy;
+      const speed = (rideById(a.ride)?.speed || WALK_SPEED) * 1.1;
+      const step = speed * dt * Math.min(1, m);
+      const ok = (x, y) => {
+        const from = [Math.round(a.x), Math.round(a.y)], to = [Math.round(x), Math.round(y)];
+        return (from[0] === to[0] && from[1] === to[1]) || canStep(this.city, ...from, ...to);
+      };
+      const nx = a.x + mx * step, ny = a.y + my * step;
+      // Contro un muro si scivola lungo il lato libero
+      if (ok(nx, ny)) { a.x = nx; a.y = ny; } else if (ok(nx, a.y)) a.x = nx; else if (ok(a.x, ny)) a.y = ny;
+      a.mv = [mx, my]; a.dir = DIR_TOWN(mx, my);
+      a.walked += step; a.path = []; a.sit = null; a.act = null;
+      // La telecamera torna piano alle spalle quando si va avanti
+      const want = Math.atan2(-mx, -my);
+      let d = want - v.az; d = Math.atan2(Math.sin(d), Math.cos(d));
+      v.az += d * Math.min(1, dt * 1.6) * Math.max(0, -jy);
+      // Agli altri basta sapere in che casella si è
+      const tile = `${Math.round(a.x)},${Math.round(a.y)}`;
+      if (tile !== this.tps.tile && t - this.tps.sent > 250) { this.tps.tile = tile; this.tps.sent = t; this.onMove?.(Math.round(a.x), Math.round(a.y)); }
+    }
+    v.x += (a.x + 0.5 - v.x) * Math.min(1, dt * 10);
+    v.y += (a.y + 0.5 - v.y) * Math.min(1, dt * 10);
+    this.t3.clampView();
+  }
   // Gira la città di un quarto di giro (dir = +1 o -1), con un movimento morbido.
   rotate(dir) {
     if (!this.is3d()) return;
@@ -1107,7 +1169,8 @@ export class CityMap {
           this.t3.view.dist *= this.pinch.d / p.d;
           let da = p.a - this.pinch.a; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI;
           this.t3.view.az -= da; this.turn = null;
-          this.t3.pan(p.cx - this.pinch.cx, p.cy - this.pinch.cy);
+          if (!this.tps) this.t3.pan(p.cx - this.pinch.cx, p.cy - this.pinch.cy);
+          this.t3.clampView();
           this.pinch = p; this.dirty = true; this.interactUntil = performance.now() + 160;
           return;
         }
@@ -1119,7 +1182,8 @@ export class CityMap {
       } else if (this.drag) {
         const dx = e.offsetX - this.drag.x, dy = e.offsetY - this.drag.y;
         this.drag.moved += Math.abs(dx) + Math.abs(dy);
-        if (this.is3d()) this.t3.pan(dx, dy);
+        if (this.tps && this.is3d()) { const v = this.t3.view; v.az -= dx * 0.009; v.pitch += dy * 0.004; this.t3.clampView(); }
+        else if (this.is3d()) this.t3.pan(dx, dy);
         else { this.cam.x -= dx / this.cam.z; this.cam.y -= dy / this.cam.z; }
         this.drag.x = e.offsetX; this.drag.y = e.offsetY;
         this.clamp();
@@ -1423,8 +1487,8 @@ export class CityMap {
       const ride = a.sit ? null : a.ride;
       const h = surfaceOf(this.city, a.x + 0.5, a.y + 0.5) / TILE;
       // Chi cammina guarda dove va; chi è fermo si gira piano verso chi guarda lo schermo
-      const moving = a.path.length > 0;
-      const want = moving || sit ? Math.atan2(mx, my) : t3.view.az;
+      const moving = a.path.length > 0 || !!(a.me && a.tpsMove);
+      const want = moving || sit || (a.me && this.tps) ? Math.atan2(mx, my) : t3.view.az;
       let f = a.face3 ?? want;
       let d = want - f; d = Math.atan2(Math.sin(d), Math.cos(d));
       f += moving ? d : d * 0.08;

@@ -485,3 +485,25 @@ body.in-room .toasts { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 1
 @media (prefers-reduced-motion: reduce) { .customer, .coin-pop, .tray.wrong { animation: none; } }
 .cust-wait { display: none; text-align: center; padding: 30px 0; }
 .customers > .cust-wait:only-child { display: block; }
+
+/* Terza persona: joystick, tasto azione */
+.zoom .tps-toggle[hidden] { display: none; }
+@media (pointer: coarse) { .zoom .tab.tps-toggle:not([hidden]) { display: grid; } }
+.tps-toggle { color: var(--brand); }
+body.in-tps .bottom, body.in-tps .zoom, body.in-tps .ticker { display: none; }
+body.in-room .tps { display: none; }
+.tps { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.tps[hidden] { display: none; }
+.tps > * { pointer-events: auto; }
+.tps-top { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 96px); right: max(12px, env(safe-area-inset-right, 0px)); display: flex; gap: 6px; }
+.tps-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--glass); box-shadow: var(--shadow); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.joy { position: absolute; left: max(22px, env(safe-area-inset-left, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 28px); width: 132px; height: 132px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.28) 0 55%, rgba(255,255,255,0.12) 56%); border: 2px solid rgba(255,255,255,0.75); box-shadow: 0 6px 18px rgba(0,0,0,0.2); touch-action: none; display: grid; place-items: center; }
+.joy-knob { width: 58px; height: 58px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fffaf0, #e6dcc6); box-shadow: 0 3px 8px rgba(0,0,0,0.3); pointer-events: none; transition: transform 0.08s; }
+.tps-act { position: absolute; right: max(22px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 34px); min-width: 120px; max-width: 46vw; min-height: 96px; padding: 10px 14px; border-radius: 28px; border: 0;
+  display: grid; justify-items: center; gap: 2px; background: var(--brand); color: #fff; font-weight: 800; font-size: 0.85rem; box-shadow: 0 6px 18px rgba(0,0,0,0.25); cursor: pointer; touch-action: manipulation; }
+.tps-act:disabled { background: rgba(40,50,46,0.55); color: rgba(255,255,255,0.85); cursor: default; }
+.tps-act:not(:disabled):active { transform: scale(0.95); }
+.tps-act-ico { font-size: 1.9rem; line-height: 1; }
+.tps-act-label { text-align: center; line-height: 1.15; }
+.tps-hint { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 172px); opacity: 0.85; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.6); pointer-events: none; white-space: nowrap; }
