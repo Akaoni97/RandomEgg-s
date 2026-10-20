@@ -1140,6 +1140,10 @@ export const CAR_MODELS = {
   utilitaria: { len: 28, hgt: 15, wid: 18 },
   berlina: { len: 34, hgt: 14, wid: 20 },
   furgone: { len: 36, hgt: 22, wid: 20 },
+  familiare: { len: 34, hgt: 15, wid: 20 },
+  suv: { len: 32, hgt: 18, wid: 21 },
+  sportiva: { len: 32, hgt: 12, wid: 21 },
+  taxi: { len: 34, hgt: 14, wid: 20 },
   ape: { len: 24, hgt: 17, wid: 15 },
   autobus: { len: 72, hgt: 26, wid: 24 },
 };
@@ -1153,14 +1157,14 @@ function trafficList(city) {
         dir: i % 2 ? -1 : 1, speed: 0.9 + r(3) * 0.7, offset: r(4) * 200 });
     }
   };
-  put({ axis: 'x', at: MAIN_Y, from: -2, to: W + 2 }, Math.min(9, 3 + Math.floor(built / 5)), ['utilitaria', 'berlina', 'berlina', 'furgone', 'autobus', 'utilitaria'], 0);
+  put({ axis: 'x', at: MAIN_Y, from: -2, to: W + 2 }, Math.min(9, 3 + Math.floor(built / 5)), ['utilitaria', 'berlina', 'familiare', 'furgone', 'autobus', 'utilitaria', 'suv', 'taxi', 'sportiva'], 0);
   put({ axis: 'x', at: 20, from: 30, to: 55 }, 1, ['ape', 'utilitaria'], 20);
-  put({ axis: 'x', at: 35, from: 30, to: 55 }, 2, ['utilitaria', 'ape', 'berlina'], 30);
+  put({ axis: 'x', at: 35, from: 30, to: 55 }, 2, ['utilitaria', 'ape', 'berlina', 'familiare'], 30);
   put({ axis: 'y', at: 30, from: 20, to: 35 }, 1, ['ape'], 40);
   for (const d of DISTRICTS) {
     if (!d.dorsal || d.id > city.openDistricts) continue;
     const r = d.dorsal.x !== undefined ? { axis: 'y', at: d.dorsal.x, from: d.dorsal.y0, to: d.dorsal.y1 } : { axis: 'x', at: d.dorsal.y, from: d.dorsal.x0, to: d.dorsal.x1 };
-    put(r, 2, ['utilitaria', 'berlina', 'ape', 'furgone'], 50 + d.id * 10);
+    put(r, 2, ['utilitaria', 'berlina', 'ape', 'furgone', 'suv', 'familiare', 'sportiva'], 50 + d.id * 10);
   }
   return out;
 }

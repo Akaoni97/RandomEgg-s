@@ -10,9 +10,10 @@ import {
 import { rgb, mix, shade, ih } from './art.js';
 import {
   townGround, townRamps, townSurface, tileTop, plaster, window3, door3, tiledRoof, ivy, bougainvillea, vitrine3, SHOP_LOOK,
-  traffic, carAt, CAR_MODELS, roofOf, doorOf,
+  traffic, carAt, roofOf, doorOf,
 } from './town.js';
 import { Avatar3D } from './avatar3d.js';
+import { vehicleGeometry } from './vehicles3d.js';
 
 const PX = 32;
 // Proporzioni: un omino è alto circa 0,57 caselle (una casella ≈ 3 metri), le case sono un po' più
@@ -118,6 +119,15 @@ export class Mesher {
     }
   }
   box(x0, y0, z0, x1, y1, z1, col) { this.prim('box', (x0 + x1) / 2, y0, (z0 + z1) / 2, x1 - x0, y1 - y0, z1 - z0, col); }
+  // Una geometria di three.js (estrusa, sfera tagliata...) con un colore solo; xf sposta i vertici
+  geom(g, col, xf = null) {
+    const n = g.index ? g.toNonIndexed() : g;
+    const p = n.attributes.position.array;
+    const v = (i) => (xf ? xf(p[i], p[i + 1], p[i + 2]) : [p[i], p[i + 1], p[i + 2]]);
+    for (let i = 0; i < p.length; i += 9) this.tri(v(i), v(i + 3), v(i + 6), [0, 0], [0, 0], [0, 0], col);
+    if (n !== g) n.dispose();
+    g.dispose();
+  }
   // Quello che fill aggiunge viene rimpicciolito di f attorno a (ox, oy, oz): arredi a misura d'omino
   scaled(f, ox, oy, oz, fill) {
     const i0 = this.p.length;
@@ -1283,44 +1293,17 @@ export class Town3D {
   buildCars(list) {
     const T = T3();
     for (const c of this.cars) { this.scene.remove(c.mesh); c.mesh.geometry.dispose(); }
+    this.carMat ||= new T.MeshPhongMaterial({ vertexColors: true, shininess: 70, specular: '#5a5a5a', flatShading: true });
     this.cars = list.map((v) => {
-      const M = CAR_MODELS[v.kind];
-      const L = M.len / PX, Wd = M.wid / PX * 0.95, Hc = M.hgt / PX;
-      const m = new Mesher();
-      const col = v.color, glass = '#3e5a72', dark = shade(col, -0.3);
-      // Il muso è verso +x
-      for (const wx of [-L / 2 + 0.18, L / 2 - 0.18]) for (const wz of [-Wd / 2, Wd / 2]) m.prim('cyl10', wx, 0.11, wz - (wz > 0 ? 0.04 : -0.04), 0.11, 0.08, 0.11, '#1f1f1f', 0, Math.PI / 2);
-      if (v.kind === 'autobus') {
-        m.box(-L / 2, 0.1, -Wd / 2, L / 2, Hc + 0.12, Wd / 2, col);
-        m.box(-L / 2 + 0.1, Hc * 0.5, -Wd / 2 - 0.005, L / 2 - 0.1, Hc * 0.95, Wd / 2 + 0.005, glass);
-        m.box(L / 2 - 0.02, Hc * 0.45, -Wd / 2 + 0.06, L / 2 + 0.005, Hc, Wd / 2 - 0.06, glass);
-        m.box(-L / 2, Hc + 0.12, -Wd / 2, L / 2, Hc + 0.16, Wd / 2, shade(col, 0.15));
-      } else if (v.kind === 'furgone') {
-        m.box(-L / 2, 0.1, -Wd / 2, L / 2 - 0.32, Hc + 0.1, Wd / 2, col);
-        m.box(L / 2 - 0.34, 0.1, -Wd / 2, L / 2, Hc * 0.65, Wd / 2, col);
-        m.box(L / 2 - 0.3, Hc * 0.4, -Wd / 2 + 0.05, L / 2 + 0.005, Hc * 0.62, Wd / 2 - 0.05, glass);
-      } else if (v.kind === 'ape') {
-        m.box(-L / 2, 0.12, -Wd / 2, 0, 0.32, Wd / 2, '#9a6a43');
-        m.box(0, 0.1, -Wd / 2 + 0.03, L / 2, Hc + 0.12, Wd / 2 - 0.03, col);
-        m.box(L / 2 - 0.02, Hc * 0.55, -Wd / 2 + 0.07, L / 2 + 0.005, Hc + 0.05, Wd / 2 - 0.07, glass);
-      } else {
-        m.box(-L / 2, 0.1, -Wd / 2, L / 2, 0.36, Wd / 2, col);
-        const c0 = -L * 0.3, c1 = L * (v.kind === 'berlina' ? 0.18 : 0.14);
-        m.box(c0, 0.36, -Wd / 2 + 0.05, c1, 0.58, Wd / 2 - 0.05, glass);
-        m.box(c0 + 0.02, 0.58, -Wd / 2 + 0.06, c1 - 0.02, 0.62, Wd / 2 - 0.06, shade(col, 0.15));
-        m.box(-L / 2 - 0.005, 0.14, -Wd / 2 + 0.02, L / 2 + 0.005, 0.18, Wd / 2 - 0.02, dark);
-      }
-      m.box(L / 2 - 0.01, 0.22, -Wd / 2 + 0.04, L / 2 + 0.01, 0.28, -Wd / 2 + 0.14, '#ffe39a');
-      m.box(L / 2 - 0.01, 0.22, Wd / 2 - 0.14, L / 2 + 0.01, 0.28, Wd / 2 - 0.04, '#ffe39a');
-      m.box(-L / 2 - 0.01, 0.22, -Wd / 2 + 0.04, -L / 2 + 0.01, 0.28, -Wd / 2 + 0.12, '#c0392b');
-      m.box(-L / 2 - 0.01, 0.22, Wd / 2 - 0.12, -L / 2 + 0.01, 0.28, Wd / 2 - 0.04, '#c0392b');
-      const mesh = new T.Mesh(m.build(), mats().vcFlat);
-      mesh.receiveShadow = true;
-      const blob = new T.Mesh(new T.PlaneGeometry(L + 0.2, Wd + 0.2), mats().shadow);
+      const { geo, L, W: Wd, light } = vehicleGeometry(v.kind, v.color);
+      const mesh = new T.Mesh(geo, this.carMat);
+      mesh.castShadow = mesh.receiveShadow = true;
+      const blob = new T.Mesh(new T.PlaneGeometry(L + 0.12, Wd + 0.12), mats().shadow);
       blob.rotation.x = -Math.PI / 2; blob.position.y = 0.02;
       mesh.add(blob);
       this.scene.add(mesh);
-      return { v, mesh, L };
+      // I mezzi larghi stanno più verso il centro della via, per non salire sul marciapiede
+      return { v, mesh, L, lane: Math.min(0.22, 0.49 - Wd / 2), light };
     });
     const gg = new T.BufferGeometry();
     gg.setAttribute('position', new T.Float32BufferAttribute(new Array(list.length * 3).fill(0), 3));
@@ -1374,7 +1357,7 @@ export class Town3D {
       else s.seen = false;
     }
   }
-  avBoost() { return this.tps ? 1 : 1 + 0.45 * Math.max(0, Math.min(1, (this.view.dist - 8) / 16)); }
+  avBoost() { return this.tps ? 1 : 1 + 0.7 * Math.max(0, Math.min(1, (this.view.dist - 8) / 16)); }
   avatarHead(id) { const s = this.sprites.get(id); return s ? s.av.group.position.y + 1.08 * s.av.group.scale.y : null; }
 
   setSelected(slot) {
@@ -1447,7 +1430,9 @@ export class Town3D {
     // Traffico
     const pos = this.carGlow.geometry.attributes.position;
     this.cars.forEach((c, i) => {
-      const [gx, gy] = carAt(c.v, s);
+      let [gx, gy] = carAt(c.v, s);
+      const fix = (0.22 - c.lane) * (c.v.axis === 'x' ? c.v.dir : -c.v.dir);
+      if (c.v.axis === 'x') gy -= fix; else gx -= fix;
       const hgt = this.groundAt(gx, gy);
       c.mesh.position.set(gx, hgt, gy);
       const ang = c.v.axis === 'x' ? (c.v.dir > 0 ? 0 : Math.PI) : (c.v.dir > 0 ? -Math.PI / 2 : Math.PI / 2);
@@ -1455,7 +1440,7 @@ export class Town3D {
       // in salita la macchina si inclina seguendo la rampa
       const ahead = this.groundAt(gx + Math.cos(ang) * 0.3, gy - Math.sin(ang) * 0.3);
       c.mesh.rotation.z = Math.atan2(ahead - hgt, 0.3);
-      if (pos) pos.setXYZ(i, gx + Math.cos(ang) * (c.L / 2 + 0.35), hgt + 0.25, gy - Math.sin(ang) * (c.L / 2 + 0.35));
+      if (pos) pos.setXYZ(i, gx + Math.cos(ang) * (c.L / 2 + 0.35), hgt + c.light, gy - Math.sin(ang) * (c.L / 2 + 0.35));
     });
     if (pos) pos.needsUpdate = true;
     this.boats.forEach((b, i) => {
