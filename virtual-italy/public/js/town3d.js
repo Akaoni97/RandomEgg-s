@@ -569,6 +569,117 @@ export function buildShop(shop) {
   return { group: grp, wallMat, top: y1 + 0.3 };
 }
 
+/* Bar Centrale ----------------------------------------------------------------------------- */
+
+// Facciata del bar: insegna, due grandi vetrine con le paste e la macchina del caffè, porta a vetri.
+function paintBarFront(g, w, Hh) {
+  const wins = [];
+  plaster(g, 0, 0, w, Hh, '#f3d6c3', 4242, true);
+  g.fillStyle = 'rgba(30,15,5,0.2)'; g.fillRect(0, 0, w, 3);
+  // Primo piano: tre finestre con i vasi
+  const o = { lit: false, night: false, door: '#2f6b4f', detail: true, wins, flowers: ['#e85d75', '#f6d84a'] };
+  for (const wx of [14, w / 2 - 5, w - 24]) window3(g, Math.round(wx), 8, 10, 14, o);
+  // Insegna in legno verde con le lettere dorate
+  const sy = Hh - 50;
+  g.fillStyle = '#1f4a38'; g.fillRect(6, sy, w - 12, 13);
+  g.fillStyle = '#2f6b4f'; g.fillRect(7, sy + 1, w - 14, 11);
+  g.fillStyle = '#e2bf4f'; g.font = '800 8px Nunito, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('BAR CENTRALE', w / 2, sy + 7); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  // Zoccolo di marmo e vetrine
+  g.fillStyle = '#e9e1cf'; g.fillRect(0, Hh - 6, w, 6); g.fillStyle = '#cfc5b0'; g.fillRect(0, Hh - 6, w, 1);
+  const vit = (x, vw, kind) => {
+    g.fillStyle = '#3a2a1c'; g.fillRect(x - 2, Hh - 34, vw + 4, 30);
+    g.fillStyle = '#a9d3e4'; g.fillRect(x, Hh - 32, vw, 26);
+    g.fillStyle = '#c99a6b'; g.fillRect(x, Hh - 14, vw, 2);
+    if (kind === 'paste') {
+      // Vassoi di cornetti e pasticcini sulla mensola
+      for (let k = 0; k < 6; k++) { g.fillStyle = k % 2 ? '#d9a441' : '#c9853a'; g.beginPath(); g.ellipse(x + 4 + k * (vw - 8) / 5, Hh - 16, 2.6, 1.6, 0, 0, 7); g.fill(); }
+      for (let k = 0; k < 5; k++) { g.fillStyle = ['#f28cbf', '#ffffff', '#c0392b', '#f6d84a', '#7a4a2f'][k]; g.fillRect(x + 5 + k * (vw - 10) / 4, Hh - 25, 3, 2); }
+    } else {
+      // La macchina del caffè cromata e le tazzine
+      g.fillStyle = '#c9ced2'; g.fillRect(x + vw / 2 - 8, Hh - 28, 16, 12); g.fillStyle = '#8e969c'; g.fillRect(x + vw / 2 - 8, Hh - 18, 16, 2);
+      g.fillStyle = '#c0392b'; g.fillRect(x + vw / 2 - 6, Hh - 31, 12, 3);
+      for (let k = 0; k < 4; k++) { g.fillStyle = '#ffffff'; g.fillRect(x + 3 + k * 4, Hh - 17, 3, 3); }
+    }
+    g.fillStyle = 'rgba(255,255,255,0.45)'; g.fillRect(x + 2, Hh - 31, 1, 16);
+    wins.push([[x, Hh - 32], [x + vw, Hh - 32], [x + vw, Hh - 6], [x, Hh - 6]]);
+  };
+  vit(6, 40, 'paste');
+  vit(w - 46, 40, 'caffe');
+  // Porta a vetri
+  const dx = w / 2 - 8;
+  g.fillStyle = '#1f4a38'; g.fillRect(dx - 1, Hh - 36, 18, 31);
+  g.fillStyle = '#f4cf7a'; g.fillRect(dx + 2, Hh - 33, 12, 27);
+  g.fillStyle = '#1f4a38'; g.fillRect(dx + 7.5, Hh - 33, 1, 27);
+  wins.push([[dx + 2, Hh - 33], [dx + 14, Hh - 33], [dx + 14, Hh - 6], [dx + 2, Hh - 6]]);
+  return wins;
+}
+export function buildBar(shop) {
+  const T = T3();
+  const M = mats();
+  const u = (px) => px / PX;
+  const Wp = shop.w * 30, Hh = 76, D = 54;
+  const grp = new T.Group();
+  const AW = Wp + D + 8, AH = Hh + 4;
+  const atlas = canvas2d(AW, AH), g = atlas.getContext('2d');
+  g.fillStyle = '#f3d6c3'; g.fillRect(0, 0, AW, AH);
+  g.save(); g.translate(2, 2);
+  const wins = paintBarFront(g, Wp, Hh).map((q) => q.map(([x, y]) => [x + 2, y + 2]));
+  g.restore();
+  wins.push(...paintSide(g, Wp + 6, 2, D, Hh, { wall: '#f3d6c3', door: '#2f6b4f', flowers: ['#e85d75', '#f6d84a'], hs: 7 }, 1));
+  const tex = pixTex(atlas);
+  const wallMat = new T.MeshLambertMaterial({ map: tex, emissive: '#ffffff', emissiveIntensity: 0 });
+  wallMat.userData.lights = () => (wallMat.userData.lt ||= paintLights(AW, AH, wins));
+  const x0 = -u(Wp / 2), x1 = u(Wp / 2), z1 = 0, z0 = -u(D), y1 = u(Hh);
+  const uvF = [2 / AW, 1 - (2 + Hh) / AH, (2 + Wp) / AW, 1 - 2 / AH], uvS = [(Wp + 6) / AW, 1 - (2 + Hh) / AH, (Wp + 6 + D) / AW, 1 - 2 / AH];
+  const wm = new Mesher();
+  wm.quad([x0, 0, z1], [x1, 0, z1], [x1, y1, z1], [x0, y1, z1], '#ffffff', uvF);
+  wm.quad([x1, 0, z1], [x1, 0, z0], [x1, y1, z0], [x1, y1, z1], '#ffffff', uvS);
+  wm.quad([x0, 0, z0], [x0, 0, z1], [x0, y1, z1], [x0, y1, z0], '#ffffff', uvS);
+  wm.quad([x1, 0, z0], [x0, 0, z0], [x0, y1, z0], [x1, y1, z0], '#ffffff', uvS);
+  const walls = new T.Mesh(wm.build(), wallMat); walls.castShadow = walls.receiveShadow = true; grp.add(walls);
+  // Tetto a coppi a due falde, comignolo
+  const rm = new Mesher(), o = 0.12, zm = (z0 + z1) / 2, rh = 0.55;
+  const sl = Math.hypot((z1 - z0) / 2 + o, rh) * 0.5;
+  rm.quad([x0 - o, y1, z1 + o], [x1 + o, y1, z1 + o], [x1 + o, y1 + rh, zm], [x0 - o, y1 + rh, zm], '#ffffff', [0, 0, (x1 - x0) * 0.5, sl]);
+  rm.quad([x1 + o, y1, z0 - o], [x0 - o, y1, z0 - o], [x0 - o, y1 + rh, zm], [x1 + o, y1 + rh, zm], '#ffffff', [0, 0, (x1 - x0) * 0.5, sl]);
+  const roof = new T.Mesh(rm.build(), roofMat('#b5523b')); roof.castShadow = roof.receiveShadow = true; grp.add(roof);
+  const ex = new Mesher();
+  ex.tri([x0, y1, z0], [x0, y1, z1], [x0, y1 + rh, zm], [0, 0], [1, 0], [0, 1], '#e8c7b3');
+  ex.tri([x1, y1, z1], [x1, y1, z0], [x1, y1 + rh, zm], [0, 0], [1, 0], [0, 1], '#e8c7b3');
+  ex.box(x1 - 0.7, y1 + 0.2, zm - 0.5, x1 - 0.45, y1 + rh + 0.3, zm - 0.25, '#a0522d');
+  // Tazzina gigante appesa sopra l'insegna
+  ex.prim('cyl10', 0, y1 - u(56), 0.18, 0.12, 0.14, 0.12, '#ffffff');
+  ex.prim('disc', 0, y1 - u(56) + 0.13, 0.18, 0.1, 0.01, 0.1, '#4a2c1a');
+  ex.prim('disc', 0, y1 - u(56) - 0.01, 0.18, 0.18, 0.02, 0.18, '#ffffff');
+  ex.box(-0.01, y1 - u(56) + 0.14, 0.02, 0.01, y1 - u(50), 0.2, '#1f2a26');
+  // Gradino, tavolini con gli ombrelloni sul marciapiede, lavagna del menù
+  ex.box(-0.4, 0, 0, 0.4, 0.05, 0.14, '#e6dcc6');
+  for (const tx of [x0 + 0.55, x1 - 0.55]) {
+    const tz = 0.62;
+    ex.prim('cyl6', tx, 0, tz, 0.025, 0.34, 0.025, '#3b3f45'); ex.prim('disc', tx, 0.34, tz, 0.2, 0.025, 0.2, '#f2ead6');
+    ex.prim('cyl6', tx - 0.08, 0.37, tz + 0.02, 0.025, 0.03, 0.025, '#ffffff'); ex.prim('cyl6', tx + 0.07, 0.37, tz - 0.03, 0.03, 0.06, 0.03, '#f08a3c');
+    for (const dx of [-0.32, 0.32]) {
+      ex.box(tx + dx - 0.09, 0.2, tz - 0.09, tx + dx + 0.09, 0.23, tz + 0.09, '#2f6b4f');
+      ex.box(tx + dx + (dx > 0 ? 0.06 : -0.09), 0.23, tz - 0.09, tx + dx + (dx > 0 ? 0.09 : -0.06), 0.45, tz + 0.09, '#2f6b4f');
+      for (const ez of [-0.07, 0.07]) ex.box(tx + dx - 0.01, 0, tz + ez - 0.01, tx + dx + 0.01, 0.2, tz + ez + 0.01, '#3b3f45');
+    }
+    ex.prim('cyl6', tx, 0, tz, 0.015, 1.2, 0.015, '#6b4a2f');
+    ex.prim('cone8', tx, 0.98, tz, 0.6, 0.28, 0.6, '#f6ecd4');
+    ex.prim('cone8', tx, 0.975, tz, 0.61, 0.06, 0.61, '#2f6b4f');
+  }
+  ex.prim('pyr', x1 - 0.18, 0, 0.32, 0.14, 0.42, 0.06, '#7a5a3a');
+  ex.box(x1 - 0.27, 0.12, 0.35, x1 - 0.09, 0.36, 0.36, '#2b2f2c');
+  potIn(ex, x0 + 0.12, 0, 0.2, 2); potIn(ex, -0.55, 0, 0.2, 1); potIn(ex, 0.55, 0, 0.2, 3);
+  const extra = new T.Mesh(ex.build(), M.vcFlat); extra.castShadow = extra.receiveShadow = true; grp.add(extra);
+  // Tenda a strisce verdi e bianche lungo tutta la facciata
+  const aw = new T.Mesh(new T.PlaneGeometry(x1 - x0 + 0.04, 0.5), new T.MeshLambertMaterial({ map: stripeTex('#2f6b4f', '#f6efe0', 12), side: T.DoubleSide, transparent: true, alphaTest: 0.5 }));
+  aw.rotation.x = -0.75; aw.position.set(0, u(36) - 0.08, 0.17); aw.castShadow = true;
+  grp.add(aw);
+  void shop;
+  return { group: grp, wallMat, top: y1 + 0.6 };
+}
+
 /* Municipio ----------------------------------------------------------------------------- */
 
 // Facciata: portico ad archi in bugnato, piano nobile con balconi, fascia con la scritta.
@@ -918,12 +1029,15 @@ export class Town3D {
       this.shadowDirty = true;
     }
     for (const [slot, cur] of this.houses) if (!seen.has(slot)) { this.world.remove(cur.group); disposeTree(cur.group); this.houses.delete(slot); this.shadowDirty = true; }
-    if (!this.shops.size) {
+    if (!this.shopsBuilt) {
+      this.shopsBuilt = true;
       for (const shop of SHOPS) {
         if (shop.kind === 'comune') continue;     // il Municipio si costruisce con la piazza
-        const b = buildShop(shop);
-        const x = shop.x0 + 1, y = shop.y0 + 1;
-        b.group.position.set(x, townSurface(G, ramps, x, y + 0.5) / PX, shop.y0 + 1.96);
+        const b = shop.kind === 'bar' ? buildBar(shop) : buildShop(shop);
+        const x = shop.x0 + shop.w / 2, y = shop.y0 + 1;
+        // La facciata guarda la sua strada: a sud, o a nord per chi ha la porta da quella parte
+        if (shop.facing === 'N') { b.group.rotation.y = Math.PI; b.group.position.set(x, townSurface(G, ramps, x, y) / PX, shop.y0 + 0.04); }
+        else b.group.position.set(x, townSurface(G, ramps, x, y + 0.5) / PX, shop.y0 + shop.d - 0.04);
         b.group.userData.pick = { kind: 'shop', shop: shop.id };
         this.world.add(b.group);
         this.shops.set(shop.id, b);

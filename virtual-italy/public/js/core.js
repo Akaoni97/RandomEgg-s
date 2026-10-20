@@ -88,6 +88,8 @@ export const SHOPS = [
   { id: 'moda', name: 'Sartoria Moda', sign: 'MODA', kind: 'wear', x0: 46, y0: 28, keeper: 'Rosa' },
   { id: 'bici', name: 'Ciclofficina Ruota Libera', sign: 'BICI', kind: 'ride', x0: 51, y0: 28, keeper: 'Tonino' },
   { id: 'comune', name: 'Municipio', sign: 'MUNICIPIO', kind: 'comune', x0: 38, y0: 21, w: 5, d: 2, keeper: 'Carla', front: [40, 23] },
+  // Il Bar Centrale guarda la piazza dall'altra parte della strada principale (porta a nord)
+  { id: 'bar', name: 'Bar Centrale', sign: 'BAR CENTRALE', kind: 'bar', x0: 41, y0: 31, w: 4, d: 2, keeper: 'Franco', front: [42, 30], facing: 'N' },
 ].map((sh) => ({ w: 2, d: 2, front: [sh.x0, MAIN_Y], ...sh, room: 'shop:' + sh.id }));
 export const COMUNE = 'comune';
 export const shopById = (id) => SHOPS.find((sh) => sh.id === id || sh.room === id) || null;
@@ -469,6 +471,12 @@ const SHOP_ROOMS = {
     ['bancone', 4, 1, 0, 1], ['espositore', 2, 3, 0, 0], ['espositore', 4, 3, 0, 1], ['espositore', 6, 3, 0, 2],
     ['espositore', 2, 6, 0, 1], ['espositore', 4, 6, 0, 2], ['espositore', 6, 6, 0, 0], ['pianta', 0, 0], ['lampada', 7, 0], ['pianta', 7, 7],
   ] },
+  // Bar: il bancone con la macchina del caffè, i tavolini, il jukebox
+  'shop:bar': { floor: 'piastrelle', wall: '#f3d6c3', access: 'tutti', items: [
+    ['bancone', 3, 1, 0, 3], ['bancone', 5, 1, 0, 3], ['cucina', 3, 0], ['frigo', 6, 0], ['specchio', 2, 0], ['lampada', 7, 0],
+    ['tavolino', 2, 4], ['sedia', 2, 3, 0, 1], ['sedia', 2, 5, 0, 1], ['tavolino', 5, 5], ['sedia', 5, 4, 0, 1], ['sedia', 6, 5, 0, 1],
+    ['jukebox', 7, 7], ['pianta', 0, 7], ['vaso', 4, 4, 0, 5],
+  ] },
   // Municipio: il bancone dell'anagrafe, le sedie d'attesa, la bandiera e il ritratto della città
   'shop:comune': { floor: 'marmo', wall: '#efe6d2', access: 'tutti', items: [
     ['bancone', 4, 1, 0, 0], ['scrivania', 2, 0], ['libreria', 6, 0], ['libreria', 7, 0], ['pendolo', 1, 0], ['statua', 0, 0],
@@ -494,6 +502,37 @@ export const MANNEQUINS = [
 export const invOf = (s, id) => ({ furni: {}, wear: [], rides: [], ...s.inv?.[id] });
 export const ownsWear = (s, id, wearId) => !!wearById(wearId)?.base || invOf(s, id).wear.includes(wearId);
 // Qui si pagherà con la moneta della città: per ora i negozi regalano tutto.
+/* Lavori: turni brevi che si pagano in soldi ------------------------------- */
+
+// Ogni lavoro ha i suoi turni al giorno, la paga per pezzo servito e un tetto per turno.
+// Il gioco del turno gira sul telefono; qui si controlla che il risultato sia credibile
+// (tempo passato, non più di un ordine ogni 2,5 secondi) prima di pagare.
+export const JOBS = {
+  bar: {
+    label: 'Barista', place: 'bar', shifts: 3, secs: 60, rate: 3, cap: 80, minSecs: 20, perOrder: 2.5,
+    levels: [{ at: 0, label: 'Apprendista', bonus: 0 }, { at: 40, label: 'Barista', bonus: 0.2 }, { at: 150, label: 'Maestro del caffè', bonus: 0.4 }],
+    menu: [
+      { id: 'espresso', label: 'Espresso', w: 5 }, { id: 'cappuccino', label: 'Cappuccino', w: 3 }, { id: 'cornetto', label: 'Cornetto', w: 3 },
+      { id: 'spremuta', label: 'Spremuta', w: 2 }, { id: 'tramezzino', label: 'Tramezzino', w: 2 }, { id: 'acqua', label: 'Acqua', w: 2 },
+    ],
+  },
+};
+export function workOf(s, id) {
+  const w = s.work?.[id] || {};
+  return { active: w.active || null, day: w.day || null, shifts: w.shifts || 0, xp: w.xp || {}, lastAt: w.lastAt || 0 };
+}
+export function jobLevel(job, xp) {
+  const lv = JOBS[job].levels;
+  let i = 0;
+  while (i + 1 < lv.length && xp >= lv[i + 1].at) i++;
+  return { ...lv[i], index: i, next: lv[i + 1] || null };
+}
+// Turni rimasti oggi
+export function shiftsLeft(s, id, job, now) {
+  const w = workOf(s, id);
+  return JOBS[job].shifts - (w.day === dayKey(now) ? w.shifts : 0);
+}
+
 /* Il Soldo: la moneta della città -------------------------------------- */
 
 // Si chiama come l'antica moneta italiana (da cui "i soldi"). Ognuno ha il suo borsellino.
@@ -639,6 +678,7 @@ export const DAILY = [
   { id: 'saluta', label: 'Saluta qualcuno', done: (s, id, t0) => markedSince(s, id, 'saluta', t0) },
   { id: 'arreda', label: 'Aggiungi o sposta un mobile in casa', done: (s, id, t0) => markedSince(s, id, 'arreda', t0) },
   { id: 'giornale', label: 'Leggi le notizie del giorno', done: (s, id, t0) => markedSince(s, id, 'giornale', t0) },
+  { id: 'bar', label: 'Fai un turno al Bar Centrale', done: (s, id, t0) => (s.work?.[id]?.lastAt || 0) >= t0 },
 ];
 const dayStart = (t) => Date.parse(dayKey(t) + 'T00:00:00Z') - 3600000;
 export function dailyMission(now) { return DAILY[hash('giorno' + dayKey(now)) % DAILY.length]; }
@@ -917,6 +957,42 @@ const OPS = {
     if (h && h.status === 'cantiere') finishHouse(s, r, h, now);
     refresh(s, now);
     return { number: r.number };
+  },
+
+  // Inizio di un turno di lavoro
+  shiftStart(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    const job = JOBS[op.job];
+    if (!job) throw invalid('Lavoro sconosciuto.');
+    if (!r.anagrafe) throw invalid('Prima passa in Municipio: per lavorare serve l\'iscrizione all\'anagrafe.');
+    if (shiftsLeft(s, r.id, op.job, now) <= 0) throw invalid(`Per oggi hai fatto tutti i ${job.shifts} turni da ${job.label.toLowerCase()}: torna domani!`);
+    s.work ||= {};
+    const w = (s.work[r.id] ||= { day: null, shifts: 0, xp: {}, lastAt: 0, active: null });
+    w.active = { job: op.job, start: now };
+    return { secs: job.secs, left: shiftsLeft(s, r.id, op.job, now) - 1 };
+  },
+  // Fine del turno: si paga quello che è credibile, mai oltre il tetto
+  shiftEnd(s, op, ctx, now) {
+    const r = needResident(s, ctx);
+    const w = s.work?.[r.id];
+    const a = w?.active;
+    if (!a || a.job !== op.job) throw invalid('Nessun turno in corso.');
+    const job = JOBS[a.job];
+    const secs = Math.min((now - a.start) / 1000, job.secs + 15);
+    w.active = null;
+    if (secs < job.minSecs) throw invalid('Il turno è finito troppo presto: non è stato pagato.');
+    const served = Math.max(0, Math.min(Math.floor(Number(op.served) || 0), Math.floor(secs / job.perOrder)));
+    const items = Math.max(served, Math.min(Math.floor(Number(op.items) || 0), served * 3));
+    const before = jobLevel(a.job, w.xp[a.job] || 0);
+    const pay = Math.min(job.cap, Math.round(items * job.rate * (1 + before.bonus)));
+    const today = dayKey(now);
+    if (w.day !== today) { w.day = today; w.shifts = 0; }
+    w.shifts += 1;
+    w.lastAt = now;
+    w.xp[a.job] = (w.xp[a.job] || 0) + served;
+    earn(r, pay);
+    const after = jobLevel(a.job, w.xp[a.job]);
+    return { pay, served, items, xp: w.xp[a.job], level: after.label, promoted: after.index > before.index, left: job.shifts - w.shifts };
   },
 
   // Ufficio anagrafe del Municipio: chi arriva in città si iscrive (e lì sceglie com'è fatto).
@@ -1253,6 +1329,7 @@ export function publicView(s, viewerId, admin = false) {
     roads: s.roads, doors: s.doors, news: s.news.slice(0, 120), milestones: s.milestones, rooms: s.rooms || {},
     inv: viewerId && s.inv?.[viewerId] ? { [viewerId]: s.inv[viewerId] } : {},
     progress: viewerId && s.progress?.[viewerId] ? { [viewerId]: s.progress[viewerId] } : {},
+    work: viewerId && s.work?.[viewerId] ? { [viewerId]: s.work[viewerId] } : {},
     guestbook: s.guestbook || {}, hearts: s.hearts || {},
     requests: viewerId ? s.requests.filter((q) => q.from === viewerId || q.to === viewerId) : [],
     friendships: viewerId ? s.friendships.filter((f) => f.a === viewerId || f.b === viewerId) : [],

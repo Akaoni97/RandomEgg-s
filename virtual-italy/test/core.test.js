@@ -342,12 +342,17 @@ test('vita in città: missioni, libro degli ospiti, cuori, Casa della settimana,
   // Missione del giorno e serie di giorni di fila.
   assert.ok(DAILY.length >= 5);
   let streak = 0;
-  for (const d of [3, 4]) { // due giorni di fila con missioni da fare con l'omino
+  // Due giorni di fila con missioni da fare con l'omino (le altre sono già provate sopra)
+  const doable = (d) => ['panchina', 'balla', 'saluta', 'giornale', 'bar'].includes(dailyMission(T + d * 86400000).id);
+  let d0 = 3;
+  while (!(doable(d0) && doable(d0 + 1))) d0++;
+  for (const d of [d0, d0 + 1]) {
     const t = T + d * 86400000;
     const m = dailyMission(t);
-    // Le missioni che si fanno con l'omino (le altre sono già provate sopra)
-    if (!['panchina', 'balla', 'saluta', 'giornale'].includes(m.id)) continue;
-    s = applyOp(s, { type: 'mark', what: m.id }, at('b', t)).state;
+    if (m.id === 'bar') {
+      s = applyOp(s, { type: 'shiftStart', job: 'bar' }, at('b', t - 60000)).state;
+      s = applyOp(s, { type: 'shiftEnd', job: 'bar', served: 5, items: 6 }, at('b', t)).state;
+    } else s = applyOp(s, { type: 'mark', what: m.id }, at('b', t)).state;
     assert.ok(missionStatus(s, 'b', t).daily.done, `missione ${m.id} completata`);
     const res = applyOp(s, { type: 'claim', what: 'daily' }, at('b', t));
     s = res.state;
@@ -450,4 +455,38 @@ test('soldo: regalo del Comune, premi delle missioni e della Casa della settiman
   for (const r of Object.values(old.residents)) delete r.soldi;
   migratePlan(old);
   assert.ok(Object.values(old.residents).every((r) => r.soldi === INCOME.anagrafe));
+});
+
+test('bar: turni da barista pagati in soldi, con i controlli', async () => {
+  const { JOBS, shiftsLeft, workOf, jobLevel, shopAt, shopById, walletOf } = await import('../public/js/core.js');
+  const bar = shopById('bar');
+  assert.equal(shopAt(42, 31), bar);
+  assert.ok(!isLot('41,31') && !isLot('44,31'), 'dove c\'è il bar non si costruiscono case');
+  let s = join(emptyState(0), 'a', 'anna.b', { now: 1000 });
+  const start = (t) => applyOp(s, { type: 'shiftStart', job: 'bar' }, as('a', t)).state;
+  const end = (t, served, items) => applyOp(s, { type: 'shiftEnd', job: 'bar', served, items }, as('a', t));
+  assert.throws(() => end(2000, 1, 1), /Nessun turno/);
+  s = start(10_000);
+  assert.throws(() => end(15_000, 3, 3), /troppo presto/, 'un turno di 5 secondi non si paga');
+  s = start(20_000);
+  // 60 secondi: al massimo 24 ordini; chi dichiara di più viene ridotto, e la paga ha un tetto
+  let r = end(80_000, 999, 9999);
+  assert.equal(r.result.served, 24);
+  assert.equal(r.result.pay, JOBS.bar.cap);
+  s = r.state;
+  assert.equal(walletOf(s, 'a'), 150 + JOBS.bar.cap);
+  s = start(100_000);
+  r = end(160_000, 10, 15);
+  assert.equal(r.result.pay, 45, '15 pezzi a 3 soldi');
+  s = r.state;
+  s = start(200_000);
+  s = end(260_000, 10, 12).state;
+  assert.equal(shiftsLeft(s, 'a', 'bar', 260_000), 0);
+  assert.throws(() => start(270_000), /tutti i 3 turni/);
+  assert.equal(shiftsLeft(s, 'a', 'bar', 260_000 + 86_400_000), 3, 'il giorno dopo si ricomincia');
+  assert.equal(workOf(s, 'a').xp.bar, 44);
+  assert.equal(jobLevel('bar', 44).label, 'Barista');
+  // Senza anagrafe non si lavora
+  let t = applyOp(emptyState(0), { type: 'join', id: 'z', username: 'zeno.v' }, sys()).state;
+  assert.throws(() => applyOp(t, { type: 'shiftStart', job: 'bar' }, as('z')), /Municipio/);
 });

@@ -5,7 +5,7 @@ import {
   districtAt, districtById, parseKey, makeStyle, residentHouse, builtCount, isFounder, areFriends, friendsOf,
   formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook, SAY_PRESETS, SAY_MAX,
   FURNI, FLOORS, WALLS, ACCESS, ROOM_DOOR, furniById, roomOf, canVisit,
-  SHOPS, COMUNE, shopById, isShopRoom, SOLDO, soldi, INCOME, dailyReward, walletOf, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
+  SHOPS, COMUNE, shopById, isShopRoom, SOLDO, soldi, INCOME, dailyReward, walletOf, JOBS, workOf, jobLevel, shiftsLeft, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
   seatAt, footprint, missionStatus, progressOf, dayKey, weekKey, heartsThisWeek, weekRanking, WELCOME_PRIZE,
   RIDES, rideById, walkable, W, SEA_Y, BENCHES, WALK_SPEED,
 } from './core.js';
@@ -299,7 +299,9 @@ function openWallet() {
       h('li', {}, coin(16), h('span', {}, h('strong', {}, `${INCOME.daily}–${dailyReward(99)}`), ' la missione del giorno (di più se la fai tanti giorni di fila)')),
       h('li', {}, coin(16), h('span', {}, h('strong', {}, `${INCOME.welcome}`), ' le missioni di benvenuto, tutte completate')),
       h('li', {}, coin(16), h('span', {}, h('strong', {}, `${INCOME.casaSettimana}`), ' la Casa della settimana, la più amata dai vicini')),
-      h('li', { class: 'soon' }, '🛠️', h('span', {}, 'In arrivo: i lavori in città (barista, postino, giardiniere...)'))),
+      h('li', {}, coin(16), h('span', {}, h('strong', {}, `fino a ${JOBS.bar.cap}`), ` a turno come barista al Bar Centrale (${JOBS.bar.shifts} turni al giorno)`)),
+      h('li', { class: 'soon' }, '🛠️', h('span', {}, 'In arrivo: altri lavori in città (postino, giardiniere...)'))),
+    h('button', { class: 'btn primary', onclick: () => { closeSheet(); goToShop('bar'); } }, '☕ Vai a lavorare al bar'),
     h('h3', {}, 'Dove si spendono'),
     h('div', { class: 'row-wrap' }, shopBtn('mobili', 'Mobilificio'), shopBtn('moda', 'Sartoria Moda'), shopBtn('bici', 'Ciclofficina'))));
 }
@@ -1174,7 +1176,8 @@ function enterHouse(ownerId) {
   store.move(...ROOM_DOOR, ownerId);
   map.enterRoom(ownerId);
   const shop = shopById(ownerId);
-  if (shop?.kind === 'comune') {
+  if (shop?.kind === 'bar') setTimeout(() => map.say('npc:' + shop.id, `Ciao ${mine.username}! Un caffè? O ti va di darmi una mano al bancone?`), 350);
+  else if (shop?.kind === 'comune') {
     const fresh = !registered();
     setTimeout(() => map.say('npc:' + shop.id, fresh ? `Benvenuto in Comune, ${mine.username}! Vieni allo sportello per l'iscrizione.` : `Buongiorno ${mine.username}! Come posso aiutarti?`), 350);
     if (fresh) setTimeout(() => { if (ui.room === shop.room) openAnagrafe(); }, 900);
@@ -1207,6 +1210,7 @@ function goToShop(id) {
 
 function openShop(shop) {
   map.set({ selected: null });
+  if (shop.kind === 'bar') return openBarSheet(shop);
   if (shop.kind === 'comune') {
     return openSheet(shop.name, h('div', { class: 'stack' },
       h('p', {}, `Il palazzo comunale di ${CITY}: qui c'è l'ufficio anagrafe, dove ogni nuovo abitante si iscrive e ritira la carta d'identità.`),
@@ -1278,11 +1282,185 @@ function openRide(m) {
     h('p', { class: 'small' }, 'In casa e nei negozi si entra sempre a piedi.')), { wide: true });
   requestAnimationFrame(anim);
 }
+/* Lavori: il turno da barista al Bar Centrale ----------------------------------- */
+
+// Icone del menù del bar, disegnate a mano (48×48)
+const MENU_SVG = {
+  espresso: '<ellipse cx="24" cy="36" rx="15" ry="4" fill="#e9e1cf"/><path d="M14 22h18l-2 12a3 3 0 0 1-3 2.5h-8A3 3 0 0 1 16 34z" fill="#fff" stroke="#c9bfa8"/><ellipse cx="23" cy="22.5" rx="9" ry="2.2" fill="#5a3418"/><path d="M32 25a4 4 0 0 1 0 7" fill="none" stroke="#fff" stroke-width="2.4"/><path d="M20 16c-1-2 1-3 0-5M25 16c-1-2 1-3 0-5" stroke="#c9bfa8" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
+  cappuccino: '<ellipse cx="24" cy="38" rx="18" ry="4.5" fill="#e9e1cf"/><path d="M9 18h28l-3 16a4 4 0 0 1-4 3H16a4 4 0 0 1-4-3z" fill="#fff" stroke="#c9bfa8"/><ellipse cx="23" cy="18.6" rx="14" ry="3.6" fill="#c9915a"/><ellipse cx="23" cy="18.6" rx="10" ry="2.4" fill="#f4e6cf"/><path d="M21 17.6c0-1.2 2-1.2 2 0 0-1.2 2-1.2 2 0 0 1-2 2-2 2s-2-1-2-2z" fill="#c9915a"/><path d="M37 21a5 5 0 0 1-1 9" fill="none" stroke="#fff" stroke-width="2.8"/>',
+  cornetto: '<path d="M7 32c4-12 30-12 34 0-4 3-8 1-10-2-2 4-10 4-12 0-2 3-8 5-12 2z" fill="#d9a441" stroke="#a36a1f" stroke-width="1.4"/><path d="M17 26l2 6M24 24v7M31 26l-2 6" stroke="#a36a1f" stroke-width="1.4"/><path d="M12 28c3-4 7-6 12-6" stroke="#f3cf7d" stroke-width="1.6" fill="none"/>',
+  spremuta: '<path d="M14 12h20l-3 28H17z" fill="#f2f6f7" stroke="#b9c6cc"/><path d="M15 20h18l-2.3 18H17.3z" fill="#f39a2b"/><circle cx="33" cy="13" r="6" fill="#f6b23e" stroke="#e08a1a"/><path d="M33 8v10M28 13h10M29.5 9.5l7 7M36.5 9.5l-7 7" stroke="#fde2a6" stroke-width="0.9"/><path d="M22 8l4 14" stroke="#e85d75" stroke-width="2"/>',
+  tramezzino: '<path d="M6 34L24 12l18 22z" fill="#f4ecd8" stroke="#c9b48f" stroke-width="1.4"/><path d="M9 31l15-15 15 15" fill="none" stroke="#7bbf6a" stroke-width="3"/><path d="M11 33l13-13 13 13" fill="none" stroke="#f28cbf" stroke-width="2.4"/><path d="M6 34h36l-2 4H8z" fill="#e6d6b0" stroke="#c9b48f"/>',
+  acqua: '<path d="M20 6h8v5c4 2 6 5 6 9v19a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3V20c0-4 2-7 6-9z" fill="#cfe9f5" stroke="#6fa9c6" stroke-width="1.4"/><rect x="19" y="4" width="10" height="4" rx="1" fill="#3f6aa1"/><rect x="14" y="22" width="20" height="9" fill="#3f6aa1"/><path d="M18 26.5h12" stroke="#fff" stroke-width="1.4"/><path d="M17 33c3 1 11 1 14 0" stroke="#fff" stroke-width="1.2" fill="none" opacity=".7"/>',
+};
+const menuIcon = (id, size = 34) => h('span', { class: 'menu-ico', 'data-item': id, 'aria-hidden': 'true', html: `<svg viewBox="0 0 48 48" width="${size}" height="${size}">${MENU_SVG[id]}</svg>` });
+
+function openBarSheet(shop) {
+  const r = myResident();
+  const job = JOBS.bar;
+  const w = r ? workOf(store.city, r.id) : null;
+  const lv = jobLevel('bar', w?.xp.bar || 0);
+  const left = r ? shiftsLeft(store.city, r.id, 'bar', Date.now()) : job.shifts;
+  openSheet(shop.name, h('div', { class: 'stack' },
+    h('div', { class: 'badges' }, h('span', { class: 'tag live' }, 'Aperto'), h('span', { class: 'tag gold' }, coin(14), 'Cercasi baristi')),
+    h('p', {}, 'Il bar di fronte alla piazza: espresso, cappuccino, cornetti caldi e le chiacchiere del paese.'),
+    h('div', { class: 'job-card' },
+      h('span', { class: 'job-ico' }, menuIcon('espresso', 40)),
+      h('div', {},
+        h('strong', {}, 'Turno da barista'),
+        h('p', { class: 'small' }, `${job.secs} secondi al bancone: servi gli ordini prima che i clienti perdano la pazienza. Fino a ${soldi(job.cap)} a turno, ${job.shifts} turni al giorno.`),
+        r ? h('p', { class: 'small' }, h('strong', {}, lv.label), lv.next ? ` · ${w.xp.bar || 0}/${lv.next.at} clienti per diventare ${lv.next.label.toLowerCase()} (paga +${Math.round(lv.next.bonus * 100)}%)` : ' · il massimo!') : null)),
+    !me() ? h('button', { class: 'btn primary big', onclick: openRegister }, 'Iscriviti per lavorare')
+      : !registered() ? h('button', { class: 'btn primary big', onclick: goToComune }, 'Prima l\'anagrafe in Municipio')
+        : left > 0 ? h('button', { class: 'btn primary big', onclick: (e) => startShift(e.currentTarget) }, `☕ Inizia il turno (${left} ${left === 1 ? 'rimasto' : 'rimasti'} oggi)`)
+          : h('p', { class: 'small' }, 'Per oggi hai fatto tutti i turni: Franco ti aspetta domani!'),
+    me() && ui.room !== shop.room ? h('button', { class: 'btn', onclick: () => enterHouse(shop.room) }, 'Entra al bar') : null));
+}
+function barRoomBar(shop) {
+  const r = myResident();
+  const left = r ? shiftsLeft(store.city, r.id, 'bar', Date.now()) : 0;
+  const head = h('div', { class: 'room-head' },
+    h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, 'Sei al bar'), h('strong', {}, shop.name)),
+    h('span', { class: 'row-actions' }, h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
+  const work = registered() && left > 0 ? h('button', { class: 'btn primary', onclick: (e) => startShift(e.currentTarget) }, `☕ Turno da barista (${left}/${JOBS.bar.shifts})`)
+    : h('button', { class: 'btn', onclick: () => openBarSheet(shop) }, '☕ Lavorare al bar');
+  return h('div', { class: 'bar room-bar' }, head, work, chatBar());
+}
+
+// Il gioco: arrivano i clienti con l'ordinazione, si compone il vassoio, si serve.
+async function startShift(btn) {
+  const res = await run(btn, () => store.op({ type: 'shiftStart', job: 'bar' }));
+  if (!res) return;
+  closeSheet();
+  const job = JOBS.bar, mine = me();
+  const lvl = jobLevel('bar', workOf(store.city, mine.id).xp.bar || 0);
+  const rate = job.rate * (1 + lvl.bonus);
+  const total = job.secs * 1000;
+  const pool = Object.values(store.city.residents).filter((x) => x.id !== mine.id && !x.suspended);
+  const weights = job.menu.flatMap((m) => Array(m.w).fill(m.id));
+  const pick = (list) => list[Math.floor(Math.random() * list.length)];
+  const g = { t0: performance.now(), served: 0, items: 0, tray: [], queue: [], nextAt: 0, done: false, lost: 0, tips: 0 };
+  // Interfaccia
+  const timer = h('span', { class: 'job-timer-fill' });
+  const earned = h('strong', {}, '0');
+  const servedEl = h('span', {}, '0');
+  const queueEl = h('div', { class: 'customers' }, h('p', { class: 'small cust-wait' }, 'Arrivano i clienti...'));
+  const trayEl = h('div', { class: 'tray-items' });
+  const trayBox = h('div', { class: 'tray' }, h('span', { class: 'tray-label' }, 'Vassoio'), trayEl,
+    h('button', { class: 'btn small', onclick: () => { g.tray = []; drawTray(); } }, 'Svuota'));
+  const menuEl = h('div', { class: 'menu-grid' }, job.menu.map((m) => h('button', { class: 'menu-btn', onclick: () => addItem(m.id) }, menuIcon(m.id, 40), h('span', {}, m.label))));
+  const overlay = h('div', { class: 'job', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Turno al Bar Centrale' },
+    h('div', { class: 'job-head' },
+      h('div', {}, h('span', { class: 'eyebrow' }, 'Bar Centrale · turno'), h('strong', {}, 'Servi i clienti!')),
+      h('div', { class: 'job-score' }, coin(22), earned, h('span', { class: 'small' }, ' · serviti '), servedEl)),
+    h('div', { class: 'job-timer' }, timer),
+    queueEl, trayBox, menuEl,
+    h('p', { class: 'small job-hint' }, 'Tocca le cose ordinate: quando il vassoio corrisponde a un ordine, il cliente viene servito.'));
+  document.body.append(overlay);
+  const est = () => Math.min(job.cap, Math.round(g.items * rate));
+  const sameOrder = (a, b) => a.length === b.length && [...a].sort().join() === [...b].sort().join();
+  const fits = (tray, order) => { const o = [...order]; return tray.every((t) => { const i = o.indexOf(t); if (i < 0) return false; o.splice(i, 1); return true; }); };
+  function drawTray() {
+    trayEl.replaceChildren(...(g.tray.length ? g.tray.map((t) => menuIcon(t, 30)) : [h('span', { class: 'small' }, 'vuoto')]));
+  }
+  function addCustomer(now) {
+    const r = pool.length ? pick(pool) : null;
+    const n = Math.random() < 0.5 ? 1 : Math.random() < 0.7 ? 2 : 3;
+    const order = Array.from({ length: n }, () => pick(weights));
+    const patience = Math.max(9000, 17000 - g.served * 350) + n * 1500;
+    const cv = h('canvas', { class: 'cust-face', width: 72, height: 72, 'aria-hidden': 'true' });
+    try { drawAvatarBust(cv, avatarLook(r?.username || 'cliente' + Math.random(), r?.look)); } catch { /* senza ritratto */ }
+    const bar = h('span', { class: 'patience-fill' });
+    const el = h('div', { class: 'customer' }, cv,
+      h('div', { class: 'cust-body' },
+        h('span', { class: 'cust-name' }, r?.username || 'Un turista'),
+        h('div', { class: 'cust-order' }, order.map((o) => menuIcon(o, 28))),
+        h('span', { class: 'patience' }, bar)));
+    const c = { order, el, bar, born: now, patience };
+    g.queue.push(c);
+    queueEl.append(el);
+  }
+  function addItem(id) {
+    if (g.done) return;
+    if (g.tray.length >= 3) return flash('Il vassoio è pieno: servi o svuota.');
+    g.tray.push(id);
+    drawTray();
+    const c = g.queue.find((q) => !q.gone && sameOrder(q.order, g.tray));
+    if (c) return serve(c);
+    if (!g.queue.some((q) => !q.gone && fits(g.tray, q.order))) {
+      trayBox.classList.add('wrong');
+      flash('Questo non l\'ha ordinato nessuno!');
+      setTimeout(() => { trayBox.classList.remove('wrong'); g.tray = []; drawTray(); }, 650);
+    }
+  }
+  function serve(c) {
+    const now = performance.now();
+    const left = 1 - (now - c.born) / c.patience;
+    g.served++; g.items += c.order.length;
+    c.gone = true;
+    c.el.classList.add('happy');
+    c.el.append(h('span', { class: 'cust-say' }, left > 0.6 ? 'Perfetto, grazie!' : 'Grazie!'));
+    const pop = h('span', { class: 'coin-pop' }, `+${Math.round(c.order.length * rate)}`);
+    c.el.append(pop);
+    g.tray = []; drawTray();
+    earned.textContent = est(); servedEl.textContent = g.served;
+    setTimeout(() => { c.el.remove(); g.queue = g.queue.filter((q) => q !== c); }, 700);
+  }
+  let flashT = null;
+  const flashEl = h('div', { class: 'job-flash', hidden: true });
+  overlay.append(flashEl);
+  function flash(text) { flashEl.textContent = text; flashEl.hidden = false; clearTimeout(flashT); flashT = setTimeout(() => { flashEl.hidden = true; }, 1300); }
+  drawTray();
+  const tick = () => {
+    if (g.done) return;
+    const now = performance.now();
+    const el = now - g.t0;
+    timer.style.width = `${Math.max(0, 100 - (el / total) * 100)}%`;
+    if (now >= g.nextAt && g.queue.filter((q) => !q.gone).length < 3) { addCustomer(now); g.nextAt = now + 2200 + Math.random() * 2200; }
+    for (const c of g.queue) {
+      if (c.gone) continue;
+      const p = Math.max(0, 1 - (now - c.born) / c.patience);
+      c.bar.style.width = `${p * 100}%`;
+      c.bar.classList.toggle('low', p < 0.3);
+      if (p <= 0) {
+        c.gone = true; g.lost++;
+        c.el.classList.add('angry');
+        c.el.append(h('span', { class: 'cust-say' }, 'Che lentezza!'));
+        setTimeout(() => { c.el.remove(); g.queue = g.queue.filter((q) => q !== c); }, 900);
+      }
+    }
+    if (el >= total) return finish();
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  async function finish() {
+    g.done = true;
+    let result = null, error = null;
+    try { result = await store.op({ type: 'shiftEnd', job: 'bar', served: g.served, items: g.items }); } catch (ex) { error = errText(ex); }
+    const left = result ? result.left : 0;
+    overlay.replaceChildren(h('div', { class: 'job-end' },
+      h('span', { class: 'eyebrow' }, 'Fine del turno'),
+      h('h2', {}, result ? (g.served >= 10 ? 'Che bancone, complimenti!' : g.served >= 5 ? 'Bel turno!' : 'Turno finito') : 'Turno non pagato'),
+      result ? h('div', { class: 'purse' }, h('span', { class: 'purse-coin', html: coinSvg(64) }),
+        h('div', {}, h('p', { class: 'eyebrow' }, 'Paga del turno'), h('p', { class: 'purse-n' }, `+${soldi(result.pay)}`))) : h('p', {}, error),
+      h('ul', { class: 'earn' },
+        h('li', {}, '☕', h('span', {}, h('strong', {}, g.served), ' clienti serviti, ', h('strong', {}, g.items), ' cose portate al tavolo')),
+        g.lost ? h('li', {}, '😤', h('span', {}, `${g.lost} ${g.lost === 1 ? 'cliente se n\'è andato' : 'clienti se ne sono andati'} senza aspettare`)) : null,
+        result ? h('li', {}, '⭐', h('span', {}, result.promoted ? h('strong', {}, `Promozione! Ora sei ${result.level.toLowerCase()}: paga più alta.`) : `${result.level} · ${result.xp} clienti serviti in tutto`)) : null),
+      h('div', { class: 'stack' },
+        left > 0 ? h('button', { class: 'btn primary big', onclick: (e) => { overlay.remove(); startShift(e.currentTarget); } }, `Un altro turno (${left} ${left === 1 ? 'rimasto' : 'rimasti'})`) : h('p', { class: 'small' }, 'Per oggi basta così: torna domani per altri turni.'),
+        h('button', { class: 'btn', onclick: () => { overlay.remove(); update(); } }, 'Torna in città'))));
+    if (result?.promoted) toast(`Promozione al bar: ora sei ${result.level.toLowerCase()}!`);
+    update();
+  }
+}
+
 function onNpcTap(id) {
   if (id.startsWith('npc:p:')) { map.say(id, ['Buongiorno!', 'Bella giornata, eh?', 'Ciao!', 'Hai visto la fontana?', 'Vado a prendere un caffè'][Math.floor(Math.random() * 5)]); return; }
   const shop = shopById(ui.room);
   if (!shop) return;
   if (shop.kind === 'comune') return registered() ? openCarta() : openAnagrafe();
+  if (shop.kind === 'bar') return openBarSheet(shop);
   const m = /^npc:man:(\d+)$/.exec(id);
   if (m) {
     // Il manichino mostra un capo in vendita: si apre la prova di quello.
@@ -1308,6 +1486,7 @@ function comuneBar(shop) {
 }
 function shopBar(shop) {
   if (shop.kind === 'comune') return comuneBar(shop);
+  if (shop.kind === 'bar') return barRoomBar(shop);
   const head = h('div', { class: 'room-head' },
     h('div', { class: 'room-title' }, h('span', { class: 'eyebrow' }, 'Sei in negozio'), h('strong', {}, shop.name)),
     h('span', { class: 'row-actions' }, h('button', { class: 'btn small', onclick: exitHouse }, 'Esci')));
@@ -1482,7 +1661,8 @@ function syncAvatars() {
 const KEEPER_LOOKS = { mobili: { gender: 'uomo', skin: 2, hair: 6, style: 'corti', beard: 'baffi', shirt: 3, pants: 3, top: 'camicia', bottom: 'pantaloni', extra: 'occhiali' },
   moda: { gender: 'donna', skin: 1, hair: 0, style: 'coda', lips: 'rosso', shirt: 9, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'nessuno' },
   bici: { gender: 'uomo', skin: 3, hair: 2, style: 'ricci', beard: 'barbetta', shirt: 4, pants: 1, top: 'felpa', bottom: 'pantaloncini', extra: 'cuffie' },
-  comune: { gender: 'donna', skin: 2, hair: 1, style: 'chignon', lips: 'rosa', shirt: 5, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'occhiali' } };
+  comune: { gender: 'donna', skin: 2, hair: 1, style: 'chignon', lips: 'rosa', shirt: 5, pants: 5, top: 'giacca', bottom: 'gonna', extra: 'occhiali' },
+  bar: { gender: 'uomo', skin: 3, hair: 0, style: 'corti', beard: 'baffi', shirt: 8, pants: 5, shoes: 0, top: 'camicia', bottom: 'pantaloni', extra: 'nessuno' } };
 // Passanti: gente del paese che fa due passi, si siede in piazza, prende il caffè. Esistono solo
 // sullo schermo di chi guarda e servono a dare vita alla città anche quando gli abitanti sono pochi.
 const PASSERSBY = Array.from({ length: 8 }, (_, i) => ({
