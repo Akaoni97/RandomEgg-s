@@ -1113,7 +1113,7 @@ export class CityMap {
       // Avanti è dove guarda la telecamera; destra è la sua destra
       const fx = -Math.sin(v.az), fy = -Math.cos(v.az), rx = Math.cos(v.az), ry = -Math.sin(v.az);
       const mx = rx * jx - fx * jy, my = ry * jx - fy * jy;
-      const speed = (rideById(a.ride)?.speed || WALK_SPEED) * 1.1;
+      const speed = (rideById(a.ride)?.speed || WALK_SPEED) * 0.8;
       const step = speed * dt * Math.min(1, m);
       const ok = (x, y) => {
         const from = [Math.round(a.x), Math.round(a.y)], to = [Math.round(x), Math.round(y)];
@@ -1495,7 +1495,7 @@ export class CityMap {
       a.face3 = f;
       t3.setAvatar(a.id, {
         x: a.x + 0.5, y: a.y + 0.5, h, look: a.look, ride, me: a.me, facing: f,
-        pose: { moving, phase: a.walked * Math.PI * 1.6, act, at: act ? at : t, sit, seatH: 0.3, lookUp: 0.28 },
+        pose: { moving, phase: a.walked * Math.PI * 2.6, act, at: act ? at : t, sit, lookUp: 0.28 },
       });
     }
     t3.sweepAvatars();

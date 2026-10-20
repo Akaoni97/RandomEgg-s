@@ -15,6 +15,10 @@ import {
 import { Avatar3D } from './avatar3d.js';
 
 const PX = 32;
+// Proporzioni: un omino è alto circa 0,57 caselle (una casella ≈ 3 metri), le case sono un po' più
+// piccole del loro mezzo isolato e arretrate di un marciapiede, gli arredi sono a misura d'omino.
+export const PERSON = 0.55;
+const HOUSE_K = 0.86, SETBACK = 0.22, ARREDO_K = 0.62, SEAT = 0.15;
 const T3 = () => globalThis.THREE;
 // Si controlla una volta sola (ogni prova crea un contesto grafico, e i telefoni ne reggono pochi)
 let gl3D = null;
@@ -114,6 +118,12 @@ export class Mesher {
     }
   }
   box(x0, y0, z0, x1, y1, z1, col) { this.prim('box', (x0 + x1) / 2, y0, (z0 + z1) / 2, x1 - x0, y1 - y0, z1 - z0, col); }
+  // Quello che fill aggiunge viene rimpicciolito di f attorno a (ox, oy, oz): arredi a misura d'omino
+  scaled(f, ox, oy, oz, fill) {
+    const i0 = this.p.length;
+    fill(this);
+    for (let i = i0; i < this.p.length; i += 3) { this.p[i] = ox + (this.p[i] - ox) * f; this.p[i + 1] = oy + (this.p[i + 1] - oy) * f; this.p[i + 2] = oz + (this.p[i + 2] - oz) * f; }
+  }
   build() {
     const T = T3();
     const g = new T.BufferGeometry();
@@ -482,7 +492,8 @@ export function buildHouse(style, { cantiere = false, founder = false, flag = nu
   return { group: grp, wallMat, top };
 }
 // Vaso di coccio con una pianta fiorita
-function potIn(m, x, y, z, seed) {
+function potIn(m, x, y, z, seed) { m.scaled(0.65, x, y, z, () => potAt(m, x, y, z, seed)); }
+function potAt(m, x, y, z, seed) {
   const fl = ['#e85d75', '#b46ad6', '#f08a3c', '#ffffff'][seed % 4];
   m.prim('cyl6', x, y, z, 0.09, 0.16, 0.09, '#c66a3c');
   m.prim('ico0', x, y + 0.26, z, 0.13, 0.12, 0.13, '#4c8a3a', seed);
@@ -517,9 +528,10 @@ function decoIn(m, deco, x, z) {
     m.box(x - 0.15, 0.12, z - 0.01, x + 0.15, 0.15, z + 0.01, '#c0392b'); m.box(x - 0.02, 0.12, z - 0.01, x + 0.01, 0.28, z + 0.01, '#c0392b');
   } else if (deco === 'panchina') benchIn(m, x - 0.1, z, 0);
   else if (deco === 'limoni') { m.prim('cyl6', x, 0, z, 0.12, 0.2, 0.12, '#c66a3c'); m.prim('ico1', x, 0.42, z, 0.2, 0.22, 0.2, '#3f7d34'); for (const [dx, dy] of [[0.12, 0.42], [-0.1, 0.5], [0.04, 0.6]]) m.prim('ico0', x + dx, dy, z + 0.12, 0.04, 0.04, 0.04, '#f6d84a'); }
-  else if (deco === 'cane') { m.box(x - 0.18, 0, z - 0.2, x + 0.18, 0.26, z + 0.15, '#a0522d'); m.prim('pyr', x, 0.26, z - 0.02, 0.3, 0.16, 0.27, '#7a3f22'); m.box(x - 0.06, 0, z + 0.15, x + 0.06, 0.16, z + 0.151, '#2b2118'); }
+  else if (deco === 'cane') m.scaled(0.6, x, 0, z, () => { m.box(x - 0.18, 0, z - 0.2, x + 0.18, 0.26, z + 0.15, '#a0522d'); m.prim('pyr', x, 0.26, z - 0.02, 0.3, 0.16, 0.27, '#7a3f22'); m.box(x - 0.06, 0, z + 0.15, x + 0.06, 0.16, z + 0.151, '#2b2118'); });
 }
-function benchIn(m, x, z, ry) {
+function benchIn(m, x, z, ry, y = 0) { m.scaled(ARREDO_K, x, y, z, () => benchAt(m, x, z, ry)); }
+function benchAt(m, x, z, ry) {
   const c = Math.cos(ry), s = Math.sin(ry);
   const P = (dx, dz) => [x + dx * c + dz * s, z - dx * s + dz * c];
   for (const dx of [-0.32, 0.32]) { const [px, pz] = P(dx, 0); m.prim('box', px, 0, pz, 0.06, 0.2, 0.24, '#8f8a80', ry); }
@@ -655,7 +667,7 @@ export function buildBar(shop) {
   ex.box(-0.01, y1 - u(56) + 0.14, 0.02, 0.01, y1 - u(50), 0.2, '#1f2a26');
   // Gradino, tavolini con gli ombrelloni sul marciapiede, lavagna del menù
   ex.box(-0.4, 0, 0, 0.4, 0.05, 0.14, '#e6dcc6');
-  for (const tx of [x0 + 0.55, x1 - 0.55]) {
+  for (const tx of [x0 + 0.55, x1 - 0.55]) ex.scaled(ARREDO_K, tx, 0, 0.5, () => {
     const tz = 0.62;
     ex.prim('cyl6', tx, 0, tz, 0.025, 0.34, 0.025, '#3b3f45'); ex.prim('disc', tx, 0.34, tz, 0.2, 0.025, 0.2, '#f2ead6');
     ex.prim('cyl6', tx - 0.08, 0.37, tz + 0.02, 0.025, 0.03, 0.025, '#ffffff'); ex.prim('cyl6', tx + 0.07, 0.37, tz - 0.03, 0.03, 0.06, 0.03, '#f08a3c');
@@ -667,7 +679,7 @@ export function buildBar(shop) {
     ex.prim('cyl6', tx, 0, tz, 0.015, 1.2, 0.015, '#6b4a2f');
     ex.prim('cone8', tx, 0.98, tz, 0.6, 0.28, 0.6, '#f6ecd4');
     ex.prim('cone8', tx, 0.975, tz, 0.61, 0.06, 0.61, '#2f6b4f');
-  }
+  });
   ex.prim('pyr', x1 - 0.18, 0, 0.32, 0.14, 0.42, 0.06, '#7a5a3a');
   ex.box(x1 - 0.27, 0.12, 0.35, x1 - 0.09, 0.36, 0.36, '#2b2f2c');
   potIn(ex, x0 + 0.12, 0, 0.2, 2); potIn(ex, -0.55, 0, 0.2, 1); potIn(ex, 0.55, 0, 0.2, 3);
@@ -931,14 +943,15 @@ export class Town3D {
   setTPS(on) {
     this.tps = !!on;
     this.camera.fov = on ? 52 : 30;
+    this.camera.near = on ? 0.08 : 0.5;
     this.camera.updateProjectionMatrix();
-    if (on) Object.assign(this.view, { dist: 5.2, pitch: 0.36 });
+    if (on) Object.assign(this.view, { dist: 2.6, pitch: 0.32 });
     else Object.assign(this.view, { dist: 22, pitch: 0.82 });
     this.lastShadow = null;
   }
   clampView() {
     const v = this.view;
-    if (this.tps) { v.dist = Math.max(2.6, Math.min(12, v.dist)); v.pitch = Math.max(0.12, Math.min(1.1, v.pitch)); }
+    if (this.tps) { v.dist = Math.max(1.2, Math.min(9, v.dist)); v.pitch = Math.max(0.1, Math.min(1.1, v.pitch)); }
     else v.dist = Math.max(6, Math.min(120, v.dist));
     v.x = Math.max(0, Math.min(W, v.x));
     v.y = Math.max(0, Math.min(H + 2, v.y));
@@ -946,17 +959,17 @@ export class Town3D {
   groundAt(x, y) { return this.G ? townSurface(this.G, this.ramps, Math.max(0, Math.min(W - 0.01, x)), Math.max(0, Math.min(H - 0.01, y))) / PX : 0; }
   updateCamera() {
     const v = this.view;
-    const gy = this.groundAt(v.x, v.y) + (this.tps ? 0.85 : 0);
+    const gy = this.groundAt(v.x, v.y) + (this.tps ? 0.45 : 0);
     const c = Math.cos(v.pitch), s = Math.sin(v.pitch);
     let d = v.dist;
     if (this.tps) {
       // Se una casa sta tra l'omino e la telecamera, la telecamera si avvicina
       const T = T3();
       const dir = new T.Vector3(Math.sin(v.az) * c, s, Math.cos(v.az) * c);
-      const rc = new T.Raycaster(new T.Vector3(v.x, gy, v.y), dir, 0.3, d);
+      const rc = new T.Raycaster(new T.Vector3(v.x, gy, v.y), dir, 0.2, d);
       const solid = [...this.houses.values(), ...this.shops.values()].map((b) => b.group);
       const hit = rc.intersectObjects(solid, true)[0];
-      if (hit) d = Math.max(1.2, hit.distance - 0.25);
+      if (hit) d = Math.max(0.6, hit.distance - 0.15);
     }
     this.camera.position.set(v.x + Math.sin(v.az) * c * d, gy + s * d, v.y + Math.cos(v.az) * c * d);
     this.camera.lookAt(v.x, gy, v.y);
@@ -1039,7 +1052,8 @@ export class Town3D {
       const cx = x + 0.5 + (bx === 1 ? 0.5 : bx === STREET - 1 ? -0.5 : 0);
       // La facciata guarda la sua via: a sud (bordo basso del lotto) o a nord (casa girata)
       const north = lotFacing(slot) === 'N';
-      b.group.position.set(cx, G.level[y * W + x] < 0 ? 0 : townSurface(G, ramps, x + 0.5, y + 0.5) / PX, north ? y + 0.03 : y + 0.97);
+      b.group.position.set(cx, G.level[y * W + x] < 0 ? 0 : townSurface(G, ramps, x + 0.5, y + 0.5) / PX, north ? y + SETBACK : y + 1 - SETBACK);
+      b.group.scale.setScalar(HOUSE_K);
       if (north) b.group.rotation.y = Math.PI;
       b.north = north;
       b.group.userData.pick = { kind: 'house', slot, x, y };
@@ -1196,10 +1210,12 @@ export class Town3D {
     for (const [x, y] of D.trees) treeIn(m, 'tondo', x + 0.5, pH(x, y), y + 0.5, 0.9, x * 7 + y);
     for (const [x, y] of D.cafe) {
       const cx = x + 0.5, cz = y + 0.5, h0 = pH(x, y);
+      m.scaled(ARREDO_K, cx, h0, cz, () => {
       m.prim('cyl6', cx, h0, cz, 0.03, 0.36, 0.03, '#3b3f45'); m.prim('disc', cx, h0 + 0.36, cz, 0.24, 0.03, 0.24, '#f2ead6');
       for (const dx of [-0.36, 0.36]) { m.box(cx + dx - 0.1, h0 + 0.22, cz - 0.1, cx + dx + 0.1, h0 + 0.26, cz + 0.1, '#c0392b'); m.box(cx + dx + (dx > 0 ? 0.06 : -0.1), h0 + 0.26, cz - 0.1, cx + dx + (dx > 0 ? 0.1 : -0.06), h0 + 0.5, cz + 0.1, '#c0392b'); for (const ez of [-0.08, 0.08]) m.box(cx + dx - 0.01, h0, cz + ez - 0.01, cx + dx + 0.01, h0 + 0.22, cz + ez + 0.01, '#3b3f45'); }
       m.prim('cyl6', cx, h0, cz, 0.018, 1.25, 0.018, '#6b4a2f');
       m.prim('cone8', cx, h0 + 1.05, cz, 0.62, 0.3, 0.62, '#f6ecd4');
+      });
     }
     for (const [x, y, i] of [[36, 21, 0], [37, 21, 1], [43, 22, 2], [36, 28, 3], [44, 23, 0], [44, 27, 1], [38, 29, 2], [42, 29, 3], [39, 23, 1], [41, 27, 2]]) potIn(m, x + 0.5, pH(x, y), y + 0.5, i);
     // Edicola e Muro dei Fondatori: si possono toccare
@@ -1334,17 +1350,21 @@ export class Town3D {
     const T = T3();
     let s = this.sprites.get(id);
     if (!s) {
-      const av = new Avatar3D(o.look, { ride: o.ride, scale: 0.95 });
+      const av = new Avatar3D(o.look, { ride: o.ride, scale: PERSON });
       if (o.me) av.makeGhost();
-      const blob = new T.Mesh(new T.CircleGeometry(0.2, 12), mats().shadow);
+      const blob = new T.Mesh(new T.CircleGeometry(0.13, 12), mats().shadow);
       blob.rotation.x = -Math.PI / 2;
       this.scene.add(av.group, blob);
       s = { av, blob };
       this.sprites.set(id, s);
     } else s.av.set(o.look, o.ride);
+    // Da lontano gli omini crescono un po', così restano leggibili; da vicino sono a misura vera
+    const k = PERSON * this.avBoost();
+    s.av.group.scale.setScalar(k);
+    s.blob.scale.setScalar(k / PERSON);
     s.av.group.position.set(o.x, o.h, o.y);
     s.av.group.rotation.y = o.facing;
-    s.av.pose(o.pose);
+    s.av.pose(o.pose.sit ? { ...o.pose, seatH: SEAT / k } : o.pose);
     s.blob.position.set(o.x, this.groundAt(o.x, o.y) + 0.02, o.y);
     s.seen = true;
   }
@@ -1354,7 +1374,8 @@ export class Town3D {
       else s.seen = false;
     }
   }
-  avatarHead(id) { const s = this.sprites.get(id); return s ? s.av.group.position.y + 1.0 : null; }
+  avBoost() { return this.tps ? 1 : 1 + 0.45 * Math.max(0, Math.min(1, (this.view.dist - 8) / 16)); }
+  avatarHead(id) { const s = this.sprites.get(id); return s ? s.av.group.position.y + 1.08 * s.av.group.scale.y : null; }
 
   setSelected(slot) {
     const T = T3();
@@ -1419,8 +1440,8 @@ export class Town3D {
     for (const [slot, t0] of this.born) {
       const b = this.houses.get(slot);
       const p = (t - t0) / 900;
-      if (!b || p >= 1) { if (b) b.group.scale.set(1, 1, 1); this.born.delete(slot); this.shadowDirty = true; continue; }
-      const k = Math.max(0.01, growBack(Math.max(0, p)));
+      if (!b || p >= 1) { if (b) b.group.scale.setScalar(HOUSE_K); this.born.delete(slot); this.shadowDirty = true; continue; }
+      const k = HOUSE_K * Math.max(0.01, growBack(Math.max(0, p)));
       b.group.scale.set(k, k, k);
     }
     // Traffico
