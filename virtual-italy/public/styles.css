@@ -181,12 +181,13 @@ body.in-room .zoom .turn, .zoom .turn[hidden] { display: none; }
 }
 .catalog-item canvas { width: 56px; height: 56px; image-rendering: auto; }
 .catalog-item:hover { border-color: var(--brand); }
-.catalog-item .price { padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--live) 16%, var(--bg)); color: var(--live); font-size: 0.66rem; }
+.catalog-item .price { padding: 1px 7px 1px 3px; border-radius: 999px; background: #fbf1d0; color: #7a5410; font-size: 0.7rem; }
 .catalog-item .owned { color: var(--muted); font-size: 0.66rem; }
 .catalog-item.shop-link { align-content: center; border-style: dashed; color: var(--brand); }
 .shop-ico { font-size: 1.9rem; line-height: 56px; height: 56px; }
 .empty-inv { flex: none; width: 190px; align-self: center; margin: 0; }
-.price { display: inline-block; justify-self: start; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--live) 16%, var(--bg)); color: var(--live); font-size: 0.8rem; font-weight: 800; }
+.price { display: inline-flex; align-items: center; gap: 4px; justify-self: start; padding: 3px 10px 3px 4px; border-radius: 999px; background: #fbf1d0; color: #7a5410; font-size: 0.85rem; font-weight: 800; }
+.price.short { background: #fbe1dc; color: #a3322a; }
 .chat { display: flex; gap: 6px; grid-column: 1 / -1; }
 .chat-input {
   flex: 1; min-width: 0; min-height: 40px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--line);
@@ -417,3 +418,23 @@ body.in-room .toasts { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 1
 .id-data dd { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
 .id-sign { display: flex; align-items: baseline; gap: 10px; font-size: 0.75rem; color: #7a6a4f; }
 .id-sign em { font-family: "Abril Fatface", Georgia, serif; font-size: 1.1rem; color: #2a3f6a; }
+
+/* Il Soldo: moneta, borsellino, premi */
+.coin { display: inline-flex; line-height: 0; flex: none; filter: drop-shadow(0 1px 0 rgba(90,60,10,0.35)); }
+.tab.wallet { display: inline-flex; flex-direction: row; align-items: center; width: auto; min-width: 0; padding: 0 9px 0 6px; gap: 4px; font-weight: 800; font-size: 0.86rem; color: #7a5410; background: #fbf1d0; border-radius: 999px; font-variant-numeric: tabular-nums; }
+.tab.wallet[hidden] { display: none; }
+.tab.wallet.bump { animation: coin-bump 0.6s ease; }
+@keyframes coin-bump { 0% { transform: scale(1); } 35% { transform: scale(1.22) rotate(-4deg); background: #f2c94c; } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .tab.wallet.bump { animation: none; } }
+.purse { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 18px; background: linear-gradient(135deg, #fbf1d0, #f2dc97); }
+.purse-coin { line-height: 0; filter: drop-shadow(0 3px 4px rgba(90,60,10,0.35)); }
+.purse .eyebrow { margin: 0; }
+.purse-n { margin: 2px 0 0; font-family: "Abril Fatface", Georgia, serif; font-size: 1.9rem; color: #5c3f0c; font-variant-numeric: tabular-nums; }
+.earn { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.earn li { display: flex; align-items: center; gap: 8px; }
+.earn li.soon { color: var(--muted); }
+.gift { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; background: #fbf1d0; color: #5c3f0c; }
+.gift p { margin: 0; }
+.btn .coin { margin-right: 2px; }
+/* Sui telefoni stretti, col borsellino in alto, resta solo il marchio della città */
+@media (max-width: 440px) { body.has-wallet .brand-text { display: none; } }

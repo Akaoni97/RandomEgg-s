@@ -5,7 +5,7 @@ import {
   districtAt, districtById, parseKey, makeStyle, residentHouse, builtCount, isFounder, areFriends, friendsOf,
   formatNews, nextGoal, goalProgress, lotsOpen, DomainError, frontOf, spawnPoint, LOOK, cleanLook, SAY_PRESETS, SAY_MAX,
   FURNI, FLOORS, WALLS, ACCESS, ROOM_DOOR, furniById, roomOf, canVisit,
-  SHOPS, COMUNE, shopById, isShopRoom, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
+  SHOPS, COMUNE, shopById, isShopRoom, SOLDO, soldi, INCOME, dailyReward, walletOf, FURNI_CATS, WEAR, WEAR_SLOTS, wearById, invOf, ownsWear, SHOP_KEEPER_AT, MANNEQUINS,
   seatAt, footprint, missionStatus, progressOf, dayKey, weekKey, heartsThisWeek, weekRanking, WELCOME_PRIZE,
   RIDES, rideById, walkable, W, SEA_Y, BENCHES, WALK_SPEED,
 } from './core.js';
@@ -50,6 +50,19 @@ const ICONS = {
   star: '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
   smile: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14c.9 1.4 2.1 2 3.5 2s2.6-.6 3.5-2M9 9.5v.5M15 9.5v.5"/>',
 };
+// Il Soldo: moneta d'oro con la S e la stella d'Italia, bordo zigrinato.
+function coinSvg(size = 22) {
+  return `<svg viewBox="0 0 32 32" width="${size}" height="${size}" aria-hidden="true">
+    <circle cx="16" cy="16" r="15" fill="#b8862a"/>
+    <circle cx="16" cy="16" r="15" fill="none" stroke="#8a5f14" stroke-width="1" stroke-dasharray="1.6 1.2"/>
+    <circle cx="16" cy="16" r="12.2" fill="#f2c94c"/>
+    <circle cx="16" cy="16" r="12.2" fill="none" stroke="#c9952e" stroke-width="1.2"/>
+    <path d="M10 10.5a8 8 0 0 1 10.5-2.3" fill="none" stroke="#fff3c4" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
+    <path d="M16 6.4l.75 1.6 1.7.2-1.27 1.15.34 1.7-1.52-.87-1.52.87.34-1.7-1.27-1.15 1.7-.2z" fill="#9a6a12"/>
+    <text x="16" y="24.2" text-anchor="middle" font-family="Georgia, 'Abril Fatface', serif" font-weight="700" font-size="13" fill="#8a5f14">S</text>
+  </svg>`;
+}
+const coin = (size) => h('span', { class: 'coin', 'aria-hidden': 'true', html: coinSvg(size) });
 const icon = (name) => h('span', { class: 'ico', 'aria-hidden': 'true', html: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>` });
 
 function toast(text, kind = 'ok') {
@@ -97,6 +110,7 @@ function shell() {
             h('span', { class: 'brand-count', id: 'count' }))),
         DEMO ? h('button', { class: 'demo-chip', id: 'demo-chip', 'aria-expanded': 'false', onclick: toggleDemoMenu }, icon('flask'), h('span', { class: 'demo-label' }, 'Demo')) : null,
         h('nav', { class: 'top-actions', 'aria-label': 'Comandi' },
+          h('button', { class: 'tab wallet', id: 'btn-wallet', onclick: () => openWallet(), 'aria-label': 'Il mio borsellino', hidden: true }, coin(20), h('span', { id: 'wallet-n' })),
           h('button', { class: 'tab', id: 'btn-night', onclick: toggleNight, 'aria-label': 'Giorno o notte' }),
           h('button', { class: 'tab', onclick: () => openGiornale(), 'aria-label': 'Il giornale' }, icon('paper')),
           h('button', { class: 'tab', id: 'btn-missions', onclick: () => openMissions(), 'aria-label': 'Missioni' }, icon('star'), h('span', { class: 'badge', id: 'missions-badge', hidden: true })),
@@ -178,6 +192,16 @@ function update() {
   badge.hidden = !incoming;
   badge.textContent = incoming;
   $('#btn-mail').hidden = !mine;
+  // Borsellino: il saldo in alto, con un saltello quando entrano soldi
+  const wallet = mine && city.residents[mine.id]?.anagrafe ? walletOf(city, mine.id) : null;
+  $('#btn-wallet').hidden = wallet === null;
+  document.body.classList.toggle('has-wallet', wallet !== null);
+  if (wallet !== null) {
+    $('#wallet-n').textContent = wallet;
+    $('#btn-wallet').setAttribute('aria-label', `Il mio borsellino: ${soldi(wallet)}`);
+    if (ui.wallet !== undefined && wallet > ui.wallet) { const b = $('#btn-wallet'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
+    ui.wallet = wallet;
+  }
   $('#btn-missions').hidden = !mine;
   if (mine && city.residents[mine.id]) watchProgress(city, mine.id);
 
@@ -260,6 +284,26 @@ function markOnce(what) {
   if (t && dayKey(t) === dayKey(Date.now())) return;
   store.op({ type: 'mark', what }).catch(() => {});
 }
+function openWallet() {
+  const r = myResident();
+  if (!r) return openLogin();
+  const n = walletOf(store.city, r.id);
+  const shopBtn = (id, label) => h('button', { class: 'btn small', onclick: () => { closeSheet(); goToShop(id); } }, label);
+  openSheet('Il mio borsellino', h('div', { class: 'stack' },
+    h('div', { class: 'purse' }, h('span', { class: 'purse-coin', html: coinSvg(72) }),
+      h('div', {}, h('p', { class: 'eyebrow' }, `La moneta di ${CITY}`), h('p', { class: 'purse-n' }, soldi(n)))),
+    h('p', { class: 'small' }, 'Il Soldo era una moneta dell\'Italia di una volta: da lui viene la parola "soldi".'),
+    h('h3', {}, 'Come si guadagnano'),
+    h('ul', { class: 'earn' },
+      h('li', {}, coin(16), h('span', {}, h('strong', {}, `${INCOME.anagrafe}`), ' regalo del Comune, all\'iscrizione all\'anagrafe')),
+      h('li', {}, coin(16), h('span', {}, h('strong', {}, `${INCOME.daily}–${dailyReward(99)}`), ' la missione del giorno (di più se la fai tanti giorni di fila)')),
+      h('li', {}, coin(16), h('span', {}, h('strong', {}, `${INCOME.welcome}`), ' le missioni di benvenuto, tutte completate')),
+      h('li', {}, coin(16), h('span', {}, h('strong', {}, `${INCOME.casaSettimana}`), ' la Casa della settimana, la più amata dai vicini')),
+      h('li', { class: 'soon' }, '🛠️', h('span', {}, 'In arrivo: i lavori in città (barista, postino, giardiniere...)'))),
+    h('h3', {}, 'Dove si spendono'),
+    h('div', { class: 'row-wrap' }, shopBtn('mobili', 'Mobilificio'), shopBtn('moda', 'Sartoria Moda'), shopBtn('bici', 'Ciclofficina'))));
+}
+
 function openMissions() {
   const mine = me();
   if (!mine) return openLogin();
@@ -267,8 +311,8 @@ function openMissions() {
   const st = missionStatus(city, mine.id, Date.now());
   const claim = (what) => (e) => run(e.currentTarget, async () => {
     const r = await store.op({ type: 'claim', what });
-    if (r.prize) toast(`Premio: ${furniById(r.prize).label}! La trovi in casa, nel pannello Arreda.`);
-    else toast(r.streak > 1 ? `Fatto! Sono ${r.streak} giorni di fila 🔥` : 'Fatto! Torna domani per la prossima missione 🔥');
+    if (r.prize) toast(`Premio: ${furniById(r.prize).label} e ${soldi(r.soldi)}! La targa la trovi in casa, nel pannello Arreda.`);
+    else toast(r.streak > 1 ? `+${soldi(r.soldi)}! Sono ${r.streak} giorni di fila 🔥` : `+${soldi(r.soldi)}! Torna domani per la prossima missione 🔥`);
     openMissions(); update();
   });
   const n = st.welcome.filter((m) => m.done).length;
@@ -277,14 +321,14 @@ function openMissions() {
     h('ul', { class: 'mission-list' }, st.welcome.map((m) => h('li', { class: 'mission' + (m.done ? ' done' : '') },
       h('span', { class: 'mission-tick', 'aria-hidden': 'true' }, m.done ? '✓' : ''),
       h('span', { class: 'mission-body' }, h('strong', {}, m.label), m.done ? null : h('span', { class: 'small' }, m.hint))))),
-    h('p', { class: 'small' }, `Premio finale: ${furniById(WELCOME_PRIZE).label.toLowerCase()} da mettere in casa, solo per chi le completa tutte.`),
+    h('p', { class: 'small' }, `Premio finale: ${soldi(INCOME.welcome)} e la ${furniById(WELCOME_PRIZE).label.toLowerCase()} da mettere in casa, solo per chi le completa tutte.`),
     st.welcomeReady ? h('button', { class: 'btn primary big', onclick: claim('welcome') }, 'Ritira il premio') : null);
   const daily = h('section', { class: 'missions daily' },
     h('div', { class: 'missions-head' }, h('h3', {}, 'Missione del giorno'), h('span', { class: 'tag gold' }, `🔥 ${st.streak} ${st.streak === 1 ? 'giorno' : 'giorni'} di fila`)),
     h('div', { class: 'mission' + (st.daily.done ? ' done' : '') }, h('span', { class: 'mission-tick', 'aria-hidden': 'true' }, st.daily.done ? '✓' : ''), h('span', { class: 'mission-body' }, h('strong', {}, st.daily.label))),
     st.daily.claimed ? h('p', { class: 'small' }, 'Fatta! Domani ne arriva un\'altra: non perdere la serie.')
-      : st.daily.done ? h('button', { class: 'btn primary', onclick: claim('daily') }, 'Segna come fatta')
-        : h('p', { class: 'small' }, 'Ogni giorno una missione nuova, uguale per tutti. Completale di fila per allungare la serie.'));
+      : st.daily.done ? h('button', { class: 'btn primary', onclick: claim('daily') }, coin(18), `Ritira ${soldi(dailyReward(st.streak + 1))}`)
+        : h('p', { class: 'small' }, `Premio: ${soldi(dailyReward(st.streak + 1))}. Ogni giorno una missione nuova, uguale per tutti: più giorni di fila, più soldi.`));
   openSheet('Missioni', h('div', { class: 'stack' }, welcome, daily, st.welcomeClaimed ? h('p', { class: 'small' }, 'Missioni di benvenuto completate: sei un abitante a tutti gli effetti!') : null));
 }
 
@@ -786,7 +830,7 @@ function openCarta({ fresh = false } = {}) {
           h('dt', {}, 'Iscritto il'), h('dd', {}, date),
           h('dt', {}, 'Residenza'), h('dd', {}, house ? `${districtById(districtAt(...parseKey(house.slot))).name}` : 'da scegliere'))),
       h('div', { class: 'id-sign' }, h('span', {}, 'Firma'), h('em', {}, r.username))),
-    fresh ? h('p', {}, 'Ecco fatto: sei iscritto all\'anagrafe. Ora scegli il lotto dove costruire la tua casa.') : null,
+    fresh ? h('div', { class: 'gift' }, coin(34), h('p', {}, h('strong', {}, `Il Comune ti regala ${soldi(INCOME.anagrafe)}!`), ' Sono nel tuo borsellino, in alto. Ora scegli il lotto dove costruire la tua casa.')) : null,
     !house ? h('button', { class: 'btn primary big', onclick: () => { if (ui.room) exitHouse(); startChoosing(); } }, 'Scegli il tuo lotto')
       : h('button', { class: 'btn', onclick: () => openCharacter() }, 'Cambia aspetto')));
 }
@@ -1175,18 +1219,21 @@ function openShop(shop) {
     : shop.kind === 'ride' ? 'Skateboard, biciclette e monopattini elettrici: a piedi si va a passo d\'uomo, con un mezzo si gira la città più svelti.'
       : 'Mobili e decorazioni da portare a casa e sistemare come vuoi.';
   openSheet(shop.name, h('div', { class: 'stack' },
-    h('div', { class: 'badges' }, h('span', { class: 'tag live' }, 'Aperto'), h('span', { class: 'tag gold' }, 'Inaugurazione: tutto gratis')),
+    h('div', { class: 'badges' }, h('span', { class: 'tag live' }, 'Aperto'), h('span', { class: 'tag gold' }, coin(14), 'Si paga in soldi')),
     h('p', {}, what),
-    h('p', { class: 'small' }, `Dietro al bancone c'è ${shop.keeper}. Presto in città arriverà la moneta di ${CITY}: i prezzi sono già pronti.`),
+    h('p', { class: 'small' }, `Dietro al bancone c'è ${shop.keeper}.${me() ? ` Nel borsellino hai ${soldi(walletOf(store.city, me().id))}.` : ''}`),
     me() ? h('button', { class: 'btn primary big', onclick: () => enterHouse(shop.room) }, 'Entra nel negozio')
       : h('button', { class: 'btn primary', onclick: openRegister }, 'Iscriviti per fare acquisti')));
 }
-// Il cartellino del prezzo: per ora tutto gratis, il numero servirà con la moneta.
-const priceTag = () => h('span', { class: 'price' }, 'Gratis');
+// Il cartellino del prezzo in soldi: in rosso se nel borsellino non bastano.
+const priceTag = (price) => {
+  const short = me() && walletOf(store.city, me().id) < price;
+  return h('span', { class: 'price' + (short ? ' short' : ''), title: short ? 'Non ti bastano i soldi' : null }, coin(14), String(price));
+};
 async function buyFurni(t) {
   const f = furniById(t);
   const res = await run(null, () => store.op({ type: 'buy', kind: 'furni', t }));
-  if (res) toast(`${f.label}: nell'inventario (${res.have} da sistemare)`);
+  if (res) toast(`${f.label}: pagato ${soldi(f.price)}, è nell'inventario (${res.have} da sistemare)`);
   update();
 }
 function openWear(w) {
@@ -1201,14 +1248,14 @@ function openWear(w) {
     if (has) await store.op({ type: 'look', look });
     else await store.op({ type: 'buy', kind: 'wear', id: w.id, wear: true });
     closeSheet(); syncAvatars();
-    toast(has ? `Ora indossi: ${w.label.toLowerCase()}` : `${w.label}: preso! Ti sta benissimo.`);
+    toast(has ? `Ora indossi: ${w.label.toLowerCase()}` : `${w.label}: pagato ${soldi(w.price)}. Ti sta benissimo!`);
   });
   openSheet(w.label, h('div', { class: 'stack' },
     h('div', { class: 'avatar-head' }, cv, h('div', { class: 'stack' },
       h('p', { class: 'small' }, has ? 'È già nel tuo armadio.' : 'Ecco come ti starebbe. Il colore lo cambi quando vuoi dal tuo personaggio.'),
-      has ? null : priceTag())),
-    h('button', { class: 'btn primary big', onclick: wearNow }, has ? 'Indossa' : 'Prendi e indossa'),
-    has ? null : h('button', { class: 'btn', onclick: (e) => run(e.currentTarget, async () => { await store.op({ type: 'buy', kind: 'wear', id: w.id }); closeSheet(); toast(`${w.label}: nel tuo armadio`); }) }, 'Prendi e tienilo da parte')), { wide: true });
+      has ? null : priceTag(w.price))),
+    h('button', { class: 'btn primary big', onclick: wearNow }, has ? 'Indossa' : `Compra e indossa · ${soldi(w.price)}`),
+    has ? null : h('button', { class: 'btn', onclick: (e) => run(e.currentTarget, async () => { await store.op({ type: 'buy', kind: 'wear', id: w.id }); closeSheet(); toast(`${w.label}: nel tuo armadio`); }) }, 'Compra e tienilo da parte')), { wide: true });
   requestAnimationFrame(anim);
 }
 // Prova di un mezzo: l'omino ci gira sopra; si prende e ci si sale subito.
@@ -1224,10 +1271,10 @@ function openRide(m) {
   openSheet(m.label, h('div', { class: 'stack' },
     h('div', { class: 'avatar-head' }, cv, h('div', { class: 'stack' },
       h('p', { class: 'small' }, `Va ${Math.round((m.speed / WALK_SPEED) * 10) / 10} volte più veloce che a piedi.`),
-      has ? h('p', { class: 'small' }, on ? 'Ci sei già sopra.' : 'È già tuo.') : priceTag())),
+      has ? h('p', { class: 'small' }, on ? 'Ci sei già sopra.' : 'È già tuo.') : priceTag(m.price))),
     has ? (on ? h('button', { class: 'btn big', onclick: go({ type: 'ride', id: null }, 'Sei sceso: si va a piedi') }, 'Scendi e vai a piedi')
       : h('button', { class: 'btn primary big', onclick: go({ type: 'ride', id: m.id }, `In sella! ${m.label}`) }, 'Sali'))
-      : h('button', { class: 'btn primary big', onclick: go({ type: 'buy', kind: 'ride', id: m.id, use: true }, `${m.label}: è tuo! Esci e fatti un giro`) }, 'Prendi e sali'),
+      : h('button', { class: 'btn primary big', onclick: go({ type: 'buy', kind: 'ride', id: m.id, use: true }, `${m.label}: pagato ${soldi(m.price)}, è tuo! Esci e fatti un giro`) }, `Compra e sali · ${soldi(m.price)}`),
     h('p', { class: 'small' }, 'In casa e nei negozi si entra sempre a piedi.')), { wide: true });
   requestAnimationFrame(anim);
 }
@@ -1242,7 +1289,7 @@ function onNpcTap(id) {
     const look = MANNEQUINS[+m[1]].look;
     return openWear(['extra', 'top', 'bottom'].map((k) => wearById(look[k])).find((w) => w && !w.base));
   }
-  map.say(id, shop.kind === 'wear' ? 'Prova quello che vuoi, oggi è tutto gratis!' : shop.kind === 'ride' ? 'Fatti un giro di prova, oggi è tutto gratis!' : 'Scegli pure: oggi è tutto gratis!');
+  map.say(id, shop.kind === 'wear' ? 'Prova quello che vuoi, provare non costa niente!' : shop.kind === 'ride' ? 'Fatti un giro di prova, è gratis!' : 'Scegli pure, i prezzi sono sul cartellino!');
 }
 // Barra in basso dentro un negozio: il catalogo completo, diviso per reparto.
 function comuneBar(shop) {
@@ -1275,7 +1322,7 @@ function shopBar(shop) {
     items = RIDES.map((m) => {
       const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
       drawRideIcon(cv, m.id);
-      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => openRide(m) }, cv, h('span', {}, m.label), owned.includes(m.id) ? h('span', { class: 'owned' }, r.ride === m.id ? 'Ci sei sopra' : 'Già tuo') : priceTag());
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => openRide(m) }, cv, h('span', {}, m.label), owned.includes(m.id) ? h('span', { class: 'owned' }, r.ride === m.id ? 'Ci sei sopra' : 'Già tuo') : priceTag(m.price));
     });
   } else if (shop.kind === 'wear') {
     const base = r ? cleanLook(r.look, r.username) : null;
@@ -1283,14 +1330,14 @@ function shopBar(shop) {
       const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
       drawAvatarIcon(cv, avatarLook(r?.username || 'ospite', { ...base, [w.slot]: w.id }));
       const has = r && ownsWear(store.city, r.id, w.id);
-      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => openWear(w) }, cv, h('span', {}, w.label), has ? h('span', { class: 'owned' }, 'Già tuo') : priceTag());
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => openWear(w) }, cv, h('span', {}, w.label), has ? h('span', { class: 'owned' }, 'Già tuo') : priceTag(w.price));
     });
   } else {
     const inv = r ? invOf(store.city, r.id).furni : {};
     items = FURNI.filter((f) => f.cat === tab).map((f) => {
       const cv = h('canvas', { width: 112, height: 112, 'aria-hidden': 'true' });
       drawFurniIcon(cv, f.id, 0);
-      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => buyFurni(f.id) }, cv, h('span', {}, f.label), inv[f.id] ? h('span', { class: 'owned' }, `Ne hai ${inv[f.id]}`) : priceTag());
+      return h('button', { class: 'catalog-item', role: 'listitem', onclick: () => buyFurni(f.id) }, cv, h('span', {}, f.label), inv[f.id] ? h('span', { class: 'owned' }, `Ne hai ${inv[f.id]} · `, coin(12), String(f.price)) : priceTag(f.price));
     });
   }
   const strip = h('div', { class: 'catalog', role: 'list', 'aria-label': 'Catalogo del negozio' }, items);

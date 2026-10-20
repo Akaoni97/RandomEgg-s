@@ -235,7 +235,12 @@ test('negozi: edifici fissi accanto alla piazza, vestiti e mobili si prendono e 
   }
   // Vestiti: prima si prendono, poi si indossano.
   assert.throws(() => applyOp(s, { type: 'look', look: { extra: 'corona' } }, as('a')), /Sartoria/);
+  // Si paga in soldi: con i 150 del Comune la corona (200) non basta
+  assert.equal(s.residents.a.soldi, 150);
+  assert.throws(() => applyOp(s, { type: 'buy', kind: 'wear', id: 'corona' }, as('a')), /Ti mancano 50 soldi/);
+  s.residents.a.soldi = 10_000;
   s = applyOp(s, { type: 'buy', kind: 'wear', id: 'corona', wear: true }, as('a')).state;
+  assert.equal(s.residents.a.soldi, 9800);
   assert.equal(s.residents.a.look.extra, 'corona');
   assert.deepEqual(invOf(s, 'a').wear, ['corona']);
   assert.ok(applyOp(s, { type: 'buy', kind: 'wear', id: 'corona' }, as('a')).result.already);
@@ -253,6 +258,8 @@ test('negozi: edifici fissi accanto alla piazza, vestiti e mobili si prendono e 
   for (let i = 1; i < MAX_STOCK; i++) s = applyOp(s, { type: 'buy', kind: 'furni', t: 'jukebox' }, as('a')).state;
   assert.throws(() => applyOp(s, { type: 'buy', kind: 'furni', t: 'jukebox' }, as('a')), /da parte/);
   assert.equal(publicView(s, 'b').inv.a, undefined, 'l\'inventario resta privato');
+  assert.equal(publicView(s, 'b').residents.a.soldi, undefined, 'il borsellino resta privato');
+  assert.equal(publicView(s, 'a').residents.a.soldi, 9800 - 140 * MAX_STOCK);
   assert.equal(publicView(s, 'a').inv.a.furni.jukebox, MAX_STOCK);
 });
 
@@ -428,4 +435,19 @@ test('municipio: prima di costruire ci si iscrive all\'anagrafe', async () => {
   for (const r of Object.values(old.residents)) delete r.anagrafe;
   migratePlan(old);
   assert.ok(Object.values(old.residents).every((r) => r.anagrafe));
+});
+
+test('soldo: regalo del Comune, premi delle missioni e della Casa della settimana', async () => {
+  const { INCOME, dailyReward, soldi, walletOf } = await import('../public/js/core.js');
+  assert.equal(soldi(1), '1 soldo'); assert.equal(soldi(40), '40 soldi');
+  assert.equal(dailyReward(1), 20); assert.equal(dailyReward(3), 30); assert.equal(dailyReward(100), 70);
+  let s = join(emptyState(0), 'a', 'anna.b');
+  assert.equal(walletOf(s, 'a'), INCOME.anagrafe);
+  assert.ok(applyOp(s, { type: 'anagrafe' }, as('a')).result.already);
+  assert.equal(walletOf(applyOp(s, { type: 'anagrafe' }, as('a')).state, 'a'), INCOME.anagrafe, 'il regalo arriva una volta sola');
+  // Le città di prima del Soldo: chi è iscritto riceve il regalo
+  const old = seedResidents(emptyState(0), 3, 10_000_000);
+  for (const r of Object.values(old.residents)) delete r.soldi;
+  migratePlan(old);
+  assert.ok(Object.values(old.residents).every((r) => r.soldi === INCOME.anagrafe));
 });

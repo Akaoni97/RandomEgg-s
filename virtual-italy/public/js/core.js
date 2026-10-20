@@ -115,7 +115,7 @@ export const LOOK = {
   extra: [{ id: 'nessuno', label: 'Niente' }, { id: 'cappellino', label: 'Cappellino' }, { id: 'occhiali', label: 'Occhiali' }, { id: 'fiore', label: 'Fiore' }],
 };
 // Vestiti: i capi base li hanno tutti, gli altri si prendono alla Sartoria Moda.
-// `price` è già pronto per la moneta della città: finché non c'è, tutto è gratis.
+// `price` è in soldi, la moneta della città.
 export const WEAR = [
   { id: 'maglietta', slot: 'top', label: 'Maglietta', base: true },
   { id: 'camicia', slot: 'top', label: 'Camicia', price: 40 },
@@ -417,7 +417,7 @@ export const FLOORS = [
 export const WALLS = ['#efe6d2', '#f3d6c3', '#d7e6ef', '#dcebd2', '#f4e7b8', '#d9d0e8', '#c9b8a6', '#5b6b7a'];
 export const FURNI_COLORS = ['#c0392b', '#2f6b9f', '#2f7d4f', '#e0a92a', '#7a4a6b', '#e86b8a', '#6b4a2f', '#4b4f56'];
 // w lungo x e d lungo y con rotazione 0; con rotazione 1 si scambiano. `rug` si può calpestare.
-// `cat` è il reparto del Mobilificio, `price` il prezzo per quando la città avrà la sua moneta.
+// `cat` è il reparto del Mobilificio, `price` il prezzo in soldi.
 export const FURNI = [
   { id: 'sedia', label: 'Sedia', w: 1, d: 1, color: true, cat: 'mobili', price: 20 },
   { id: 'poltrona', label: 'Poltrona', w: 1, d: 1, color: true, cat: 'mobili', price: 45 },
@@ -494,7 +494,22 @@ export const MANNEQUINS = [
 export const invOf = (s, id) => ({ furni: {}, wear: [], rides: [], ...s.inv?.[id] });
 export const ownsWear = (s, id, wearId) => !!wearById(wearId)?.base || invOf(s, id).wear.includes(wearId);
 // Qui si pagherà con la moneta della città: per ora i negozi regalano tutto.
-function pay(s, r, price) { void s; void r; void price; }
+/* Il Soldo: la moneta della città -------------------------------------- */
+
+// Si chiama come l'antica moneta italiana (da cui "i soldi"). Ognuno ha il suo borsellino.
+export const SOLDO = { one: 'soldo', many: 'soldi' };
+export const soldi = (n) => `${n} ${n === 1 ? SOLDO.one : SOLDO.many}`;
+// Entrate: il regalo del Comune all'iscrizione, i premi delle missioni e della Casa della settimana.
+export const INCOME = { anagrafe: 150, welcome: 100, daily: 20, streakBonus: 5, streakMax: 50, casaSettimana: 200 };
+export const dailyReward = (streak) => INCOME.daily + Math.min(INCOME.streakMax, Math.max(0, streak - 1) * INCOME.streakBonus);
+export const walletOf = (s, id) => s.residents[id]?.soldi || 0;
+function earn(r, n) { r.soldi = (r.soldi || 0) + n; return n; }
+function pay(s, r, price) {
+  const have = r.soldi || 0;
+  if (!price) return;
+  if (have < price) throw invalid(`Ti mancano ${soldi(price - have)}: costa ${soldi(price)} e nel borsellino ne hai ${have}.`);
+  r.soldi = have - price;
+}
 export function footprint(it) {
   const f = furniById(it.t);
   const [w, d] = it.r ? [f.d, f.w] : [f.w, f.d];
@@ -801,6 +816,8 @@ export function migratePlan(s) {
   // Chi aveva già casa prima del Municipio risulta iscritto all'anagrafe dal giorno in cui è arrivato
   let enrolled = false;
   for (const r of Object.values(s.residents)) if (!r.anagrafe && residentHouse(s, r.id)) { r.anagrafe = r.joinedAt || 1; enrolled = true; }
+  // Chi era già iscritto quando è arrivato il Soldo riceve il regalo del Comune
+  for (const r of Object.values(s.residents)) if (r.anagrafe && r.soldi === undefined) { r.soldi = INCOME.anagrafe; enrolled = true; }
   const wrong = Object.keys(s.houses).filter((k) => !PLAN.lots.has(k)).sort((a, b) => s.houses[a].reservedAt - s.houses[b].reservedAt);
   for (const k of wrong) {
     const [x, y] = parseKey(k);
@@ -912,7 +929,8 @@ const OPS = {
     r.look = look;
     if (r.anagrafe) return { already: true };
     r.anagrafe = now;
-    return { at: now };
+    // Il Comune dà a ogni nuovo cittadino un piccolo gruzzolo per cominciare
+    return { at: now, gift: earn(r, INCOME.anagrafe) };
   },
 
   chooseSlot(s, op, ctx, now) {
@@ -1066,13 +1084,13 @@ const OPS = {
       s.inv ||= {};
       const inv = (s.inv[r.id] ||= { furni: {}, wear: [] });
       inv.furni[WELCOME_PRIZE] = (inv.furni[WELCOME_PRIZE] || 0) + 1;
-      return { prize: WELCOME_PRIZE };
+      return { prize: WELCOME_PRIZE, soldi: earn(r, INCOME.welcome) };
     }
     if (op.what === 'daily') {
       if (st.daily.claimed) throw invalid('Per oggi hai già fatto: torna domani per una nuova missione.');
       if (!st.daily.done) throw invalid('La missione di oggi non è ancora completa.');
       p.daily = { last: dayKey(now), streak: st.streak + 1 };
-      return { streak: p.daily.streak };
+      return { streak: p.daily.streak, soldi: earn(r, dailyReward(p.daily.streak)) };
     }
     throw invalid('Premio sconosciuto.');
   },
@@ -1117,6 +1135,7 @@ const OPS = {
     const top = weekRanking(s, prev)[0];
     if (!top) return { announced: false, changed: true };
     addNews(s, { kind: 'casaSettimana', at: now, residentId: top.id, slot: residentHouse(s, top.id).slot, n: top.n });
+    if (s.residents[top.id]) earn(s.residents[top.id], INCOME.casaSettimana);
     return { announced: true, changed: true };
   },
 
@@ -1226,6 +1245,8 @@ export function publicView(s, viewerId, admin = false) {
     residents[r.id] = r.suspended
       ? { id: r.id, username: r.username, number: r.number, joinedAt: r.joinedAt, bio: '', instagram: '', confirmed: r.confirmed, suspended: true }
       : { ...r };
+    // Il borsellino lo vede solo il suo padrone
+    if (r.id !== viewerId && !admin) delete residents[r.id].soldi;
   }
   const v = {
     rev: s.rev, createdAt: s.createdAt, openDistricts: s.openDistricts, residents, houses: s.houses,
@@ -1270,7 +1291,7 @@ export function formatNews(n, s) {
     case 'casaSettimana':
       return {
         title: r ? `Casa della settimana: da ${who}` : 'La Casa della settimana',
-        text: `${n.n} ${n.n === 1 ? 'abitante le ha lasciato' : 'abitanti le hanno lasciato'} un cuore. Passate a trovarla nel quartiere ${d ? d.name : 'Centro'} e firmate il libro degli ospiti!`,
+        text: `${n.n} ${n.n === 1 ? 'abitante le ha lasciato' : 'abitanti le hanno lasciato'} un cuore e il Comune le ha regalato 200 soldi. Passate a trovarla nel quartiere ${d ? d.name : 'Centro'} e firmate il libro degli ospiti!`,
       };
     default:
       return { title: 'Notizia', text: '' };
