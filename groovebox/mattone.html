@@ -356,6 +356,23 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .cell.pitched::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 5px; height: 2px; background: rgba(20,16,10,.6); border-radius: 1px; }
 .cell.now { box-shadow: inset 0 0 0 2px var(--cream); }
 .roll .cell, .roll .lab { height: 22px; }
+.cell.lk::before { content: ""; position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--cream); box-shadow: 0 0 0 1px rgba(0,0,0,.45); z-index: 2; }
+.lanelab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-content: center; gap: 4px 6px; padding-top: 10px; border-top: 1px dashed var(--line); min-width: 0; }
+.lanelab .lbl { grid-column: 1 / -1; }
+@media (max-width: 700px) { .lanelab { grid-template-columns: minmax(0, 1fr); } .lanelab select { font-size: 11px; padding: 2px; } }
+.lanelab select { flex: 1; min-width: 0; background: var(--well); color: var(--well-text); border: 1px solid var(--line); border-radius: 5px; padding: 3px 4px; font-size: 12px; }
+.beat.lanes { padding-top: 10px; border-top: 1px dashed var(--line); touch-action: none; }
+.lcell { position: relative; height: 54px; border-radius: 3px; background: var(--well); box-shadow: inset 0 1px 3px rgba(0,0,0,.5); cursor: ns-resize; overflow: hidden; }
+.lcell .lbar { position: absolute; left: 3px; right: 3px; bottom: 0; border-radius: 2px; background: color-mix(in srgb, var(--hue) 35%, transparent); pointer-events: none; }
+.lcell.set .lbar { background: var(--hue); box-shadow: 0 0 8px -2px var(--hue); }
+.lcell.off { opacity: .35; cursor: default; }
+.lcell.off .lbar { display: none; }
+.lcell.bi::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--line); pointer-events: none; }
+.lockbox { display: grid; gap: 5px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.lockhd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.lockrow { display: grid; grid-template-columns: 58px minmax(0, 1fr) 64px; gap: 8px; align-items: center; }
+.lockrow input { width: 100%; accent-color: var(--led); }
+.lockrow output { font-family: var(--f-label); font-size: 9px; color: var(--cream-2); text-align: right; }
 .roll .cell.len, .roll .cell.tie { overflow: visible; }
 .roll .cell.len::after, .roll .cell.tie::after { content: ""; position: absolute; top: 32%; bottom: 32%; left: 50%; right: -4px; border-radius: 2px; background: color-mix(in srgb, var(--hue) 75%, var(--cell)); pointer-events: none; z-index: 1; }
 .roll .cell.tie::after { left: -4px; }
@@ -1745,6 +1762,7 @@ html.intro-on { overflow: hidden; }
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
+            <li><b>Per step</b> (Sequencer): ogni colpo può avere il suo <b>filtro</b>, <b>tono</b>, <b>volume</b>, <b>pan</b> e <b>coda</b>, come i «parameter lock» delle groovebox. Sotto la griglia c’è la corsia del pad scelto: scegli l’impostazione e disegnala trascinando sugli step (doppio clic: torna come il pad); oppure tasto destro su uno step e i cursori «Solo per questo step». Gli step con impostazioni proprie hanno un puntino.</li>
             <li><b>Basso 808</b> (Sequencer → Melodia): trascina una nota verso destra per allungarla; col tasto destro (o tenendo premuto) scegli lunghezza e <b>glissato</b>, così la nota prima scivola in quella nuova come nella trap. <b>🎲 Idea 808</b> scrive una linea sulla cassa del gruppo A e, se il pad non ha un suono intonato, ci mette l’808. In libreria, categoria 808: lungo pulito, sporco e corto.</li>
             <li><b>🎬 Video per i social</b> (Mix o Voce): verticale per TikTok, Reels e Shorts, quadrato o orizzontale. Tre stili: <b>Strumento</b> (schermo, lancette e pad che si accendono), <b>Disco</b> (il vinile che gira con lo spettro intorno) e <b>Testo</b> (le barre grandi, a tempo). Titolo, nome d’arte, effetti FX e testo a tempo; il video si registra mentre suona e si salva in MP4.</li>
             <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
@@ -3365,10 +3383,10 @@ function updateDelayTime() { if (ctx) { N.delay.delayTime.setTargetAtTime(60 / s
 /* ================= voices ================= */
 const voices = [];
 function stopVoice(v, t) { try { v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(0, t, 0.01); v.src.stop(t + 0.08); } catch (e) { /* stopped */ } }
-function playBuffer(soundId, pr, t, vel, note, tag, dur) {
+function playBuffer(soundId, pr, t, vel, note, tag, dur, lk) {
   let buf = cache.get(soundId);
   if (!buf) { loadSound(soundId).catch(() => {}); return null; }
-  const s = SOUNDS.get(soundId), semis = pr.pitch + note;
+  const s = SOUNDS.get(soundId), semis = pr.pitch + note + (lk && lk.pitch || 0);
   let root = s.root;
   if (s.kind === "multi" && zoneCache.has(soundId)) {             // use the recorded note closest to the one played
     const target = s.home + semis;
@@ -3381,17 +3399,20 @@ function playBuffer(soundId, pr, t, vel, note, tag, dur) {
   if (f.sp || f.rv) buf = shapedBuf(soundId + ":" + root, buf, f.sp, f.rv);
   const D = buf.duration, off = (f.rv ? 1 - f.en : f.st) * D, seg = Math.max(0.005, (f.en - f.st) * D);
   const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
-  const g = ctx.createGain(), level = pr.vol * vel, full = seg / rate;
-  const len = dur ? Math.min(full, dur) : pr.gate > 0 ? Math.min(full, pr.gate * sixteenth()) : full;
+  const g = ctx.createGain(), level = pr.vol * vel * (lk && lk.vol != null ? lk.vol : 1), full = seg / rate;
+  let len = dur ? Math.min(full, dur) : pr.gate > 0 ? Math.min(full, pr.gate * sixteenth()) : full;
+  if (lk && lk.dec != null && lk.dec < 1) len = Math.min(len, Math.max(0.02, full * lk.dec));   // a shorter tail for this step
   const att = Math.max(f.att, f.st > 0 || f.rv ? 0.002 : 0);
   if (att > 0) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + Math.min(att, len)); } else g.gain.setValueAtTime(level, t);
   if (len < full) { g.gain.setValueAtTime(level, t + Math.max(att, len - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.03); }
   else if (f.en < 1) { g.gain.setValueAtTime(level, t + Math.max(att, full - 0.006)); g.gain.linearRampToValueAtTime(0, t + full); }
-  if (f.cut < 0.995) { const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = cutHz(f.cut); lp.Q.value = 0.7 + f.res * 14; src.connect(lp).connect(g); }
+  const cut = Math.min(f.cut, lk && lk.cut != null ? lk.cut : 1);
+  if (cut < 0.995) { const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = cutHz(cut); lp.Q.value = 0.7 + f.res * 14; src.connect(lp).connect(g); }
   else src.connect(g);
   // through the strip of its group; kicks drive the sidechain, everything else is ducked by it
   const gi = /^(\d+):/.exec(tag || ""), dest = gi && N.grp ? N.grp[+gi[1]][s.kick ? 0 : 1].in : s.kick ? N.bus : N.duckV;
-  if (ctx.createStereoPanner && pr.pan) { const pan = ctx.createStereoPanner(); pan.pan.value = pr.pan; g.connect(pan).connect(dest); } else g.connect(dest);
+  const pv = lk && lk.pan != null ? lk.pan : pr.pan;
+  if (ctx.createStereoPanner && pv) { const pan = ctx.createStereoPanner(); pan.pan.value = pv; g.connect(pan).connect(dest); } else g.connect(dest);
   if (pr.rev > 0) { const rs = ctx.createGain(); rs.gain.value = pr.rev * (gi ? state.geq[+gi[1]][3] : 1); g.connect(rs).connect(N.revIn); }   // the group level reaches the reverb too
   src.start(t, off, seg); src.stop(t + Math.min(full, len + 0.05) + 0.01);
   const v = { src, g, tag, sound: soundId, ch: f.ch, rate, level, end: t + Math.min(full, len), natural: t + full, base: root == null ? null : s.home - root, lofi: fxActive.has("lofi") };
@@ -3418,7 +3439,7 @@ function trigger(b, p, t, vel = 0.85, note = 0, live = false, keep = false, opt 
     else if (/hat(?!_open)/.test(pr.sound) && /hat_open/.test(v.sound)) stopVoice(v, t);
     else if (ch && v.ch === ch && v.tag && v.tag.split(":")[0] === String(b)) stopVoice(v, t);   // choke group: one cuts the other
   }
-  if (!playBuffer(pr.sound, pr, t, vel, note, tag, opt && opt.dur)) return;
+  if (!playBuffer(pr.sound, pr, t, vel, note, tag, opt && opt.dur, opt && opt.lk)) return;
   const wait = (t - ctx.currentTime) * 1000;
   if (live || wait < 8) flash(b, p, note); else setTimeout(() => flash(b, p, note), wait);
   if (b === 0 && /kick/.test(pr.sound)) kickAt.push(t);
@@ -3518,7 +3539,8 @@ function schedule() {
         // "mano umana": a few milliseconds early or late and a little softer or harder, never the same twice
         const h = state.human, tt = h ? t + (Math.random() * 2 - 1) * 0.011 * h * (s % cpb === 0 ? 0.4 : 1) : t;
         const vel = STEP_VEL[v[0]] * (h ? 1 + (Math.random() * 2 - 1) * 0.22 * h : 1), roll = v[2] > 1 ? v[2] : 1;
-        const opt = roll > 1 ? null : noteOpt(pat[b][p], s, len, v);
+        let opt = roll > 1 ? null : noteOpt(pat[b][p], s, len, v);
+        if (v[7]) opt = Object.assign({ dur: 0, glide: 0 }, opt, { lk: v[7] });   // the step's own settings
         for (let r = 0; r < roll; r++) { const tr = Math.max(ctx.currentTime, tt + r * stepDur() / roll), vr = vel * (r ? 0.8 : 1); if (v[4] > 1) playNotes(b, p, tr, vr, v[1], false, v[4], opt); else trigger(b, p, tr, vr, v[1], false, false, opt); }   // a roll: the hits share the step
       }
     }
@@ -5030,7 +5052,7 @@ function cellsRow(grid, cls, onCell, meta) {
   }
 }
 function buildEditor() {
-  const grid = $("grid"); grid.innerHTML = ""; edCells = []; edLabs = []; edRows = [];
+  const grid = $("grid"); grid.innerHTML = ""; edCells = []; edLabs = []; edRows = []; edLane = [];
   grid.classList.toggle("roll", state.view === "roll");
   const cpb = pm().div / 4; grid.style.setProperty("--cpb", cpb);
   grid.appendChild(el("span"));
@@ -5060,6 +5082,7 @@ function buildEditor() {
       cellsRow(grid, isRoot ? "rootrow-cells" : "", st => setRollNote(st, off), { off });
     }
   }
+  buildLane(grid);
 }
 function renderEditor() {
   renderEditorHead();
@@ -5068,7 +5091,7 @@ function renderEditor() {
   const pat = state.patterns[state.pattern][state.bank], base = edPage * pm().div;
   for (const c of edCells) c.s = base + c.r;
   if (state.view === "grid") {
-    for (const c of edCells) { const v = pat[c.p][c.s]; c.el.className = "cell" + (v ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") + (v[1] ? " pitched" : "") + (v[2] > 1 ? " r" + v[2] : "") + (v[3] != null && v[3] < 100 ? " maybe" : "") : ""); }
+    for (const c of edCells) { const v = pat[c.p][c.s]; c.el.className = "cell" + (v ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") + (v[1] ? " pitched" : "") + (v[2] > 1 ? " r" + v[2] : "") + (v[3] != null && v[3] < 100 ? " maybe" : "") + (v[7] ? " lk" : "") : ""); }
     for (const l of edLabs) {
       const pr = state.banks[state.bank][l.p];
       l.el.classList.toggle("sel", l.p === state.pad); l.mb.classList.toggle("on", !!pr.mute); l.sb.classList.toggle("on", !!pr.solo);
@@ -5083,9 +5106,10 @@ function renderEditor() {
     arr.forEach((v, s0) => { if (!v || !(v[5] > 1)) return; for (let k = 1; k < v[5] && s0 + k < arr.length && !arr[s0 + k]; k++) tie.set(s0 + k, { off: shown[s0], end: k === v[5] - 1 || s0 + k + 1 >= arr.length || !!arr[s0 + k + 1] }); });
     for (const c of edCells) {
       const v = arr[c.s], ti = tie.get(c.s);
-      c.el.className = "cell" + (v && shown[c.s] === c.off ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") + (v[4] > 1 ? " chord" : "") + (v[5] > 1 ? " len" : "") + (v[6] ? " glide" : "") : ti && ti.off === c.off ? " tie" + (ti.end ? " tieend" : "") : "");
+      c.el.className = "cell" + (v && shown[c.s] === c.off ? (v[0] === 2 ? " acc" : v[0] === 3 ? " on ghost" : " on") + (v[4] > 1 ? " chord" : "") + (v[5] > 1 ? " len" : "") + (v[6] ? " glide" : "") + (v[7] ? " lk" : "") : ti && ti.off === c.off ? " tie" + (ti.end ? " tieend" : "") : "");
     }
   }
+  renderLane();
   lastNow = -2; renderPlayhead();
 }
 let lastNow = -2;
@@ -6899,6 +6923,7 @@ function openStepPop(cellEl, b, p, s) {
   row("Colpo", [[1, "Normale"], [2, "Accento"], [3, "Fantasma"]], () => v()[0], x => { arr[s] = Object.assign(v().slice(), { 0: x }); });
   row("Rullata", [[1, "1"], [2, "2"], [3, "3"], [4, "4"]], () => v()[2] || 1, x => { const n = v().slice(); n[2] = x; arr[s] = n; });
   row("Probabilità", [[100, "100%"], [75, "75%"], [50, "50%"], [25, "25%"]], () => v()[3] == null ? 100 : v()[3], x => { const n = v().slice(); n[2] = n[2] || 1; n[3] = x; arr[s] = n; });
+  lockRows(pop, arr, s, () => { if (initAudio()) trigger(b, p, ctx.currentTime, STEP_VEL[v()[0]], v()[1], false, false, { dur: 0, glide: 0, lk: v()[7] }); });
   const acts = el("div", "spacts");
   const del = el("button", "key small", "Togli il colpo"); del.type = "button"; del.addEventListener("click", () => { arr[s] = 0; save(); closeStepPop(); renderEditor(); renderPads(); renderLeds(); renderPatterns(); });
   const ok = el("button", "key small on", "Fatto"); ok.type = "button"; ok.addEventListener("click", closeStepPop);
@@ -6921,6 +6946,25 @@ function cellExtras(c, o) {
   ["pointerup", "pointercancel", "pointerleave"].forEach(ev => c.addEventListener(ev, () => clearTimeout(longT)));
 }
 
+// the step's own settings, as sliders in its pop-up
+function lockRows(pop, arr, s, hear) {
+  const box = el("div", "lockbox"), hd = el("div", "lockhd");
+  hd.append(el("span", "lbl", "Solo per questo step"));
+  const rst = el("button", "key small", "Come il pad"); rst.type = "button"; hd.appendChild(rst);
+  box.appendChild(hd);
+  const ins = LOCKS.map(([k, name, lo, hi, def, , fmt]) => {
+    const r = el("label", "lockrow"), inp = el("input"), out = el("output");
+    inp.type = "range"; inp.min = lo; inp.max = hi; inp.step = k === "pitch" ? 1 : (hi - lo) / 100;
+    const cur = () => { const lk = arr[s] && arr[s][7]; return lk && lk[k] != null ? lk[k] : def; };
+    inp.value = cur(); out.textContent = fmt(cur());
+    inp.addEventListener("input", () => { setLock(arr, s, k, +inp.value); out.textContent = fmt(cur()); renderEditor(); });
+    inp.addEventListener("change", () => { save(); hear(); });
+    r.append(el("span", "lbl", name), inp, out); box.appendChild(r);
+    return { inp, out, cur, fmt };
+  });
+  rst.addEventListener("click", () => { LOCKS.forEach(([k]) => setLock(arr, s, k, null)); ins.forEach(x => { x.inp.value = x.cur(); x.out.textContent = x.fmt(x.cur()); }); save(); renderEditor(); hear(); });
+  pop.appendChild(box);
+}
 // drag a note to the right to make it longer (a drag from an empty step writes the note first)
 let rollDrag = null;
 function rollDragStart(e, o) {
@@ -6962,6 +7006,7 @@ function openNotePop(cellEl, o) {
   row("Colpo", [[1, "Normale"], [2, "Accento"], [3, "Fantasma"]], () => v()[0], x => { const n = full(); n[0] = x; arr[s] = n; });
   row("Lunghezza", lens, () => v()[5] || 1, x => { const n = full(); n[5] = x > 1 ? x : undefined; arr[s] = n; });
   row("Glissato dalla nota prima", [[0, "No"], [1, "Corto"], [2, "Medio"], [3, "Lungo"]], () => v()[6] || 0, x => { const n = full(); n[6] = x || undefined; arr[s] = n; });
+  lockRows(pop, arr, s, () => { const n = v(); if (initAudio()) trigger(b, p, ctx.currentTime, STEP_VEL[n[0]], n[1], false, false, { dur: (n[5] || 1) * stepDur(), glide: 0, lk: n[7] }); });
   const acts = el("div", "spacts");
   const del = el("button", "key small", "Togli la nota"); del.type = "button"; del.addEventListener("click", () => { arr[s] = 0; save(); closeStepPop(); renderEditor(); renderPads(); renderLeds(); renderPatterns(); });
   const ok = el("button", "key small on", "Fatto"); ok.type = "button"; ok.addEventListener("click", closeStepPop);
@@ -6990,6 +7035,80 @@ function idea808() {
     row[s] = [s % m.div === 0 ? 2 : 1, off, 1, 100, 1, Math.max(1, Math.min(nxt - s, cpb * 3)), gl || undefined];
   });
   P[b][p] = row; save(); renderAll(); msg("IDEA 808 SU " + padLabel(b, p) + ": " + hits.length + " NOTE SULLA CASSA");
+}
+
+// the settings a step can lock: key, name, range, neutral value, how the bar is drawn, how the value reads
+const LOCKS = [
+  ["cut", "Filtro", 0, 1, 1, false, x => x >= 0.995 ? "aperto" : Math.round(cutHz(x)) + " Hz"],
+  ["pitch", "Tono", -12, 12, 0, true, x => (x > 0 ? "+" : "") + Math.round(x) + " st"],
+  ["vol", "Volume", 0, 1.5, 1, false, x => Math.round(x * 100) + "%"],
+  ["pan", "Pan", -1, 1, 0, true, x => Math.abs(x) < 0.03 ? "centro" : (x < 0 ? "S " : "D ") + Math.round(Math.abs(x) * 100)],
+  ["dec", "Coda", 0.05, 1, 1, false, x => x >= 0.995 ? "intera" : Math.round(x * 100) + "%"],
+];
+const lockDef = k => LOCKS.find(l => l[0] === k);
+// a new value for one setting of a step (a new array and a new object, so copies never share them)
+function setLock(arr, s, key, val) {
+  const v = arr[s]; if (!v) return;
+  const n = v.slice(); while (n.length < 7) n.push(n.length === 2 ? 1 : n.length === 3 ? 100 : n.length === 4 ? 1 : null);
+  const lk = Object.assign({}, n[7] || {}), d = lockDef(key);
+  if (val == null || Math.abs(val - d[4]) < 1e-3) delete lk[key]; else lk[key] = key === "pitch" ? Math.round(val) : +val.toFixed(3);
+  n[7] = Object.keys(lk).length ? lk : null;
+  arr[s] = n;
+}
+// the lane under the grid: one setting of the selected pad, drawn step by step
+let laneKey = "cut", laneDrag = false, edLane = [];
+function laneValue(cellEl, y) {
+  const r = cellEl.getBoundingClientRect(), u = Math.max(0, Math.min(1, 1 - (y - r.top) / r.height)), d = lockDef(laneKey);
+  let x = d[2] + u * (d[3] - d[2]);
+  if (d[5] && Math.abs(x - d[4]) < (d[3] - d[2]) * 0.03) x = d[4];   // a little catch at the centre
+  if (!d[5] && u > 0.97) x = d[3];
+  return x;
+}
+function laneAt(e) {
+  const hit = document.elementFromPoint(e.clientX, e.clientY), cell = hit && hit.closest(".lcell"), o = cell && edLane.find(x => x.el === cell);
+  if (!o) return;
+  const arr = state.patterns[state.pattern][state.bank][state.pad];
+  if (!arr[o.s]) return;
+  setLock(arr, o.s, laneKey, laneValue(cell, e.clientY)); renderEditor();
+  const v = arr[o.s], lk = v[7] || {}, d = lockDef(laneKey);
+  msg(d[1].toUpperCase() + " STEP " + (o.s % pm().div + 1) + ": " + d[6](lk[laneKey] != null ? lk[laneKey] : d[4]).toUpperCase());
+}
+function buildLane(grid) {
+  edLane = [];
+  const lab = el("div", "lanelab");
+  const sel = el("select"); sel.setAttribute("aria-label", "Impostazione da disegnare");
+  LOCKS.forEach(([k, name]) => sel.appendChild(new Option(name, k))); sel.value = laneKey;
+  sel.addEventListener("change", () => { laneKey = sel.value; renderEditor(); });
+  const clr = el("button", "key small", "Azzera"); clr.type = "button"; clr.title = "Toglie questa impostazione da tutti gli step del pad";
+  clr.addEventListener("click", () => { const arr = state.patterns[state.pattern][state.bank][state.pad]; arr.forEach((v, s) => { if (v && v[7] && v[7][laneKey] != null) setLock(arr, s, laneKey, null); }); save(); renderEditor(); msg(lockDef(laneKey)[1].toUpperCase() + " AZZERATO SU " + padLabel(state.bank, state.pad)); });
+  lab.append(el("span", "lbl", "Per step"), sel, clr);
+  grid.appendChild(lab);
+  const cpb = pm().div / 4;
+  for (let beat = 0; beat < 4; beat++) {
+    const wrap = el("div", "beat lanes");
+    for (let k = 0; k < cpb; k++) {
+      const c = el("div", "lcell", '<i class="lbar"></i>'), o = { el: c, r: beat * cpb + k, s: beat * cpb + k };
+      c.addEventListener("dblclick", () => { const arr = state.patterns[state.pattern][state.bank][state.pad]; setLock(arr, o.s, laneKey, null); save(); renderEditor(); });
+      wrap.appendChild(c); edLane.push(o);
+    }
+    grid.appendChild(wrap);
+  }
+  if (grid.dataset.lane) return;   // the grid element stays: its listeners are added once
+  grid.dataset.lane = "1";
+  grid.addEventListener("pointerdown", e => { if (!e.target.closest(".lcell") || e.button) return; e.preventDefault(); laneDrag = true; laneAt(e); });
+  addEventListener("pointermove", e => { if (laneDrag) laneAt(e); });
+  addEventListener("pointerup", () => { if (laneDrag) { laneDrag = false; save(); renderPads(); } });
+}
+function renderLane() {
+  const arr = state.patterns[state.pattern][state.bank][state.pad], base = edPage * pm().div, d = lockDef(laneKey), span = d[3] - d[2];
+  for (const o of edLane) {
+    o.s = base + o.r;
+    const v = arr[o.s], val = v && v[7] && v[7][laneKey] != null ? v[7][laneKey] : d[4], u = (val - d[2]) / span, bar = o.el.firstChild;
+    o.el.className = "lcell" + (v ? (v[7] && v[7][laneKey] != null ? " set" : " def") : " off") + (d[5] ? " bi" : "");
+    if (d[5]) { const z = (d[4] - d[2]) / span; bar.style.bottom = (Math.min(u, z) * 100) + "%"; bar.style.height = Math.max(2, Math.abs(u - z) * 100) + "%"; }
+    else { bar.style.bottom = "0"; bar.style.height = (u * 100) + "%"; }
+    o.el.title = v ? d[1] + ": " + d[6](val) + " · trascina per cambiare, doppio clic per tornare al valore del pad" : "Step vuoto";
+  }
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
@@ -8202,7 +8321,7 @@ function chordOffsets(off, size) {
 }
 // the first note cuts what was ringing on that pad, the others join it
 function playNotes(b, p, t, vel, off, live, size, opt) {
-  const offs = chordOffsets(off, size), st = (state.strum || 0) / 1000, o2 = opt && opt.dur ? { dur: opt.dur, glide: 0 } : null;
+  const offs = chordOffsets(off, size), st = (state.strum || 0) / 1000, o2 = opt && (opt.dur || opt.lk) ? { dur: opt.dur, glide: 0, lk: opt.lk } : null;
   offs.forEach((o, k) => trigger(b, p, t + k * st, vel * (k ? 0.82 : 1), o, live && k === 0, k > 0, o2));
 }
 function renderChords() {
