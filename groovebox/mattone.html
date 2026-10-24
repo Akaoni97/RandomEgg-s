@@ -304,6 +304,15 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .grvsw { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 12px; }
 .grvsw label { display: grid; grid-template-columns: auto minmax(0, 1fr) 7ch; gap: 6px; align-items: center; font-family: var(--f-label); font-size: 10px; text-transform: uppercase; }
 .grvsw input { width: 100%; min-width: 0; }
+.learnbar { position: fixed; z-index: 60; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(860px, calc(100vw - 24px)); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; border-radius: 10px; background: var(--chassis); box-shadow: 0 0 0 1px var(--edge), 0 0 0 3px rgba(77,208,160,.35), 0 18px 40px rgba(0,0,0,.6); animation: cardIn .25s cubic-bezier(.34, 1.4, .64, 1); }
+.learnbar > b { font-family: var(--f-label); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #4dd0a0; }
+.learntxt { flex: 1; min-width: 200px; font-family: var(--f-lcd, monospace); font-size: 16px; color: var(--led); }
+.learnbar select { background: var(--well); color: var(--well-text); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px; }
+.learnbtn.on { color: #08130e; background: linear-gradient(180deg, #6fe6b8, #2fa47a); }
+html.learn .knob canvas, html.learn input[type="range"], html.learn button[id]:not(#learnBar button), html.learn #deck, html.learn #sbXf { outline: 1px dashed rgba(77,208,160,.55); outline-offset: 2px; cursor: crosshair; }
+html.learn .midimap { outline: 2px solid #4dd0a0 !important; outline-offset: 2px; }
+html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3px; animation: learnPulse .8s ease-in-out infinite alternate; }
+@keyframes learnPulse { to { outline-color: rgba(255,159,46,.35); } }
 .grvsw output { color: var(--led); text-align: right; white-space: nowrap; }
 .grvsw label.off { opacity: .45; }
 @media (max-width: 700px) { .grvsw { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -1420,6 +1429,7 @@ html.intro-on { overflow: hidden; }
       <button class="key" id="sbFlip" type="button" title="Torna al lato A (tasto O o Esc)">⟲ Lato A</button>
       <div class="sbname"><b>MAT<span>.</span>TONE</b><small>Lato B · giradischi da battaglia</small></div>
       <div class="sbstrip"><i class="sbbeat" id="sbBeat"></i><span id="sbPos">■ P01</span><span class="sbmsg" id="sbMsg"></span></div>
+      <button class="key learnbtn" id="sbLearn" type="button" title="Collega jog, crossfader e tasti del tuo controller">MIDI</button>
       <button class="key" id="sbPlay" type="button">▶ Play</button>
     </div>
     <div class="unit sbdeck">
@@ -1445,6 +1455,14 @@ html.intro-on { overflow: hidden; }
     </div>
     <div class="sbplate" aria-hidden="true">Mat.Tone · lato B · serie 88 · non aprire: rischio di scratch</div>
   </section>
+  <div class="learnbar" id="learnBar" hidden role="dialog" aria-label="MIDI learn">
+    <b>MIDI learn</b>
+    <span class="learntxt" id="learnTxt"></span>
+    <label class="lbl" title="Quanto gira il disco per ogni scatto del jog">Jog <select id="learnJog"><option value="1024">fine</option><option value="400">medio</option><option value="128">grosso</option></select></label>
+    <button class="key small" id="learnDel" type="button" disabled>Togli</button>
+    <button class="key small" id="learnClear" type="button">Cancella tutto</button>
+    <button class="key small" id="learnDone" type="button">Fine</button>
+  </div>
   <div class="pages" id="pages">
     <div class="page pg-suona" data-page="suona" role="tabpanel" aria-label="Suona">
       <section class="unit padunit" aria-label="Pad">
@@ -1469,7 +1487,8 @@ html.intro-on { overflow: hidden; }
           <button class="key small" id="nrBtn" type="button" aria-pressed="false" title="Tasto H"><span class="ledi"></span>Note repeat</button>
           <div class="seg" id="nrSeg" role="group" aria-label="Velocità del note repeat"></div>
           <button class="key small" id="midiBtn" type="button" aria-pressed="false" title="Suona i pad da un controller MIDI"><span class="ledi"></span><span>MIDI</span></button>
-          <span class="hint">Note repeat: tieni premuto un pad e lo ripete a tempo (T = terzine); con REC finisce nel pattern. MIDI: i pad del controller (note 36–47) suonano i pad del gruppo.</span>
+          <button class="key small learnbtn" id="midiLearnBtn" type="button" title="Collega manopole, fader, tasti e jog del tuo controller ai comandi del Mat.Tone">Impara</button>
+          <span class="hint">Note repeat: tieni premuto un pad e lo ripete a tempo (T = terzine); con REC finisce nel pattern. MIDI: i pad del controller (note 36–47) suonano i pad del gruppo; con «Impara» colleghi tutto il resto, anche il jog per lo scratch.</span>
         </div>
       </section>
       <div class="col">
@@ -1815,6 +1834,7 @@ html.intro-on { overflow: hidden; }
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
             <li><b>Per step</b> (Sequencer): ogni colpo può avere il suo <b>filtro</b>, <b>tono</b>, <b>volume</b>, <b>pan</b> e <b>coda</b>, come i «parameter lock» delle groovebox. Sotto la griglia c’è la corsia del pad scelto: scegli l’impostazione e disegnala trascinando sugli step (doppio clic: torna come il pad); oppure tasto destro su uno step e i cursori «Solo per questo step». Gli step con impostazioni proprie hanno un puntino.</li>
+            <li><b>Controller MIDI</b> (Suona, accanto a MIDI, o nel lato B): i pad del controller suonano i pad. Con <b>Impara</b> colleghi il resto: tocca una manopola, un cursore o un tasto sullo schermo e poi muovi quello vero. Tocca il <b>disco</b> e gira il jog del tuo controller da DJ per scratchare (se il jog sente il tocco, premilo e si collega anche quello); tocca il <b>crossfader</b> del lato B e muovi il fader. I collegamenti restano nell’app.</li>
             <li><b>Groove</b> (Sequencer, sotto la griglia): lo swing delle macchine vere (MPC 60 dal 54 al 66%, SP-1200), uno <b>storto alla Dilla</b>, uno pigro e uno spinto, oppure <b>Prendi dal pad</b>: ricava il groove dal loop del pad selezionato, così i tuoi colpi scivolano come il break. Scegli su quali gruppi vale e quanto; gli altri gruppi possono avere ognuno il suo swing.</li>
             <li><b>Loop a tempo</b> (Suona, sotto la forma del suono): un loop o un break campionato segue il BPM del progetto senza cambiare tono. Il tempo del loop lo stima da solo (o lo legge dal nome, «· 92 BPM»); se sbaglia del doppio usa <b>½</b> o <b>×2</b>. <b>A fette</b> taglia sui colpi come i file REX, ed è il migliore per i break; <b>Elastico</b> va per pad, voci e suoni lunghi. Con il tono del pad cambi la nota e il loop resta a tempo.</li>
             <li><b>Basso 808</b> (Sequencer → Melodia): trascina una nota verso destra per allungarla; col tasto destro (o tenendo premuto) scegli lunghezza e <b>glissato</b>, così la nota prima scivola in quella nuova come nella trap. <b>🎲 Idea 808</b> scrive una linea sulla cassa del gruppo A e, se il pad non ha un suono intonato, ci mette l’808. In libreria, categoria 808: lungo pulito, sporco e corto.</li>
@@ -2831,6 +2851,7 @@ function grooveFix() {
   if (g.id === "campione" && !(g.tpl && g.tpl.off && g.tpl.off.length === 16)) g.id = "";
 }
 grooveFix();
+if (!state.midiMap || typeof state.midiMap !== "object") state.midiMap = {};   // the controller's knobs and keys: kept with the app, not the project
 // every pattern has its length and grid, every row as many steps as that; the song points only at patterns that exist
 function fixPatterns() {
   if (!Array.isArray(state.pmeta)) state.pmeta = [];
@@ -4672,6 +4693,7 @@ function makeKnob(host, { label, min, max, get, set, fmt, center, col, def }) {
     if (e.key === "ArrowUp" || e.key === "ArrowRight") { e.preventDefault(); e.stopPropagation(); set(Math.min(max, get() + d), true); k.draw(); }
     if (e.key === "ArrowDown" || e.key === "ArrowLeft") { e.preventDefault(); e.stopPropagation(); set(Math.max(min, get() - d), true); k.draw(); }
   });
+  k.label = label; k.key = (host.id || (((host.closest("[id]") || {}).id || "x") + "#" + [...host.parentNode.children].indexOf(host))) + ":" + label;
   knobs.push(k); return k;
 }
 
@@ -4711,6 +4733,7 @@ function build() {
   $("projSave").addEventListener("click", saveProject);
   $("projFile").addEventListener("change", e => { const f = e.target.files[0]; if (f) openProject(f); e.target.value = ""; });
   $("midiBtn").addEventListener("click", () => midi ? midiOff() : midiConnect());
+  bindLearn();
   if (state.midi && location.protocol === "app:") midiConnect(true);   // the desktop app reconnects the controller by itself
   for (let i = 0; i < NPAT; i++) { const b = el("button"); b.type = "button"; b.textContent = i + 1; b.setAttribute("aria-label", "Pattern " + (i + 1)); b.addEventListener("click", () => selectPattern(i)); $("pats").appendChild(b); }
   BANKS.forEach((bk, bi) => { const b = el("button", null, '<span class="dot" style="background:var(--h' + bk.id + ')"></span>' + bk.id + ' <span class="nmfull">' + bk.name + "</span>"); b.type = "button"; b.addEventListener("click", () => selectBank(bi)); $("banks").appendChild(b); });
@@ -7672,6 +7695,14 @@ function midiMsg(e) {
   const [st, d1, d2] = e.data, cmd = st & 0xf0;
   if (st === 0xfa) { if (!playing) start(); return; }   // start and stop from a drum machine or a DAW
   if (st === 0xfc) { if (playing) stop(); return; }
+  const isCC = cmd === 0xb0, isOn = cmd === 0x90 && d2 > 0, isOff = cmd === 0x80 || (cmd === 0x90 && d2 === 0);
+  if (isCC || isOn || isOff) {
+    const key = (isCC ? "c" : "n") + (st & 15) + ":" + d1;
+    if (ML.on && ML.target && (isCC || isOn)) { learnBind(key, isCC); return; }
+    const tg = state.midiMap[key];
+    if (tg) { midiApply(tg, key, d2, isCC, isOn, isOff); return; }
+    if (isCC) return;
+  }
   if (cmd === 0x90 && d2 > 0) midiNote(d1, d2);
   else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) nrRelease("m" + d1);
 }
@@ -7686,6 +7717,114 @@ function midiNote(note, velo) {
   let rel = note - 36; if (rel < 0 || rel >= 48) rel = ((rel % 12) + 12) % 12;
   const b = (state.bank + Math.floor(rel / 12)) % BANKS.length, p = rel % 12;
   trigger(b, p, ctx.currentTime, vel, 0, true); liveRecord(b, p, 0); nrHold("m" + note, b, p, 0);
+}
+/* ---------- MIDI learn: le manopole, i fader, i tasti e il jog del controller ---------- */
+const ML = { on: false, target: null, el: null, last: {}, jogT: 0, touch: false, commit: {} };
+const HOLD_BTNS = { cut: 1, sbCut: 1 };   // held, not clicked: the cut opens the record only while pressed
+const mlKey = t => t.kind + ":" + (t.id || "");
+function learnToggle(on) {
+  ML.on = on == null ? !ML.on : on;
+  if (ML.on && !midi) midiConnect();
+  document.documentElement.classList.toggle("learn", ML.on);
+  $("learnBar").hidden = !ML.on; ML.target = null; learnSel(null);
+  document.querySelectorAll(".learnbtn").forEach(b => b.classList.toggle("on", ML.on));
+  $("learnJog").value = String(state.jogTicks || 400);
+  learnText(); learnMarks();
+  if (!ML.on) msg(Object.keys(state.midiMap).length + " COMANDI MIDI COLLEGATI");
+}
+function learnText(t) {
+  const n = Object.keys(state.midiMap).length;
+  $("learnTxt").textContent = t || (ML.target ? "«" + ML.target.name + "»: ora muovi o premi il controllo sul controller" : "Tocca una manopola, un cursore, un tasto, il disco o il crossfader · " + n + (n === 1 ? " collegato" : " collegati"));
+  $("learnDel").disabled = !ML.target || !Object.values(state.midiMap).some(t => mlKey(t) === mlKey(ML.target) || (ML.target.kind === "deck" && (t.kind === "jog" || t.kind === "touch")));
+}
+function learnSel(elx) { document.querySelectorAll(".learnsel").forEach(x => x.classList.remove("learnsel")); ML.el = elx; if (elx) elx.classList.add("learnsel"); }
+// what a touch on the screen points at
+function learnTarget(t) {
+  const kc = t.closest(".knob canvas, .knob");
+  if (kc) { const cv = kc.tagName === "CANVAS" ? kc : kc.querySelector("canvas"), k = knobs.find(x => x.cv === cv); if (k) return [{ kind: "knob", id: k.key, name: k.label }, cv.parentNode]; }
+  if (t.closest("#deck")) return [{ kind: "deck", name: "Disco: jog per scratchare, nota per toccarlo" }, $("deck")];
+  if (t.closest("#sbXf")) return [{ kind: "xf", name: "Crossfader" }, $("sbXf")];
+  const r = t.closest('input[type="range"][id]');
+  if (r) return [{ kind: "range", id: r.id, name: r.getAttribute("aria-label") || r.id }, r];
+  const b = t.closest("button[id]");
+  if (b && !b.closest("#learnBar")) return [{ kind: "button", id: b.id, name: (b.textContent || b.title || b.id).trim().replace(/\s+/g, " ").slice(0, 26) }, b];
+  return null;
+}
+function learnBind(key, isCC) {
+  let t = ML.target;
+  if (t.kind === "deck") t = isCC ? { kind: "jog", name: "Jog del disco" } : { kind: "touch", name: "Tocco del disco" };
+  if ((t.kind === "knob" || t.kind === "range" || t.kind === "xf" || t.kind === "jog") && !isCC) { learnText("«" + t.name + "» vuole una manopola, un fader o un jog: muovi quello"); return; }
+  state.midiMap[key] = { kind: t.kind, id: t.id, name: t.name }; save();
+  const what = (key[0] === "c" ? "CC " : "NOTA ") + key.split(":")[1] + " · CANALE " + (+key.slice(1).split(":")[0] + 1);
+  msg(t.name.toUpperCase() + " ← " + what);
+  ML.target = null; learnSel(null); learnText("Collegato: «" + t.name + "» ← " + what.toLowerCase() + ". Tocca il prossimo."); learnMarks();
+}
+function learnEl(t) {
+  if (t.kind === "knob") { const k = knobs.filter(x => x.key === t.id && x.cv.isConnected).pop(); return k && k.cv.parentNode; }
+  if (t.kind === "jog" || t.kind === "touch") return $("deck");
+  if (t.kind === "xf") return $("sbXf");
+  return $(t.id);
+}
+function learnMarks() {
+  document.querySelectorAll(".midimap").forEach(x => x.classList.remove("midimap"));
+  if (ML.on) Object.values(state.midiMap).forEach(t => { const e = learnEl(t); if (e) e.classList.add("midimap"); });
+}
+// a control moved on the controller
+function midiApply(t, key, v, isCC, isOn, isOff) {
+  if (!initAudio()) return;
+  if (t.kind === "knob") {
+    const k = knobs.filter(x => x.key === t.id && x.cv.isConnected).pop() || knobs.filter(x => x.key === t.id).pop();
+    if (!k || !isCC) return;
+    k.set(k.min + (k.max - k.min) * v / 127, false); k.draw();
+    clearTimeout(ML.commit[key]); ML.commit[key] = setTimeout(() => { k.set(k.get(), true); k.draw(); }, 250);   // as when the mouse lets go
+  } else if (t.kind === "range") {
+    const r = $(t.id); if (!r || r.disabled || !isCC) return;
+    const lo = +r.min || 0, hi = r.max === "" ? 100 : +r.max;
+    r.value = lo + (hi - lo) * v / 127; r.dispatchEvent(new Event("input", { bubbles: true }));
+    clearTimeout(ML.commit[key]); ML.commit[key] = setTimeout(() => r.dispatchEvent(new Event("change", { bubbles: true })), 200);
+  } else if (t.kind === "button") {
+    const b = $(t.id); if (!b) return;
+    const down = isCC ? v >= 64 : isOn;
+    if (HOLD_BTNS[t.id]) { if (down) deck.cutOn && deck.cutOn(); else deck.cutOff && deck.cutOff(); return; }
+    if (down && !ML.last[key] && !b.disabled) b.click();
+    ML.last[key] = down;
+  } else if (t.kind === "xf") {
+    if (!isCC) return;
+    sbSetXf(v / 127); clearTimeout(ML.commit[key]); ML.commit[key] = setTimeout(save, 300);
+  } else if (t.kind === "touch") {
+    if (isOn) { ML.touch = true; clearTimeout(ML.jogT); ML.jogT = 0; if (deck.auto) setAuto(""); deck.touching = true; deck.send({ touch: true }); }
+    else if (isOff || (isCC && v < 64)) { ML.touch = false; deck.touching = false; deck.send({ touch: false, rate: 0 }); }
+  } else if (t.kind === "jog" && isCC) {
+    // relative encoders: 1…63 forward and 127…65 back, or around 64 on some controllers
+    const d = v >= 58 && v <= 70 ? v - 64 : v < 64 ? v : v - 128;
+    if (!d) return;
+    if (deck.auto) setAuto("");
+    if (!ML.touch && !ML.jogT) deck.send({ touch: true });
+    deck.send({ move: d * (deck.rev || SEC_PER_REV) / (state.jogTicks || 400) });
+    if (!ML.touch) { clearTimeout(ML.jogT); ML.jogT = setTimeout(() => { ML.jogT = 0; if (!ML.touch) deck.send({ touch: false, rate: 0 }); }, 90); }
+  }
+}
+function bindLearn() {
+  document.querySelectorAll(".learnbtn").forEach(b => b.addEventListener("click", () => learnToggle()));
+  $("learnDone").addEventListener("click", () => learnToggle(false));
+  $("learnJog").addEventListener("change", e => { state.jogTicks = +e.target.value; save(); });
+  $("learnClear").addEventListener("click", () => { state.midiMap = {}; save(); ML.target = null; learnSel(null); learnMarks(); learnText(); msg("COMANDI MIDI CANCELLATI"); });
+  $("learnDel").addEventListener("click", () => {
+    if (!ML.target) return;
+    for (const k of Object.keys(state.midiMap)) { const t = state.midiMap[k]; if (mlKey(t) === mlKey(ML.target) || (ML.target.kind === "deck" && (t.kind === "jog" || t.kind === "touch"))) delete state.midiMap[k]; }
+    save(); msg("TOLTO: " + ML.target.name.toUpperCase()); ML.target = null; learnSel(null); learnMarks(); learnText();
+  });
+  // while learning, a touch picks the control instead of using it
+  const pick = e => {
+    if (!ML.on || e.target.closest("#learnBar") || e.target.closest(".learnbtn")) return;
+    const got = learnTarget(e.target);
+    if (!got) return;   // pages, groups and menus still work, to get to the control you want
+    e.preventDefault(); e.stopPropagation();
+    if (e.type !== "pointerdown") return;
+    ML.target = got[0]; learnSel(got[1]); learnText();
+  };
+  ["pointerdown", "click", "dblclick", "wheel", "input"].forEach(ev => document.addEventListener(ev, pick, { capture: true, passive: false }));
+  document.addEventListener("keydown", e => { if (ML.on && e.key === "Escape") { e.stopPropagation(); learnToggle(false); } }, true);
 }
 /* ---------- effetti da studio: eco a nastro e quattro riverberi ---------- */
 // the echo is a tape loop: the repeats darken, saturate and wobble a little more each time round
