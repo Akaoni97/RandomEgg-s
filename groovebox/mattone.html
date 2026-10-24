@@ -296,6 +296,8 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .pg-seq { display: grid; gap: 14px; align-content: start; }
 .seqbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; }
 .seqbar .seg button { padding: 6px 10px; }
+.fillbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.fillbar .seg button { padding: 6px 9px; }
 .groovebar { display: grid; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
 .grvhd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .grvhd select { background: var(--well); color: var(--well-text); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; max-width: 100%; }
@@ -1665,6 +1667,13 @@ html.intro-on { overflow: hidden; }
           <div class="grvsw" id="grooveSw"></div>
           <p class="cnote small" id="grooveInfo"></p>
         </div>
+        <div class="fillbar" id="fillBar">
+          <button class="key small" id="fillOn" type="button" aria-pressed="false" title="A fine giro il Mat.Tone suona da solo un passaggio: una rullata, uno stop, la cassa che sparisce o una salita"><span class="ledi"></span>Passaggi automatici</button>
+          <span class="lbl">Stile</span><div class="seg" id="fillStyle" role="group" aria-label="Stile dei passaggi"></div>
+          <span class="lbl">Ogni</span><div class="seg" id="fillEvery" role="group" aria-label="Ogni quante battute"></div>
+          <button class="key small" id="fillSong" type="button" aria-pressed="true" title="Quando suona la canzone, il passaggio arriva all’ultima battuta di ogni parte invece che ogni tot battute"><span class="ledi"></span>A fine parte</button>
+          <button class="key small" id="fillNow" type="button" title="Un passaggio subito, alla prossima battuta">Uno adesso</button>
+        </div>
       </section>
       <section class="unit song" aria-label="Canzone">
         <div class="hd">
@@ -1866,6 +1875,7 @@ html.intro-on { overflow: hidden; }
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
+            <li><b>Passaggi automatici</b> (Sequencer, sotto il groove): ogni 2, 4 o 8 battute, o alla fine di ogni parte della canzone, il Mat.Tone suona da solo un passaggio: una <b>rullata</b> sul rullante e sui tom, uno <b>stop</b>, la battuta <b>senza cassa</b> né basso, o una <b>salita</b> che finisce sull’uno. «Misto» li alterna; «Uno adesso» lo fa alla prossima battuta.</li>
             <li><b>Effetto su un colpo</b> (Sequencer, nel menu dello step o nella corsia «Per step» → Effetto): <b>tape stop</b>, <b>al contrario</b>, <b>riverbero al contrario</b> che cresce fino al colpo, <b>eco lanciata</b> solo su quel colpo, <b>stutter</b>. Restano nel pattern.</li>
             <li><b>Per step</b> (Sequencer): ogni colpo può avere il suo <b>filtro</b>, <b>tono</b>, <b>volume</b>, <b>pan</b> e <b>coda</b>, come i «parameter lock» delle groovebox. Sotto la griglia c’è la corsia del pad scelto: scegli l’impostazione e disegnala trascinando sugli step (doppio clic: torna come il pad); oppure tasto destro su uno step e i cursori «Solo per questo step». Gli step con impostazioni proprie hanno un puntino.</li>
             <li><b>Controller MIDI</b> (Suona, accanto a MIDI, o nel lato B): i pad del controller suonano i pad. Con <b>Impara</b> colleghi il resto: tocca una manopola, un cursore o un tasto sullo schermo e poi muovi quello vero. Tocca il <b>disco</b> e gira il jog del tuo controller da DJ per scratchare (se il jog sente il tocco, premilo e si collega anche quello); tocca il <b>crossfader</b> del lato B e muovi il fader. I collegamenti restano nell’app.</li>
@@ -2885,6 +2895,9 @@ function grooveFix() {
   if (g.id === "campione" && !(g.tpl && g.tpl.off && g.tpl.off.length === 16)) g.id = "";
 }
 grooveFix();
+// automatic fills: a roll, a stop, the kick taken out or a riser at the end of every few bars (or of each part of the song)
+function fillsFix() { state.fills = Object.assign({ on: false, style: "misto", every: 4, song: true }, state.fills || {}); }
+fillsFix();
 if (!state.midiMap || typeof state.midiMap !== "object") state.midiMap = {};   // the controller's knobs and keys: kept with the app, not the project
 // every pattern has its length and grid, every row as many steps as that; the song points only at patterns that exist
 function fixPatterns() {
@@ -3685,10 +3698,56 @@ const drawQ = [];
 const sixteenth = () => 60 / state.bpm / 4;
 // step levels: 1 normal, 2 accent, 3 ghost note (the soft hits between the beats)
 const STEP_VEL = [0, 0.72, 1, 0.36];
+const FILL_STYLES = [["misto", "Misto"], ["rullata", "Rullata"], ["stop", "Stop"], ["taglio", "Senza cassa"], ["riser", "Salita"]];
+let barCount = 0, FILL = null, fillForce = false;
+// at the top of each bar: is this the bar of a fill, and which one
+function fillPlan(m) {
+  const F = state.fills, bar = barCount++, inBar = Math.floor(step / m.div);
+  let go = fillForce;
+  if (!go && F.on) {
+    const e = state.songOn && state.song.length && songPos && state.song[songPos.i];
+    go = e && F.song ? songPos.rep === e.n - 1 && inBar === m.bars - 1 && !songEnded : (bar % F.every) === F.every - 1;
+  }
+  fillForce = false;
+  if (!go) return null;
+  let style = F.style;
+  if (style === "misto") style = Math.random() < 0.45 ? "rullata" : ["stop", "taglio", "riser"][Math.floor(Math.random() * 3)];
+  const cpb = m.div / 4, plan = { style, k0: m.div - cpb, skip: new Set(), all: false, roll: null };
+  if (style === "stop") plan.all = true;
+  else if (style === "rullata") {
+    const rl = padRoles(0), S = rl.snare[0] != null ? rl.snare[0] : rl.clap[0] != null ? rl.clap[0] : rl.perc[0];
+    const toms = state.banks[0].map((pr, p) => [p, (pr.sound + " " + ((SOUNDS.get(pr.sound) || {}).name || "")).toLowerCase()]).filter(x => /tom/.test(x[1])).sort((a, b) => tomRank(a[1]) - tomRank(b[1])).map(x => x[0]);   // high tom first, down to the low one
+    [...rl.hat, ...rl.open, ...rl.kick, ...rl.snare, ...rl.clap].forEach(p => plan.skip.add("0:" + p));
+    plan.roll = { S, toms };
+  } else if (style === "taglio") {
+    plan.k0 = 0;
+    state.banks.forEach((bk, b) => { padRoles(b).kick.forEach(p => plan.skip.add(b + ":" + p)); bk.forEach((pr, p) => { const s = SOUNDS.get(pr.sound); if (s && s.root != null && /808|bass|bas|sub/i.test(pr.sound + " " + s.name)) plan.skip.add(b + ":" + p); }); });
+  } else if (style === "riser") { plan.k0 = m.div - Math.max(1, cpb / 2); plan.all = true; plan.riser = true; }
+  const name = FILL_STYLES.find(x => x[0] === style)[1].toUpperCase();
+  setTimeout(() => { if (playing) msg("PASSAGGIO: " + name); }, Math.max(0, (nextTime - ctx.currentTime) * 1000));
+  return plan;
+}
+const tomRank = t => /hi|alto|high/.test(t) ? 0 : /lo|bass|floor/.test(t) ? 2 : 1;
+// the hits a fill adds: the roll down the snare and the toms, louder and closer at the end
+function fillHits(plan, k, t, m) {
+  const r = plan.roll; if (!r || r.S == null || k < plan.k0) return;
+  const n = m.div - plan.k0, i = k - plan.k0, u = n > 1 ? i / (n - 1) : 1, sd = stepDur();
+  const p = r.toms.length && i >= n / 2 ? r.toms[Math.min(r.toms.length - 1, Math.floor((i - n / 2) / Math.max(1, n / 2) * r.toms.length))] : r.S;
+  const vel = 0.42 + 0.5 * u;
+  trigger(0, p, Math.max(ctx.currentTime, t), vel, 0, false, true);
+  if (i >= n - 2) trigger(0, p, t + sd / 2, vel * 0.85, 0, false, true);   // thirty-seconds at the very end
+}
+// the riser: it ends exactly on the next one
+function fillRiser(t0, barLen) {
+  const id = "sy_riser", buf = cache.get(id); if (!buf) { loadSound(id).catch(() => {}); return; }
+  const dur = buf.duration, start = Math.max(t0, t0 + barLen - dur), st = Math.max(0, (dur - barLen) / dur);
+  playBuffer(id, { sound: id, pitch: 0, vol: 0.55, pan: 0, rev: 0.2, gate: 0, st }, start, 0.9, 0, null);
+}
 function schedule() {
   while (nextTime < ctx.currentTime + 0.1) {
     const m = pm(), len = m.bars * m.div, cpb = m.div / 4;
     if (step >= len) step = 0;
+    if (step % m.div === 0) { FILL = fillPlan(m); if (FILL && FILL.riser) fillRiser(nextTime, m.div * stepDur()); }
     if (step === 0 && SB.rec === "arm" && repeatStep === null) sbRecBegin(nextTime);
     let t = nextTime;
     if (m.div === 16 && step % 2 === 1) t += sixteenth() * state.swing / 100;   // triplets already swing
@@ -3703,6 +3762,7 @@ function schedule() {
         if (vf && vf[7] && vf[7].fx === "rrev" && !state.banks[b][p].mute) rrevPlay(b, p, nextTime, cpb * stepDur(), STEP_VEL[vf[0]] || 0.8);
         const v = pat[b][p][s]; if (!v) continue;
         const prp = state.banks[b][p]; if (prp.mute || (solo && !prp.solo)) continue;   // the pad's mute and solo
+        if (FILL && step % m.div >= FILL.k0 && (FILL.all || FILL.skip.has(b + ":" + p))) continue;   // the fill takes this hit out
         if (v[3] != null && v[3] < 100 && Math.random() * 100 >= v[3]) continue;   // the step's chance
         // "mano umana": a few milliseconds early or late and a little softer or harder, never the same twice
         const tg = m.div === 16 ? Math.max(ctx.currentTime, nextTime + sixteenth() * grooveDt(b, s)) : t;   // the groove of the group
@@ -3713,6 +3773,7 @@ function schedule() {
         for (let r = 0; r < roll; r++) { const tr = Math.max(ctx.currentTime, tt + r * stepDur() / roll), vr = vel * (r ? 0.8 : 1); if (v[4] > 1) playNotes(b, p, tr, vr, v[1], false, v[4], opt); else trigger(b, p, tr, vr, v[1], false, false, opt); }   // a roll: the hits share the step
       }
     }
+    if (FILL && !songEnded) fillHits(FILL, step % m.div, t, m);
     if (metronome && !songEnded && step % cpb === 0) click(t, step % m.div === 0);
     drawQ.push({ step: s, time: t });
     const dur = stepDur();
@@ -3784,7 +3845,7 @@ function start() {
   const song = state.songOn && state.song.length;
   if (song) { songPos = { i: Math.min(songFrom, state.song.length - 1), rep: 0 }; state.pattern = state.song[songPos.i].p; edPage = 0; renderAll(); }
   state.patterns[state.pattern].forEach((g, b) => g.forEach((row, p) => { if (row.some(v => v && v[7] && v[7].fx === "rrev")) rrevBuf(state.banks[b][p].sound); }));   // the swells get ready
-  playing = true; step = 0; songEnded = false; songJump = null; stepLog.length = 0; barT.length = 0;
+  playing = true; step = 0; songEnded = false; barCount = 0; FILL = null; songJump = null; stepLog.length = 0; barT.length = 0;
   nextTime = ctx.currentTime + 0.06; gridOrigin = nextTime; drawQ.length = 0;
   schedule(); timer = setInterval(schedule, 20);
   voiceOnStart();
@@ -4944,7 +5005,7 @@ function build() {
   $("bpmDown").addEventListener("click", () => setBpm(state.bpm - 1));
   $("bpmUp").addEventListener("click", () => setBpm(state.bpm + 1));
   $("swing").addEventListener("input", e => { state.swing = +e.target.value; $("swingOut").textContent = state.swing + "%"; save(); renderGroove(); });
-  bindGroove();
+  bindGroove(); bindFills();
   $("copy").addEventListener("click", copyPattern);
   $("undo").addEventListener("click", () => histGo(true)); $("redo").addEventListener("click", () => histGo(false));
   $("human").value = Math.round(state.human * 100); $("humanOut").textContent = Math.round(state.human * 100) + "%";
@@ -5540,6 +5601,21 @@ function drawGroove() {
   }
   c.fillStyle = "rgba(255,255,255,.4)"; c.font = "16px VT323, monospace"; c.textAlign = "right"; c.fillText("GRUPPO " + BANKS[state.bank].id + (T && g.on[state.bank] ? " · GROOVE" : " · SWING"), W - 6, 15);
 }
+function renderFills() {
+  const F = state.fills, on = $("fillOn"); if (!on) return;
+  on.classList.toggle("on", F.on); on.setAttribute("aria-pressed", F.on);
+  [...$("fillStyle").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === F.style));
+  [...$("fillEvery").children].forEach(b => b.setAttribute("aria-pressed", +b.dataset.v === F.every));
+  $("fillSong").classList.toggle("on", F.song); $("fillSong").setAttribute("aria-pressed", F.song);
+}
+function bindFills() {
+  const F = () => state.fills, set = p => { Object.assign(state.fills, p); save(); renderFills(); };
+  FILL_STYLES.forEach(([id, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { set({ style: id, on: true }); msg("PASSAGGI: " + name.toUpperCase()); }); $("fillStyle").appendChild(b); });
+  [2, 4, 8].forEach(n => { const b = el("button", null, n + " batt."); b.type = "button"; b.dataset.v = n; b.addEventListener("click", () => set({ every: n })); $("fillEvery").appendChild(b); });
+  $("fillOn").addEventListener("click", () => { set({ on: !F().on }); msg(F().on ? "PASSAGGI AUTOMATICI OGNI " + F().every + " BATTUTE" : "PASSAGGI SPENTI"); });
+  $("fillSong").addEventListener("click", () => set({ song: !F().song }));
+  $("fillNow").addEventListener("click", () => { if (!initAudio()) return; fillForce = true; if (!playing) start(); msg("PASSAGGIO ALLA PROSSIMA BATTUTA"); });
+}
 function grooveSet(patch) { Object.assign(state.groove, patch); save(); renderGroove(); }
 function grooveTake() {
   const pr = curPr(), buf = cache.get(pr.sound), s = SOUNDS.get(pr.sound);
@@ -5569,7 +5645,7 @@ function bindGroove() {
   });
 }
 function renderAll() {
-  renderBanks(); renderPads(); renderPatterns(); renderInspector(); renderEditor(); renderTransport(); renderFx(); renderLeds(); renderSong(); renderNr(); renderChords(); renderGroove();
+  renderBanks(); renderPads(); renderPatterns(); renderInspector(); renderEditor(); renderTransport(); renderFx(); renderLeds(); renderSong(); renderNr(); renderChords(); renderGroove(); renderFills();
   $("bpmNum").textContent = state.bpm; $("vBpm").textContent = pad3(state.bpm); $("swing").value = state.swing; $("swingOut").textContent = state.swing + "%";
 }
 
@@ -7812,7 +7888,7 @@ function renderLane() {
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
-const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol", "groove"];
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol", "groove", "fills"];
 function f32ToB64(d) {
   const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
   for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
@@ -7870,7 +7946,7 @@ function openProject(file) {
     }
     const st = proj.state; PROJ_KEYS.forEach(k => { if (st[k] !== undefined) state[k] = st[k]; });
     if (st.voice === undefined) state.voice = null;
-    voiceFix(); videoFix(); sidebFix(); grooveFix(); voiceSoloStop();
+    voiceFix(); videoFix(); sidebFix(); grooveFix(); fillsFix(); voiceSoloStop();
     for (const t of proj.voices || []) { const b = voiceBufFrom(b64ToF32(t.data), t.sr || 44100); VO.bufs.set(t.id, b); VO.peaks.delete(t.id); voiceKeep(t.id, b); }
     state.voice.takes = state.voice.takes.filter(t => VO.bufs.has(t.id)); if (!vTake()) state.voice.sel = state.voice.takes.length ? state.voice.takes[0].id : null;
     state.banks.forEach((bk, bi) => bk.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
