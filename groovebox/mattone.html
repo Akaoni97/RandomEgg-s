@@ -143,6 +143,17 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 }
 .pats button.has { color: var(--well-text); }
 .pats button[aria-pressed="true"] { background: var(--led); color: var(--on-ink); box-shadow: 0 0 10px -2px var(--led); }
+.pats button.dragging { opacity: .55; transform: scale(.92); }
+.pats button.droptarget { outline: 2px dashed var(--led); outline-offset: 2px; }
+.patpop { width: min(360px, calc(100vw - 16px)); }
+.patgrid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+.patt { height: 34px; border: 0; border-radius: 5px; background: var(--well); color: var(--well-ink); font-family: var(--f-label); font-size: 12px; box-shadow: inset 0 1px 2px rgba(0,0,0,.5); position: relative; }
+.patt.has { color: var(--well-text); }
+.patt.has::after { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--led); }
+.patt:disabled { background: var(--led); color: var(--on-ink); opacity: 1; }
+.patt:not(:disabled):hover { outline: 1px solid var(--led); }
+.patquick { justify-content: stretch; }
+.patquick button { flex: 1; }
 .pats button.queued { animation: blink .5s steps(2) infinite; outline: 1px solid var(--led); }
 
 /* ---------- pads ---------- */
@@ -670,6 +681,7 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
   .eqbands { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 18px; }
 }
 .gstrip, .gstrip > * { min-width: 0; }
+.gstrip { --cream: var(--well-text); --cream-2: var(--well-ink); --cream-3: var(--well-ink); }   /* the strips are dark wells on every body: their writing stays light */
 @media (max-width: 520px) {
   .gstrip { padding: 10px; gap: 8px; }
   .gtop { flex-wrap: wrap; row-gap: 6px; }
@@ -742,241 +754,179 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
 .badge { position: absolute; top: 5px; right: 26px; font-family: var(--f-label); font-size: 8px; letter-spacing: .14em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; pointer-events: none; z-index: 1;
   color: #2a2620; background: linear-gradient(180deg, #d7d2c4, #a9a394); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 2px rgba(0,0,0,.6); }
 
-/* ---------- scocche: otto carrozzerie, ognuna con i suoi materiali ---------- */
+/* ---------- scocche: cinque macchine, ognuna fatta come quella vera ---------- */
 /* each body defines its colours and --skin-bg, the surface of its panels (also used by the little previews) */
-:is(.app, .skinprev)[data-skin="cantina"] {
-  --room: #100f0d; --room-glow: #2a2620; --chassis: #1d1c19; --chassis-2: #262420; --plate: #2e2c27; --rubber: #3d3a34; --rubber-hi: #4c4840; --line: #3a372f;
-  --cream: #ebe1c6; --cream-2: #b5ac94; --cream-3: #7d7663; --well: #141311; --well-ink: #7d7663; --well-text: #ebe1c6; --edge: #0e0d0c;
-  --key-1: #4a463e; --key-2: #36332d; --key-ink: #ebe1c6; --on-1: #f6b14f; --on-2: #d7882a; --on-ink: #1a1408;
-  --pad-ink: #ebe1c6; --pad-ink-2: #7d7663; --led-off: #5a2a22;
-  --vfd: #7cf3d3; --vfd-dim: #18332c; --vfd-bg: #071210; --vfd-mid: #3f8f7a; --vfd-hi: #bff9e8; --led: #ff9f2e;
-  --cell: #2a2823; --cell-beat: #312e28; --cell-hover: #3b3831; --cap-1: #d9d0b8; --cap-2: #b5ac94; --screw-1: #9a8f7a; --screw-2: #3b3830;
-  --vu-1: #f3e9cf; --vu-2: #d8cba7; --vu-ink: #2a241a; --vu-red: #c2392b;
-  --stripe-1: #f2a43a; --stripe-2: #df6a3c; --stripe-3: #b04a3a; --stripe-4: #4fbcaa;
-  --f-logo: "Bungee", "Arial Black", Impact, sans-serif;
-  --lcd-1: #f5bb5c; --lcd-2: #d98a2b; --lcd-ink: #2a1404; --scr-bg: #0b0806; --scr-ink: #ffb247; --scr-acc: #fff2d8;
-  --knob-1: #5a564c; --knob-2: #24221e; --knob-ink: #ebe1c6;
-  /* painted steel, chipped where hands rest, with a film of cellar dust */
-  --skin-bg: var(--tex-chips), var(--tex-dust), radial-gradient(120% 70% at 50% 0%, rgba(255,240,210,.05), transparent 60%), linear-gradient(180deg, #2a2722, #1b1a17);
+
+/* Dodici bit: the dark grey metal of the 12-bit drum samplers, slate-blue faders and red LEDs */
+:is(.app, .skinprev)[data-skin="sp12"] {
+  --room: #0d0e10; --room-glow: #23262b; --hA: #ff5a3c; --hB: #8fc0f0; --hC: #f2c43a; --hD: #c9ccd1;
+  --chassis: #1e2023; --chassis-2: #2a2d31; --plate: #34373c; --rubber: #2b2d31; --rubber-hi: #3a3d42; --line: #3b3f45;
+  --cream: #e9ecef; --cream-2: #b3b8bf; --cream-3: #7f858d; --well: #121315; --well-ink: #7f858d; --well-text: #e9ecef; --edge: #0a0b0c;
+  --key-1: #464a50; --key-2: #303338; --key-ink: #e9ecef; --on-1: #a9d2f7; --on-2: #6f9fd8; --on-ink: #08131f;
+  --pad-ink: #f1f3f5; --pad-ink-2: #8a9099; --led-off: #4a1610;
+  --vfd: #ff5a3c; --vfd-dim: #2e0d08; --vfd-bg: #0c0302; --vfd-mid: #a3301c; --vfd-hi: #ffc2b2; --led: #ff3b30;
+  --cell: #2a2d31; --cell-beat: #31343a; --cell-hover: #3d4147; --cap-1: #c9d6e6; --cap-2: #6f8aa8; --screw-1: #7a7f86; --screw-2: #1a1b1e;
+  --vu-1: #15171a; --vu-2: #1f2226; --vu-ink: #ff6a4a; --vu-red: #ff3b30;
+  --stripe-1: #6f9fd8; --stripe-2: #c9ccd1; --stripe-3: #ff3b30; --stripe-4: #464a50;
+  --f-logo: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --lcd-1: #ff6a4a; --lcd-2: #c23a22; --lcd-ink: #2a0802; --scr-bg: #0a0202; --scr-ink: #ff4a30; --scr-acc: #ffd2c4;
+  --knob-1: #4a4e55; --knob-2: #15171a; --knob-ink: #e9ecef;
+  /* bead-blasted dark metal, a cold reflection across the top */
+  --skin-bg: var(--tex-plastic), linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 30%), linear-gradient(180deg, #33363b, #222428);
 }
-:is(.app, .skinprev)[data-skin="hifi"] {
-  --room: #140e0a; --room-glow: #3a2618;
-  --chassis: #b4b0a6; --chassis-2: #dcd9d0; --plate: #8e8a80; --line: #8f8b81;
-  --cream: #1c1a16; --cream-2: #37342e; --cream-3: #5f5b51;
-  --well: #22201d; --well-ink: #a7a296; --well-text: #ece8dd; --edge: #6e6a61;
-  --key-1: #2f2d2a; --key-2: #181715; --key-ink: #ece8dd; --on-1: #ffb15e; --on-2: #e0782a; --on-ink: #1f1206;
-  --led-off: #4a2216;
-  --vfd: #8fd6ff; --vfd-dim: #10243a; --vfd-bg: #040b14; --vfd-mid: #3c78a8; --vfd-hi: #d6f1ff; --led: #ff8a3a;
-  --cell: #a5a197; --cell-beat: #99958b; --cell-hover: #8d897f;
-  --cap-1: #f4f2ec; --cap-2: #c9c5bb; --screw-1: #ffffff; --screw-2: #7c786f;
-  --vu-1: #ffd98c; --vu-2: #f0a94a; --vu-ink: #2b1a07; --vu-red: #b3261e;
-  --stripe-1: #6b3f22; --stripe-2: #8a5530; --stripe-3: #b07443; --stripe-4: #d39a5e;
+/* Campionatore '88: the warm light grey plastic of the late-80s MPC-style workstations, grey rubber pads, red REC */
+:is(.app, .skinprev)[data-skin="mpc"] {
+  --room: #121110; --room-glow: #2c2a26; --hA: #d83a2a; --hB: #e8a33a; --hC: #3a7bd5; --hD: #4f9a5f;
+  --chassis: #bdb8ac; --chassis-2: #d6d1c5; --plate: #a7a194; --line: #a19b8e;
+  --cream: #24221e; --cream-2: #45423b; --cream-3: #6e6a60;
+  --well: #2c2b28; --well-ink: #a39e92; --well-text: #ede9df; --edge: #7a756a;
+  --key-1: #e8e4da; --key-2: #c9c4b8; --key-ink: #24221e; --on-1: #ff6a52; --on-2: #d83a2a; --on-ink: #ffffff;
+  --rubber: #b3ada1; --rubber-hi: #d4cfc3; --pad-ink: #2a2722; --pad-ink-2: #6e6a60; --led-off: #5a2218;
+  --vfd: #9cc25a; --vfd-dim: #1f2a10; --vfd-bg: #0a1004; --vfd-mid: #5c7f2e; --vfd-hi: #e2f5bf; --led: #e8412c;
+  --cell: #aaa598; --cell-beat: #a09b8e; --cell-hover: #939083;
+  --cap-1: #f3f0e8; --cap-2: #c9c4b8; --screw-1: #8a857a; --screw-2: #4a4740;
+  --vu-1: #1d1c1a; --vu-2: #2a2926; --vu-ink: #9cc25a; --vu-red: #e8412c;
+  --stripe-1: #d83a2a; --stripe-2: #24221e; --stripe-3: #8a857a; --stripe-4: #5a5650;
+  --f-logo: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --lcd-1: #b5cf7a; --lcd-2: #8fae55; --lcd-ink: #1a2508; --scr-bg: #0b1105; --scr-ink: #a9d36a; --scr-acc: #efffd6;
+  --knob-1: #4a4844; --knob-2: #1c1b19; --knob-ink: #f3f0e8;
+  /* fine-grain textured plastic, lit from above like a desk lamp */
+  --skin-bg: var(--tex-plastic), radial-gradient(110% 70% at 50% 0%, rgba(255,255,255,.28), transparent 62%), linear-gradient(180deg, #d9d4c8, #b9b4a7);
+}
+/* Ritmo '80: the black body of the classic analogue drum machines and their red, orange, yellow and cream keys */
+:is(.app, .skinprev)[data-skin="tr8"] {
+  --room: #0b0a09; --room-glow: #2a1a10; --hA: #e2402a; --hB: #f08a24; --hC: #f2c43a; --hD: #ece4cf;
+  --chassis: #171615; --chassis-2: #242220; --plate: #2c2a27; --rubber: #3a3734; --rubber-hi: #4a4642; --line: #34312e;
+  --cream: #ece4cf; --cream-2: #bdb49c; --cream-3: #857d69; --well: #0f0e0d; --well-ink: #857d69; --well-text: #ece4cf; --edge: #070606;
+  --key-1: #3c3936; --key-2: #2a2826; --key-ink: #ece4cf; --on-1: #ffa64a; --on-2: #f08a24; --on-ink: #1e0f02;
+  --pad-ink: #1a1714; --pad-ink-2: rgba(26,23,20,.62); --led-off: #4a1610;
+  --vfd: #ff4a2a; --vfd-dim: #2e0c06; --vfd-bg: #0b0302; --vfd-mid: #a02a14; --vfd-hi: #ffc0ae; --led: #ff3b22;
+  --cell: #262422; --cell-beat: #2e2c29; --cell-hover: #3a3734; --cap-1: #f3ead2; --cap-2: #c9bc98; --screw-1: #e6e6e6; --screw-2: #5a5a5a;
+  --vu-1: #121110; --vu-2: #1c1a18; --vu-ink: #ff6a3a; --vu-red: #ff3b22;
+  --stripe-1: #e2402a; --stripe-2: #f08a24; --stripe-3: #f2c43a; --stripe-4: #ece4cf;
+  --f-logo: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --lcd-1: #ff6a3a; --lcd-2: #c23a1a; --lcd-ink: #2a0802; --scr-bg: #0a0201; --scr-ink: #ff5a2a; --scr-acc: #ffd0b8;
+  --knob-1: #f3ead2; --knob-2: #bba987; --knob-ink: #e2402a;
+  /* matte black with the warm grey of the top section showing in a band */
+  --skin-bg: var(--tex-plastic), linear-gradient(180deg, rgba(255,255,255,.04), transparent 40%), linear-gradient(180deg, #232120, #151413);
+}
+/* Giradischi '79: the satin aluminium of the direct-drive turntables, black rubber and a red strobe */
+:is(.app, .skinprev)[data-skin="tt12"] {
+  --room: #0e0f10; --room-glow: #26292c; --hA: #ff3b30; --hB: #f2c43a; --hC: #4fd1c5; --hD: #9aa3ad;
+  --chassis: #a6aaae; --chassis-2: #cdd0d3; --plate: #8f9397; --line: #8c9095;
+  --cream: #141517; --cream-2: #34363a; --cream-3: #5d6065;
+  --well: #121314; --well-ink: #8c9095; --well-text: #eceef0; --edge: #63676c;
+  --key-1: #2c2d30; --key-2: #17181a; --key-ink: #eceef0; --on-1: #ff5a4a; --on-2: #d8221a; --on-ink: #ffffff;
+  --rubber: #1d1e20; --rubber-hi: #2e3033; --pad-ink: #eceef0; --pad-ink-2: #8c9095; --led-off: #4a1410;
+  --vfd: #ff4a3a; --vfd-dim: #2e0c08; --vfd-bg: #0c0302; --vfd-mid: #a32a1c; --vfd-hi: #ffc4ba; --led: #ff2f22;
+  --cell: #979b9f; --cell-beat: #8e9296; --cell-hover: #82868a;
+  --cap-1: #f4f5f6; --cap-2: #b9bcbf; --screw-1: #ffffff; --screw-2: #6b6f73;
+  --vu-1: #ffe2a8; --vu-2: #f0b45a; --vu-ink: #1d1206; --vu-red: #d8221a;
+  --stripe-1: #141517; --stripe-2: #5d6065; --stripe-3: #ff2f22; --stripe-4: #b9bcbf;
+  --f-logo: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --lcd-1: #ff5a4a; --lcd-2: #b8221a; --lcd-ink: #2a0402; --scr-bg: #0a0202; --scr-ink: #ff4a3a; --scr-acc: #ffd6d0;
+  --knob-1: #f4f5f6; --knob-2: #9ea2a6; --knob-ink: #141517;
+  /* satin brushed aluminium, the light running along the grain */
+  --skin-bg: var(--tex-brush), linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.3) 48%, rgba(255,255,255,0) 56%, rgba(0,0,0,.08) 100%), linear-gradient(180deg, #d3d6d9, #a3a7ab);
+}
+/* Consolle '73: the slate-blue panels of the old class-A mixing desks, walnut cheeks, red knobs and cream keys */
+:is(.app, .skinprev)[data-skin="consolle"] {
+  --room: #120e0b; --room-glow: #33241a; --hA: #e0563a; --hB: #e8b04a; --hC: #6fb3d9; --hD: #d9cfb8;
+  --chassis: #39424b; --chassis-2: #48525c; --plate: #2f373f; --line: #56616c;
+  --cream: #eee6d2; --cream-2: #c3bba6; --cream-3: #8f9aa4;
+  --well: #1a1f24; --well-ink: #8f9aa4; --well-text: #eee6d2; --edge: #151a1f;
+  --key-1: #e9e1cc; --key-2: #cfc4a8; --key-ink: #2a241a; --on-1: #ffcf7a; --on-2: #e8a33a; --on-ink: #2a1804;
+  --rubber: #d6cbb0; --rubber-hi: #f1ead8; --pad-ink: #2a241a; --pad-ink-2: #7d735e; --led-off: #4a2a0c;
+  --vfd: #ffb23a; --vfd-dim: #2e1e06; --vfd-bg: #0c0702; --vfd-mid: #a0681a; --vfd-hi: #ffe0aa; --led: #ffb23a;
+  --cell: #424c56; --cell-beat: #49545f; --cell-hover: #55616c;
+  --cap-1: #f1ead8; --cap-2: #c9bc98; --screw-1: #f2d58a; --screw-2: #7a5a1e;
+  --vu-1: #fff2d2; --vu-2: #f2d79a; --vu-ink: #2a1c0a; --vu-red: #c8402e;
+  --stripe-1: #c8402e; --stripe-2: #3d6fa8; --stripe-3: #d9cfb8; --stripe-4: #8a6a3a;
   --f-logo: "Righteous", "Arial Black", sans-serif;
-  --lcd-1: #3563c4; --lcd-2: #1d3d8f; --lcd-ink: #e8f1ff; --scr-bg: #03070e; --scr-ink: #79cfff; --scr-acc: #ffffff;
-  --knob-1: #fbfaf6; --knob-2: #a9a59b; --knob-ink: #1c1a16;
-  --rubber: #d8d1bf; --rubber-hi: #f1ecdf; --pad-ink: #2a261d; --pad-ink-2: #7a7262;
-  /* brushed aluminium with the light running along it */
-  --skin-bg: var(--tex-brush), linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.25) 46%, rgba(255,255,255,0) 54%, rgba(0,0,0,.06) 100%), linear-gradient(180deg, #e2dfd6, #aeaaa0);
-}
-:is(.app, .skinprev)[data-skin="surplus"] {
-  --room: #0d0f09; --room-glow: #262b1a;
-  --chassis: #3a4029; --chassis-2: #4a5134; --plate: #30351f; --line: #2a2e1c;
-  --cream: #e6dfc2; --cream-2: #bdb694; --cream-3: #8c8767;
-  --well: #1e2115; --well-ink: #8c8767; --well-text: #e6dfc2; --edge: #14160d;
-  --key-1: #5c6342; --key-2: #41472d; --key-ink: #ece5c8; --on-1: #e3c97c; --on-2: #b89b4c; --on-ink: #211c08;
-  --led-off: #4a1a12;
-  --vfd: #ff9b3d; --vfd-dim: #2c1806; --vfd-bg: #110903; --vfd-mid: #9a5a1e; --vfd-hi: #ffd7a3; --led: #ff4433;
-  --cell: #2f3322; --cell-beat: #363b27; --cell-hover: #41472f;
-  --cap-1: #d8d1b4; --cap-2: #aaa385; --screw-1: #a8ab88; --screw-2: #2f3320;
-  --vu-1: #262a1a; --vu-2: #1b1e12; --vu-ink: #e6dfc2; --vu-red: #ff5a3a;
-  --stripe-1: #e6dfc2; --stripe-2: #1e2115; --stripe-3: #e6dfc2; --stripe-4: #1e2115;
-  --f-logo: "Black Ops One", "Arial Black", sans-serif;
-  --lcd-1: #c8d38e; --lcd-2: #a2af63; --lcd-ink: #182009; --scr-bg: #060904; --scr-ink: #b6f266; --scr-acc: #f4ffd8;
-  --knob-1: #3a3d2e; --knob-2: #15170e; --knob-ink: #e6dfc2;
-  --rubber: #5a5a3e; --rubber-hi: #6e6e4c; --pad-ink: #f0e9cc; --pad-ink-2: #b3ac8a;
-  /* crinkle paint, the army kind, a little faded on top */
-  --skin-bg: var(--tex-crinkle), radial-gradient(60% 40% at 80% 10%, rgba(255,250,220,.06), transparent 70%), linear-gradient(180deg, #4d5536, #363c26);
-}
-:is(.app, .skinprev)[data-skin="metro"] {
-  --room: #0a0a0c; --room-glow: #1e1a24;
-  --chassis: #1a1a1e; --chassis-2: #26262c; --plate: #2b2b31; --rubber: #2e2e35; --rubber-hi: #3d3d46; --line: #34343c;
-  --cream: #f1efe9; --cream-2: #bdbbb5; --cream-3: #85837e;
-  --well: #111114; --well-ink: #8a8890; --well-text: #f1efe9; --edge: #070709;
-  --key-1: #3a3a42; --key-2: #26262c; --key-ink: #f1efe9; --on-1: #ffe066; --on-2: #f2b705; --on-ink: #1a1400;
-  --pad-ink: #f1efe9; --pad-ink-2: #8a8890; --led-off: #4a1430;
-  --vfd: #ff5fae; --vfd-dim: #33102a; --vfd-bg: #0c040a; --vfd-mid: #a3306f; --vfd-hi: #ffc4e2; --led: #ffd23f;
-  --cell: #26262c; --cell-beat: #2e2e35; --cell-hover: #3a3a42;
-  --cap-1: #f1efe9; --cap-2: #b9b7b1; --screw-1: #c9c7c1; --screw-2: #3a3a42;
-  --vu-1: #f1efe9; --vu-2: #d9d6ce; --vu-ink: #111114; --vu-red: #ff2f7d;
-  --stripe-1: #ff5fae; --stripe-2: #ffd23f; --stripe-3: #3ad6ff; --stripe-4: #9dff57;
-  --f-logo: "Permanent Marker", "Comic Sans MS", cursive;
-  --lcd-1: #ff9cc3; --lcd-2: #e0568d; --lcd-ink: #2b0516; --scr-bg: #0b0409; --scr-ink: #ff6fb5; --scr-acc: #ffe066;
-  --knob-1: #3d3d46; --knob-2: #101013; --knob-ink: #ffd23f;
-  /* a subway car at night: ribbed steel, spray drips and the neon of the platform */
-  --skin-bg: var(--drips), radial-gradient(18% 30% at 92% 18%, rgba(255,95,174,.16), transparent 70%), radial-gradient(14% 24% at 6% 80%, rgba(255,210,63,.12), transparent 70%), repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 2px, rgba(0,0,0,.25) 2px 3px, transparent 3px 22px), linear-gradient(180deg, #2a2a30, #18181c);
-}
-:is(.app, .skinprev)[data-skin="boombox"] {
-  --room: #0b0d10; --room-glow: #1d2836; --hA: #ff9a2e; --hB: #ff4a3d; --hC: #3fd0e0; --hD: #b98cff;
-  --chassis: #9aa0a7; --chassis-2: #ccd1d7; --plate: #7d838a; --line: #7a8088;
-  --cream: #15181c; --cream-2: #2d3238; --cream-3: #555b63;
-  --well: #16181b; --well-ink: #8f959c; --well-text: #e9edf1; --edge: #5d636a;
-  --key-1: #2a2d31; --key-2: #151719; --key-ink: #e9edf1; --on-1: #ff5246; --on-2: #c9271d; --on-ink: #ffffff;
-  --rubber: #2a2d31; --rubber-hi: #3f4348; --pad-ink: #e9edf1; --pad-ink-2: #8f959c; --led-off: #3a1512;
-  --vfd: #5df2ff; --vfd-dim: #0d2a30; --vfd-bg: #03090b; --vfd-mid: #2a8f9e; --vfd-hi: #c8fbff; --led: #ff3b30;
-  --cell: #8c9299; --cell-beat: #828890; --cell-hover: #767c84;
-  --cap-1: #f4f6f8; --cap-2: #b9bec4; --screw-1: #ffffff; --screw-2: #6b7178;
-  --vu-1: #101215; --vu-2: #1b1e22; --vu-ink: #5df2ff; --vu-red: #ff3b30;
-  --stripe-1: #ff3b30; --stripe-2: #ff9a2e; --stripe-3: #ffd23f; --stripe-4: #3fa9ff;
-  --f-logo: "Bungee", "Arial Black", sans-serif;
-  --lcd-1: #5df2ff; --lcd-2: #1ea7c4; --lcd-ink: #022a33; --scr-bg: #030709; --scr-ink: #5df2ff; --scr-acc: #ffffff;
-  --knob-1: #e9edf1; --knob-2: #8f959c; --knob-ink: #15181c;
-  /* silver plastic of a ghetto blaster, with the shine of the shop window */
-  --skin-bg: var(--tex-brush), linear-gradient(170deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 28%, rgba(255,255,255,0) 70%, rgba(255,255,255,.25) 100%), linear-gradient(180deg, #d5dade, #8e949b);
-}
-:is(.app, .skinprev)[data-skin="juke"] {
-  --room: #120a0a; --room-glow: #3a1616; --hA: #e0334f; --hB: #ff9a3c; --hC: #2fae96; --hD: #5b7fd6;
-  --chassis: #e2d3b3; --chassis-2: #f5ebd3; --plate: #c9b892; --line: #b9a67f;
-  --cream: #3a1d14; --cream-2: #6b3a26; --cream-3: #9a6a4a;
-  --well: #2a1310; --well-ink: #c29a7a; --well-text: #fbefd8; --edge: #9d8a66;
-  --key-1: #c8102e; --key-2: #8e0b20; --key-ink: #fff4e0; --on-1: #7fd8c4; --on-2: #3fae98; --on-ink: #062019;
-  --rubber: #b8122f; --rubber-hi: #e0334f; --pad-ink: #fff4e0; --pad-ink-2: #ffc2b8; --led-off: #4a1a12;
-  --vfd: #ffb347; --vfd-dim: #33200a; --vfd-bg: #120a04; --vfd-mid: #a8681e; --vfd-hi: #ffe2b0; --led: #ff3b55;
-  --cell: #d5c49e; --cell-beat: #cbb891; --cell-hover: #bfab82;
-  --cap-1: #fffaf0; --cap-2: #e2d3b3; --screw-1: #ffffff; --screw-2: #9aa0a7;
-  --vu-1: #fff2d6; --vu-2: #f0d9a6; --vu-ink: #3a1d14; --vu-red: #c8102e;
-  --stripe-1: #c8102e; --stripe-2: #7fd8c4; --stripe-3: #ffd23f; --stripe-4: #3a1d14;
-  --f-logo: "Righteous", "Arial Black", sans-serif;
-  --lcd-1: #ffcf7a; --lcd-2: #e8973a; --lcd-ink: #3a1d04; --scr-bg: #0f0703; --scr-ink: #ffb347; --scr-acc: #fff2d8;
-  --knob-1: #fffaf0; --knob-2: #cbb891; --knob-ink: #c8102e;
-  /* cream bakelite, with the swirl of the mould */
-  --skin-bg: var(--tex-bakelite), radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.55), transparent 55%), linear-gradient(180deg, #f6ecd5, #ddcca7);
-}
-:is(.app, .skinprev)[data-skin="studio"] {
-  --room: #121314; --room-glow: #2a2c2e;
-  --chassis: #8f8c84; --chassis-2: #aeaba2; --plate: #77746c; --line: #76736b;
-  --cream: #1b1a18; --cream-2: #34322e; --cream-3: #55534d;
-  --well: #1d1e1f; --well-ink: #9a988f; --well-text: #ecebe6; --edge: #5f5c55;
-  --key-1: #3a3b3d; --key-2: #232425; --key-ink: #ecebe6; --on-1: #ff8a2a; --on-2: #d0601a; --on-ink: #1f0e02;
-  --rubber: #6f6e69; --rubber-hi: #8a8882; --pad-ink: #f4f2ec; --pad-ink-2: #d2cfc7; --led-off: #4a1e10;
-  --vfd: #9cf06a; --vfd-dim: #1d3010; --vfd-bg: #081005; --vfd-mid: #4f8a2e; --vfd-hi: #dcffc6; --led: #ff3b2a;
-  --cell: #7f7c75; --cell-beat: #76736c; --cell-hover: #6a6862;
-  --cap-1: #e6e3dc; --cap-2: #a9a59c; --screw-1: #d6d3cb; --screw-2: #4a4843;
-  --vu-1: #1b1c1d; --vu-2: #262729; --vu-ink: #9cf06a; --vu-red: #ff3b2a;
-  --stripe-1: #ff8a2a; --stripe-2: #d0601a; --stripe-3: #55534d; --stripe-4: #1b1a18;
-  --f-logo: "Bungee", "Arial Black", sans-serif;
-  --lcd-1: #b9d88c; --lcd-2: #8fb35f; --lcd-ink: #1a2a0a; --scr-bg: #0b1206; --scr-ink: #a9e27a; --scr-acc: #f0ffe0;
-  --knob-1: #3a3b3d; --knob-2: #141516; --knob-ink: #ecebe6;
-  /* the warm grey textured plastic of the late 80s studio samplers */
-  --skin-bg: var(--tex-plastic), radial-gradient(100% 60% at 50% 0%, rgba(255,255,255,.12), transparent 60%), linear-gradient(180deg, #a9a69d, #8a877f);
-}
-:is(.app, .skinprev)[data-skin="oro"] {
-  --room: #070605; --room-glow: #2a2208; --hA: #ffcf4a; --hB: #ff8a3c; --hC: #e8e1c6; --hD: #c9a0ff;
-  --chassis: #0f0e0c; --chassis-2: #1b1915; --plate: #26221a; --line: #3a321c;
-  --cream: #f3e3b0; --cream-2: #c9b06a; --cream-3: #8d7a44;
-  --well: #090807; --well-ink: #8d7a44; --well-text: #f8ecc6; --edge: #000000;
-  --key-1: #2a2516; --key-2: #15120a; --key-ink: #f3e3b0; --on-1: #ffe08a; --on-2: #c9952a; --on-ink: #1a1204;
-  --rubber: #16140f; --rubber-hi: #262218; --pad-ink: #f3e3b0; --pad-ink-2: #9a8650; --led-off: #3a2a08;
-  --vfd: #ffd36a; --vfd-dim: #2e2208; --vfd-bg: #0a0702; --vfd-mid: #a5801f; --vfd-hi: #fff2c4; --led: #ffcf4a;
-  --cell: #1d1a14; --cell-beat: #242018; --cell-hover: #2e291e;
-  --cap-1: #ffe9a8; --cap-2: #c9a24a; --screw-1: #ffe9a8; --screw-2: #7a5a14;
-  --vu-1: #0d0b07; --vu-2: #17140c; --vu-ink: #ffd36a; --vu-red: #ff5a3a;
-  --stripe-1: #ffe08a; --stripe-2: #d4a93b; --stripe-3: #a8781e; --stripe-4: #6b4a10;
-  --f-logo: "Righteous", "Arial Black", sans-serif;
-  --lcd-1: #ffd36a; --lcd-2: #c9952a; --lcd-ink: #1a1204; --scr-bg: #070502; --scr-ink: #ffd36a; --scr-acc: #fff6dc;
-  --knob-1: #2a2516; --knob-2: #0c0a06; --knob-ink: #ffd36a;
-  /* black piano lacquer, a reflection across it and a few flakes of gold */
-  --skin-bg: var(--tex-gold), linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.07) 38%, rgba(255,255,255,0) 46%), radial-gradient(120% 80% at 50% 0%, #24201a, #0b0a08 70%);
+  --lcd-1: #ffcf7a; --lcd-2: #e8973a; --lcd-ink: #2a1804; --scr-bg: #0c0703; --scr-ink: #ffb23a; --scr-acc: #fff0d0;
+  --knob-1: #e0563a; --knob-2: #6b1a10; --knob-ink: #f1ead8;
+  /* stove-enamelled steel, slate blue, worn a little where the hands rest */
+  --skin-bg: var(--tex-plastic), radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.08), transparent 60%), linear-gradient(180deg, #4b5560, #37404a);
 }
 
 .app[data-skin] { color: var(--cream); }
 .app[data-skin] .unit { background: var(--skin-bg); }
-/* Hi-Fi: walnut cheeks on both sides of every panel */
-.app[data-skin="hifi"] .unit { border-radius: 3px; border: solid transparent; border-width: 0 16px; background: var(--tex-wood) left top / 16px 160px repeat-y border-box, var(--tex-wood) right top / 16px 160px repeat-y border-box, linear-gradient(90deg, #4a2a14, #6e4224 50%, #4a2a14) left / 16px 100% no-repeat border-box, linear-gradient(90deg, #4a2a14, #6e4224 50%, #4a2a14) right / 16px 100% no-repeat border-box, var(--skin-bg); background-origin: border-box, border-box, border-box, border-box, padding-box; background-clip: border-box, border-box, border-box, border-box, padding-box; }
-.app[data-skin="surplus"] .unit { border-radius: 4px; box-shadow: inset 0 0 0 2px rgba(0,0,0,.25), inset 0 0 0 3px rgba(230,223,194,.06), 0 18px 40px -20px rgba(0,0,0,.9); }
-.app[data-skin="metro"] .unit { border-radius: 6px; }
-.app[data-skin="boombox"] .unit { border-radius: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -2px 0 rgba(0,0,0,.25), inset 0 0 0 1px rgba(0,0,0,.25), 0 18px 40px -20px rgba(0,0,0,.9); }
-.app[data-skin="juke"] .unit { border-radius: 20px; box-shadow: inset 0 0 0 3px #d9dde2, inset 0 0 0 4px rgba(0,0,0,.25), inset 0 6px 0 3px rgba(255,255,255,.7), 0 18px 40px -20px rgba(0,0,0,.9); }
-.app[data-skin="studio"] .unit { border-radius: 5px; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 0 rgba(0,0,0,.3), 0 18px 40px -20px rgba(0,0,0,.9); }
-.app[data-skin="oro"] .unit { border-radius: 8px; box-shadow: inset 0 0 0 1.5px #c9952a, inset 0 0 0 3px #0b0a08, inset 0 0 0 4px rgba(255,224,138,.35), 0 18px 40px -20px rgba(0,0,0,.95); }
+.app[data-skin] .logo b { font-weight: var(--brand-weight, 400); font-style: var(--brand-style, normal); }
+.app[data-skin="sp12"] .unit { border-radius: 4px; box-shadow: inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 0 1px rgba(0,0,0,.6), 0 18px 40px -20px rgba(0,0,0,.95); }
+.app[data-skin="mpc"] .unit { border-radius: 9px; box-shadow: inset 0 1px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(0,0,0,.14), inset 0 0 0 1px rgba(0,0,0,.12), 0 18px 40px -20px rgba(0,0,0,.85); }
+.app[data-skin="tr8"] .unit { border-radius: 3px; box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 0 0 1px rgba(0,0,0,.7), 0 18px 40px -20px rgba(0,0,0,.95); }
+.app[data-skin="tt12"] .unit { border-radius: 12px; box-shadow: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(0,0,0,.25), inset 0 0 0 1px rgba(0,0,0,.18), 0 18px 40px -20px rgba(0,0,0,.85); }
+/* the desk: walnut cheeks on both sides of every panel */
+.app[data-skin="consolle"] .unit { border-radius: 4px; border: solid transparent; border-width: 0 18px; background: var(--tex-wood) left top / 18px 160px repeat-y border-box, var(--tex-wood) right top / 18px 160px repeat-y border-box, linear-gradient(90deg, #3e2210, #6a3e1e 50%, #3e2210) left / 18px 100% no-repeat border-box, linear-gradient(90deg, #3e2210, #6a3e1e 50%, #3e2210) right / 18px 100% no-repeat border-box, var(--skin-bg) padding-box; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 18px 40px -20px rgba(0,0,0,.95); }
 
-/* screws, rivets and bolts */
-.app[data-skin="cantina"] .unit::before, .app[data-skin="cantina"] .unit::after { background: linear-gradient(45deg, transparent 42%, rgba(0,0,0,.55) 43% 57%, transparent 58%), linear-gradient(-45deg, transparent 42%, rgba(0,0,0,.55) 43% 57%, transparent 58%), radial-gradient(circle at 35% 35%, #b3a487, #5a4a33 70%); }
-.app:is([data-skin="hifi"], [data-skin="boombox"], [data-skin="juke"]) .unit::before, .app:is([data-skin="hifi"], [data-skin="boombox"], [data-skin="juke"]) .unit::after { width: 8px; height: 8px; background: linear-gradient(90deg, transparent 42%, rgba(0,0,0,.45) 43% 57%, transparent 58%), linear-gradient(0deg, transparent 42%, rgba(0,0,0,.45) 43% 57%, transparent 58%), radial-gradient(circle at 35% 30%, #ffffff, #b9bec4 45%, #5d636a 80%); box-shadow: 0 1px 1px rgba(0,0,0,.4); }
-.app[data-skin="surplus"] .unit::before, .app[data-skin="surplus"] .unit::after { width: 9px; height: 9px; background: radial-gradient(circle at 35% 30%, #b8bb98, #6d7150 45%, #2c2f1c 85%); box-shadow: 0 1px 0 rgba(255,255,255,.12), 0 2px 2px rgba(0,0,0,.5); }
-.app[data-skin="metro"] .unit::before, .app[data-skin="metro"] .unit::after { width: 10px; height: 10px; border-radius: 0; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); background: radial-gradient(circle, #202024 0 22%, transparent 24%), linear-gradient(160deg, #e2e0da, #6a6870); }
-.app[data-skin="studio"] .unit::before, .app[data-skin="studio"] .unit::after { width: 8px; height: 8px; background: radial-gradient(circle, #111 0 30%, transparent 32%), radial-gradient(circle at 35% 30%, #5a5853, #222 80%); }
-.app[data-skin="oro"] .unit::before, .app[data-skin="oro"] .unit::after { width: 8px; height: 8px; background: linear-gradient(45deg, transparent 42%, rgba(60,40,0,.6) 43% 57%, transparent 58%), radial-gradient(circle at 35% 30%, #fff6d0, #e0b44a 45%, #6b4a10 85%); box-shadow: 0 0 6px rgba(255,207,74,.45); }
+/* screws, bolts, or none at all on the moulded plastic */
+.app[data-skin="sp12"] .unit::before, .app[data-skin="sp12"] .unit::after { width: 8px; height: 8px; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); border-radius: 0; background: radial-gradient(circle, #0c0d0e 0 24%, transparent 27%), linear-gradient(160deg, #8a9097, #2a2d31); }
+.app[data-skin="mpc"] .unit::before, .app[data-skin="mpc"] .unit::after, .app[data-skin="tt12"] .unit::before, .app[data-skin="tt12"] .unit::after { display: none; }
+.app[data-skin="tr8"] .unit::before, .app[data-skin="tr8"] .unit::after { width: 8px; height: 8px; background: linear-gradient(90deg, transparent 42%, rgba(0,0,0,.5) 43% 57%, transparent 58%), linear-gradient(0deg, transparent 42%, rgba(0,0,0,.5) 43% 57%, transparent 58%), radial-gradient(circle at 35% 30%, #ffffff, #a9a9a9 45%, #3a3a3a 90%); }
+.app[data-skin="consolle"] .unit::before, .app[data-skin="consolle"] .unit::after { width: 8px; height: 8px; background: linear-gradient(35deg, transparent 42%, rgba(60,36,0,.65) 43% 57%, transparent 58%), radial-gradient(circle at 35% 30%, #fff2c4, #d9b25a 45%, #6b4a10 88%); }
 
 /* the name on the plate */
-.app[data-skin="cantina"] .logo b { color: #efe4c8; text-shadow: 0 1px 0 rgba(0,0,0,.8), 0 0 18px rgba(255,159,46,.08); }
-.app[data-skin="hifi"] .logo b { letter-spacing: .06em; color: #2a2722; text-shadow: 0 1px 0 rgba(255,255,255,.85), 0 -1px 0 rgba(0,0,0,.25); }
-.app[data-skin="surplus"] .logo b { letter-spacing: .08em; color: #e6dfc2; text-shadow: 1px 1px 0 rgba(0,0,0,.35); opacity: .92; }
-.app[data-skin="metro"] .logo b { transform: rotate(-4deg); letter-spacing: .02em; text-shadow: 3px 3px 0 #ff5fae, -1px -1px 0 #111; }
-.app[data-skin="metro"] .logo b span { color: #ffd23f; }
-.app[data-skin="boombox"] .logo b { background: linear-gradient(180deg, #ffffff 0%, #c9ced4 45%, #5d636a 50%, #9aa0a7 62%, #f4f6f8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 1px #2d3238; letter-spacing: .03em; filter: drop-shadow(0 2px 0 rgba(0,0,0,.35)); }
-.app[data-skin="boombox"] .logo b span { color: #ff3b30; -webkit-text-fill-color: #ff3b30; }
-.app[data-skin="juke"] .logo b { color: #c8102e; letter-spacing: .03em; text-shadow: 0 2px 0 #fff, 0 3px 0 #8e0b20, 0 6px 10px rgba(58,29,20,.25); transform: rotate(-2deg); }
-.app[data-skin="juke"] .logo b span { color: #2fae96; }
-.app[data-skin="studio"] .logo b { color: #26252a; font-size: calc(26px * var(--brand-scale, 1)); letter-spacing: .08em; text-shadow: 0 1px 0 rgba(255,255,255,.45); }
-.app[data-skin="oro"] .logo b { background: linear-gradient(180deg, #fff6d0 0%, #ffd36a 38%, #a8781e 52%, #ffe08a 70%, #c9952a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255,207,74,.35)) drop-shadow(0 2px 0 #000); letter-spacing: .04em; }
-.app[data-skin="oro"] .logo b span { -webkit-text-fill-color: #fff6d0; }
+.app[data-skin="sp12"] .logo b { color: #f1f3f5; letter-spacing: .02em; text-shadow: 0 1px 0 #000; }
+.app[data-skin="sp12"] .logo b span { color: #6f9fd8; }
+.app[data-skin="mpc"] .logo b { color: #24221e; letter-spacing: -.01em; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
+.app[data-skin="mpc"] .logo b span { color: #d83a2a; }
+.app[data-skin="tr8"] .logo b { color: #ece4cf; letter-spacing: .04em; }
+.app[data-skin="tr8"] .logo b span { color: #f08a24; }
+.app[data-skin="tt12"] .logo b { color: #141517; letter-spacing: .12em; text-shadow: 0 1px 0 rgba(255,255,255,.8); }
+.app[data-skin="tt12"] .logo b span { color: #ff2f22; text-shadow: 0 0 8px rgba(255,47,34,.6); }
+.app[data-skin="consolle"] .logo b { color: #f1ead8; letter-spacing: .05em; text-shadow: 0 2px 0 rgba(0,0,0,.4); }
+.app[data-skin="consolle"] .logo b span { color: #ffb23a; }
 
 /* plates and badges */
-.app[data-skin="cantina"] .badge { background: linear-gradient(180deg, #d7d2c4, #a9a394); }
-.app[data-skin="hifi"] .badge { color: #e8e4da; background: linear-gradient(180deg, #2b2926, #121110); box-shadow: inset 0 0 0 1px #c9a24a, 0 1px 2px rgba(0,0,0,.5); letter-spacing: .2em; }
-.app[data-skin="surplus"] .badge { font-family: "Black Ops One", var(--f-label); font-size: 10px; color: #e6dfc2; background: transparent; box-shadow: none; border: 1px dashed rgba(230,223,194,.5); }
-.app[data-skin="metro"] .badge { top: 2px; right: 34px; font-family: "Permanent Marker", var(--f-label); font-size: 13px; letter-spacing: .02em; text-transform: none; color: #111; background: #ffd23f; transform: rotate(3deg); box-shadow: 2px 2px 0 #ff5fae; padding: 2px 10px; }
-.app[data-skin="boombox"] .badge { color: #fff; background: linear-gradient(180deg, #ff5246, #b81d14); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 2px rgba(0,0,0,.4); font-size: 9px; letter-spacing: .18em; border-radius: 3px; }
-.app[data-skin="juke"] .badge { color: #3a1d14; background: linear-gradient(180deg, #fff, #d9dde2 50%, #9aa0a7); border-radius: 999px; box-shadow: inset 0 1px 0 #fff, 0 1px 3px rgba(0,0,0,.35); padding: 3px 12px; }
-.app[data-skin="studio"] .badge { color: #ecebe6; background: #3a3b3d; box-shadow: none; border-radius: 2px; letter-spacing: .24em; }
-.app[data-skin="oro"] .badge { color: #1a1204; background: linear-gradient(180deg, #fff2c4, #ffcf4a 50%, #a8781e); box-shadow: 0 0 10px rgba(255,207,74,.4); letter-spacing: .16em; }
+.app[data-skin="sp12"] .badge { color: #c9ccd1; background: #121315; box-shadow: inset 0 0 0 1px #3b3f45; letter-spacing: .2em; }
+.app[data-skin="mpc"] .badge { color: #ede9df; background: linear-gradient(180deg, #3a3833, #24221e); box-shadow: 0 1px 0 rgba(255,255,255,.5); letter-spacing: .18em; border-radius: 3px; }
+.app[data-skin="tr8"] .badge { color: #1a1714; background: #ece4cf; box-shadow: none; letter-spacing: .2em; border-radius: 1px; }
+.app[data-skin="tt12"] .badge { color: #eceef0; background: linear-gradient(180deg, #2c2d30, #121314); box-shadow: inset 0 1px 0 rgba(255,255,255,.15), 0 1px 0 rgba(255,255,255,.7); letter-spacing: .22em; border-radius: 3px; }
+.app[data-skin="consolle"] .badge { color: #2a1c06; background: linear-gradient(180deg, #fff0c4, #d9b25a 55%, #9a7420); box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 1px 2px rgba(0,0,0,.5); letter-spacing: .16em; }
 
-/* pads that go with each body (when the pads follow the body) */
-.app[data-skin="hifi"][data-pad="skin"] .pad { box-shadow: 0 3px 0 #8e8778, 0 1px 0 rgba(255,255,255,.7) inset; }
-.app[data-skin="hifi"] .pads { background: #1c1b18; }
-.app[data-skin="hifi"] .lcd { background: linear-gradient(180deg, #121110, #2b2926); }
-.app[data-skin="surplus"][data-pad="skin"] .pad { border-radius: 3px; }
-.app[data-skin="surplus"][data-pad="skin"] .pad::before { content: ""; position: absolute; inset: 4px; border: 1px dashed rgba(240,233,204,.18); border-radius: 2px; pointer-events: none; }
-.app[data-skin="metro"][data-pad="skin"] .pad { box-shadow: 0 3px 0 #070709, inset 0 0 0 1px rgba(255,95,174,.25); }
-.app[data-skin="metro"] .pad.sel::after { box-shadow: inset 0 0 0 2px #ffd23f; }
-.app[data-skin="boombox"][data-pad="skin"] .pad { border-radius: 4px; background: linear-gradient(180deg, #4a4e54 0%, #2a2d31 18%, #1d1f22 100%); box-shadow: 0 4px 0 #0e0f11, inset 0 1px 0 rgba(255,255,255,.35), inset 0 0 0 1px rgba(0,0,0,.6); }
-.app[data-skin="boombox"] .vus { border-radius: 12px; padding: 8px; background: radial-gradient(circle, rgba(0,0,0,.75) 0 1.4px, transparent 1.9px) 0 0 / 6px 6px, linear-gradient(180deg, #2a2d31, #121315); box-shadow: inset 0 2px 6px rgba(0,0,0,.8), 0 0 0 2px #c9ced4, 0 0 0 3px #5d636a; }
-.app[data-skin="juke"][data-pad="skin"] .pad { border-radius: 14px; background: radial-gradient(120% 90% at 50% 0%, #ff4d68, #b8122f 62%, #7e0a1e); box-shadow: 0 4px 0 #6b0716, inset 0 0 0 2px rgba(255,255,255,.55), inset 0 6px 8px rgba(255,255,255,.25); }
-.app[data-skin="juke"] .pads { background: linear-gradient(180deg, #3a1d14, #22100b); box-shadow: inset 0 0 0 3px #d9dde2, inset 0 2px 10px rgba(0,0,0,.7); }
-.app[data-skin="studio"][data-pad="skin"] .pad { border-radius: 4px; background: radial-gradient(130% 100% at 50% 110%, #5f5e59, #7d7b75 60%, #8e8c86); box-shadow: 0 3px 0 #46453f, inset 0 2px 4px rgba(0,0,0,.35), inset 0 -1px 0 rgba(255,255,255,.18); }
-.app[data-skin="studio"] .pads { background: #3a3936; }
-.app[data-skin="oro"][data-pad="skin"] .pad { background: radial-gradient(120% 90% at 50% 0%, #2a261d, #0f0d0a 72%); box-shadow: 0 3px 0 #000, inset 0 0 0 1px rgba(255,207,74,.45), inset 0 1px 0 rgba(255,246,208,.18); }
-.app[data-skin="oro"] .pads { background: #050403; box-shadow: inset 0 0 0 1px rgba(255,207,74,.35), inset 0 2px 8px rgba(0,0,0,.9); }
+/* the pads of each machine (when the pads follow the body) */
+.app[data-skin="sp12"][data-pad="skin"] .pad { border-radius: 3px; background: linear-gradient(180deg, #34373c 0%, #25272b 30%, #1b1c1f 100%); box-shadow: 0 3px 0 #08090a, inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px rgba(0,0,0,.6); }
+.app[data-skin="sp12"] .pads { background: #0f1012; box-shadow: inset 0 0 0 1px #3b3f45, inset 0 2px 8px rgba(0,0,0,.8); }
+.app[data-skin="mpc"][data-pad="skin"] .pad { border-radius: 6px; background: radial-gradient(130% 110% at 50% 25%, #d6d1c5, #b2ac9f 78%); box-shadow: 0 3px 0 #6e695e, inset 0 1px 0 rgba(255,255,255,.65), inset 0 -3px 5px rgba(0,0,0,.12); }
+.app[data-skin="mpc"] .pads { background: #33312d; box-shadow: inset 0 2px 8px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.5); }
+.app[data-skin="tr8"][data-pad="skin"] .pad { --pc: #e2402a; border-radius: 4px; background: linear-gradient(180deg, color-mix(in srgb, var(--pc) 82%, #fff) 0%, var(--pc) 22%, color-mix(in srgb, var(--pc) 86%, #000) 100%); box-shadow: 0 3px 0 color-mix(in srgb, var(--pc) 40%, #000), inset 0 1px 0 rgba(255,255,255,.4); }
+.app[data-skin="tr8"][data-pad="skin"] .pad:nth-child(4n+2) { --pc: #f08a24; }
+.app[data-skin="tr8"][data-pad="skin"] .pad:nth-child(4n+3) { --pc: #f2c43a; }
+.app[data-skin="tr8"][data-pad="skin"] .pad:nth-child(4n) { --pc: #ece4cf; }
+.app[data-skin="tr8"][data-pad="skin"] .pad.hit { background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--pc) 70%, #fff)); }
+.app[data-skin="tr8"][data-pad="skin"] .pad::after { box-shadow: inset 0 0 0 3px #f8f3e4, 0 0 14px rgba(255,240,210,.45); }
+.app[data-skin="tr8"][data-pad="skin"] .pad .wv { opacity: .2; filter: brightness(0); }
+.app[data-skin="tr8"] .pads { background: #0c0b0a; box-shadow: inset 0 2px 8px rgba(0,0,0,.9); }
+.app[data-skin="tt12"][data-pad="skin"] .pad { border-radius: 9px; background: radial-gradient(circle, rgba(255,255,255,.055) 0 1px, transparent 1.5px) 0 0 / 6px 6px, linear-gradient(180deg, #2e3033, #161719); box-shadow: 0 3px 0 #050505, inset 0 1px 0 rgba(255,255,255,.12); }
+.app[data-skin="tt12"] .pads { background: #0d0e0f; box-shadow: inset 0 2px 8px rgba(0,0,0,.85), 0 0 0 2px #cdd0d3, 0 0 0 3px #63676c; }
+.app[data-skin="consolle"][data-pad="skin"] .pad { border-radius: 3px; background: linear-gradient(180deg, #f6f0e0 0%, #e2d8bf 60%, #cfc2a3 100%); box-shadow: 0 4px 0 #7d7056, inset 0 1px 0 #fff, inset 0 -2px 0 rgba(0,0,0,.08); }
+.app[data-skin="consolle"] .pads { background: #232a31; box-shadow: inset 0 2px 8px rgba(0,0,0,.75); }
 
 /* ornaments on the top panel, drawn per body */
 .skinart { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; border-radius: inherit; }
 .rack > *:not(.skinart):not(.badge):not(.stickers) { position: relative; z-index: 1; }
 .skinart > * { position: absolute; }
-.sa-tape { left: calc(50% - 85px); bottom: 2px; width: 170px; height: 20px; transform: rotate(-2deg); background: var(--tex-dust), linear-gradient(180deg, #b9b6ae, #8f8c85); box-shadow: 0 2px 4px rgba(0,0,0,.45); opacity: .9; display: grid; place-items: center; font: 400 11px "Permanent Marker", cursive; color: #1d1b18; letter-spacing: .02em; clip-path: polygon(2% 8%, 100% 0, 98% 92%, 0 100%); }
-.sa-stencil { right: 30%; bottom: -14px; font: 400 92px "Black Ops One", sans-serif; color: rgba(255,255,255,.035); letter-spacing: .05em; }
-.sa-plate { left: 50%; bottom: 3px; transform: translateX(-50%); white-space: nowrap; padding: 2px 14px; font: 400 8px var(--f-label); letter-spacing: .1em; text-transform: uppercase; color: #2c2f1c; background: linear-gradient(180deg, #c9c8b4, #8f8e78); border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.5); line-height: 1.4; }
-.sa-plate::before, .sa-plate::after { content: ""; position: absolute; top: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #eee, #555); }
-.sa-plate::before { left: 4px; } .sa-plate::after { right: 4px; }
-.sa-emblem { left: 50%; bottom: 3px; transform: translateX(-50%); padding: 1px 14px; border-radius: 999px; font: 400 9px var(--f-label); letter-spacing: .3em; color: #3a2a10; background: linear-gradient(180deg, #fff2c4, #d4a93b 55%, #8a6418); box-shadow: 0 1px 2px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.7); }
-.sa-chrome { left: 0; right: 0; bottom: 0; height: 4px; background: linear-gradient(180deg, #ffffff, #9aa0a7 50%, #5d636a); }
-.sa-bullet { left: 44%; top: 3px; width: 26px; height: 26px; border-radius: 50%; background: #2f8a3c; color: #fff; display: grid; place-items: center; font: 400 12px "Bungee", sans-serif; box-shadow: 0 0 0 2px #111, 0 0 12px rgba(47,138,60,.6); }
-.sa-tag { right: 28%; bottom: -6px; font: 400 54px "Permanent Marker", cursive; color: transparent; -webkit-text-stroke: 1.5px rgba(58,214,255,.28); transform: rotate(-8deg); }
-.sa-stripes { left: 0; right: 0; top: 0; height: 7px; background: linear-gradient(180deg, #ff3b30 0 25%, #ff9a2e 25% 50%, #ffd23f 50% 75%, #3fa9ff 75%); opacity: .95; }
-.sa-grilleL, .sa-grilleR { top: 14px; bottom: 14px; width: 10px; background: radial-gradient(circle, rgba(0,0,0,.55) 0 1.2px, transparent 1.6px) 0 0 / 5px 5px; opacity: .8; }
-.sa-grilleL { left: 4px; } .sa-grilleR { right: 4px; }
-.sa-bubbles { left: 20px; right: 20px; top: 3px; height: 8px; display: flex; justify-content: space-between; }
-.sa-bubbles i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); animation: bubble 2.4s ease-in-out infinite; will-change: transform, opacity; animation-delay: calc(var(--k) * -.18s); }
-@keyframes bubble { 0%, 100% { opacity: .35; transform: scale(.7); } 50% { opacity: 1; transform: scale(1); } }
+/* 12 bit: the two thin stripes across the plate and the model number, big and faint */
+.sa-twin { left: 0; right: 0; bottom: 10px; height: 7px; background: linear-gradient(180deg, #6f9fd8 0 40%, transparent 40% 60%, #ff3b30 60%); opacity: .55; }
+.sa-big { right: 26%; bottom: -18px; font: 700 italic 96px "IBM Plex Sans Condensed", sans-serif; color: rgba(255,255,255,.035); letter-spacing: -.02em; }
+/* '88: a dark band with the printed line of what it does, and the vents on top */
+.sa-band { left: 0; right: 0; bottom: 0; height: 15px; background: linear-gradient(180deg, #3a3833, #24221e); display: flex; align-items: center; justify-content: center; gap: 22px; font: 600 8px "IBM Plex Sans Condensed", sans-serif; letter-spacing: .32em; color: #d6d1c5; text-transform: uppercase; box-shadow: inset 0 1px 0 rgba(0,0,0,.4); }
+.sa-band::before { content: ""; position: absolute; left: 0; right: 0; top: -3px; height: 2px; background: #d83a2a; }
 .sa-vents { right: 30%; top: 6px; display: flex; gap: 5px; }
-.sa-vents i { width: 22px; height: 4px; border-radius: 2px; background: #3a3936; box-shadow: inset 0 1px 1px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.35); }
-.sa-print { left: 50%; bottom: 4px; transform: translateX(-50%); font: 400 8px var(--f-label); letter-spacing: .4em; color: rgba(27,26,24,.55); white-space: nowrap; }
-.sa-fili { width: 60px; height: 60px; }
-.sa-fili.tl { left: 4px; top: 4px; } .sa-fili.br { right: 4px; bottom: 4px; transform: rotate(180deg); }
-.sa-spark { width: 12px; height: 12px; animation: twinkle 3.2s ease-in-out infinite; will-change: transform, opacity; animation-delay: var(--d); }
-@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
-.lowmotion .sa-bubbles i, .lowmotion .sa-spark { animation: none; opacity: .7; }
-@media (max-width: 700px) { .sa-bullet, .sa-tag, .sa-stencil { display: none; } }
-.app[data-skin="surplus"] .rack { border-bottom: 7px solid; border-image: repeating-linear-gradient(-45deg, #d6b23a 0 9px, #1e2115 9px 18px) 1; }
+.sa-vents i { width: 22px; height: 4px; border-radius: 2px; background: #8f8a7e; box-shadow: inset 0 1px 1px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.5); }
+/* '80: the four coloured bands of the instrument rows */
+.sa-bands { left: 0; right: 0; bottom: 0; height: 13px; display: grid; grid-template-columns: repeat(4, 1fr); }
+.sa-bands i { display: grid; place-items: center; font: 600 7px "IBM Plex Sans Condensed", sans-serif; letter-spacing: .28em; color: #1a1714; text-transform: uppercase; font-style: normal; }
+.sa-bands i:nth-child(1) { background: #e2402a; } .sa-bands i:nth-child(2) { background: #f08a24; } .sa-bands i:nth-child(3) { background: #f2c43a; } .sa-bands i:nth-child(4) { background: #ece4cf; }
+.sa-script { right: 28%; top: 4px; font: 400 italic 15px "Righteous", sans-serif; color: #f08a24; letter-spacing: .02em; opacity: .9; }
+/* '79: the red strobe lamp and the row of strobe dots along the edge */
+.sa-strobe { right: 30%; top: 8px; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ffd2c8, #ff2f22 45%, #7a0a06 80%); box-shadow: 0 0 14px 3px rgba(255,47,34,.55), 0 0 0 3px #1d1e20, 0 0 0 4px #e4e6e8; }
+.sa-dots { left: 12px; right: 12px; bottom: 4px; height: 4px; background: radial-gradient(circle, #3a3c40 0 1.3px, transparent 1.7px) 0 0 / 9px 4px repeat-x; opacity: .7; }
+.sa-quartz { right: calc(30% + 28px); top: 10px; font: 600 9px "IBM Plex Sans Condensed", sans-serif; letter-spacing: .3em; color: #34363a; }
+/* '73: the brass plate and the strip of white tape where the engineer writes */
+.sa-brass { left: 50%; bottom: 3px; transform: translateX(-50%); white-space: nowrap; padding: 2px 16px; font: 400 8px var(--f-label); letter-spacing: .14em; text-transform: uppercase; color: #3a2a08; background: linear-gradient(180deg, #fff0c4, #d9b25a 55%, #9a7420); border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.5); line-height: 1.4; }
+.sa-scribble { right: 27%; top: 6px; padding: 1px 12px; background: #f4f1e8; color: #1d3a6a; font: 400 13px "Permanent Marker", cursive; transform: rotate(-1.5deg); box-shadow: 0 1px 2px rgba(0,0,0,.4); clip-path: polygon(1% 6%, 99% 0, 100% 94%, 0 100%); }
+@media (max-width: 700px) { .sa-big, .sa-script, .sa-quartz, .sa-scribble, .sa-strobe, .sa-vents { display: none; } }
 
 /* the header chooser: one body at a time, arrows to change it */
 .skins { display: grid; grid-template-columns: 22px minmax(0, 1fr) 22px 24px; gap: 4px; align-items: center; }
@@ -993,14 +943,14 @@ kbd { font-family: var(--f-label); font-size: 9px; border: 1px solid var(--line)
 .skinprev .spb { position: absolute; inset: 8px 10px; border-radius: 6px; background: var(--skin-bg); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 3px 8px rgba(0,0,0,.5); display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 4px; padding: 6px 7px; overflow: hidden; }
 .skinprev .spl { grid-column: 1 / -1; font-family: var(--f-logo); font-size: 11px; line-height: 1; color: var(--cream); white-space: nowrap; }
 .skinprev .spl span { color: var(--led); }
-.skinprev[data-skin="juke"] .spl { color: #c8102e; }
-.skinprev[data-skin="metro"] .spl { text-shadow: 1px 1px 0 #ff5fae; }
+.skinprev .spl { font-family: var(--f-logo); }
 .skinprev .sps { border-radius: 3px; background: var(--scr-bg); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); position: relative; overflow: hidden; }
 .skinprev .sps::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: 3px; height: 50%; background: repeating-linear-gradient(90deg, var(--scr-ink) 0 2px, transparent 2px 4px); opacity: .7; clip-path: polygon(0 60%, 15% 20%, 30% 50%, 45% 0, 60% 40%, 75% 10%, 90% 55%, 100% 30%, 100% 100%, 0 100%); }
 .skinprev .spp { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
 .skinprev .spp i { border-radius: 2px; background: radial-gradient(120% 90% at 50% 0%, var(--rubber-hi), var(--rubber)); box-shadow: 0 1px 0 rgba(0,0,0,.4); }
 .skinprev .spp i:first-child { background: var(--hA); box-shadow: 0 0 6px var(--hA); }
-.skinprev[data-skin="juke"] .spp i { border-radius: 50%; }
+.skinprev[data-skin="tr8"] .spp i:nth-child(2) { background: var(--hB); } .skinprev[data-skin="tr8"] .spp i:nth-child(3) { background: var(--hC); } .skinprev[data-skin="tr8"] .spp i:nth-child(4) { background: var(--hD); }
+.skinprev[data-skin="consolle"] .spb { border-left: 6px solid #6a3e1e; border-right: 6px solid #6a3e1e; }
 
 
 /* ---------- personalizzazione ---------- */
@@ -1792,7 +1742,7 @@ html.intro-on { overflow: hidden; }
           <nav class="custnav" id="custNav" aria-label="Categorie"></nav>
           <div class="custpanes">
             <section class="cpane" data-cat="scocca" aria-label="Scocca">
-              <h3>Scocca</h3><p class="cnote">La carrozzeria dello strumento: materiali veri (alluminio spazzolato, noce, vernice raggrinzita, bachelite, lacca e foglia d’oro), targhette e decorazioni.</p>
+              <h3>Scocca</h3><p class="cnote">Cinque macchine vere, ognuna coi suoi pad, manopole, schermo e targhette: il campionatore a 12 bit scuro, il campionatore grigio anni 80, la drum machine nera coi tasti colorati, il giradischi d’alluminio e la consolle da studio coi fianchi in noce.</p>
               <div class="scrow"><button class="key on" id="skinSurprise" type="button">🎲 Sorprendimi</button><span class="cnote small">una scocca a caso con tutto il suo look: schermo, indicatori, stanza, carattere e disco</span></div>
               <div class="cards" id="cSkin"></div>
             </section>
@@ -1875,6 +1825,8 @@ html.intro-on { overflow: hidden; }
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
+            <li><b>Scocche</b> (in alto a sinistra, o Personalizza): cinque macchine vere, ognuna col suo look completo. «Dodici bit» (campionatore scuro), «Campionatore ’88» (grigio coi pad di gomma), «Ritmo ’80» (drum machine coi tasti rosso, arancio, giallo e crema), «Giradischi ’79» (alluminio e strobo rosso), «Consolle ’73» (banco da studio coi fianchi in noce). Il dado ne sceglie una a caso.</li>
+            <li><b>Duplica</b> (in alto, sotto i tasti dei pattern): copia il pattern su qualsiasi altro, anche su quello prima, o scambiali di posto. Si può anche trascinare un tasto 1–8 sopra un altro: si scambiano (con Alt si copia). La canzone segue gli scambi.</li>
             <li><b>Passaggi automatici</b> (Sequencer, sotto il groove): ogni 2, 4 o 8 battute, o alla fine di ogni parte della canzone, il Mat.Tone suona da solo un passaggio: una <b>rullata</b> sul rullante e sui tom, uno <b>stop</b>, la battuta <b>senza cassa</b> né basso, o una <b>salita</b> che finisce sull’uno. «Misto» li alterna; «Uno adesso» lo fa alla prossima battuta.</li>
             <li><b>Effetto su un colpo</b> (Sequencer, nel menu dello step o nella corsia «Per step» → Effetto): <b>tape stop</b>, <b>al contrario</b>, <b>riverbero al contrario</b> che cresce fino al colpo, <b>eco lanciata</b> solo su quel colpo, <b>stutter</b>. Restano nel pattern.</li>
             <li><b>Per step</b> (Sequencer): ogni colpo può avere il suo <b>filtro</b>, <b>tono</b>, <b>volume</b>, <b>pan</b> e <b>coda</b>, come i «parameter lock» delle groovebox. Sotto la griglia c’è la corsia del pad scelto: scegli l’impostazione e disegnala trascinando sugli step (doppio clic: torna come il pad); oppure tasto destro su uno step e i cursori «Solo per questo step». Gli step con impostazioni proprie hanno un puntino.</li>
@@ -2858,7 +2810,7 @@ const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: 
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
-  warmth: 0.35, volume: 0.85, dust: 0.25, wow: 0.25, glue: 0.35, pump: 0, push: 1.5, mpreset: "boombap", human: 0, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "cantina", ver: 4, custom: null,
+  warmth: 0.35, volume: 0.85, dust: 0.25, wow: 0.25, glue: 0.35, pump: 0, push: 1.5, mpreset: "boombap", human: 0, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "sp12", ver: 4, custom: null,
   pmeta: defaultPmeta(), song: [{ p: 0, n: 3 }, { p: 1, n: 1 }], songOn: false, follow: true, nr: false, nrRate: 4,
   meq: { hp: 0, lo: 0, loF: 60, mid: 0, midF: 1600, hi: 0 }, eqPreset: "piatto", geq: [[0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0]], favs: [], recent: [],
   echo: { time: "8d", fb: 0.4, tone: 0.45, wear: 0.35, ret: 0.8 }, rev: { type: "stanza", ret: 0.8, tone: 0.7 }, chord: 1, strum: 0,
@@ -4953,7 +4905,8 @@ function build() {
   $("midiBtn").addEventListener("click", () => midi ? midiOff() : midiConnect());
   bindLearn();
   if (state.midi && location.protocol === "app:") midiConnect(true);   // the desktop app reconnects the controller by itself
-  for (let i = 0; i < NPAT; i++) { const b = el("button"); b.type = "button"; b.textContent = i + 1; b.setAttribute("aria-label", "Pattern " + (i + 1)); b.addEventListener("click", () => selectPattern(i)); $("pats").appendChild(b); }
+  for (let i = 0; i < NPAT; i++) { const b = el("button"); b.type = "button"; b.textContent = i + 1; b.setAttribute("aria-label", "Pattern " + (i + 1)); b.addEventListener("click", () => { if (!$("pats").dataset.noclick) selectPattern(i); }); $("pats").appendChild(b); }
+  bindPatDrag();
   BANKS.forEach((bk, bi) => { const b = el("button", null, '<span class="dot" style="background:var(--h' + bk.id + ')"></span>' + bk.id + ' <span class="nmfull">' + bk.name + "</span>"); b.type = "button"; b.addEventListener("click", () => selectBank(bi)); $("banks").appendChild(b); });
   PAD_KEYS.forEach((k, i) => {
     const b = el("button", "pad", '<canvas class="wv" width="160" height="34" aria-hidden="true"></canvas><span class="use"></span><div class="top"><span class="idx"></span><span class="ky">' + k + '</span></div><span class="nm"></span><span class="sub"></span>');
@@ -5075,10 +5028,79 @@ function selectPattern(i) {
   if (playing && i !== state.pattern) { queued = i; renderPatterns(); msg("PATTERN " + (i + 1) + " A FINE PATTERN"); return; }
   state.pattern = i; queued = null; edPage = 0; save(); renderAll(); msg("PATTERN " + (i + 1) + (pm().bars > 1 ? " · " + pm().bars + " BATTUTE" : ""));
 }
-function copyPattern() {
-  const to = (state.pattern + 1) % NPAT;
-  state.patterns[to] = JSON.parse(JSON.stringify(state.patterns[state.pattern])); state.pmeta[to] = Object.assign({}, pm());
-  save(); msg("PATTERN " + (state.pattern + 1) + " → " + (to + 1)); selectPattern(to);
+// copy a pattern onto any other slot, before or after it; or swap two of them, the song follows
+const patHas = i => state.patterns[i].some(bk => bk.some(p => p.some(Boolean)));
+function patCopy(from, to) {
+  if (from === to) return;
+  state.patterns[to] = JSON.parse(JSON.stringify(state.patterns[from])); state.pmeta[to] = Object.assign({}, pm(from));
+  save(); selectPattern(to); msg("PATTERN " + (from + 1) + " COPIATO SUL " + (to + 1) + " · CTRL+Z PER TORNARE");
+}
+function patSwap(a, b) {
+  if (a === b) return;
+  [state.patterns[a], state.patterns[b]] = [state.patterns[b], state.patterns[a]];
+  [state.pmeta[a], state.pmeta[b]] = [state.pmeta[b], state.pmeta[a]];
+  state.song.forEach(e => { if (e.p === a) e.p = b; else if (e.p === b) e.p = a; });   // the song keeps playing the same music
+  if (state.pattern === a) state.pattern = b; else if (state.pattern === b) state.pattern = a;
+  if (queued === a) queued = b; else if (queued === b) queued = a;
+  edPage = Math.min(edPage, pm().bars - 1);
+  save(); renderAll(); msg("PATTERN " + (a + 1) + " ⇄ " + (b + 1) + " · CTRL+Z PER TORNARE");
+}
+function copyPattern() { openPatPop(); }
+let patPop = null;
+function closePatPop() { if (patPop) { patPop.remove(); patPop = null; document.removeEventListener("pointerdown", patPopOutside, true); } }
+function patPopOutside(e) { if (patPop && !patPop.contains(e.target) && e.target !== $("copy")) closePatPop(); }
+function openPatPop() {
+  if (patPop) { closePatPop(); return; }
+  const cur = state.pattern, pop = el("div", "steppop patpop"); pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Copia o sposta il pattern");
+  pop.appendChild(el("div", "sphd", "Pattern " + (cur + 1) + (patHas(cur) ? "" : " · vuoto")));
+  const quick = el("div", "spacts patquick");
+  const prev = el("button", "key small", "← Copia nel " + ((cur + NPAT - 1) % NPAT + 1)), next = el("button", "key small", "Copia nel " + ((cur + 1) % NPAT + 1) + " →");
+  prev.type = next.type = "button";
+  prev.addEventListener("click", () => { closePatPop(); patCopy(cur, (cur + NPAT - 1) % NPAT); });
+  next.addEventListener("click", () => { closePatPop(); patCopy(cur, (cur + 1) % NPAT); });
+  quick.append(prev, next); pop.appendChild(quick);
+  const row = (label, fn) => {
+    const r = el("div", "sprow"); r.appendChild(el("span", "lbl", label));
+    const g = el("div", "patgrid");
+    for (let i = 0; i < NPAT; i++) {
+      const b = el("button", "patt" + (patHas(i) ? " has" : ""), String(i + 1)); b.type = "button"; b.disabled = i === cur;
+      b.title = (patHas(i) ? "Il pattern " + (i + 1) + " ha già delle note" : "Il pattern " + (i + 1) + " è vuoto");
+      b.addEventListener("click", () => { closePatPop(); fn(i); });
+      g.appendChild(b);
+    }
+    r.appendChild(g); pop.appendChild(r);
+  };
+  row("Copia su (anche indietro)", i => patCopy(cur, i));
+  row("Scambia di posto con", i => patSwap(cur, i));
+  pop.appendChild(el("p", "cnote small", "Puoi anche trascinare un pattern sopra un altro nei tasti 1–8: si scambiano di posto (tieni Alt per copiarlo). La canzone segue gli scambi; Ctrl+Z torna indietro."));
+  document.body.appendChild(pop);
+  const r = $("copy").getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(innerWidth - pw - 8, r.left + r.width / 2 - pw / 2)) + "px";
+  pop.style.top = (r.bottom + ph + 12 < innerHeight ? r.bottom + 8 : Math.max(8, r.top - ph - 8)) + "px";
+  patPop = pop;
+  setTimeout(() => document.addEventListener("pointerdown", patPopOutside, true), 0);
+}
+// drag a pattern key onto another: they swap places (with Alt: a copy)
+function bindPatDrag() {
+  const box = $("pats"); let drag = null;
+  box.addEventListener("pointerdown", e => { const b = e.target.closest("button"); if (!b || e.button) return; drag = { from: [...box.children].indexOf(b), x: e.clientX, y: e.clientY, on: false, el: b }; });
+  addEventListener("pointermove", e => {
+    if (!drag) return;
+    if (!drag.on && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 8) return;
+    if (!drag.on) { drag.on = true; drag.el.classList.add("dragging"); try { drag.el.setPointerCapture(e.pointerId); } catch (_) {} }
+    const t = document.elementFromPoint(e.clientX, e.clientY), tb = t && t.closest("#pats button");
+    [...box.children].forEach(x => x.classList.toggle("droptarget", x === tb && x !== drag.el));
+  });
+  addEventListener("pointerup", e => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    [...box.children].forEach(x => x.classList.remove("droptarget", "dragging"));
+    if (!d.on) return;
+    const t = document.elementFromPoint(e.clientX, e.clientY), tb = t && t.closest("#pats button"), to = tb ? [...box.children].indexOf(tb) : -1;
+    box.dataset.noclick = "1"; setTimeout(() => { delete box.dataset.noclick; }, 50);   // the drop is not a click
+    if (to < 0 || to === d.from) return;
+    if (e.altKey) { state.pattern = d.from; patCopy(d.from, to); } else patSwap(d.from, to);
+  });
 }
 const armedT = {};
 function armed(id, label, fn) {
@@ -6842,7 +6864,7 @@ const VINYLS = [["nero", "Nero classico", "#0c0c0c"], ["rosso", "Rosso trasparen
 const LABEL_COLORS = [["auto", "Del gruppo", null], ["#f2a43a", "Arancio"], ["#e8483a", "Rosso"], ["#2f6fd6", "Blu"], ["#f4efe3", "Crema"], ["#1d1c19", "Nero"], ["#49b36a", "Verde"], ["#b48ddb", "Lilla"]];
 const ROOMS = [["studio", "Studio insonorizzato", "#3a3029"], ["mattoni", "Muro di mattoni", "#7a3522"], ["graffiti", "Metro coi graffiti", "#ff7a2e"], ["dischi", "Negozio di dischi", "#b8352a"], ["neon", "Club al neon", "#ff3fa4"], ["citta", "Tetto in città, di notte", "#2b2a6a"]];
 const KNOB_STYLES = [["skin", "Della scocca", "Il cappuccio che va con la carrozzeria"], ["crema", "Crema vintage", "Bachelite chiara con la tacca scura"], ["alluminio", "Alluminio", "Metallo spazzolato e zigrinato"], ["becco", "Becco d’anatra", "Il puntatore nero degli amplificatori"], ["gomma", "Gomma colorata", "Prende il colore del gruppo"]];
-const FONTS = [["bungee", "Cantiere", "Bungee", 1], ["ops", "Militare", "Black Ops One", 1.04], ["marker", "Pennarello", "Permanent Marker", 1.08], ["righteous", "Anni 70", "Righteous", 1.12], ["vt", "Terminale", "VT323", 1.55], ["pixel", "Pixel", "Silkscreen", 0.92]];
+const FONTS = [["plex", "Industriale", "IBM Plex Sans Condensed", 1.05, 700], ["plexi", "Industriale corsivo", "IBM Plex Sans Condensed", 1.05, 700, "italic"], ["bungee", "Cantiere", "Bungee", 1], ["ops", "Militare", "Black Ops One", 1.04], ["marker", "Pennarello", "Permanent Marker", 1.08], ["righteous", "Anni 70", "Righteous", 1.12], ["vt", "Terminale", "VT323", 1.55], ["pixel", "Pixel", "Silkscreen", 0.92]];
 const STICKERS = [["boombap", "Boom bap"], ["tag", "Tag a spray"], ["giri", "33⅓ giri"], ["nastro", "Nastro adesivo"], ["corona", "Corona"], ["cassetta", "Cassetta"]];
 const SHAPES = [["rettangolo", "Rettangolo", "Il classico, spigoli vivi"], ["arrotondato", "Arrotondato", "Angoli morbidi come un telefono"], ["capsula", "Capsula", "Cornice tutta tonda ai lati"], ["tv", "Televisore", "Vetro bombato e due manopole"], ["inclinato", "Inclinato", "Leggermente piegato verso di te"], ["esagono", "Esagono", "Lati tagliati, stile fantascienza anni 80"], ["rack", "Rack con viti", "Cornice di metallo avvitata"]];
 const RACKS = [["classica", "Classica", ["logo", "lcd", "vu", "tr"]], ["specchio", "A specchio", ["tr", "vu", "lcd", "logo"]], ["schermo", "Schermo in testa", ["lcd", "logo", "vu", "tr"]]];
@@ -6864,6 +6886,7 @@ function cardButton(host, value, name, note, preview, onPick) {
 const mkCanvas = (w, h) => { const c = el("canvas"); c.width = w; c.height = h; return c; };
 // knob caps, shared by the real knobs and the previews (116 × 116, value angle a)
 function drawKnobCap(c, style, a) {
+  if (style === "skin" && SKIN_KNOB[state.skin]) style = SKIN_KNOB[state.skin];   // each machine has its own knobs
   const cx = 58, cy = 58, line = (r0, r1, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); c.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); c.stroke(); };
   c.lineCap = "round";
   if (style === "becco") {
@@ -7023,6 +7046,7 @@ function applyCustom() {
   $("lcdName").textContent = "Schermo · " + lt[1];
   const f = FONTS.find(x => x[0] === C.font) || FONTS[0];
   app.setProperty("--f-brand", '"' + f[2] + '", "Arial Black", Impact, sans-serif'); app.setProperty("--brand-scale", f[3]);
+  app.setProperty("--brand-weight", f[4] || 400); app.setProperty("--brand-style", f[5] || "normal");
   document.body.dataset.room = C.room; if (typeof paintScene === "function" && SCENE.ready) paintScene();
   document.documentElement.style.setProperty("--wear", (C.wear / 100).toFixed(2));
   // logo: the first "·" (or ".") becomes the dot that lights up on the kick
@@ -7090,15 +7114,15 @@ function tick() {
 }
 let beatLightV = 0, kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a";
 const SKINS = [
-  ["cantina", "Cantina", "SP-88 · CAMPIONATORE DA CANTINA", "#2a2620", "SER. Nº 0088 · 220V~ 50HZ"],
-  ["hifi", "Hi-Fi ’76", "STEREO GROOVE CENTER · MOD. 76", "#c9c5bb", "HIGH FIDELITY · 2×40W"],
-  ["surplus", "Surplus ’68", "APPARATO RITMICO M-68 · USO CAMPO", "#4a5134", "LOTTO 0417 · NON APRIRE"],
-  ["metro", "Metro ’89", "LINEA 89 · NON SPORGERSI", "#ff5fae", "NO WAVE CREW"],
-  ["boombox", "Boombox ’84", "GHETTO BLASTER · DOPPIA CASSETTA", "#b9bec4", "SUPER BASS · AUTO REVERSE"],
-  ["juke", "Juke ’57", "SELEZIONATORE A 48 DISCHI", "#c8102e", "78 · 45 · 33 GIRI"],
-  ["studio", "Studio ’88", "CENTRO RITMICO 88 · 12 BIT", "#a9a59c", "MIDI IN · OUT · THRU"],
-  ["oro", "Oro ’99", "EDIZIONE PLATINO · MILLENNIUM", "#d4a93b", "24 CARATI · Nº 099/500"],
+  ["sp12", "Dodici bit", "PERCUSSIONI CAMPIONATE · 12 BIT · 26 KHZ", "#2b2d31", "SER. Nº 1200 · 220V~ 50HZ"],
+  ["mpc", "Campionatore ’88", "CAMPIONATORE RITMICO · MOD. 88", "#c9c4b8", "12 BIT · 40 KHZ · MIDI"],
+  ["tr8", "Ritmo ’80", "COMPOSITORE RITMICO · 16 PASSI", "#e2402a", "ANALOGICO · USCITE SEPARATE"],
+  ["tt12", "Giradischi ’79", "TRAZIONE DIRETTA · AL QUARZO · 33/45", "#b9bcbf", "PITCH ±8% · QUARZO"],
+  ["consolle", "Consolle ’73", "BANCO DI MISSAGGIO · CLASSE A", "#4a5560", "Nº 073 · TRASFORMATORI"],
 ];
+// the bodies of earlier versions, and the machine each one became
+const SKIN_MOVED = { cantina: "sp12", surplus: "sp12", hifi: "consolle", oro: "consolle", studio: "mpc", boombox: "tt12", juke: "tr8", metro: "tr8" };
+const SKIN_KNOB = { tr8: "crema", tt12: "alluminio" };
 // the materials of the bodies: little tiles of SVG noise, drawn once and used as CSS backgrounds
 function makeSkinTextures() {
   const tile = (w, h, body) => 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' + body + "</svg>") + '")';
@@ -7133,25 +7157,19 @@ function makeSkinTextures() {
 const SPARK = '<svg viewBox="0 0 12 12"><path d="M6 0 7.2 4.8 12 6 7.2 7.2 6 12 4.8 7.2 0 6 4.8 4.8Z" fill="#fff2c4"/></svg>';
 const FILI = '<svg viewBox="0 0 60 60" fill="none" stroke="#d4a93b" stroke-width="1.4" stroke-linecap="round"><path d="M3 57V12Q3 3 12 3h45"/><path d="M8 50V16q0-8 8-8h34" opacity=".55"/><path d="M14 14q10 0 10 10t-8 4 2-8 10-2" /><circle cx="3" cy="57" r="1.8" fill="#d4a93b"/><circle cx="57" cy="3" r="1.8" fill="#d4a93b"/></svg>';
 const SKIN_ART = {
-  cantina: '<span class="sa-stencil">SP-88</span><span class="sa-tape">non toccare · beat</span>',
-  hifi: '<span class="sa-chrome"></span><span class="sa-emblem">STEREO</span>',
-  surplus: '<span class="sa-plate">App. ritmico M-68 · Matr. 0417 · Genio</span>',
-  metro: '<span class="sa-tag">bomb</span><span class="sa-bullet">89</span>',
-  boombox: '<span class="sa-stripes"></span><span class="sa-grilleL"></span><span class="sa-grilleR"></span>',
-  juke: '<span class="sa-bubbles">' + ["#ff3b55", "#ffb347", "#7fd8c4", "#ffd23f", "#5b7fd6", "#ff3b55", "#ffb347", "#7fd8c4", "#ffd23f", "#5b7fd6", "#ff3b55", "#ffb347"].map((c, k) => '<i style="--c:' + c + ";--k:" + k + '"></i>').join("") + "</span>",
-  studio: '<span class="sa-vents"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="sa-print">CAMPIONATORE RITMICO DIGITALE</span>',
-  oro: '<span class="sa-fili tl">' + FILI + '</span><span class="sa-fili br">' + FILI + "</span>" + [[18, 30, 0], [46, 70, 1.1], [64, 22, 2.2], [86, 64, .6]].map(([x, y, d]) => '<span class="sa-spark" style="left:' + x + "%;top:" + y + "%;--d:-" + d + 's">' + SPARK + "</span>").join(""),
+  sp12: '<span class="sa-big">12 BIT</span><span class="sa-twin"></span>',
+  mpc: '<span class="sa-vents"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="sa-band"><b>Campionatore</b><b>Sequencer MIDI</b><b>12 bit</b></span>',
+  tr8: '<span class="sa-script">Compositore ritmico</span><span class="sa-bands"><i>Strumento</i><i>Ritmo</i><i>Accento</i><i>Volume</i></span>',
+  tt12: '<span class="sa-quartz">QUARZO</span><span class="sa-strobe"></span><span class="sa-dots"></span>',
+  consolle: '<span class="sa-scribble">mix finale</span><span class="sa-brass">Banco Nº 073 · Classe A · Trasformatori</span>',
 };
 // a whole look that goes with each body: screen, meters, room, lettering and record
 const SKIN_LOOKS = {
-  cantina: { lcd: "oled", meter: "ago", room: "mattoni", font: "bungee", vinyl: "nero" },
-  hifi: { lcd: "vfd", meter: "notte", room: "dischi", font: "righteous", vinyl: "nero" },
-  surplus: { lcd: "lcd", meter: "occhio", room: "studio", font: "ops", vinyl: "nero" },
-  metro: { lcd: "amoled", meter: "led", room: "graffiti", font: "marker", vinyl: "splatter" },
-  boombox: { lcd: "stn", meter: "led", room: "citta", font: "bungee", vinyl: "marmo" },
-  juke: { lcd: "plasma", meter: "ago", room: "dischi", font: "righteous", vinyl: "rosso" },
-  studio: { lcd: "lcd", meter: "vfd", room: "studio", font: "pixel", vinyl: "bianco" },
-  oro: { lcd: "crt", meter: "notte", room: "neon", font: "righteous", vinyl: "oro" },
+  sp12: { lcd: "plasma", meter: "led", room: "mattoni", font: "plex", vinyl: "nero" },
+  mpc: { lcd: "lcd", meter: "led", room: "studio", font: "plexi", vinyl: "nero" },
+  tr8: { lcd: "plasma", meter: "led", room: "citta", font: "plexi", vinyl: "rosso" },
+  tt12: { lcd: "vfd", meter: "notte", room: "dischi", font: "plex", vinyl: "nero" },
+  consolle: { lcd: "vfd", meter: "ago", room: "studio", font: "righteous", vinyl: "nero" },
 };
 function stepSkin(d) {
   const i = SKINS.findIndex(x => x[0] === state.skin);
@@ -7191,6 +7209,11 @@ function readSkin() {
   LCDPAL = null;
 }
 function applySkin(id) {
+  if (SKIN_MOVED[id]) {   // a body that is no more: its machine, with the whole look that goes with it
+    id = SKIN_MOVED[id];
+    if (state.custom) Object.assign(state.custom, SKIN_LOOKS[id], { pad: "skin", knob: "skin", screen: "auto", led: "auto" });
+    setTimeout(() => { if (typeof applyCustom === "function") { applyCustom(); save(); } }, 0);
+  }
   const sk = SKINS.find(x => x[0] === id) || SKINS[0];
   state.skin = sk[0]; $("app").dataset.skin = sk[0]; $("skinTag").textContent = sk[2];
   const nm = $("skName"); if (nm) { nm.querySelector("i").style.background = sk[3]; nm.querySelector("span").textContent = sk[1]; nm.setAttribute("aria-label", "Scocca: " + sk[1] + ". Passa alla successiva"); }
