@@ -341,6 +341,12 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .formknobs .knob canvas { width: 48px; height: 48px; }
 .formtog { display: grid; gap: 6px; justify-items: stretch; }
 .formch { display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+.warprow { display: grid; gap: 6px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.warpctl { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.warpbpm { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-label); font-size: 10px; text-transform: uppercase; color: var(--ink-2, inherit); }
+.warpbpm input { width: 64px; background: var(--well); color: var(--well-text); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; font: inherit; font-size: 13px; }
+.warpctl .seg button { height: 26px; padding: 0 8px; }
+.warpinfo { font-family: var(--f-lcd, monospace); font-size: 15px; color: var(--led); min-height: 1.2em; }
 .formch select { background: var(--well); color: var(--well-text); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px; }
 .fxrack { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px 18px; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
 .fxbox { display: grid; gap: 10px; align-content: start; min-width: 0; }
@@ -1478,6 +1484,18 @@ html.intro-on { overflow: hidden; }
                 <label class="lbl formch" title="I pad dello stesso gruppo choke si zittiscono a vicenda, come charleston aperto e chiuso">Choke <select id="formCh" aria-label="Gruppo choke"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
               </div>
             </div>
+            <div class="warprow" id="warpRow" hidden>
+              <span class="lbl">Loop a tempo</span>
+              <div class="warpctl">
+                <button class="key small" id="warpOn" type="button" aria-pressed="false" title="Il loop si allunga o si accorcia per stare al BPM del progetto, senza cambiare tono"><span class="ledi"></span>Segue il tempo</button>
+                <label class="warpbpm" title="Il tempo a cui è stato registrato il loop">BPM del loop <input id="warpBpm" type="number" min="40" max="250" step="1" inputmode="numeric" aria-label="BPM del loop"></label>
+                <button class="key small" id="warpHalf" type="button" title="Metà tempo">½</button>
+                <button class="key small" id="warpDouble" type="button" title="Doppio tempo">×2</button>
+                <button class="key small" id="warpGuess" type="button" title="Lo stima dai colpi del loop">Stima</button>
+                <div class="seg" id="warpMode" role="group" aria-label="Come si allunga" title="A fette: taglia sui colpi, perfetto per i break. Elastico: per pad, voci e suoni lunghi"></div>
+              </div>
+              <span class="warpinfo" id="warpInfo"></span>
+            </div>
           </div>
         </section>
         <section class="unit fxunit" aria-label="Effetti al volo">
@@ -1763,6 +1781,7 @@ html.intro-on { overflow: hidden; }
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
             <li><b>Per step</b> (Sequencer): ogni colpo può avere il suo <b>filtro</b>, <b>tono</b>, <b>volume</b>, <b>pan</b> e <b>coda</b>, come i «parameter lock» delle groovebox. Sotto la griglia c’è la corsia del pad scelto: scegli l’impostazione e disegnala trascinando sugli step (doppio clic: torna come il pad); oppure tasto destro su uno step e i cursori «Solo per questo step». Gli step con impostazioni proprie hanno un puntino.</li>
+            <li><b>Loop a tempo</b> (Suona, sotto la forma del suono): un loop o un break campionato segue il BPM del progetto senza cambiare tono. Il tempo del loop lo stima da solo (o lo legge dal nome, «· 92 BPM»); se sbaglia del doppio usa <b>½</b> o <b>×2</b>. <b>A fette</b> taglia sui colpi come i file REX, ed è il migliore per i break; <b>Elastico</b> va per pad, voci e suoni lunghi. Con il tono del pad cambi la nota e il loop resta a tempo.</li>
             <li><b>Basso 808</b> (Sequencer → Melodia): trascina una nota verso destra per allungarla; col tasto destro (o tenendo premuto) scegli lunghezza e <b>glissato</b>, così la nota prima scivola in quella nuova come nella trap. <b>🎲 Idea 808</b> scrive una linea sulla cassa del gruppo A e, se il pad non ha un suono intonato, ci mette l’808. In libreria, categoria 808: lungo pulito, sporco e corto.</li>
             <li><b>🎬 Video per i social</b> (Mix o Voce): verticale per TikTok, Reels e Shorts, quadrato o orizzontale. Tre stili: <b>Strumento</b> (schermo, lancette e pad che si accendono), <b>Disco</b> (il vinile che gira con lo spettro intorno) e <b>Testo</b> (le barre grandi, a tempo). Titolo, nome d’arte, effetti FX e testo a tempo; il video si registra mentre suona e si salva in MP4.</li>
             <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
@@ -2794,7 +2813,7 @@ function fixPatterns() {
 }
 fixPatterns();
 let saveTimer = 0;
-function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }, 400); histTouch(); }
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } warpRefresh(); }, 400); histTouch(); }
 // undo / redo of the music (pads, patterns, tempo, swing, mutes): a burst of changes (a knob turned) is one step
 const HIST = { past: [], future: [], cur: null, burst: false, timer: 0, quiet: false };
 const histSnap = () => JSON.stringify([state.banks, state.patterns, state.bpm, state.swing, state.mutes, state.human, state.pmeta, state.song]);
@@ -3396,7 +3415,8 @@ function playBuffer(soundId, pr, t, vel, note, tag, dur, lk) {
   const rate = Math.pow(2, (root == null ? semis : s.home + semis - root) / 12) * (fxActive.has("lofi") ? 0.94 : 1);
   // the pad's form: crunched or reversed copy, start and end, attack, low-pass
   const f = formOf(pr);
-  if (f.sp || f.rv) buf = shapedBuf(soundId + ":" + root, buf, f.sp, f.rv);
+  if (s.kind !== "multi" && (pr.warp || pr.wsnd !== pr.sound)) buf = warpPlay(soundId, buf, pr, rate / (fxActive.has("lofi") ? 0.94 : 1));   // a loop that follows the tempo
+  if (f.sp || f.rv) buf = shapedBuf(soundId + ":" + root + (buf._wk || ""), buf, f.sp, f.rv);
   const D = buf.duration, off = (f.rv ? 1 - f.en : f.st) * D, seg = Math.max(0.005, (f.en - f.st) * D);
   const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
   const g = ctx.createGain(), level = pr.vol * vel * (lk && lk.vol != null ? lk.vol : 1), full = seg / rate;
@@ -3867,8 +3887,10 @@ function chopAuto() {
 }
 // the tempo of a loop: the sound lasts 1, 2, 4 or 8 bars (plus at most a short tail) and its hits fall on the sixteenths;
 // a sound without a rhythm (a note, a voice) has none
-function loopBpm() {
-  const rate = Math.pow(2, chop.pitch / 12), dur = chop.d.length / chop.sr / rate, on = chop.onsets.slice(0, 12).map(o => o.pos / chop.sr / rate);   // the strongest hits: kicks and snares, rarely swung
+function loopBpm() { return tempoOf(chop.d.length, chop.sr, chop.onsets, Math.pow(2, chop.pitch / 12), state.bpm); }
+// bars and tempo of a loop: the tempo whose sixteenths the strongest hits line up on best
+function tempoOf(n, sr, onsets, rate, near) {
+  const dur = n / sr / rate, on = onsets.slice(0, 12).map(o => o.pos / sr / rate);   // the strongest hits: kicks and snares, rarely swung
   if (dur < 1 || on.length < 3) return null;
   let best = null;
   for (const bars of [1, 2, 4, 8]) {
@@ -3878,8 +3900,8 @@ function loopBpm() {
       // how well the hits line up on the sixteenths, whatever the small constant offset of the cuts
       const st = 15 / bpm; let cs = 0, sn = 0;
       for (const t of on) { cs += Math.cos(2 * Math.PI * t / st); sn += Math.sin(2 * Math.PI * t / st); }
-      const err = 1 - Math.hypot(cs, sn) / on.length, tail = dur - 240 * bars / bpm, score = err + Math.abs(bpm - state.bpm) / 4000 + 0.15 * tail / dur;
-      if (!best || score < best.score) best = { bars, bpm, score, err, len: Math.min(chop.d.length, Math.round(bars * 240 / bpm * rate * chop.sr)) };
+      const err = 1 - Math.hypot(cs, sn) / on.length, tail = dur - 240 * bars / bpm, score = err + Math.abs(bpm - near) / 4000 + 0.15 * tail / dur + Math.max(0, 72 - bpm, bpm - 170) / 300;   // half or double time: the usual tempo wins
+      if (!best || score < best.score) best = { bars, bpm, score, err, len: Math.min(n, Math.round(bars * 240 / bpm * rate * sr)) };
     }
   }
   return best && best.err < 0.25 ? best : null;
@@ -4001,6 +4023,7 @@ function chopUse() {
     for (let k = 0; k < fo; k++) o[n - 1 - k] *= k / fo;
     const id = addUserSound(name + " · " + (i + 1), "Taglio di " + chop.name, out), q = chopPad(i);
     const pr = state.banks[q.b][q.p]; pr.sound = id; pr.gate = 0; pr.pitch = chop.pitch; resetForm(pr);
+    if (cuts.length === 1 && chop.est) Object.assign(pr, { wsnd: id, warp: true, wbpm: Math.round(chop.est.bpm / Math.pow(2, chop.pitch / 12) * 10) / 10, wmode: chop.onsets.length >= 4 ? "fette" : "elastico" });
     userSave(id, out);
     return a / sr;
   });
@@ -4519,7 +4542,7 @@ function build() {
   $("songAdd").addEventListener("click", songAdd);
   $("songRec").addEventListener("click", songRec);
   $("songClear").addEventListener("click", () => armed("songClear", "Sicuro?", () => { state.song = []; state.songOn = false; songFrom = 0; save(); renderSong(); msg("CANZONE SVUOTATA"); }));
-  bindChop(); bindForm(); buildPadColors();
+  bindChop(); bindForm(); bindWarp(); buildPadColors();
   CHORDS.forEach(([v, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = v; b.addEventListener("click", () => { state.chord = v; save(); renderChords(); msg(v > 1 ? "ACCORDI: " + name.toUpperCase() + " SULLA SCALA" : "UNA NOTA PER PAD"); }); $("chordSeg").appendChild(b); });
   $("strum").addEventListener("change", e => { state.strum = +e.target.value; save(); });
   GROOVE_STYLES.forEach(([id, name]) => $("ideaSel").appendChild(new Option(name, id)));
@@ -4662,7 +4685,7 @@ function armed(id, label, fn) {
   clearTimeout(armedT[id]); armedT[id] = 0; b.textContent = b.dataset.orig; b.classList.remove("on"); fn();
 }
 function toggleRec() { recording = !recording; renderTransport(); msg(recording ? (playing ? "REC: SUONA SUI PAD" : "REC PRONTO: PREMI PLAY") : "REC SPENTO"); }
-function setBpm(v) { state.bpm = Math.max(50, Math.min(200, Math.round(v))); $("bpmNum").textContent = state.bpm; $("vBpm").textContent = pad3(state.bpm); updateDelayTime(); deck.send({ set: { six: sixteenth() } }); save(); renderSong(); }
+function setBpm(v) { state.bpm = Math.max(50, Math.min(200, Math.round(v))); $("bpmNum").textContent = state.bpm; $("vBpm").textContent = pad3(state.bpm); updateDelayTime(); deck.send({ set: { six: sixteenth() } }); save(); renderSong(); warpRefresh(); }
 let taps = [];
 function tapTempo() {
   const now = performance.now(); taps = taps.filter(t => now - t < 2500); taps.push(now);
@@ -5023,7 +5046,7 @@ function renderInspector() {
   $("insChips").innerHTML = s ? '<span class="chip">' + esc(s.cat) + "</span>" + (s.root != null ? '<span class="chip tuned">intonato · ' + noteName(s.home) + "</span>" : '<span class="chip">non intonato</span>') + '<span class="chip">' + esc(s.src) + "</span>" : "";
   knobs.forEach(k => k.draw());
   [...$("gate").children].forEach((b, i) => b.setAttribute("aria-pressed", GATES[i][1] === pr.gate));
-  renderForm(); renderPadColor();
+  renderForm(); renderPadColor(); renderWarp();
 }
 function renderEditorHead() {
   const roll = state.view === "roll", s = curSound();
@@ -6830,12 +6853,182 @@ function shapedBuf(key, buf, sp, rv) {
   return out;
 }
 const cutHz = c => 120 * Math.pow(2, c * 7.4);   // 120 Hz … 20 kHz
+
+/* ---------- loop a tempo: un loop campionato segue il BPM del progetto senza cambiare tono ---------- */
+const WARP_MODES = [["fette", "A fette"], ["elastico", "Elastico"]];
+const warpCache = new Map(), warpLast = new Map(), warpEst = new Map(), warpJobs = [], hitsMemo = new WeakMap();
+let warpBusy = 0, warpTimer = 0;
+const hitsOf = buf => { if (!hitsMemo.has(buf)) hitsMemo.set(buf, findOnsets(monoOf(buf), buf.sampleRate)); return hitsMemo.get(buf); };
+const monoOf = buf => { const n = buf.length, ch = buf.numberOfChannels, d = new Float32Array(n); for (let c = 0; c < ch; c++) { const x = buf.getChannelData(c); for (let i = 0; i < n; i++) d[i] += x[i] / ch; } return d; };
+// what the pad knows about its loop: its settings when they belong to this sound, else the tempo written in the sound's name
+function warpOf(pr) {
+  if (pr.wsnd === pr.sound) return { on: !!pr.warp, bpm: pr.wbpm || 0, mode: pr.wmode || "fette", auto: false };
+  const s = SOUNDS.get(pr.sound), m = s && s.kind !== "multi" && s.root == null && /(\d{2,3})\s*BPM/i.exec(s.name || "");
+  return { on: !!m, bpm: m ? +m[1] : 0, mode: "fette", auto: true };
+}
+// the tempo of a loop as it is recorded: from its name, else from where its hits fall
+function warpGuess(id, buf) {
+  const s = SOUNDS.get(id), m = s && /(\d{2,3})\s*BPM/i.exec(s.name || "");
+  if (m) return { bpm: +m[1], hits: 99 };
+  if (warpEst.has(id)) return warpEst.get(id);
+  const on = hitsOf(buf), e = tempoOf(buf.length, buf.sampleRate, on, 1, state.bpm);
+  const r = e ? { bpm: e.bpm, bars: e.bars, hits: on.length } : null;
+  warpEst.set(id, r);
+  return r;
+}
+// cuts a loop at its hits and moves each slice to its new place, so the hits stay sharp (like the REX files)
+function warpSlices(buf, k) {
+  const sr = buf.sampleRate, L = buf.length, M = Math.max(1, Math.round(L * k)), ch = buf.numberOfChannels;
+  const pos = hitsOf(buf).map(o => o.pos).sort((a, b) => a - b), cut = [0];
+  for (const p of pos) if (p - cut[cut.length - 1] > sr * 0.03) cut.push(p);
+  if (cut.length < 3) return null;   // nothing to cut: stretched instead
+  const out = new AudioBuffer({ numberOfChannels: ch, length: M, sampleRate: sr }), fo = Math.round(sr * 0.005);
+  for (let c = 0; c < ch; c++) {
+    const x = buf.getChannelData(c), y = out.getChannelData(c);
+    for (let i = 0; i < cut.length; i++) {
+      const a = cut[i], z = i + 1 < cut.length ? cut[i + 1] : L, A = Math.round(a * k), Z = Math.min(M, i + 1 < cut.length ? Math.round(z * k) : M);
+      const n = Math.min(z - a, Z - A), f = Math.min(fo, n);
+      for (let j = 0; j < n; j++) y[A + j] = x[a + j];
+      if (n < z - a || k > 1.001) for (let j = 0; j < f; j++) y[A + n - 1 - j] *= j / f;   // cut short, or ends before the gap: no click
+    }
+  }
+  return out;
+}
+// overlap and add, each grain where it matches the last one best (WSOLA): pads, voices and anything without clear hits
+function* warpElastic(buf, k) {
+  const sr = buf.sampleRate, L = buf.length, M = Math.max(1, Math.round(L * k)), ch = buf.numberOfChannels;
+  const N = 1024, Hs = 512, Ha = Hs / k, T = 256, D = 4, d = monoOf(buf);
+  const out = new AudioBuffer({ numberOfChannels: ch, length: M, sampleRate: sr }), wsum = new Float32Array(M + N);
+  const win = new Float32Array(N); for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / N);
+  const xs = [], ys = []; for (let c = 0; c < ch; c++) { xs.push(buf.getChannelData(c)); ys.push(out.getChannelData(c)); }
+  const at = i => i >= 0 && i < L ? d[i] : 0;
+  let prev = 0;
+  yield;
+  for (let m = 0, o = 0; o < M; m++, o += Hs) {
+    const nom = Math.round(m * Ha);
+    let best = nom;
+    if (m > 0) {
+      // the grain that best continues the previous one: coarse search on every 4th sample, then to the sample
+      const nat = prev + Hs; let bs = -Infinity;
+      for (let dl = -T; dl <= T; dl += D) { const p = nom + dl; let s = 0; for (let j = 0; j < N; j += D) s += at(p + j) * at(nat + j); if (s > bs) { bs = s; best = p; } }
+      const c0 = best; bs = -Infinity;
+      for (let dl = -D + 1; dl < D; dl++) { const p = c0 + dl; let s = 0; for (let j = 0; j < N; j += 2) s += at(p + j) * at(nat + j); if (s > bs) { bs = s; best = p; } }
+    }
+    for (let c = 0; c < ch; c++) { const x = xs[c], y = ys[c]; for (let j = 0; j < N && o + j < M; j++) { const i = best + j; if (i >= 0 && i < L) y[o + j] += x[i] * win[j]; } }
+    for (let j = 0; j < N; j++) wsum[o + j] += win[j];
+    prev = best;
+    if (m % 6 === 5) yield;   // a breath for the clock
+  }
+  for (let c = 0; c < ch; c++) { const y = ys[c]; for (let i = 0; i < M; i++) { if (wsum[i] > 0.05) y[i] /= wsum[i]; if ((i & 65535) === 65535) yield; } }
+  // the first and last millisecond-or-so smoothed, where the window had less to lean on
+  const e = Math.min(M, Math.round(sr * 0.003));
+  for (let c = 0; c < ch; c++) { const y = ys[c]; for (let i = 0; i < e; i++) y[M - 1 - i] *= i / e; }
+  return out;
+}
+const warpKey = (id, k, mode) => id + "|" + k.toFixed(3) + "|" + mode;
+function* warpMake(id, buf, k, mode) {
+  const out = (mode === "fette" && warpSlices(buf, k)) || (yield* warpElastic(buf, k));
+  out._wk = "|w" + k.toFixed(3) + mode;
+  if (warpCache.size > 48) warpCache.clear();
+  warpCache.set(warpKey(id, k, mode), { src: buf, out });
+  warpLast.set(id + "|" + mode, { src: buf, out });
+  return out;
+}
+// asks for a stretched copy; made one at a time between the beats, so the clock never stumbles
+function warpWant(id, buf, k, mode) {
+  const c = warpCache.get(warpKey(id, k, mode));
+  if (c && c.src === buf) return c.out;
+  if (!warpJobs.some(j => j.id === id && j.k === k && j.mode === mode)) warpJobs.push({ id, buf, k, mode });
+  if (!warpBusy) warpBusy = setTimeout(warpRun, 0);
+  return null;
+}
+// a few milliseconds of work at a time: the scheduler looks only 100 ms ahead
+function warpRun() {
+  warpBusy = 0;
+  const j = warpJobs[0]; if (!j) return;
+  const c = warpCache.get(warpKey(j.id, j.k, j.mode));
+  if (c && c.src === j.buf) warpJobs.shift();
+  else {
+    j.gen = j.gen || warpMake(j.id, j.buf, j.k, j.mode);
+    const t0 = performance.now();
+    while (performance.now() - t0 < 8) if (j.gen.next().done) { warpJobs.shift(); if (curPr().sound === j.id) renderWarp(); break; }
+  }
+  if (warpJobs.length) warpBusy = setTimeout(warpRun, 12);
+}
+const warpNow = (id, buf, k, mode) => { const g = warpMake(id, buf, k, mode); let r; while (!(r = g.next()).done); return r.value; };
+// the stretch for this pad and pitch: the loop always lasts its bars at the project tempo, the pitch only changes the note
+function warpRatio(pr, w, rate) { const k = Math.round(w.bpm * rate / state.bpm * 1000) / 1000; return Math.abs(k - 1) < 0.002 ? 1 : Math.max(0.25, Math.min(4, k)); }
+function warpPlay(id, buf, pr, rate) {
+  const w = warpOf(pr);
+  if (!w.on || !w.bpm || buf.duration < 0.5) return buf;
+  const k = warpRatio(pr, w, rate);
+  if (k === 1) return buf;
+  const got = warpWant(id, buf, k, w.mode);
+  if (got) return got;
+  const last = warpLast.get(id + "|" + w.mode);   // while the new one is made, the last one made
+  return last && last.src === buf ? last.out : buf;
+}
+// the pads that follow the tempo get their copies ready for the new tempo
+function warpRefresh() {
+  clearTimeout(warpTimer);
+  warpTimer = setTimeout(() => {
+    if (!ctx) return;
+    for (const bank of state.banks) for (const pr of bank) {
+      const w = warpOf(pr), buf = cache.get(pr.sound), s = SOUNDS.get(pr.sound);
+      if (!w.on || !w.bpm || !buf || !s || s.kind === "multi") continue;
+      const k = warpRatio(pr, w, Math.pow(2, pr.pitch / 12));
+      if (k !== 1) warpWant(pr.sound, buf, k, w.mode);
+    }
+    if (!$("warpRow").hidden) renderWarp();
+  }, 250);
+}
+function warpSet(patch, hear) {
+  const pr = curPr(), w = warpOf(pr);
+  Object.assign(pr, { wsnd: pr.sound, warp: w.on, wbpm: w.bpm, wmode: w.mode }, patch);
+  save(); renderWarp(); warpRefresh();
+  if (hear && initAudio() && !playing) setTimeout(() => trigger(state.bank, state.pad, ctx.currentTime), 320);
+}
+function warpGuessPad(quiet) {
+  const pr = curPr(), buf = cache.get(pr.sound);
+  if (!buf) return null;
+  const g = warpGuess(pr.sound, buf);
+  if (!g) { if (!quiet) msg("NON TROVO IL TEMPO DI QUESTO SUONO: SCRIVILO TU"); return null; }
+  warpSet({ wbpm: g.bpm, wmode: pr.wsnd === pr.sound && pr.wmode ? pr.wmode : g.hits >= 4 ? "fette" : "elastico" });
+  if (!quiet) msg("TEMPO DEL LOOP: " + g.bpm + " BPM");
+  return g;
+}
+function renderWarp() {
+  const pr = curPr(), buf = cache.get(pr.sound), s = SOUNDS.get(pr.sound), row = $("warpRow");
+  const can = !!(buf && s && s.kind !== "multi" && buf.duration >= 1);
+  row.hidden = !can; if (!can) return;
+  const w = warpOf(pr), on = w.on && w.bpm > 0;
+  $("warpOn").classList.toggle("on", on); $("warpOn").setAttribute("aria-pressed", on);
+  if (document.activeElement !== $("warpBpm")) $("warpBpm").value = w.bpm ? String(w.bpm) : "";
+  [...$("warpMode").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.m === w.mode));
+  const rate = Math.pow(2, pr.pitch / 12), dur = buf.duration / rate, bars = w.bpm ? Math.round(dur * w.bpm * rate / 240 * 4) / 4 : 0;
+  const bt = bars ? (bars === 1 ? "1 battuta" : String(bars).replace(".", ",") + " battute") : "";
+  $("warpInfo").textContent = !w.bpm ? "Tocca «Stima» o scrivi il BPM del loop"
+    : on ? bt + " a " + w.bpm + " BPM → " + state.bpm + (Math.abs(w.bpm * rate - state.bpm) < 0.5 ? " · già a tempo" : " · " + (w.mode === "fette" ? "a fette" : "elastico")) + (w.auto ? " · dal nome" : "")
+    : bt + " a " + Math.round(w.bpm * rate) + " BPM · suona com’è";
+}
+function bindWarp() {
+  $("warpOn").addEventListener("click", () => {
+    const pr = curPr(), w = warpOf(pr);
+    if (!w.bpm && !warpGuessPad(false)) return;
+    warpSet({ warp: !(w.on && w.bpm) }, true);
+  });
+  $("warpGuess").addEventListener("click", () => { warpEst.delete(curPr().sound); if (warpGuessPad(false)) warpSet({ warp: true }, true); });
+  $("warpBpm").addEventListener("change", e => { const v = Math.round(+e.target.value); if (v >= 40 && v <= 250) warpSet({ wbpm: v, warp: true }, true); else renderWarp(); });
+  $("warpHalf").addEventListener("click", () => { const w = warpOf(curPr()); if (w.bpm) warpSet({ wbpm: Math.max(40, Math.round(w.bpm / 2)) }, true); });
+  $("warpDouble").addEventListener("click", () => { const w = warpOf(curPr()); if (w.bpm) warpSet({ wbpm: Math.min(250, w.bpm * 2) }, true); });
+  WARP_MODES.forEach(([m, t]) => { const b = el("button", null, t); b.type = "button"; b.dataset.m = m; b.addEventListener("click", () => warpSet({ wmode: m }, true)); $("warpMode").appendChild(b); });
+}
 function drawForm() {
   const cv = $("formCv"); if (!cv || !cv.offsetParent) return;
   const W = cv.width, H = cv.height, c = cv.getContext("2d"), pr = curPr(), f = formOf(pr), buf = cache.get(pr.sound);
   const st = getComputedStyle(document.documentElement), led = st.getPropertyValue("--led").trim() || "#ff9f2e";
   c.fillStyle = "#070605"; c.fillRect(0, 0, W, H);
-  if (!buf) { c.fillStyle = "rgba(255,255,255,.3)"; c.font = "22px VT323, monospace"; c.textAlign = "center"; c.fillText(ctx ? "CARICO…" : "TOCCA UN PAD PER VEDERE IL SUONO", W / 2, H / 2 + 6); if (ctx) loadSound(pr.sound).then(drawForm, () => {}); return; }
+  if (!buf) { c.fillStyle = "rgba(255,255,255,.3)"; c.font = "22px VT323, monospace"; c.textAlign = "center"; c.fillText(ctx ? "CARICO…" : "TOCCA UN PAD PER VEDERE IL SUONO", W / 2, H / 2 + 6); if (ctx) loadSound(pr.sound).then(() => { drawForm(); renderWarp(); }, () => {}); return; }
   const d = buf.getChannelData(0), per = d.length / W;
   let gpk = 0.001; for (let i = 0; i < d.length; i += 7) gpk = Math.max(gpk, Math.abs(d[i]));
   const x0 = f.st * W, x1 = f.en * W;
