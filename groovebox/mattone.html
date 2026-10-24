@@ -296,6 +296,17 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .pg-seq { display: grid; gap: 14px; align-content: start; }
 .seqbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; }
 .seqbar .seg button { padding: 6px 10px; }
+.groovebar { display: grid; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.grvhd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.grvhd select { background: var(--well); color: var(--well-text); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; max-width: 100%; }
+.grvhd .seg button { padding: 6px 10px; }
+#grooveCv { width: 100%; height: auto; aspect-ratio: 640 / 56; border-radius: 6px; display: block; box-shadow: inset 0 2px 8px rgba(0,0,0,.8), 0 0 0 1px var(--edge); }
+.grvsw { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 12px; }
+.grvsw label { display: grid; grid-template-columns: auto minmax(0, 1fr) 7ch; gap: 6px; align-items: center; font-family: var(--f-label); font-size: 10px; text-transform: uppercase; }
+.grvsw input { width: 100%; min-width: 0; }
+.grvsw output { color: var(--led); text-align: right; white-space: nowrap; }
+.grvsw label.off { opacity: .45; }
+@media (max-width: 700px) { .grvsw { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .pagewrap { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .pagewrap[hidden] { display: none; }
 .songrow { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: thin; min-height: 96px; align-items: stretch; }
@@ -1589,6 +1600,19 @@ html.intro-on { overflow: hidden; }
           <span class="pagewrap" id="pageWrap" hidden><span class="lbl">Modifica la battuta</span><span class="seg" id="pageSeg" role="group" aria-label="Battuta da modificare"></span><button class="key small" id="follow" type="button" aria-pressed="true" title="Mentre suona, mostra la battuta che sta suonando"><span class="ledi"></span>Segui</button></span>
         </div>
         <div class="scroller"><div class="grid" id="grid"></div></div>
+        <div class="groovebar" id="grooveBar">
+          <div class="grvhd">
+            <span class="lbl">Groove</span>
+            <select id="grooveSel" aria-label="Groove"></select>
+            <label class="lbl humanl" title="Quanto si sente il groove">Quanto <input type="range" id="grooveAmt" min="0" max="150" value="100" aria-label="Quanto groove"><output id="grooveAmtOut">100%</output></label>
+            <button class="key small" id="grooveTake" type="button" title="Ricava il groove dal loop del pad selezionato: dove cadono i suoi colpi rispetto ai sedicesimi">Prendi dal pad</button>
+            <span class="lbl">Sui gruppi</span><div class="seg" id="grooveOn" role="group" aria-label="Gruppi col groove"></div>
+          </div>
+          <canvas id="grooveCv" width="640" height="56" aria-label="Il groove: dove cade ogni sedicesimo e quanto forte"></canvas>
+          <span class="lbl">Swing per gruppo · doppio clic: come il cursore in alto</span>
+          <div class="grvsw" id="grooveSw"></div>
+          <p class="cnote small" id="grooveInfo"></p>
+        </div>
       </section>
       <section class="unit song" aria-label="Canzone">
         <div class="hd">
@@ -1791,6 +1815,7 @@ html.intro-on { overflow: hidden; }
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
             <li><b>Per step</b> (Sequencer): ogni colpo può avere il suo <b>filtro</b>, <b>tono</b>, <b>volume</b>, <b>pan</b> e <b>coda</b>, come i «parameter lock» delle groovebox. Sotto la griglia c’è la corsia del pad scelto: scegli l’impostazione e disegnala trascinando sugli step (doppio clic: torna come il pad); oppure tasto destro su uno step e i cursori «Solo per questo step». Gli step con impostazioni proprie hanno un puntino.</li>
+            <li><b>Groove</b> (Sequencer, sotto la griglia): lo swing delle macchine vere (MPC 60 dal 54 al 66%, SP-1200), uno <b>storto alla Dilla</b>, uno pigro e uno spinto, oppure <b>Prendi dal pad</b>: ricava il groove dal loop del pad selezionato, così i tuoi colpi scivolano come il break. Scegli su quali gruppi vale e quanto; gli altri gruppi possono avere ognuno il suo swing.</li>
             <li><b>Loop a tempo</b> (Suona, sotto la forma del suono): un loop o un break campionato segue il BPM del progetto senza cambiare tono. Il tempo del loop lo stima da solo (o lo legge dal nome, «· 92 BPM»); se sbaglia del doppio usa <b>½</b> o <b>×2</b>. <b>A fette</b> taglia sui colpi come i file REX, ed è il migliore per i break; <b>Elastico</b> va per pad, voci e suoni lunghi. Con il tono del pad cambi la nota e il loop resta a tempo.</li>
             <li><b>Basso 808</b> (Sequencer → Melodia): trascina una nota verso destra per allungarla; col tasto destro (o tenendo premuto) scegli lunghezza e <b>glissato</b>, così la nota prima scivola in quella nuova come nella trap. <b>🎲 Idea 808</b> scrive una linea sulla cassa del gruppo A e, se il pad non ha un suono intonato, ci mette l’808. In libreria, categoria 808: lungo pulito, sporco e corto.</li>
             <li><b>🎬 Video per i social</b> (Mix o Voce): verticale per TikTok, Reels e Shorts, quadrato o orizzontale. Tre stili: <b>Strumento</b> (schermo, lancette e pad che si accendono), <b>Disco</b> (il vinile che gira con lo spettro intorno) e <b>Testo</b> (le barre grandi, a tempo). Titolo, nome d’arte, effetti FX e testo a tempo; il video si registra mentre suona e si salva in MP4.</li>
@@ -2798,6 +2823,14 @@ function videoFix() { state.video = Object.assign({ fmt: "v", layout: "strumento
 videoFix();
 function sidebFix() { state.sideb = Object.assign({ curve: "netta", hamster: false, xf: 0, cues: [null, null, null] }, state.sideb || {}); if (!Array.isArray(state.sideb.cues) || state.sideb.cues.length !== 3) state.sideb.cues = [null, null, null]; }
 sidebFix();
+// the groove: a feel taken from a machine or from a sample, on the groups you choose; and a swing for each group
+function grooveFix() {
+  const g = state.groove = Object.assign({ id: "", amt: 1, on: [true, true, true, true], gs: [null, null, null, null], tpl: null }, state.groove || {});
+  if (!Array.isArray(g.on) || g.on.length !== 4) g.on = [true, true, true, true];
+  if (!Array.isArray(g.gs) || g.gs.length !== 4) g.gs = [null, null, null, null];
+  if (g.id === "campione" && !(g.tpl && g.tpl.off && g.tpl.off.length === 16)) g.id = "";
+}
+grooveFix();
 // every pattern has its length and grid, every row as many steps as that; the song points only at patterns that exist
 function fixPatterns() {
   if (!Array.isArray(state.pmeta)) state.pmeta = [];
@@ -3568,8 +3601,9 @@ function schedule() {
         const prp = state.banks[b][p]; if (prp.mute || (solo && !prp.solo)) continue;   // the pad's mute and solo
         if (v[3] != null && v[3] < 100 && Math.random() * 100 >= v[3]) continue;   // the step's chance
         // "mano umana": a few milliseconds early or late and a little softer or harder, never the same twice
-        const h = state.human, tt = h ? t + (Math.random() * 2 - 1) * 0.011 * h * (s % cpb === 0 ? 0.4 : 1) : t;
-        const vel = STEP_VEL[v[0]] * (h ? 1 + (Math.random() * 2 - 1) * 0.22 * h : 1), roll = v[2] > 1 ? v[2] : 1;
+        const tg = m.div === 16 ? Math.max(ctx.currentTime, nextTime + sixteenth() * grooveDt(b, s)) : t;   // the groove of the group
+        const h = state.human, tt = h ? tg + (Math.random() * 2 - 1) * 0.011 * h * (s % cpb === 0 ? 0.4 : 1) : tg;
+        const vel = STEP_VEL[v[0]] * (h ? 1 + (Math.random() * 2 - 1) * 0.22 * h : 1) * (m.div === 16 ? grooveVel(b, s) : 1), roll = v[2] > 1 ? v[2] : 1;
         let opt = roll > 1 ? null : noteOpt(pat[b][p], s, len, v);
         if (v[7]) opt = Object.assign({ dur: 0, glide: 0 }, opt, { lk: v[7] });   // the step's own settings
         for (let r = 0; r < roll; r++) { const tr = Math.max(ctx.currentTime, tt + r * stepDur() / roll), vr = vel * (r ? 0.8 : 1); if (v[4] > 1) playNotes(b, p, tr, vr, v[1], false, v[4], opt); else trigger(b, p, tr, vr, v[1], false, false, opt); }   // a roll: the hits share the step
@@ -3583,6 +3617,49 @@ function schedule() {
     step = (step + 1) % len;
     if (step === 0) patternEnd();
   }
+}
+// how much each sixteenth of the bar moves (in sixteenths) and how hard it hits
+const ODD = k => Array.from({ length: 16 }, (_, i) => i % 2 ? k : 0), FLAT = () => new Array(16).fill(1);
+const GROOVES = [
+  ["mpc54", "MPC 60 · 54%", ODD(0.08), FLAT()],
+  ["mpc58", "MPC 60 · 58%", ODD(0.16), FLAT()],
+  ["mpc62", "MPC 60 · 62%", ODD(0.24), FLAT()],
+  ["mpc66", "MPC 60 · 66%", ODD(0.32), FLAT()],
+  ["sp1200", "SP-1200 · 61%", ODD(0.22), [1.1, 0.86, 0.95, 0.84, 1.06, 0.86, 0.95, 0.84, 1.1, 0.86, 0.95, 0.84, 1.06, 0.86, 0.95, 0.84]],
+  ["dilla", "Storto alla Dilla", [0, 0.3, 0.04, 0.38, -0.03, 0.26, 0.06, 0.42, 0, 0.34, 0.02, 0.36, -0.05, 0.28, 0.07, 0.44], [1.1, 0.8, 0.95, 0.74, 1.05, 0.85, 0.9, 0.7, 1.1, 0.8, 0.95, 0.75, 1.05, 0.85, 0.9, 0.72]],
+  ["pigro", "Pigro · rullante dietro", [0, 0.14, 0, 0.16, 0.12, 0.14, 0.02, 0.16, 0, 0.14, 0, 0.16, 0.12, 0.14, 0.02, 0.18], [1.05, 0.9, 1, 0.88, 1.02, 0.9, 1, 0.88, 1.05, 0.9, 1, 0.88, 1.02, 0.9, 1, 0.88]],
+  ["spinto", "Spinto · davanti", [0, 0.05, -0.02, 0.06, -0.06, 0.04, -0.02, 0.06, 0, 0.05, -0.02, 0.06, -0.06, 0.04, -0.02, 0.06], [1.08, 0.92, 1, 0.92, 1.1, 0.92, 1, 0.92, 1.08, 0.92, 1, 0.92, 1.1, 0.92, 1, 0.92]],
+];
+const grooveTpl = () => { const g = state.groove; if (!g.id) return null; if (g.id === "campione") return g.tpl; const q = GROOVES.find(x => x[0] === g.id); return q ? { off: q[2], vel: q[3] } : null; };
+// the shift of a sixteenth for a group: the groove where it is on, else the group's swing or the main one
+function grooveDt(b, k) {
+  const g = state.groove, T = grooveTpl();
+  if (T && g.on[b]) return T.off[k % 16] * g.amt;
+  return k % 2 ? (g.gs[b] != null ? g.gs[b] : state.swing) / 100 : 0;
+}
+function grooveVel(b, k) { const g = state.groove, T = grooveTpl(); return T && g.on[b] ? Math.max(0.3, 1 + (T.vel[k % 16] - 1) * g.amt) : 1; }
+const grooveTag = () => { const g = state.groove, q = GROOVES.find(x => x[0] === g.id); return g.id === "campione" ? "GR CAMP" : q ? "GR " + q[1].split(" ")[0].toUpperCase().slice(0, 6) : state.swing ? "SW " + state.swing + "%" : ""; };
+// the groove of a loop: where its hits fall against the sixteenths of its own tempo
+function grooveFromBuf(buf, bpm) {
+  const sr = buf.sampleRate, st = sr * 15 / bpm, beat = st * 4, on = hitsOf(buf).slice(0, 64);
+  if (on.length < 6) return null;
+  // the loop's own downbeat: the strongest hits, which sit on the beats, decide where the grid starts
+  let cs = 0, sn = 0; on.slice(0, 8).forEach(o => { const a = o.pos / beat * Math.PI * 2; cs += Math.cos(a) * o.str; sn += Math.sin(a) * o.str; });
+  const ph = ((Math.atan2(sn, cs) / (Math.PI * 2)) * beat + beat) % beat, phase = ph > beat / 2 ? ph - beat : ph;
+  const sum = new Float64Array(16), w = new Float64Array(16), str = new Float64Array(16), cnt = new Float64Array(16);
+  for (const o of on) {
+    const x = (o.pos - phase) / st, k = Math.round(x), d = x - k;
+    if (Math.abs(d) > 0.46) continue;
+    const c = ((k % 16) + 16) % 16;
+    sum[c] += d * o.str; w[c] += o.str; str[c] += o.str; cnt[c]++;
+  }
+  const off = new Array(16), vel = new Array(16), par = [0, 1].map(p => { let a = 0, b = 0; for (let c = p; c < 16; c += 2) { a += sum[c]; b += w[c]; } return b ? a / b : 0; });
+  for (let c = 0; c < 16; c++) off[c] = w[c] ? sum[c] / w[c] : par[c % 2];
+  // the beats stay where they are: the grid is not moved, only the feel
+  const base = (off[0] + off[4] + off[8] + off[12]) / 4;
+  let top = 0; for (let c = 0; c < 16; c++) { off[c] = Math.round(Math.max(-0.4, Math.min(0.45, off[c] - base)) * 1000) / 1000; if (cnt[c]) top = Math.max(top, str[c] / cnt[c]); }
+  for (let c = 0; c < 16; c++) vel[c] = Math.round((cnt[c] && top ? 0.82 + 0.28 * (str[c] / cnt[c]) / top : 1) * 100) / 100;
+  return { off, vel, hits: on.length };
 }
 // a melodic note may last several steps (v[5]) and slide into its pitch (v[6]: short, medium, long glide);
 // a note held into a gliding one lasts until it, so the slide starts from a note still sounding
@@ -3789,7 +3866,7 @@ function nrTick() {
     while (h.next < ctx.currentTime + 0.08) {
       let t = h.next;
       // the off sixteenths swing, like the sequencer's
-      if (playing && state.nrRate === 4 && pm().div === 16 && Math.round((t - h.origin) / r) % 2 === 1) t += sixteenth() * state.swing / 100;
+      if (playing && state.nrRate === 4 && pm().div === 16) t += sixteenth() * grooveDt(h.b, Math.round((t - h.origin) / r));
       t = Math.max(ctx.currentTime, t);
       playNotes(h.b, h.p, t, 0.85, h.note, false, h.chord);
       if (recording && playing) setTimeout(() => liveRecord(h.b, h.p, h.note, t, h.chord), Math.max(0, (t - ctx.currentTime) * 1000));
@@ -4686,7 +4763,8 @@ function build() {
   $("tap").addEventListener("click", tapTempo);
   $("bpmDown").addEventListener("click", () => setBpm(state.bpm - 1));
   $("bpmUp").addEventListener("click", () => setBpm(state.bpm + 1));
-  $("swing").addEventListener("input", e => { state.swing = +e.target.value; $("swingOut").textContent = state.swing + "%"; save(); });
+  $("swing").addEventListener("input", e => { state.swing = +e.target.value; $("swingOut").textContent = state.swing + "%"; save(); renderGroove(); });
+  bindGroove();
   $("copy").addEventListener("click", copyPattern);
   $("undo").addEventListener("click", () => histGo(true)); $("redo").addEventListener("click", () => histGo(false));
   $("human").value = Math.round(state.human * 100); $("humanOut").textContent = Math.round(state.human * 100) + "%";
@@ -5191,6 +5269,7 @@ function buildEditor() {
   buildLane(grid);
 }
 function renderEditor() {
+  drawGroove();
   renderEditorHead();
   const key = editorKey();
   if (key !== edKey) { edKey = key; buildEditor(); }
@@ -5246,8 +5325,71 @@ function renderTransport() {
   $("metro").classList.toggle("on", metronome);
 }
 function renderFx() { [...$("fx").children].forEach(b => b.classList.toggle("on", fxActive.has(b.dataset.fx))); }
+// the groove panel in the sequencer
+function renderGroove() {
+  const g = state.groove, sel = $("grooveSel"); if (!sel) return;
+  if (!sel.options.length) {
+    sel.appendChild(new Option("Swing dritto · col cursore", ""));
+    GROOVES.forEach(([id, name]) => sel.appendChild(new Option(name, id)));
+    sel.appendChild(new Option("Dal campione", "campione"));
+  }
+  sel.querySelector('option[value="campione"]').disabled = !g.tpl; sel.value = g.id;
+  $("grooveAmt").value = Math.round(g.amt * 100); $("grooveAmtOut").textContent = Math.round(g.amt * 100) + "%"; $("grooveAmt").disabled = !g.id;
+  [...$("grooveOn").children].forEach((b, i) => { b.setAttribute("aria-pressed", !!g.on[i]); b.disabled = !g.id; });
+  [...$("grooveSw").children].forEach((l, b) => {
+    const own = g.gs[b] != null, inp = l.querySelector("input"), on = !!g.id && g.on[b];
+    inp.value = own ? g.gs[b] : state.swing; l.querySelector("output").textContent = on ? "groove" : own ? g.gs[b] + "%" : "= " + state.swing + "%";
+    l.classList.toggle("off", on); inp.disabled = on;
+  });
+  const T = grooveTpl(), odd = T ? T.off.filter((_, i) => i % 2).reduce((a, b) => a + b, 0) / 8 * g.amt : 0;
+  $("grooveInfo").textContent = g.id ? (g.id === "campione" ? "Groove preso da «" + (g.tpl.name || "un campione") + "»" : GROOVES.find(x => x[0] === g.id)[1]) + " · gli off-beat spostati in media di " + Math.round(odd * 100) + "% di sedicesimo (come uno swing MPC al " + Math.round(50 + odd * 50) + "%). Vale per la griglia a sedicesimi; con le terzine resta dritto."
+    : "Lo swing del cursore in alto vale per tutti i gruppi; qui sotto puoi dare a ogni gruppo il suo (doppio clic: torna come il cursore). Con un groove i colpi si spostano e cambiano forza come su una macchina vera.";
+  drawGroove();
+}
+function drawGroove() {
+  const cv = $("grooveCv"); if (!cv || !cv.offsetParent) return;
+  const c = cv.getContext("2d"), W = cv.width, H = cv.height, g = state.groove, T = grooveTpl(), st = W / 16;
+  const led = getComputedStyle(document.documentElement).getPropertyValue("--led").trim() || "#ff9f2e";
+  c.fillStyle = "#070605"; c.fillRect(0, 0, W, H);
+  for (let k = 0; k < 16; k++) { c.fillStyle = k % 4 === 0 ? "rgba(255,255,255,.16)" : "rgba(255,255,255,.06)"; c.fillRect(Math.round(k * st), 0, 1, H); }
+  for (let k = 0; k < 16; k++) {
+    // drawn for the group that is being edited
+    const b = state.bank, dt = grooveDt(b, k), v = grooveVel(b, k), x = (k + dt) * st + st * 0.08, hh = Math.min(H - 8, (H - 10) * 0.72 * v);
+    c.fillStyle = k % 4 === 0 ? (hueColor || led) : led; c.globalAlpha = k % 2 ? 0.75 : 1;
+    c.fillRect(x, H - 4 - hh, Math.max(3, st * 0.18), hh); c.globalAlpha = 1;
+  }
+  c.fillStyle = "rgba(255,255,255,.4)"; c.font = "16px VT323, monospace"; c.textAlign = "right"; c.fillText("GRUPPO " + BANKS[state.bank].id + (T && g.on[state.bank] ? " · GROOVE" : " · SWING"), W - 6, 15);
+}
+function grooveSet(patch) { Object.assign(state.groove, patch); save(); renderGroove(); }
+function grooveTake() {
+  const pr = curPr(), buf = cache.get(pr.sound), s = SOUNDS.get(pr.sound);
+  if (!buf || !s || buf.duration < 1) { msg("SCEGLI UN PAD CON UN LOOP O UN BREAK"); return; }
+  const w = warpOf(pr), bpm = w.bpm || (warpGuess(pr.sound, buf) || {}).bpm;
+  if (!bpm) { msg("NON TROVO IL TEMPO DEL LOOP: SCRIVILO IN «LOOP A TEMPO»"); return; }
+  const r = grooveFromBuf(buf, bpm);
+  if (!r) { msg("TROPPO POCHI COLPI PER CAPIRE IL GROOVE"); return; }
+  grooveSet({ id: "campione", tpl: { off: r.off, vel: r.vel, name: s.name.slice(0, 28) } });
+  const odd = r.off.filter((_, i) => i % 2).reduce((a, b) => a + b, 0) / 8;
+  msg("GROOVE DAL CAMPIONE · SWING COME MPC " + Math.round(50 + odd * 50) + "%");
+}
+function bindGroove() {
+  $("grooveSel").addEventListener("change", e => { grooveSet({ id: e.target.value }); msg(e.target.value ? "GROOVE: " + e.target.selectedOptions[0].text.toUpperCase() : "SWING DRITTO"); });
+  $("grooveAmt").addEventListener("input", e => grooveSet({ amt: +e.target.value / 100 }));
+  $("grooveTake").addEventListener("click", grooveTake);
+  BANKS.forEach((bk, i) => {
+    const b = el("button", null, bk.id); b.type = "button"; b.title = "Groove sul gruppo " + bk.id + " " + bk.name;
+    b.addEventListener("click", () => { const on = state.groove.on.slice(); on[i] = !on[i]; grooveSet({ on }); });
+    $("grooveOn").appendChild(b);
+    const l = el("label"); l.title = "Swing del gruppo " + bk.id + " · doppio clic: come il cursore in alto";
+    l.innerHTML = "<span>" + bk.id + "</span><input type=\"range\" min=\"0\" max=\"60\" aria-label=\"Swing del gruppo " + bk.id + "\"><output></output>";
+    const inp = l.querySelector("input");
+    inp.addEventListener("input", () => { const gs = state.groove.gs.slice(); gs[i] = +inp.value; grooveSet({ gs }); });
+    inp.addEventListener("dblclick", () => { const gs = state.groove.gs.slice(); gs[i] = null; grooveSet({ gs }); });
+    $("grooveSw").appendChild(l);
+  });
+}
 function renderAll() {
-  renderBanks(); renderPads(); renderPatterns(); renderInspector(); renderEditor(); renderTransport(); renderFx(); renderLeds(); renderSong(); renderNr(); renderChords();
+  renderBanks(); renderPads(); renderPatterns(); renderInspector(); renderEditor(); renderTransport(); renderFx(); renderLeds(); renderSong(); renderNr(); renderChords(); renderGroove();
   $("bpmNum").textContent = state.bpm; $("vBpm").textContent = pad3(state.bpm); $("swing").value = state.swing; $("swingOut").textContent = state.swing + "%";
 }
 
@@ -5478,7 +5620,7 @@ function drawSpec(idle) {
   lcdText(gname, tx + 10, 2); lcdText(vn, vx, 2, 1, 2);
   dotLine(2, LCD_W - 2, 11);
   // left panel: tempo and position, small printed labels over big digits
-  tinyText("BPM", 2, 14); tinyText(state.swing ? "SW " + state.swing + "%" : "", 30, 14);
+  tinyText("BPM", 2, 14); tinyText(grooveTag(), 30, 14);
   lcdText(pad3(state.bpm), 2, 21, 2, 1);
   tinyText("BAR.BEAT", 2, 38); if (pm().bars > 1) tinyText("/" + pm().bars, 40, 38);
   lcdText($("vPos").textContent.slice(0, 3), 2, 45, 2, playing ? 2 : 1);
@@ -6814,7 +6956,7 @@ function showPage(id) {
   document.querySelectorAll(".page").forEach(pg => { pg.hidden = pg.dataset.page !== id; });
   [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.page === id));
   if (id !== "cust" && state.page !== id) { state.page = id; save(); }
-  fitPages(); sizeCanvases(); placeTabGlow(); if (id === "mix") drawEq(); if (id === "suona") drawForm();
+  fitPages(); sizeCanvases(); placeTabGlow(); if (id === "mix") drawEq(); if (id === "suona") drawForm(); if (id === "seq") setTimeout(drawGroove, 50);
   if (id === "voce") { if (state.voice.takes.length && !ctx && navigator.userActivation && navigator.userActivation.isActive) initAudio(); voiceRender(); } else if (VO.stream) voiceMicClose();
 }
 // the LED under the tabs glides to the page you pick
@@ -7431,7 +7573,7 @@ function renderLane() {
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
-const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol"];
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol", "groove"];
 function f32ToB64(d) {
   const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
   for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
@@ -7489,7 +7631,7 @@ function openProject(file) {
     }
     const st = proj.state; PROJ_KEYS.forEach(k => { if (st[k] !== undefined) state[k] = st[k]; });
     if (st.voice === undefined) state.voice = null;
-    voiceFix(); videoFix(); sidebFix(); voiceSoloStop();
+    voiceFix(); videoFix(); sidebFix(); grooveFix(); voiceSoloStop();
     for (const t of proj.voices || []) { const b = voiceBufFrom(b64ToF32(t.data), t.sr || 44100); VO.bufs.set(t.id, b); VO.peaks.delete(t.id); voiceKeep(t.id, b); }
     state.voice.takes = state.voice.takes.filter(t => VO.bufs.has(t.id)); if (!vTake()) state.voice.sel = state.voice.takes.length ? state.voice.takes[0].id : null;
     state.banks.forEach((bk, bi) => bk.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
@@ -8653,8 +8795,8 @@ function exportMidi() {
       P[b][p].forEach((v, i) => {
         if (!v) return;
         if (!tracks.has(key)) tracks.set(key, { name: tuned ? padLabel(b, p) + " " + (s ? s.name : "") : "Gruppo " + BANKS[b].id + " " + BANKS[b].name, ch: tuned ? (nextCh === 9 ? ++nextCh : nextCh++) % 16 : 9, ev: [] });
-        const tr = tracks.get(key), roll = v[2] > 1 ? v[2] : 1, vel = [0, 96, 120, 50][v[0]] || 96;
-        const t = tick0 + i * st + (m.div === 16 && i % 2 ? Math.round(st * state.swing / 100) : 0);
+        const tr = tracks.get(key), roll = v[2] > 1 ? v[2] : 1, vel = Math.min(127, Math.round(([0, 96, 120, 50][v[0]] || 96) * (m.div === 16 ? grooveVel(b, i) : 1)));
+        const t = Math.max(0, tick0 + i * st + (m.div === 16 ? Math.round(st * grooveDt(b, i)) : 0));
         const note = Math.max(0, Math.min(127, tuned ? (s.home || 60) + pr.pitch + v[1] : 36 + b * 12 + p));
         const nl = roll === 1 && v[5] > 1 ? v[5] : 1;
         for (let r = 0; r < roll; r++) { const on = Math.round(t + r * st / roll); tr.ev.push([on, 1, 0x90 | tr.ch, note, r ? Math.round(vel * 0.8) : vel], [on + Math.max(1, Math.round(st * nl / roll * 0.9)), 0, 0x80 | tr.ch, note, 0]); }
