@@ -392,6 +392,13 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 .lcell .lbar { position: absolute; left: 3px; right: 3px; bottom: 0; border-radius: 2px; background: color-mix(in srgb, var(--hue) 35%, transparent); pointer-events: none; }
 .lcell.set .lbar { background: var(--hue); box-shadow: 0 0 8px -2px var(--hue); }
 .lcell.off { opacity: .35; cursor: default; }
+.lcell.fxl { cursor: pointer; }
+.lcell.fxl::before { content: attr(data-fx); position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-label); font-size: 9px; letter-spacing: .06em; color: var(--well-ink); }
+.lcell.fxl.set { background: color-mix(in srgb, var(--hue) 30%, var(--well)); }
+.lcell.fxl.set::before { color: var(--cream); text-shadow: 0 0 6px var(--hue); }
+.lockfx { display: grid; gap: 4px; }
+.fxsteps { flex-wrap: wrap; }
+.fxsteps button { flex: 1 1 auto; padding: 5px 7px; height: auto; min-height: 26px; }
 .lcell.off .lbar { display: none; }
 .lcell.bi::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--line); pointer-events: none; }
 .lockbox { display: grid; gap: 5px; padding-top: 8px; border-top: 1px dashed var(--line); }
@@ -1859,6 +1866,7 @@ html.intro-on { overflow: hidden; }
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
+            <li><b>Effetto su un colpo</b> (Sequencer, nel menu dello step o nella corsia «Per step» → Effetto): <b>tape stop</b>, <b>al contrario</b>, <b>riverbero al contrario</b> che cresce fino al colpo, <b>eco lanciata</b> solo su quel colpo, <b>stutter</b>. Restano nel pattern.</li>
             <li><b>Per step</b> (Sequencer): ogni colpo può avere il suo <b>filtro</b>, <b>tono</b>, <b>volume</b>, <b>pan</b> e <b>coda</b>, come i «parameter lock» delle groovebox. Sotto la griglia c’è la corsia del pad scelto: scegli l’impostazione e disegnala trascinando sugli step (doppio clic: torna come il pad); oppure tasto destro su uno step e i cursori «Solo per questo step». Gli step con impostazioni proprie hanno un puntino.</li>
             <li><b>Controller MIDI</b> (Suona, accanto a MIDI, o nel lato B): i pad del controller suonano i pad. Con <b>Impara</b> colleghi il resto: tocca una manopola, un cursore o un tasto sullo schermo e poi muovi quello vero. Tocca il <b>disco</b> e gira il jog del tuo controller da DJ per scratchare (se il jog sente il tocco, premilo e si collega anche quello); tocca il <b>crossfader</b> del lato B e muovi il fader. I collegamenti restano nell’app.</li>
             <li><b>Groove</b> (Sequencer, sotto la griglia): lo swing delle macchine vere (MPC 60 dal 54 al 66%, SP-1200), uno <b>storto alla Dilla</b>, uno pigro e uno spinto, oppure <b>Prendi dal pad</b>: ricava il groove dal loop del pad selezionato, così i tuoi colpi scivolano come il break. Scegli su quali gruppi vale e quanto; gli altri gruppi possono avere ognuno il suo swing.</li>
@@ -3506,29 +3514,76 @@ function playBuffer(soundId, pr, t, vel, note, tag, dur, lk) {
   // the pad's form: crunched or reversed copy, start and end, attack, low-pass
   const f = formOf(pr);
   if (s.kind !== "multi" && (pr.warp || pr.wsnd !== pr.sound)) buf = warpPlay(soundId, buf, pr, rate / (fxActive.has("lofi") ? 0.94 : 1));   // a loop that follows the tempo
-  if (f.sp || f.rv) buf = shapedBuf(soundId + ":" + root + (buf._wk || ""), buf, f.sp, f.rv);
-  const D = buf.duration, off = (f.rv ? 1 - f.en : f.st) * D, seg = Math.max(0.005, (f.en - f.st) * D);
+  const fx = lk && lk.fx || "", rv = fx === "rev" ? !f.rv : f.rv;   // the step's own effect: "al contrario" turns the sound round
+  if (f.sp || rv) buf = shapedBuf(soundId + ":" + root + (buf._wk || ""), buf, f.sp, rv);
+  const D = buf.duration, off = (rv ? 1 - f.en : f.st) * D, seg = Math.max(0.005, (f.en - f.st) * D);
   const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
   const g = ctx.createGain(), level = pr.vol * vel * (lk && lk.vol != null ? lk.vol : 1), full = seg / rate;
   let len = dur ? Math.min(full, dur) : pr.gate > 0 ? Math.min(full, pr.gate * sixteenth()) : full;
   if (lk && lk.dec != null && lk.dec < 1) len = Math.min(len, Math.max(0.02, full * lk.dec));   // a shorter tail for this step
-  const att = Math.max(f.att, f.st > 0 || f.rv ? 0.002 : 0);
+  const att = Math.max(f.att, f.st > 0 || rv ? 0.002 : 0);
   if (att > 0) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + Math.min(att, len)); } else g.gain.setValueAtTime(level, t);
   if (len < full) { g.gain.setValueAtTime(level, t + Math.max(att, len - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.03); }
   else if (f.en < 1) { g.gain.setValueAtTime(level, t + Math.max(att, full - 0.006)); g.gain.linearRampToValueAtTime(0, t + full); }
   const cut = Math.min(f.cut, lk && lk.cut != null ? lk.cut : 1);
-  if (cut < 0.995) { const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = cutHz(cut); lp.Q.value = 0.7 + f.res * 14; src.connect(lp).connect(g); }
-  else src.connect(g);
+  let head = src;
+  if (fx === "stut") {   // stutter: a gate chops the note in thirty-seconds, a little softer each time
+    const sg = ctx.createGain(), d = sixteenth() / 2, n = Math.max(2, Math.min(32, Math.floor(Math.max(len, 2 * sixteenth()) / d)));
+    sg.gain.setValueAtTime(1, t);
+    for (let k = 0; k < n; k++) { const a = t + k * d; sg.gain.setValueAtTime(Math.max(0.15, 1 - k / (n * 1.4)), a); sg.gain.setTargetAtTime(0, a + d * 0.5, 0.004); }
+    src.connect(sg); head = sg;
+  }
+  if (cut < 0.995) { const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = cutHz(cut); lp.Q.value = 0.7 + f.res * 14; head.connect(lp).connect(g); }
+  else head.connect(g);
   // through the strip of its group; kicks drive the sidechain, everything else is ducked by it
   const gi = /^(\d+):/.exec(tag || ""), dest = gi && N.grp ? N.grp[+gi[1]][s.kick ? 0 : 1].in : s.kick ? N.bus : N.duckV;
   const pv = lk && lk.pan != null ? lk.pan : pr.pan;
   if (ctx.createStereoPanner && pv) { const pan = ctx.createStereoPanner(); pan.pan.value = pv; g.connect(pan).connect(dest); } else g.connect(dest);
   if (pr.rev > 0) { const rs = ctx.createGain(); rs.gain.value = pr.rev * (gi ? state.geq[+gi[1]][3] : 1); g.connect(rs).connect(N.revIn); }   // the group level reaches the reverb too
   src.start(t, off, seg); src.stop(t + Math.min(full, len + 0.05) + 0.01);
+  if (fx === "stop") {   // tape stop: the reel slows down to nothing over the note
+    const T = Math.max(0.15, Math.min(len, 1.4));
+    src.playbackRate.setValueAtTime(rate, t); src.playbackRate.setTargetAtTime(rate * 0.03, t + 0.01, T / 3);
+    g.gain.setTargetAtTime(0.0001, t + T * 0.7, T / 6);
+  }
+  if (fx === "echo" && N.echoIn) {   // an echo thrown on this hit only: it goes into the tape echo and the repeats last longer
+    const es = ctx.createGain(); es.gain.value = 0.95; g.connect(es).connect(N.echoIn);
+    const fb = N.echoFb.gain, base = state.echo.fb * 0.92;
+    fb.cancelScheduledValues(t); fb.setTargetAtTime(Math.max(base, 0.74), t, 0.02); fb.setTargetAtTime(base, t + 12 * sixteenth(), 0.5);
+  }
   const v = { src, g, tag, sound: soundId, ch: f.ch, rate, level, end: t + Math.min(full, len), natural: t + full, base: root == null ? null : s.home - root, lofi: fxActive.has("lofi") };
   voices.push(v);
   src.onended = () => { const i = voices.indexOf(v); if (i >= 0) voices.splice(i, 1); };
   return v;
+}
+// the reverb of a sound, turned round: it swells up into the hit (made once, in the background)
+const rrevCache = new Map();
+function rrevBuf(id) {
+  const c = rrevCache.get(id); if (c) return c.buf;
+  const buf = cache.get(id); if (!buf || !window.OfflineAudioContext) return null;
+  const ent = { buf: null }; rrevCache.set(id, ent);
+  const sr = buf.sampleRate, srcLen = Math.min(buf.length, Math.round(sr * 0.5)), tail = 2.2, L = srcLen + Math.round(sr * tail);
+  const oc = new OfflineAudioContext(2, L, sr), s = oc.createBufferSource(), cv = oc.createConvolver(), ir = oc.createBuffer(2, Math.round(sr * tail), sr);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.6); }
+  cv.buffer = ir; s.buffer = buf; s.connect(cv).connect(oc.destination); s.start(0, 0, srcLen / sr);
+  oc.startRendering().then(r => {
+    let pk = 0;
+    for (let c = 0; c < r.numberOfChannels; c++) { const d = r.getChannelData(c); d.reverse(); for (let i = 0; i < d.length; i++) pk = Math.max(pk, Math.abs(d[i])); }
+    if (pk > 0) for (let c = 0; c < r.numberOfChannels; c++) { const d = r.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= 0.9 / pk; }
+    ent.buf = r;
+  }).catch(() => {});
+  return null;
+}
+// the swell that ends exactly when the hit starts
+function rrevPlay(b, p, t, dur, vel) {
+  const pr = state.banks[b][p], s = SOUNDS.get(pr.sound), rb = s && rrevBuf(pr.sound);
+  if (!rb || !N.grp) return false;
+  const rate = Math.pow(2, pr.pitch / 12), take = Math.min(rb.duration, dur * rate), src = ctx.createBufferSource(), g = ctx.createGain(), level = pr.vol * vel * 0.75;
+  src.buffer = rb; src.playbackRate.value = rate;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + take / rate * 0.97);   // the turned-round tail already grows: a straight fade-in lets it be heard from the start g.gain.setTargetAtTime(0, t + take / rate, 0.006);
+  src.connect(g).connect(N.grp[b][s.kick ? 0 : 1].in);
+  src.start(t, rb.duration - take, take); src.stop(t + take / rate + 0.05);
+  return true;
 }
 function trigger(b, p, t, vel = 0.85, note = 0, live = false, keep = false, opt = null) {
   if (!ctx) return;
@@ -3644,6 +3699,8 @@ function schedule() {
     for (let b = 0; b < BANKS.length && !songEnded && t < playUntil; b++) {
       if (state.mutes[b]) continue;
       for (let p = 0; p < 12; p++) {
+        const vf = repeatStep === null ? pat[b][p][(s + cpb) % len] : 0;
+        if (vf && vf[7] && vf[7].fx === "rrev" && !state.banks[b][p].mute) rrevPlay(b, p, nextTime, cpb * stepDur(), STEP_VEL[vf[0]] || 0.8);
         const v = pat[b][p][s]; if (!v) continue;
         const prp = state.banks[b][p]; if (prp.mute || (solo && !prp.solo)) continue;   // the pad's mute and solo
         if (v[3] != null && v[3] < 100 && Math.random() * 100 >= v[3]) continue;   // the step's chance
@@ -3726,6 +3783,7 @@ function start() {
   if (!initAudio()) return;
   const song = state.songOn && state.song.length;
   if (song) { songPos = { i: Math.min(songFrom, state.song.length - 1), rep: 0 }; state.pattern = state.song[songPos.i].p; edPage = 0; renderAll(); }
+  state.patterns[state.pattern].forEach((g, b) => g.forEach((row, p) => { if (row.some(v => v && v[7] && v[7].fx === "rrev")) rrevBuf(state.banks[b][p].sound); }));   // the swells get ready
   playing = true; step = 0; songEnded = false; songJump = null; stepLog.length = 0; barT.length = 0;
   nextTime = ctx.currentTime + 0.06; gridOrigin = nextTime; drawQ.length = 0;
   schedule(); timer = setInterval(schedule, 20);
@@ -7563,8 +7621,29 @@ function lockRows(pop, arr, s, hear) {
     r.append(el("span", "lbl", name), inp, out); box.appendChild(r);
     return { inp, out, cur, fmt };
   });
-  rst.addEventListener("click", () => { LOCKS.forEach(([k]) => setLock(arr, s, k, null)); ins.forEach(x => { x.inp.value = x.cur(); x.out.textContent = x.fmt(x.cur()); }); save(); renderEditor(); hear(); });
+  // the effect of this hit
+  const fr = el("div", "lockfx"), fseg = el("div", "seg fxsteps");
+  fr.append(el("span", "lbl", "Effetto"), fseg);
+  const curFx = () => (arr[s] && arr[s][7] && arr[s][7].fx) || "";
+  STEP_FX.forEach(([id, name]) => {
+    const b2 = el("button", null, name); b2.type = "button"; b2.dataset.fx = id; b2.setAttribute("aria-pressed", curFx() === id);
+    b2.addEventListener("click", () => {
+      setLock(arr, s, "fx", id || null); save(); renderEditor();
+      [...fseg.children].forEach(x => x.setAttribute("aria-pressed", x.dataset.fx === curFx()));
+      stepFxHear(id, hear);
+    });
+    fseg.appendChild(b2);
+  });
+  box.appendChild(fr);
+  rst.addEventListener("click", () => { LOCKS.forEach(([k]) => setLock(arr, s, k, null)); setLock(arr, s, "fx", null); ins.forEach(x => { x.inp.value = x.cur(); x.out.textContent = x.fmt(x.cur()); }); [...fseg.children].forEach(x => x.setAttribute("aria-pressed", x.dataset.fx === "")); save(); renderEditor(); hear(); });
   pop.appendChild(box);
+}
+// hearing an effect: the reverse reverb needs its swell first, then the hit
+function stepFxHear(id, hear) {
+  if (!initAudio()) return;
+  if (id !== "rrev") { hear(); return; }
+  const go = () => { const t = ctx.currentTime + 0.03, d = 4 * sixteenth(); if (rrevPlay(state.bank, state.pad, t, d, 0.85)) setTimeout(hear, (d + 0.03) * 1000); else hear(); };
+  if (rrevBuf(curPr().sound)) go(); else setTimeout(go, 450);
 }
 // drag a note to the right to make it longer (a drag from an empty step writes the note first)
 let rollDrag = null;
@@ -7646,13 +7725,15 @@ const LOCKS = [
   ["pan", "Pan", -1, 1, 0, true, x => Math.abs(x) < 0.03 ? "centro" : (x < 0 ? "S " : "D ") + Math.round(Math.abs(x) * 100)],
   ["dec", "Coda", 0.05, 1, 1, false, x => x >= 0.995 ? "intera" : Math.round(x * 100) + "%"],
 ];
-const lockDef = k => LOCKS.find(l => l[0] === k);
+const STEP_FX = [["", "Niente", ""], ["stop", "Tape stop", "STOP"], ["rev", "Al contrario", "REV"], ["rrev", "Riverbero al contrario", "RIV"], ["echo", "Eco lanciata", "ECO"], ["stut", "Stutter", "STUT"]];
+const lockDef = k => k === "fx" ? ["fx", "Effetto"] : LOCKS.find(l => l[0] === k);
 // a new value for one setting of a step (a new array and a new object, so copies never share them)
 function setLock(arr, s, key, val) {
   const v = arr[s]; if (!v) return;
   const n = v.slice(); while (n.length < 7) n.push(n.length === 2 ? 1 : n.length === 3 ? 100 : n.length === 4 ? 1 : null);
   const lk = Object.assign({}, n[7] || {}), d = lockDef(key);
-  if (val == null || Math.abs(val - d[4]) < 1e-3) delete lk[key]; else lk[key] = key === "pitch" ? Math.round(val) : +val.toFixed(3);
+  if (key === "fx") { if (val) lk.fx = val; else delete lk.fx; }
+  else if (val == null || Math.abs(val - d[4]) < 1e-3) delete lk[key]; else lk[key] = key === "pitch" ? Math.round(val) : +val.toFixed(3);
   n[7] = Object.keys(lk).length ? lk : null;
   arr[s] = n;
 }
@@ -7670,6 +7751,13 @@ function laneAt(e) {
   if (!o) return;
   const arr = state.patterns[state.pattern][state.bank][state.pad];
   if (!arr[o.s]) return;
+  if (laneKey === "fx") {
+    const cur = (arr[o.s][7] && arr[o.s][7].fx) || "", i = STEP_FX.findIndex(x => x[0] === cur), nx = STEP_FX[(i + 1) % STEP_FX.length];
+    setLock(arr, o.s, "fx", nx[0] || null); renderEditor(); save();
+    msg("EFFETTO STEP " + (o.s % pm().div + 1) + ": " + nx[1].toUpperCase());
+    if (nx[0] === "rrev") rrevBuf(curPr().sound);
+    return;
+  }
   setLock(arr, o.s, laneKey, laneValue(cell, e.clientY)); renderEditor();
   const v = arr[o.s], lk = v[7] || {}, d = lockDef(laneKey);
   msg(d[1].toUpperCase() + " STEP " + (o.s % pm().div + 1) + ": " + d[6](lk[laneKey] != null ? lk[laneKey] : d[4]).toUpperCase());
@@ -7678,7 +7766,7 @@ function buildLane(grid) {
   edLane = [];
   const lab = el("div", "lanelab");
   const sel = el("select"); sel.setAttribute("aria-label", "Impostazione da disegnare");
-  LOCKS.forEach(([k, name]) => sel.appendChild(new Option(name, k))); sel.value = laneKey;
+  LOCKS.forEach(([k, name]) => sel.appendChild(new Option(name, k))); sel.appendChild(new Option("Effetto", "fx")); sel.value = laneKey;
   sel.addEventListener("change", () => { laneKey = sel.value; renderEditor(); });
   const clr = el("button", "key small", "Azzera"); clr.type = "button"; clr.title = "Toglie questa impostazione da tutti gli step del pad";
   clr.addEventListener("click", () => { const arr = state.patterns[state.pattern][state.bank][state.pad]; arr.forEach((v, s) => { if (v && v[7] && v[7][laneKey] != null) setLock(arr, s, laneKey, null); }); save(); renderEditor(); msg(lockDef(laneKey)[1].toUpperCase() + " AZZERATO SU " + padLabel(state.bank, state.pad)); });
@@ -7696,16 +7784,27 @@ function buildLane(grid) {
   }
   if (grid.dataset.lane) return;   // the grid element stays: its listeners are added once
   grid.dataset.lane = "1";
-  grid.addEventListener("pointerdown", e => { if (!e.target.closest(".lcell") || e.button) return; e.preventDefault(); laneDrag = true; laneAt(e); });
+  grid.addEventListener("pointerdown", e => { if (!e.target.closest(".lcell") || e.button) return; e.preventDefault(); laneDrag = laneKey !== "fx"; laneAt(e); });
   addEventListener("pointermove", e => { if (laneDrag) laneAt(e); });
   addEventListener("pointerup", () => { if (laneDrag) { laneDrag = false; save(); renderPads(); } });
 }
 function renderLane() {
+  if (laneKey === "fx") {
+    const arr = state.patterns[state.pattern][state.bank][state.pad], base = edPage * pm().div;
+    for (const o of edLane) {
+      o.s = base + o.r;
+      const v = arr[o.s], fx = v && v[7] && v[7].fx || "", q = STEP_FX.find(x => x[0] === fx);
+      o.el.className = "lcell fxl" + (v ? (fx ? " set" : " def") : " off");
+      o.el.firstChild.style.height = "0"; o.el.dataset.fx = q ? q[2] : "";
+      o.el.title = v ? "Effetto: " + q[1] + " · tocca per cambiarlo" : "Step vuoto";
+    }
+    return;
+  }
   const arr = state.patterns[state.pattern][state.bank][state.pad], base = edPage * pm().div, d = lockDef(laneKey), span = d[3] - d[2];
   for (const o of edLane) {
     o.s = base + o.r;
     const v = arr[o.s], val = v && v[7] && v[7][laneKey] != null ? v[7][laneKey] : d[4], u = (val - d[2]) / span, bar = o.el.firstChild;
-    o.el.className = "lcell" + (v ? (v[7] && v[7][laneKey] != null ? " set" : " def") : " off") + (d[5] ? " bi" : "");
+    o.el.className = "lcell" + (v ? (v[7] && v[7][laneKey] != null ? " set" : " def") : " off") + (d[5] ? " bi" : ""); o.el.dataset.fx = "";
     if (d[5]) { const z = (d[4] - d[2]) / span; bar.style.bottom = (Math.min(u, z) * 100) + "%"; bar.style.height = Math.max(2, Math.abs(u - z) * 100) + "%"; }
     else { bar.style.bottom = "0"; bar.style.height = (u * 100) + "%"; }
     o.el.title = v ? d[1] + ": " + d[6](val) + " · trascina per cambiare, doppio clic per tornare al valore del pad" : "Step vuoto";
