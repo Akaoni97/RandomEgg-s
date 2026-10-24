@@ -527,7 +527,19 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 .sbrpmb { position: relative; height: 36px; border: 0; border-radius: 4px; background: var(--key-2); color: var(--key-ink); font-family: var(--f-label); font-size: 12px; box-shadow: 0 3px 0 var(--edge); }
 .sbrpmb.on::after { content: ""; position: absolute; top: 5px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 6px #ff3b30; }
 .sbpitch { display: grid; justify-items: center; gap: 6px; padding-top: 6px; }
-#sbPitch { writing-mode: vertical-lr; direction: rtl; height: min(260px, 32vh); width: 34px; accent-color: var(--led); }
+#sbPitch, #sb2Pitch { writing-mode: vertical-lr; direction: rtl; height: min(260px, 32vh); width: 34px; accent-color: var(--led); }
+.sb2src { grid-column: 1 / -1; display: grid; gap: 6px; }
+.sb2src select { width: 100%; }
+.sbcue2.set { color: #fff; background: radial-gradient(120% 90% at 50% 0%, #ff6b5a, #c8102e 70%); }
+.sbgo { color: var(--led); }
+#sbTwo[aria-pressed="true"] { color: #15120c; background: var(--led); }
+/* two decks: deck · mixer · deck, the controls of each deck under its record */
+.sideb.two { grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr) minmax(0, 1fr); }
+.sideb.two .sbdeck { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+.sideb.two .sbside { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; }
+.sideb.two .sbstart { aspect-ratio: auto; height: 60px; }
+.sideb.two .sbpitch { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
+.sideb.two #sbPitch, .sideb.two #sb2Pitch { writing-mode: horizontal-tb; direction: ltr; height: auto; width: 100%; }
 .sbpitch output { font-family: var(--f-label); font-size: 11px; color: var(--cream-2); }
 .sbmix { display: grid; gap: 18px; align-content: start; padding: 20px; }
 .sbsec { display: grid; gap: 8px; min-width: 0; }
@@ -567,7 +579,8 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 .sbplate { grid-column: 1 / -1; justify-self: center; padding: 6px 18px; border-radius: 3px; font-family: var(--f-label); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--cream-3); border: 1px dashed var(--line); }
 .flipbtn { white-space: nowrap; }
 @media (max-width: 900px) {
-  .sideb { grid-template-columns: minmax(0, 1fr); }
+  .sideb, .sideb.two { grid-template-columns: minmax(0, 1fr); }
+  #sb2Pitch { writing-mode: horizontal-tb; direction: ltr; height: auto; width: 100%; }
   .sbdeck { grid-template-columns: minmax(0, 1fr); padding: 14px; }
   .sbside { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; }
   .sbstart { aspect-ratio: auto; height: 64px; }
@@ -1429,6 +1442,7 @@ html.intro-on { overflow: hidden; }
       <button class="key" id="sbFlip" type="button" title="Torna al lato A (tasto O o Esc)">⟲ Lato A</button>
       <div class="sbname"><b>MAT<span>.</span>TONE</b><small>Lato B · giradischi da battaglia</small></div>
       <div class="sbstrip"><i class="sbbeat" id="sbBeat"></i><span id="sbPos">■ P01</span><span class="sbmsg" id="sbMsg"></span></div>
+      <button class="key" id="sbTwo" type="button" aria-pressed="false" title="Un secondo giradischi a destra del mixer, per il beat juggling: due copie dello stesso disco e il crossfader in mezzo">＋ Piatto 2</button>
       <button class="key learnbtn" id="sbLearn" type="button" title="Collega jog, crossfader e tasti del tuo controller">MIDI</button>
       <button class="key" id="sbPlay" type="button">▶ Play</button>
     </div>
@@ -1439,6 +1453,7 @@ html.intro-on { overflow: hidden; }
         <div class="sbrpm"><button class="sbrpmb" id="sb33" type="button">33</button><button class="sbrpmb" id="sb45" type="button">45</button></div>
         <button class="key small" id="sbLever" type="button" title="Alza o abbassa la puntina (tasto L)">▼ Puntina giù</button>
         <button class="key small" id="sbSpin" type="button">Spinback</button>
+        <button class="key small sbgo" id="sbGo" type="button" title="Il disco riparte dall’adesivo 1 sul prossimo tempo del beat, già a velocità">▶ A tempo</button>
         <div class="sbpitch"><span class="lbl">Pitch</span><input type="range" id="sbPitch" min="-16" max="16" step="1" value="0" aria-label="Pitch del piatto (doppio clic: zero)"><output id="sbPitchOut">0%</output></div>
       </div>
     </div>
@@ -1450,8 +1465,19 @@ html.intro-on { overflow: hidden; }
       <div class="sbsec sbrow"><div class="knobs sbknobs" id="sbKnobs"></div><label class="sbvol"><span class="lbl">Volume del piatto</span><input type="range" id="sbVol" min="0" max="150" value="100"></label></div>
       <div class="sbsec">
         <div class="sbxfhd"><span class="lbl">Crossfader</span><div class="seg" id="sbCurve" role="group" aria-label="Curva del crossfader"></div><button class="key small" id="sbHam" type="button" title="Inverte il verso del fader, come l’interruttore hamster"><span class="ledi"></span>Hamster</button></div>
-        <div class="sbxfrow"><div class="sbxf" id="sbXf" tabindex="0" role="slider" aria-label="Crossfader" aria-valuemin="0" aria-valuemax="100"><span class="sbxfslot"></span><span class="sbxfl">Disco</span><span class="sbxfr">Solo beat</span><span class="sbxfknob" id="sbXfKnob"></span></div><button class="sbcut" id="sbCut" type="button" title="Tieni premuto: apre e chiude il disco al volo (tasto G)">Taglio</button></div>
+        <div class="sbxfrow"><div class="sbxf" id="sbXf" tabindex="0" role="slider" aria-label="Crossfader" aria-valuemin="0" aria-valuemax="100"><span class="sbxfslot"></span><span class="sbxfl" id="sbXfL">Disco</span><span class="sbxfr" id="sbXfR">Solo beat</span><span class="sbxfknob" id="sbXfKnob"></span></div><button class="sbcut" id="sbCut" type="button" title="Tieni premuto: apre e chiude il disco al volo (tasto G)">Taglio</button></div>
       </div>
+    </div>
+    <div class="unit sbdeck sbdeck2" id="sbDeck2" hidden>
+      <div class="sbplatter" id="sbPlatter2"><canvas id="deck2" aria-label="Secondo piatto: trascina il disco per scratchare, la testina per spostare la puntina"></canvas></div>
+      <div class="sbside">
+        <button class="sbstart" id="sb2Motor" type="button"><span>START</span><small>STOP</small></button>
+        <button class="key small sbgo" id="sb2Go" type="button" title="Riparte dall’adesivo sul prossimo tempo del beat, già a velocità">▶ A tempo</button>
+        <button class="key small sbcue2" id="sb2Cue" type="button" title="Tocca per attaccare l’adesivo dove sta la puntina, poi per tornarci · tieni premuto per toglierlo">Adesivo</button>
+        <button class="key small" id="sb2Spin" type="button">Spinback</button>
+        <div class="sbpitch"><span class="lbl">Pitch</span><input type="range" id="sb2Pitch" min="-16" max="16" step="1" value="0" aria-label="Pitch del piatto 2 (doppio clic: zero)"><output id="sb2PitchOut">0%</output></div>
+      </div>
+      <div class="sb2src"><span class="lbl">Disco sul piatto 2</span><select id="sb2Src" aria-label="Disco sul piatto 2"></select></div>
     </div>
     <div class="sbplate" aria-hidden="true">Mat.Tone · lato B · serie 88 · non aprire: rischio di scratch</div>
   </section>
@@ -1842,7 +1868,7 @@ html.intro-on { overflow: hidden; }
             <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
             <li><b>VIS</b> accanto allo schermo (o <kbd>B</kbd>) cambia la grafica a tempo: spettro, specchio, oscilloscopio, cerchio e cascata, più l’equalizzatore anni 80 a segmenti, il goniometro XY dello stereo, le colline, il tunnel, l’iperspazio, il fuoco, il radar che gira una volta a battuta e la pioggia digitale.</li>
             <li><b>FX</b> (o <kbd>J</kbd>) accende gli effetti visivi a tempo su tutta la stanza: <b>Club</b> (luci sul muro, laser, scintille, scossa), <b>VHS</b>, <b>Cinema</b>, <b>Glitch</b> e <b>Sogno</b>. In Personalizza → Luci e animazioni li combini come vuoi e ne regoli l’intensità.</li>
-            <li><b>⟲ Lato B</b> (in alto o nel Piatto, tasto <kbd>O</kbd>): il Mat.Tone si gira e sotto c’è il giradischi da battaglia, grande. Start/Stop, 33 e 45 giri, pitch, la <b>leva della puntina</b> (<kbd>L</kbd>), tre <b>adesivi</b> per tornare al punto giusto del disco (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>, tieni premuto per toglierli), nove scratch a tempo, e il <b>crossfader</b> vero: si trascina, ha la curva a taglio netto o morbida e l’interruttore hamster; <b>Taglio</b> (<kbd>G</kbd>) lo apre e chiude al volo. La <b>puntina</b> si prende per la testina e si lascia dove vuoi nel disco. I <b>dischi da battaglia</b> hanno più suoni, ognuno col suo adesivo giallo e il suo tasto. <b>● Registra</b> prende il tuo scratch (disco e crossfader) per un giro del pattern e poi lo suona a tempo, come gli scratch automatici. Sul disco puoi mettere anche la tua voce. Il beat continua a suonare, e col tasto Play lo fermi o lo fai ripartire anche da qui.</li>
+            <li><b>⟲ Lato B</b> (in alto o nel Piatto, tasto <kbd>O</kbd>): il Mat.Tone si gira e sotto c’è il giradischi da battaglia, grande. Start/Stop, 33 e 45 giri, pitch, la <b>leva della puntina</b> (<kbd>L</kbd>), tre <b>adesivi</b> per tornare al punto giusto del disco (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>, tieni premuto per toglierli), nove scratch a tempo, e il <b>crossfader</b> vero: si trascina, ha la curva a taglio netto o morbida e l’interruttore hamster; <b>Taglio</b> (<kbd>G</kbd>) lo apre e chiude al volo. La <b>puntina</b> si prende per la testina e si lascia dove vuoi nel disco. I <b>dischi da battaglia</b> hanno più suoni, ognuno col suo adesivo giallo e il suo tasto. <b>● Registra</b> prende il tuo scratch (disco e crossfader) per un giro del pattern e poi lo suona a tempo, come gli scratch automatici. <b>＋ Piatto 2</b> mette un secondo giradischi dall’altra parte del mixer, con una copia dello stesso disco: il crossfader passa da un piatto all’altro e <b>▶ A tempo</b> fa ripartire un disco dal suo adesivo sul prossimo tempo del beat, già a velocità. È il <b>beat juggling</b>: campiona il beat, attacca l’adesivo sull’uno in tutti e due, e alterna i piatti. Sul disco puoi mettere anche la tua voce. Il beat continua a suonare, e col tasto Play lo fermi o lo fai ripartire anche da qui.</li>
             <li>Il tasto <b>3D</b> accanto alle pagine (o <kbd>T</kbd>) cambia visuale: frontale, sul banco, di tre quarti da destra o da sinistra. Si suona anche in 3D.</li>
             <li><b>Reparto tekno</b>: nella libreria la categoria <b>Tekno</b> (casse 909, dure e col rimbombo, acid 303, hoover, accordi dub techno, loop 909 a 140 BPM). Per la free party ci sono la cassa hardtek, lo stab “mentasm”, l’acid che urla, le rullate e l’allarme. I kit <b>Tekno 140</b>, <b>Acid 140</b>, <b>Loop 909 · 140</b>, <b>Free party 170</b> e <b>Hardtek 180</b> portano il tempo dove serve e, se il pattern è vuoto, ci mettono un groove da cui partire.</li>
             <li><b>Campiona</b> (sotto il pad selezionato), come su una groovebox: dal <b>microfono o da un ingresso</b> (scheda audio, Missaggio stereo, BlackHole…), dall’<b>audio del computer</b> (una scheda con YouTube o Spotify: parte da sola quando arriva il suono) o dal <b>beat</b> che sta suonando (ricampiona le battute scelte, a tempo). Poi <b>✂ Taglia nei pad</b> lo spezza sui pad, oppure lo metti intero su un pad. Resta salvato tra «I tuoi suoni» (✕ nella libreria per eliminarlo).</li>
@@ -2841,7 +2867,7 @@ function voiceFix() { const d = VOICE_DEF(); state.voice = Object.assign(d, stat
 voiceFix();
 function videoFix() { state.video = Object.assign({ fmt: "v", layout: "strumento", len: "8", title: "", artist: "", fx: true, lyrics: true, light: false }, state.video || {}); }
 videoFix();
-function sidebFix() { state.sideb = Object.assign({ curve: "netta", hamster: false, xf: 0, cues: [null, null, null] }, state.sideb || {}); if (!Array.isArray(state.sideb.cues) || state.sideb.cues.length !== 3) state.sideb.cues = [null, null, null]; }
+function sidebFix() { state.sideb = Object.assign({ curve: "netta", hamster: false, xf: 0, cues: [null, null, null], two: false }, state.sideb || {}); if (!Array.isArray(state.sideb.cues) || state.sideb.cues.length !== 3) state.sideb.cues = [null, null, null]; }
 sidebFix();
 // the groove: a feel taken from a machine or from a sample, on the groups you choose; and a swing for each group
 function grooveFix() {
@@ -4181,6 +4207,7 @@ class DeckCore {
     if (m.move) this.target += m.move * this.bsr;
     if (m.touch === false) { this.touch = false; this.rate = m.rate || 0; this.slow = !!m.slow; }
     if (m.take !== undefined) this.take = m.take;
+    if (m.go !== undefined) this.go = m.go || null;   // released from the sticker at an exact time, already at speed
     if (m.rec) this.rec = { t0: m.rec.t0, du: m.rec.du, n: m.rec.n, p: new Float32Array(m.rec.n), g: new Float32Array(m.rec.n), a: null };
     if (m.rec === false) this.rec = null;
     if (m.auto !== undefined) { this.auto = m.auto; this.anchor = m.anchor != null ? m.anchor : this.pos; this.origin = m.origin; }
@@ -4207,7 +4234,7 @@ class DeckCore {
   render(out, n, t0) {
     if (!this.buf) { out.fill(0); return; }
     const buf = this.buf, L = this.L, sr = this.sr, step = this.bsr / sr, mstep = step * (1 + this.pitch / 100);
-    const goal = this.motor ? 1 : 0, kUp = 1 / (0.09 * sr), kDn = 1 / (0.45 * sr);
+    let goal = this.motor ? 1 : 0; const kUp = 1 / (0.09 * sr), kDn = 1 / (0.45 * sr);
     const follow = 1 - Math.exp(-1 / (0.0035 * sr));
     const open = this.lever ? 0 : this.cut ? (this.xf > 0.5 ? 0 : 1) : this.xf;   // the cue lever lifts the needle off the record
     const openRec = this.lever || this.cut ? 0 : 1;   // a recorded scratch brings its own fader moves
@@ -4216,6 +4243,7 @@ class DeckCore {
     let p = this.pos, g = this.g, amp = this.amp, prev = this.prev, held = this.held, hc = this.hc, lp = this.lp, hx = this.hpX, hy = this.hpY;
     for (let i = 0; i < n; i++) {
       let gate = 1;
+      if (this.go && t0 + i / sr >= this.go.t) { p = prev = this.target = this.anchor = this.go.pos; this.rate = 1; this.motor = true; goal = 1; this.touch = false; this.auto = ""; this.slow = false; this.go = null; }
       if (this.auto && !this.touch) { const r = this.pattern((t0 + i / sr - this.origin) / this.six); p = r[0]; gate = r[1]; }
       else if (this.touch) p += (this.target - p) * follow;          // the record follows the hand
       else {
@@ -4254,7 +4282,9 @@ class DeckCore {
     this.pos = p; this.prev = prev; this.g = g; this.amp = amp; this.held = held; this.hc = hc; this.lp = lp; this.hpX = hx;
   }
 }
-const deck = { pos: 0, sr: 44100, touching: false, motor: false, auto: "", cut: false, hist: [], src: "phrase", userBeat: null, rev: 0, wave: null, speed: 1, finger: null, send: () => {} };
+let deck = { pos: 0, sr: 44100, touching: false, motor: false, auto: "", cut: false, hist: [], src: "phrase", userBeat: null, rev: 0, wave: null, speed: 1, finger: null, send: () => {} };
+// the second turntable of side B: the same engine, its own record, for beat juggling
+const deck1 = deck, deck2 = { pos: 0, sr: 44100, touching: false, motor: false, auto: "", cut: false, hist: [], src: "copia", userBeat: null, rev: 0, wave: null, speed: 1, finger: null, cues: [null], pitch: 0, send: () => {} };
 function toMono(buf) {
   const n = buf.length, out = new Float32Array(n);
   for (let c = 0; c < buf.numberOfChannels; c++) { const d = buf.getChannelData(c); for (let i = 0; i < n; i++) out[i] += d[i] / buf.numberOfChannels; }
@@ -4268,12 +4298,12 @@ function setDeckBuffer(mono, label) {
   deck.rev = dur >= SEC_PER_REV ? dur / Math.max(1, Math.round(dur / SEC_PER_REV)) : dur * Math.max(1, Math.round(SEC_PER_REV / dur));
   const n = Math.max(64, Math.min(20000, Math.round(dur / deck.rev * 720))), peaks = new Float32Array(n), step = data.length / n;
   for (let i = 0; i < n; i++) { let m = 0; const b = Math.min(data.length, Math.floor((i + 1) * step)); for (let k = Math.floor(i * step); k < b; k++) m = Math.max(m, Math.abs(data[k])); peaks[i] = m; }
-  deck.marks = mono.marks || null;
+  deck.marks = mono.marks || null; deck.mono = mono;
   deck.wave = { peaks, dur, rev: deck.rev, id: (deck.wave ? deck.wave.id : 0) + 1 };
   deck.sr = mono.sr; deck.pos = 0; armR = 0; lastDeckA = null;
   deck.send({ buf: data, sr: mono.sr });
   // a record with several sounds: the first three get the stickers by themselves
-  if (deck.marks) { state.sideb.cues = [0, 1, 2].map(i => deck.marks[i] ? Math.round(deck.marks[i].s * mono.sr) : null); save(); }
+  if (deck.marks && deck === deck1) { state.sideb.cues = [0, 1, 2].map(i => deck.marks[i] ? Math.round(deck.marks[i].s * mono.sr) : null); save(); }
   if (typeof sbRender === "function") sbRender();
   if (label) msg("SUL DISCO: " + label.toUpperCase());
 }
@@ -4351,22 +4381,80 @@ function initDeck() {
     ctx.audioWorklet.addModule(url).then(() => {
       const node = new AudioWorkletNode(ctx, "mattone-deck", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1] });
       node.port.onmessage = e => { if (typeof e.data === "number") deck.pos = e.data; else deckMsg(e.data); };
-      node.connect(N.deckDrive);
+      node.connect(N.deckDrive); N.deckMode = "worklet";
       deck.send = m => node.port.postMessage(m, m.buf ? [m.buf.buffer] : []);
       ready();
     }).catch(() => { useSP(); ready(); });
   } else { useSP(); ready(); }
+}
+const D2 = { on: false, node: null };
+function initDeck2() {
+  if (D2.node || !ctx || !N.deckDrive) return;
+  const conf = { six: sixteenth(), xf: 0, pitch: deck2.pitch, dirt: state.deckDirt, motor: false, speed: deck1.speed, crackle: discGeom().crackle };
+  if (N.deckMode === "worklet") {
+    const node = new AudioWorkletNode(ctx, "mattone-deck", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1] });
+    node.port.onmessage = e => { if (typeof e.data === "number") deck2.pos = e.data; };
+    node.connect(N.deckDrive); D2.node = node;
+    deck2.send = m => node.port.postMessage(m, m.buf ? [m.buf.buffer] : []);
+  } else {
+    const core = new DeckCore(SR), sp = ctx.createScriptProcessor(256, 1, 1);
+    sp.onaudioprocess = e => { core.render(e.outputBuffer.getChannelData(0), e.outputBuffer.length, e.playbackTime || ctx.currentTime); deck2.pos = core.pos; };
+    sp.connect(N.deckDrive); D2.node = sp; deck2.send = m => core.msg(m);
+  }
+  deck2.send({ set: conf });
+}
+// where the deck's needle goes: the sticker, else where it is now
+const deckCueOf = D => D === deck1 ? state.sideb.cues[0] : D.cues[0];
+// released from the sticker on the next beat of the pattern, as a juggler lets go of the record on the one
+function deckGo(D) {
+  if (!initAudio()) return;
+  const at = deckCueOf(D) != null ? deckCueOf(D) : Math.round(D.pos), beat = 4 * sixteenth(), now = ctx.currentTime;
+  const t = playing ? gridOrigin + Math.ceil((now + 0.04 - gridOrigin) / beat) * beat : now + 0.02;
+  if (D === deck1 && D.auto) setAuto("");
+  D.send({ go: { t, pos: at } });
+  clearTimeout(D.go2); D.go2 = setTimeout(() => { D.go2 = 0; D.motor = true; if (D === deck1) $("motor").classList.add("on"); D.pos = at; sbRender(); }, Math.max(0, (t - now) * 1000));
+  msg((D === deck1 ? "PIATTO 1" : "PIATTO 2") + (playing ? " PARTE SUL PROSSIMO TEMPO" : " PARTE DALL’ADESIVO"));
+}
+function deckMonoFor(src) {
+  if (src === "copia") return deck1.mono ? Promise.resolve([deck1.mono, "copia del disco 1"]) : Promise.reject(new Error("vuoto"));
+  if (src === "voce") { const t = vTake(), b = t && VO.bufs.get(t.id); return b ? Promise.resolve([toMono(b), t.name]) : Promise.reject(new Error("voce")); }
+  if (src === "beat") return deck1.userBeat ? Promise.resolve([deck1.userBeat, "il tuo beat"]) : Promise.reject(new Error("beat"));
+  if (src === "phrase") return Promise.resolve([buildPhrase(), "frase scratch"]);
+  if (BATTLES[src]) return buildBattle(src).then(m => [m, BATTLES[src][0]]);
+  const id = src === "pad" ? curPr().sound : src;
+  return loadSound(id).then(b => [toMono(b), SOUNDS.get(id).name]);
+}
+function deck2Source(src) {
+  if (!initAudio()) return;
+  initDeck2(); deck2.src = src; deck2.cues = [null];
+  deckMonoFor(src).then(([m, label]) => {
+    if (deck2.src !== src) return;
+    onDeck2(() => setDeckBuffer(m, label));
+    if (src === "copia") { deck2.cues = [state.sideb.cues[0]]; deck2.marks = deck1.marks; }   // the same record: the same sticker
+    sizeDeck2(); sbRender();
+  }, () => msg("DISCO NON DISPONIBILE"));
+}
+function setTwoDecks(on) {
+  if (on && !initAudio()) return;
+  D2.on = state.sideb.two = !!on; save();
+  $("sideB").classList.toggle("two", D2.on); $("sbDeck2").hidden = !D2.on;
+  if (D2.on) { initDeck2(); if (!deck2.wave) deck2Source("copia"); }
+  else if (D2.node) { deck2.motor = false; deck2.send({ set: { motor: false, xf: 0 } }); }
+  sbSetXf(state.sideb.xf);
+  requestAnimationFrame(() => { sizeCanvases(); if (SB.knobs) SB.knobs.forEach(k => k.draw()); });
+  sbRender();
+  if (on != null) msg(D2.on ? "DUE PIATTI · IL CROSSFADER PASSA DALL’UNO ALL’ALTRO" : "UN PIATTO SOLO");
 }
 function applyDeckColor() {
   if (!ctx || !N.deckTone) return;
   // a 78 never had the highs: the tone control works under a lower ceiling
   N.deckTone.frequency.setTargetAtTime(380 * Math.pow(2, state.deckTone * 4.4) * (discId() === "shellac" ? 0.45 : 1), ctx.currentTime, 0.03);
   N.deckDrive.curve = satCurve(0.35 + state.deckDirt * 1.2);
-  deck.send({ set: { dirt: state.deckDirt } });
+  deck.send({ set: { dirt: state.deckDirt } }); deck2.send({ set: { dirt: state.deckDirt } });
 }
 function deckAngle() { return (deck.pos / deck.sr) / (deck.rev || SEC_PER_REV) * Math.PI * 2; }
 function setAuto(mode) {
-  if (!initAudio()) return;
+  if (!initAudio() || deck !== deck1) return;
   let anchor;
   if (mode === "rec") {
     const T = state.sideb.take;
@@ -4396,6 +4484,7 @@ function grabBeat() {
       if (peak < 0.01) { msg("SILENZIO: PREMI PLAY E RIPROVA"); return; }
       deck.userBeat = { data, sr: SR };
       deck.src = "beat"; renderDeckSrc(); sbCuesReset(); setDeckBuffer(deck.userBeat, "il tuo beat · trascina il disco");
+      state.sideb.cues[0] = 0; save(); sbRender();   // the first sticker on the one of the bar, ready to juggle
     }
   };
 }
@@ -4414,6 +4503,12 @@ function setDeckSource(src) {
 }
 function bindDeck() {
   const cv = $("deck");
+  bindPlatter(cv, f => f());
+  bindDeckKeys(cv);
+}
+// the hands on a record (and its tonearm); wrap() runs each touch with the right deck swapped in
+function bindPlatter(cv, wrap) {
+  const on = (t, f, o) => cv.addEventListener(t, e => wrap(() => f(e)), o);
   let W = 1, lx = 0, ly = 0, travel = 0;
   // movement along the groove (tangent to the record) moves the audio; works with circles and short strokes.
   // offsetX/Y are in the canvas' own coordinates, so this stays exact when the board is shown in 3D
@@ -4439,8 +4534,8 @@ function bindDeck() {
     const at = deckSeekAt(r); deck.send({ seek: at }); deck.pos = at; deck.lever = false; deck.send({ set: { lever: false } }); lastDeckA = null; sbRender();
     msg("PUNTINA GIÙ · " + (at / deck.sr).toFixed(1).replace(".", ",") + " S");
   };
-  cv.addEventListener("pointermove", e => { if (!deck.touching && !deck.armDrag && e.pointerType === "mouse") cv.style.cursor = onArm(e.offsetX / (cv.clientWidth || 1), e.offsetY / (cv.clientWidth || 1)) ? "pointer" : ""; });
-  cv.addEventListener("pointerdown", e => {
+  on("pointermove", e => { if (!deck.touching && !deck.armDrag && e.pointerType === "mouse") cv.style.cursor = onArm(e.offsetX / (cv.clientWidth || 1), e.offsetY / (cv.clientWidth || 1)) ? "pointer" : ""; });
+  on("pointerdown", e => {
     if (!initAudio()) return;
     e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (_) {}
     W = cv.clientWidth || 1;
@@ -4451,9 +4546,10 @@ function bindDeck() {
     }
     lx = e.offsetX; ly = e.offsetY; travel = 0; deck.finger = [lx / W, ly / W];
     if (deck.auto) setAuto("");
+    if (deck.go2) { clearTimeout(deck.go2); deck.go2 = 0; deck.send({ go: false }); }
     deck.touching = true; deck.hist = [[performance.now(), 0]]; deck.send({ touch: true });
   });
-  cv.addEventListener("pointermove", e => {
+  on("pointermove", e => {
     if (deck.armDrag) { armTo(e.offsetX / W, e.offsetY / W); return; }
     if (!deck.touching) return;
     const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
@@ -4466,20 +4562,23 @@ function bindDeck() {
     const rate = dt > 0 && performance.now() - b[0] < 60 ? Math.max(-4, Math.min(4, (b[1] - a[1]) / dt)) : 0;
     deck.touching = false; deck.send({ touch: false, rate });
   };
-  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => cv.addEventListener(ev, release));
-  cv.addEventListener("wheel", e => {
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => on(ev, release));
+  on("wheel", e => {
     if (!initAudio()) return;
     e.preventDefault();
     if (!cv._w) deck.send({ touch: true });
     deck.send({ move: e.deltaY * 0.0012 });
-    clearTimeout(cv._w); cv._w = setTimeout(() => { cv._w = 0; deck.send({ touch: false, rate: 0 }); }, 90);
+    clearTimeout(cv._w); cv._w = setTimeout(() => wrap(() => { cv._w = 0; deck.send({ touch: false, rate: 0 }); }), 90);
   }, { passive: false });
+}
+function bindDeckKeys() {
 
   $("motor").addEventListener("click", () => { if (!initAudio()) return; deck.motor = !deck.motor; deck.send({ set: { motor: deck.motor } }); $("motor").classList.toggle("on", deck.motor); msg(deck.motor ? "IL DISCO GIRA" : "DISCO FERMO · SCRATCHA A MANO"); });
   $("autoSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setAuto(b.dataset.auto); });
   $("rpm45").addEventListener("click", () => {
     if (!initAudio()) return;
     deck.speed = deck.speed > 1.1 ? 1 : 1.35; deck.send({ set: { speed: deck.speed } }); deckBase = null; drawDeck(true);
+    deck2.speed = deck.speed; deck2.send({ set: { speed: deck.speed } }); V2.base = null; V2.lab = null;   // both decks on the same speed
     $("rpm45").classList.toggle("on", deck.speed > 1.1); msg(deck.speed > 1.1 ? "45 GIRI" : "33 GIRI");
   });
   $("spinback").addEventListener("click", () => {
@@ -4869,7 +4968,7 @@ function armed(id, label, fn) {
   clearTimeout(armedT[id]); armedT[id] = 0; b.textContent = b.dataset.orig; b.classList.remove("on"); fn();
 }
 function toggleRec() { recording = !recording; renderTransport(); msg(recording ? (playing ? "REC: SUONA SUI PAD" : "REC PRONTO: PREMI PLAY") : "REC SPENTO"); }
-function setBpm(v) { state.bpm = Math.max(50, Math.min(200, Math.round(v))); $("bpmNum").textContent = state.bpm; $("vBpm").textContent = pad3(state.bpm); updateDelayTime(); deck.send({ set: { six: sixteenth() } }); save(); renderSong(); warpRefresh(); }
+function setBpm(v) { state.bpm = Math.max(50, Math.min(200, Math.round(v))); $("bpmNum").textContent = state.bpm; $("vBpm").textContent = pad3(state.bpm); updateDelayTime(); deck.send({ set: { six: sixteenth() } }); deck2.send({ set: { six: sixteenth() } }); save(); renderSong(); warpRefresh(); }
 let taps = [];
 function tapTempo() {
   const now = performance.now(); taps = taps.filter(t => now - t < 2500); taps.push(now);
@@ -5425,7 +5524,16 @@ function sizeCanvases() {
   specCv.width = LCD_W * k; specCv.height = LCD_H * k;
   const size = Math.max(1, Math.round(Math.min(deckCv.clientWidth, deckCv.clientHeight) * DPR()));
   if (size !== deckSize) { deckSize = size; deckCv.width = deckCv.height = size; deckBase = null; recordCv = null; sheenCv = null; labelCv = null; armR = 0; }
-  drawDeck(true); drawSpec(true); drawVU(true);
+  drawDeck(true); drawSpec(true); drawVU(true); sizeDeck2();
+}
+function sizeDeck2() {
+  if (!D2.on) return;
+  onDeck2(() => {
+    deckCv = $("deck2");
+    const size = Math.max(1, Math.round(Math.min(deckCv.clientWidth, deckCv.clientHeight) * DPR()));
+    if (size > 1 && size !== deckSize) { deckSize = size; deckCv.width = deckCv.height = size; deckBase = null; recordCv = null; sheenCv = null; labelCv = null; armR = 0; }
+    drawDeck(true);
+  });
 }
 /* ---------- display a matrice di punti, stile OLED moderno (256 × 80) ---------- */
 // a two-dot margin all around, like the bezel of a real screen; the visualizer has its own window
@@ -6416,7 +6524,16 @@ function buildLabel() {
 }
 let lastDeckA = null, lastDeckT = 0, armR = 0, deckSpin = 0, armLift = 0;
 // changing the record: the old one lifts off, the new one drops onto the platter
-const deckSwap = { key: "", t0: 0, rec: null, lab: null };
+let deckSwap = { key: "", t0: 0, rec: null, lab: null };
+// everything the drawing of a turntable keeps between frames: the second deck has its own set, swapped in while it is drawn or touched
+const V2 = { deck: deck2, cv: null, size: 0, base: null, rec: null, rk: "", lab: null, lk: "", sheen: null, armR: 0, armLift: 0, lastA: null, spin: 0, swap: { key: "", t0: 0, rec: null, lab: null } };
+function deckSave(V) { Object.assign(V, { deck, cv: deckCv, size: deckSize, base: deckBase, rec: recordCv, rk: recordKey, lab: labelCv, lk: labelKey, sheen: sheenCv, armR, armLift, lastA: lastDeckA, spin: deckSpin, swap: deckSwap }); }
+function deckLoad(V) { deck = V.deck; deckCv = V.cv; deckSize = V.size; deckBase = V.base; recordCv = V.rec; recordKey = V.rk; labelCv = V.lab; labelKey = V.lk; sheenCv = V.sheen; armR = V.armR; armLift = V.armLift; lastDeckA = V.lastA; deckSpin = V.spin; deckSwap = V.swap; }
+function onDeck2(fn) {
+  if (deck === deck2) return fn();
+  const A = {}; deckSave(A); deckLoad(V2);
+  try { return fn(); } finally { deckSave(V2); deckLoad(A); }
+}
 function drawDeck(force) {
   if (!deckCv || !deckSize) return;
   const a = deckAngle(), S = deckSize, cx = S / 2, R = S * 0.47, rr = R * 0.93, G = discGeom();
@@ -6494,7 +6611,7 @@ function drawDeck(force) {
 // the stickers you put on: a round paper dot on the groove, it passes under the needle when the record gets there
 function deckStickers(c, S, cx, rr, a) {
   const w = deck.wave; if (!w || !state.sideb) return;
-  state.sideb.cues.forEach((q, i) => {
+  (deck === deck1 ? state.sideb.cues : deck.cues || []).forEach((q, i) => {
     if (q == null) return;
     const s = (((q / deck.sr) % w.dur) + w.dur) % w.dur, r = grooveR(s, rr), st = stylusAt(S, r);
     const th = Math.atan2(st[1] - cx, st[0] - cx) + a - s / w.rev * Math.PI * 2, x = cx + Math.cos(th) * r, y = cx + Math.sin(th) * r, R = S * 0.016;
@@ -6830,7 +6947,7 @@ function tick() {
   kickGlow *= 0.86; beatPulse *= 0.9;
   if (state.custom.pulse === "si") { const v = Math.min(1, kickGlow) * 0.9; if (Math.abs(v - beatLightV) > 0.008) { $("beatLight").style.opacity = v.toFixed(3); beatLightV = v; } }
   if (logoDot) logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
-  drawSpec(!ctx); drawVU(!ctx); drawDeck(false);
+  drawSpec(!ctx); drawVU(!ctx); drawDeck(false); if (D2.on && SB.on) onDeck2(() => drawDeck(false));
   if ($("vidBox").hidden) drawVfx(performance.now()); else if (VX_ST.tf || $("vfxAdd").width || $("vfxBack").width || $("vfxInk").width) vfxClear();   // behind the video box the screen effects rest
   if (curPage === "voce") voiceLive();
   if (SB.on) sbTick();
@@ -7743,6 +7860,7 @@ function learnTarget(t) {
   const kc = t.closest(".knob canvas, .knob");
   if (kc) { const cv = kc.tagName === "CANVAS" ? kc : kc.querySelector("canvas"), k = knobs.find(x => x.cv === cv); if (k) return [{ kind: "knob", id: k.key, name: k.label }, cv.parentNode]; }
   if (t.closest("#deck")) return [{ kind: "deck", name: "Disco: jog per scratchare, nota per toccarlo" }, $("deck")];
+  if (t.closest("#deck2")) return [{ kind: "deck", id: "2", name: "Disco 2: jog per scratchare, nota per toccarlo" }, $("deck2")];
   if (t.closest("#sbXf")) return [{ kind: "xf", name: "Crossfader" }, $("sbXf")];
   const r = t.closest('input[type="range"][id]');
   if (r) return [{ kind: "range", id: r.id, name: r.getAttribute("aria-label") || r.id }, r];
@@ -7752,7 +7870,7 @@ function learnTarget(t) {
 }
 function learnBind(key, isCC) {
   let t = ML.target;
-  if (t.kind === "deck") t = isCC ? { kind: "jog", name: "Jog del disco" } : { kind: "touch", name: "Tocco del disco" };
+  if (t.kind === "deck") t = isCC ? { kind: "jog", id: t.id, name: "Jog del disco" + (t.id ? " 2" : "") } : { kind: "touch", id: t.id, name: "Tocco del disco" + (t.id ? " 2" : "") };
   if ((t.kind === "knob" || t.kind === "range" || t.kind === "xf" || t.kind === "jog") && !isCC) { learnText("«" + t.name + "» vuole una manopola, un fader o un jog: muovi quello"); return; }
   state.midiMap[key] = { kind: t.kind, id: t.id, name: t.name }; save();
   const what = (key[0] === "c" ? "CC " : "NOTA ") + key.split(":")[1] + " · CANALE " + (+key.slice(1).split(":")[0] + 1);
@@ -7761,7 +7879,7 @@ function learnBind(key, isCC) {
 }
 function learnEl(t) {
   if (t.kind === "knob") { const k = knobs.filter(x => x.key === t.id && x.cv.isConnected).pop(); return k && k.cv.parentNode; }
-  if (t.kind === "jog" || t.kind === "touch") return $("deck");
+  if (t.kind === "jog" || t.kind === "touch") return $(t.id === "2" ? "deck2" : "deck");
   if (t.kind === "xf") return $("sbXf");
   return $(t.id);
 }
@@ -7792,16 +7910,17 @@ function midiApply(t, key, v, isCC, isOn, isOff) {
     if (!isCC) return;
     sbSetXf(v / 127); clearTimeout(ML.commit[key]); ML.commit[key] = setTimeout(save, 300);
   } else if (t.kind === "touch") {
-    if (isOn) { ML.touch = true; clearTimeout(ML.jogT); ML.jogT = 0; if (deck.auto) setAuto(""); deck.touching = true; deck.send({ touch: true }); }
-    else if (isOff || (isCC && v < 64)) { ML.touch = false; deck.touching = false; deck.send({ touch: false, rate: 0 }); }
+    const D = t.id === "2" ? deck2 : deck1;
+    if (isOn) { D.mlTouch = true; clearTimeout(D.mlJog); D.mlJog = 0; if (D.auto) setAuto(""); D.touching = true; D.send({ touch: true }); }
+    else if (isOff || (isCC && v < 64)) { D.mlTouch = false; D.touching = false; D.send({ touch: false, rate: 0 }); }
   } else if (t.kind === "jog" && isCC) {
     // relative encoders: 1…63 forward and 127…65 back, or around 64 on some controllers
-    const d = v >= 58 && v <= 70 ? v - 64 : v < 64 ? v : v - 128;
+    const D = t.id === "2" ? deck2 : deck1, d = v >= 58 && v <= 70 ? v - 64 : v < 64 ? v : v - 128;
     if (!d) return;
-    if (deck.auto) setAuto("");
-    if (!ML.touch && !ML.jogT) deck.send({ touch: true });
-    deck.send({ move: d * (deck.rev || SEC_PER_REV) / (state.jogTicks || 400) });
-    if (!ML.touch) { clearTimeout(ML.jogT); ML.jogT = setTimeout(() => { ML.jogT = 0; if (!ML.touch) deck.send({ touch: false, rate: 0 }); }, 90); }
+    if (D.auto) setAuto("");
+    if (!D.mlTouch && !D.mlJog) D.send({ touch: true });
+    D.send({ move: d * (D.rev || SEC_PER_REV) / (state.jogTicks || 400) });
+    if (!D.mlTouch) { clearTimeout(D.mlJog); D.mlJog = setTimeout(() => { D.mlJog = 0; if (!D.mlTouch) D.send({ touch: false, rate: 0 }); }, 90); }
   }
 }
 function bindLearn() {
@@ -8690,7 +8809,7 @@ function flipSide(toB) {
     SB.on = toB; app.classList.toggle("sideb-on", toB); $("sideB").hidden = !toB;
     // the one record: it moves to the side that is up
     const cv = $("deck"); (toB ? $("sbPlatter") : document.querySelector(".pg-piatto .platter")).appendChild(cv);
-    requestAnimationFrame(() => { sizeCanvases(); if (SB.knobs) SB.knobs.forEach(k => k.draw()); if (toB) sbSetXf(state.sideb.xf); sbRender(); });
+    requestAnimationFrame(() => { if (toB && state.sideb.two && !D2.on && ctx) setTwoDecks(true); sizeCanvases(); if (SB.knobs) SB.knobs.forEach(k => k.draw()); if (toB) sbSetXf(state.sideb.xf); sbRender(); });
     if (!toB) { fitPages(); placeTabGlow(); }
   };
   const flat = !document.documentElement.classList.contains("v3d");
@@ -8712,7 +8831,8 @@ function sbXfGain(p) {
 }
 function sbSetXf(p) {
   state.sideb.xf = Math.max(0, Math.min(1, p));
-  state.xf = sbXfGain(state.sideb.xf); deck.send({ set: { xf: state.xf } });
+  state.xf = sbXfGain(state.sideb.xf); deck1.send({ set: { xf: state.xf } });
+  if (D2.on) deck2.send({ set: { xf: sbXfGain(1 - state.sideb.xf) } });   // the other side of the fader
   $("xf").value = Math.round(state.xf * 100);
   sbXfDraw();
 }
@@ -8721,6 +8841,7 @@ function sbXfDraw() {
   k.style.left = "calc(18px + (100% - 36px) * " + state.sideb.xf.toFixed(4) + ")";
   $("sbXf").classList.toggle("open", state.xf > 0.5); $("sbXf").classList.toggle("ham", !!state.sideb.hamster);
   $("sbXf").setAttribute("aria-valuenow", Math.round(state.sideb.xf * 100));
+  $("sbXfR").textContent = D2.on ? "Piatto 2" : "Solo beat"; $("sbXfL").textContent = D2.on ? "Piatto 1" : "Disco";
 }
 // three stickers on the record: a touch puts one where the needle is, the next touch brings the record back to it
 function sbCue(i, clear) {
@@ -8752,6 +8873,14 @@ function sbRender() {
   $("sbVol").value = Math.round((state.deckVol ?? 1) * 100);
   sbXfDraw();
   const sel = $("sbSrc"); if (sel && $("deckSrc")) { sel.innerHTML = $("deckSrc").innerHTML; sel.value = $("deckSrc").value; }
+  // the second deck
+  $("sbTwo").setAttribute("aria-pressed", D2.on); $("sbTwo").textContent = D2.on ? "− Piatto 2" : "＋ Piatto 2";
+  if (D2.on) {
+    const s2 = $("sb2Src"); s2.innerHTML = '<option value="copia">Copia del disco 1</option>' + $("deckSrc").innerHTML; s2.value = deck2.src;
+    $("sb2Motor").classList.toggle("on", deck2.motor);
+    $("sb2Cue").classList.toggle("set", deck2.cues[0] != null); $("sb2Cue").textContent = deck2.cues[0] != null ? "● All’adesivo" : "Adesivo";
+    $("sb2Pitch").value = deck2.pitch; $("sb2PitchOut").textContent = (deck2.pitch > 0 ? "+" : "") + deck2.pitch + "%";
+  }
   // the sounds of a battle record, one button each
   const mk = deck.marks && deck.wave ? deck.wave.id : 0;
   if (SB.marksId !== mk) {
@@ -8826,6 +8955,26 @@ function buildSideB() {
   $("sb45").addEventListener("click", () => { if (!(deck.speed > 1.1)) $("rpm45").click(); sbRender(); });
   $("sbSpin").addEventListener("click", () => { $("spinback").click(); });
   $("sbLever").addEventListener("click", () => sbLever());
+  $("sbGo").addEventListener("click", () => deckGo(deck1));
+  $("sbTwo").addEventListener("click", () => setTwoDecks(!D2.on));
+  bindPlatter($("deck2"), onDeck2);
+  $("sb2Motor").addEventListener("click", () => { if (!initAudio()) return; initDeck2(); deck2.motor = !deck2.motor; deck2.send({ set: { motor: deck2.motor } }); sbRender(); msg(deck2.motor ? "PIATTO 2 GIRA" : "PIATTO 2 FERMO"); });
+  $("sb2Go").addEventListener("click", () => { initDeck2(); deckGo(deck2); });
+  $("sb2Spin").addEventListener("click", () => { if (!initAudio()) return; deck2.send({ touch: true }); deck2.send({ touch: false, rate: -3.2, slow: true }); msg("SPINBACK SUL PIATTO 2!"); });
+  $("sb2Src").addEventListener("change", e => deck2Source(e.target.value));
+  $("sb2Pitch").addEventListener("input", e => { deck2.pitch = +e.target.value; deck2.send({ set: { pitch: deck2.pitch } }); $("sb2PitchOut").textContent = (deck2.pitch > 0 ? "+" : "") + deck2.pitch + "%"; });
+  $("sb2Pitch").addEventListener("dblclick", () => { deck2.pitch = 0; deck2.send({ set: { pitch: 0 } }); sbRender(); });
+  { // the sticker of deck 2: a touch sticks it, the next one goes back to it, holding takes it off
+    const b = $("sb2Cue"); let t = 0, long = false;
+    b.addEventListener("pointerdown", () => { long = false; clearTimeout(t); t = setTimeout(() => { long = true; deck2.cues = [null]; sbRender(); msg("ADESIVO DEL PIATTO 2 TOLTO"); }, 550); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev => b.addEventListener(ev, () => clearTimeout(t)));
+    b.addEventListener("click", () => {
+      if (long || !initAudio()) return;
+      if (deck2.cues[0] == null) { deck2.cues = [Math.round(deck2.pos)]; msg("ADESIVO SUL PIATTO 2"); }
+      else { deck2.send({ seek: deck2.cues[0] }); deck2.pos = deck2.cues[0]; V2.lastA = null; msg("PIATTO 2 ALL’ADESIVO"); }
+      sbRender();
+    });
+  }
   $("sbRec").addEventListener("click", sbRecToggle);
   $("sbRecPlay").addEventListener("click", () => { setAuto(deck.auto === "rec" ? "" : "rec"); sbRender(); });
   $("sbRecDel").addEventListener("click", () => { if (deck.auto === "rec") setAuto(""); delete state.sideb.take; save(); sbRender(); msg("SCRATCH CANCELLATO"); });
