@@ -307,6 +307,12 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 22px; border: 0; bord
 .pg-seq { display: grid; gap: 14px; align-content: start; }
 .seqbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; }
 .seqbar .seg button { padding: 6px 10px; }
+.melbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: color-mix(in srgb, var(--hue) 10%, var(--well)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hue) 35%, transparent); }
+.melbar[hidden] { display: none; }
+.melbar > .lbl { color: var(--well-text); }
+.melbar select { background: var(--well); color: var(--well-text); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; }
+.melbar .seg button { padding: 6px 9px; }
+.melgiro { flex: 1 1 100%; font-family: var(--f-lcd, monospace); font-size: 17px; color: var(--led); min-height: 1.2em; }
 .fillbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
 .fillbar .seg button { padding: 6px 9px; }
 .groovebar { display: grid; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
@@ -1603,6 +1609,15 @@ html.intro-on { overflow: hidden; }
           <span class="lbl">Griglia</span><div class="seg" id="divSeg" role="group" aria-label="Griglia"></div>
           <span class="pagewrap" id="pageWrap" hidden><span class="lbl">Modifica la battuta</span><span class="seg" id="pageSeg" role="group" aria-label="Battuta da modificare"></span><button class="key small" id="follow" type="button" aria-pressed="true" title="Mentre suona, mostra la battuta che sta suonando"><span class="ledi"></span>Segui</button></span>
         </div>
+        <div class="melbar" id="melBar" hidden>
+          <span class="lbl">Assistente melodia</span>
+          <select id="melMood" aria-label="Atmosfera"></select>
+          <button class="key small" id="melChords" type="button" title="Scrive un giro di accordi della tonalità sul pad (se il pad non è intonato, usa uno strumento del gruppo C)">🎹 Accordi</button>
+          <button class="key small on" id="melIdea" type="button" title="Inventa una melodia sopra gli accordi: ancora per un’altra">🎲 Melodia</button>
+          <div class="seg" id="melLevel" role="group" aria-label="Quante note"></div>
+          <button class="key small" id="melKeep" type="button" title="Tiene la prima metà della melodia e rifà solo la seconda">Tieni l’inizio</button>
+          <span class="melgiro" id="melGiro"></span>
+        </div>
         <div class="scroller"><div class="grid" id="grid"></div></div>
         <div class="groovebar" id="grooveBar">
           <div class="grvhd">
@@ -1833,6 +1848,7 @@ html.intro-on { overflow: hidden; }
             <li><b>Controller MIDI</b> (Suona, accanto a MIDI, o nel lato B): i pad del controller suonano i pad. Con <b>Impara</b> colleghi il resto: tocca una manopola, un cursore o un tasto sullo schermo e poi muovi quello vero. Tocca il <b>disco</b> e gira il jog del tuo controller da DJ per scratchare (se il jog sente il tocco, premilo e si collega anche quello); tocca il <b>crossfader</b> del lato B e muovi il fader. I collegamenti restano nell’app.</li>
             <li><b>Groove</b> (Sequencer, sotto la griglia): lo swing delle macchine vere (MPC 60 dal 54 al 66%, SP-1200), uno <b>storto alla Dilla</b>, uno pigro e uno spinto, oppure <b>Prendi dal pad</b>: ricava il groove dal loop del pad selezionato, così i tuoi colpi scivolano come il break. Scegli su quali gruppi vale e quanto; gli altri gruppi possono avere ognuno il suo swing.</li>
             <li><b>Loop a tempo</b> (Suona, sotto la forma del suono): un loop o un break campionato segue il BPM del progetto senza cambiare tono. Il tempo del loop lo stima da solo (o lo legge dal nome, «· 92 BPM»); se sbaglia del doppio usa <b>½</b> o <b>×2</b>. <b>A fette</b> taglia sui colpi come i file REX, ed è il migliore per i break; <b>Elastico</b> va per pad, voci e suoni lunghi. Con il tono del pad cambi la nota e il loop resta a tempo.</li>
+            <li><b>Assistente melodia</b> (Sequencer → Melodia): scegli l’atmosfera (malinconico, soul anni 70, cupo, jazz anni 90, epico, sognante), poi <b>🎹 Accordi</b> scrive un giro di accordi della tonalità e <b>🎲 Melodia</b> inventa una melodia che ci sta sopra: note dell’accordo sui tempi, note della scala in mezzo, una frase che torna e si chiude. Premi ancora per un’altra; Semplice, Media o Movimentata cambia quante note; <b>Tieni l’inizio</b> rifà solo la seconda metà. Se il pad scelto non suona note, usa uno strumento del gruppo C. Poi correggi a mano quello che vuoi.</li>
             <li><b>Basso 808</b> (Sequencer → Melodia): trascina una nota verso destra per allungarla; col tasto destro (o tenendo premuto) scegli lunghezza e <b>glissato</b>, così la nota prima scivola in quella nuova come nella trap. <b>🎲 Idea 808</b> scrive una linea sulla cassa del gruppo A e, se il pad non ha un suono intonato, ci mette l’808. In libreria, categoria 808: lungo pulito, sporco e corto.</li>
             <li><b>🎬 Video per i social</b> (Mix o Voce): verticale per TikTok, Reels e Shorts, quadrato o orizzontale. Tre stili: <b>Strumento</b> (schermo, lancette e pad che si accendono), <b>Disco</b> (il vinile che gira con lo spettro intorno) e <b>Testo</b> (le barre grandi, a tempo). Titolo, nome d’arte, effetti FX e testo a tempo; il video si registra mentre suona e si salva in MP4.</li>
             <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
@@ -4973,6 +4989,7 @@ function build() {
   $("tabGrid").addEventListener("click", () => { state.view = "grid"; save(); renderEditor(); });
   $("tabRoll").addEventListener("click", () => { state.view = "roll"; save(); renderEditor(); });
   $("idea808").addEventListener("click", idea808);
+  bindMelody();
   $("muteBank").addEventListener("click", () => { state.mutes[state.bank] = !state.mutes[state.bank]; save(); renderBanks(); renderEditorHead(); renderGroups(); msg("GRUPPO " + BANKS[state.bank].id + (state.mutes[state.bank] ? " MUTO" : " ATTIVO")); });
   $("clearTrack").addEventListener("click", () => { state.patterns[state.pattern][state.bank][state.pad] = new Array(patLen()).fill(0); save(); renderPads(); renderEditor(); renderPatterns(); renderLeds(); msg("CANCELLATO " + padLabel(state.bank, state.pad)); });
   $("openLib").addEventListener("click", openLibrary);
@@ -5475,7 +5492,7 @@ function renderInspector() {
 function renderEditorHead() {
   const roll = state.view === "roll", s = curSound();
   $("tabGrid").setAttribute("aria-pressed", !roll); $("tabRoll").setAttribute("aria-pressed", roll);
-  $("idea808").hidden = !roll; $("ideaSel").hidden = $("variaBtn").hidden = roll;
+  $("idea808").hidden = !roll; $("melBar").hidden = !roll; $("ideaSel").hidden = $("variaBtn").hidden = roll;
   $("edCtx").textContent = roll ? "Melodia di " + padLabel(state.bank, state.pad) + " · " + (s ? s.name : "") + " · " + NOTE_NAMES[state.root] + " " + SCALES[state.scale][0].toLowerCase() + " · trascina per allungare, tasto destro per il glissato" : "Gruppo " + BANKS[state.bank].id + " · tocco = colpo · due = accento";
   $("muteBank").textContent = (state.mutes[state.bank] ? "Riattiva " : "Silenzia ") + BANKS[state.bank].id;
   $("muteBank").classList.toggle("on", state.mutes[state.bank]);
@@ -5487,7 +5504,7 @@ let edKey = "", edCells = [], edLabs = [], edRows = [], edCols = [];
 function editorKey() {
   const b = state.bank;
   return (state.view === "grid" ? "g|" + b + "|" + state.banks[b].map(p => p.sound).join(",")
-    : "r|" + b + "|" + state.pad + "|" + state.scale + "|" + state.root + "|" + state.oct + "|" + curPr().sound) + "|" + pm().div;
+    : "r|" + b + "|" + state.pad + "|" + state.scale + "|" + state.root + "|" + state.oct + "|" + curPr().sound + "|" + (curPr().pitch || 0)) + "|" + pm().div;
 }
 // r: the step inside the bar; s: the step in the pattern, which depends on the bar shown
 function cellsRow(grid, cls, onCell, meta) {
@@ -5519,7 +5536,7 @@ function buildEditor() {
       cellsRow(grid, "", s2 => toggleCell(state.bank, p, s2), { p });
     }
   } else {
-    const len = scaleNotes().length, base = baseNote(curSound());
+    const len = scaleNotes().length, base = baseNote(curSound()) + (curPr().pitch || 0);   // the names of the notes as they sound, with the pad's pitch
     for (let d = 2 * len; d >= 0; d--) edRows.push(degreeOffset(d));
     for (const off of edRows) {
       const isRoot = ((off - state.root) % 12 + 12) % 12 === 0;
@@ -5667,7 +5684,7 @@ function bindGroove() {
   });
 }
 function renderAll() {
-  renderBanks(); renderPads(); renderPatterns(); renderInspector(); renderEditor(); renderTransport(); renderFx(); renderLeds(); renderSong(); renderNr(); renderChords(); renderGroove(); renderFills();
+  renderBanks(); renderPads(); renderPatterns(); renderInspector(); renderEditor(); renderTransport(); renderFx(); renderLeds(); renderSong(); renderNr(); renderChords(); renderGroove(); renderFills(); renderMelGiro();
   $("bpmNum").textContent = state.bpm; $("vBpm").textContent = pad3(state.bpm); $("swing").value = state.swing; $("swingOut").textContent = state.swing + "%";
 }
 
@@ -7816,6 +7833,172 @@ function idea808() {
   P[b][p] = row; save(); renderAll(); msg("IDEA 808 SU " + padLabel(b, p) + ": " + hits.length + " NOTE SULLA CASSA");
 }
 
+/* ---------- assistente melodia: giro di accordi e melodia che ci sta sopra ---------- */
+// moods: scale, the degrees of the chords, how many notes in each chord, how they are played, the sounds that suit them
+const MOODS = [
+  ["malinconico", "Malinconico", 0, [0, 5, 2, 6], 4, "tenuto", "gm_epiano", "vc_kalimba"],
+  ["soul", "Soul anni 70", 1, [1, 4, 0, 5], 5, "stab", "gm_epiano", "vc_sax"],
+  ["cupo", "Cupo", 7, [0, 0, 5, 4], 3, "tenuto", "gm_strings", "vc_piano"],
+  ["jazz", "Jazz anni 90", 0, [0, 3, 6, 2], 5, "stab", "gm_epiano", "vc_vibes"],
+  ["epico", "Epico", 7, [0, 6, 5, 4], 3, "tenuto", "gm_strings", "gm_flute"],
+  ["sognante", "Sognante", 1, [0, 3, 5, 4], 5, "tenuto", "sy_lofipad", "sy_pluck"],
+];
+const MEL_LEVELS = [["Semplice", 0], ["Media", 1], ["Movimentata", 2]];
+let melLevel = 1;
+const moodOf = id => MOODS.find(m => m[0] === id) || MOODS[0];
+const QUAL = { "0,3,7": "m", "0,4,7": "", "0,3,6": "°", "0,4,8": "+", "0,3,7,10": "m7", "0,4,7,11": "maj7", "0,4,7,10": "7", "0,3,6,10": "ø7", "0,3,7,11": "m(maj7)", "0,4,8,11": "+maj7", "0,3,6,9": "°7" };
+// the name of a chord the way it sounds: root and colour
+function chordName(off, size, home) {
+  const ps = chordOffsets(off, Math.min(4, size)), r = ps[0], key = ps.map(x => ((x - r) % 12 + 12) % 12).join(",");
+  let q = QUAL[key]; if (q == null) q = "";
+  if (size >= 5) q = q === "m7" ? "m9" : q === "maj7" ? "maj9" : q === "7" ? "9" : q + "(9)";
+  return NOTE_NAMES[((home + off) % 12 + 12) % 12] + q;
+}
+// the chords of the mood, each one near the last, so the hand hardly moves
+function moodChords(mood, n) {
+  const L = scaleNotes().length, degs = mood[3].slice(0, n === 2 ? 2 : 4), out = [];
+  degs.forEach((d, i) => { const prev = i ? out[i - 1] : d; out.push([d, d - L, d + L].reduce((a, b) => Math.abs(b - prev) < Math.abs(a - prev) ? b : a)); });
+  while (Math.min(...out) < 0) out.forEach((_, i) => out[i] += L);   // inside the rows of the melody page
+  return out;
+}
+// the octave a part sits in, given by the pad's own pitch: the notes stay in the rows of the melody page
+function padRegister(b, p, off, target) { const pr = state.banks[b][p], home = baseNote(SOUNDS.get(pr.sound)); pr.pitch = Math.max(-24, Math.min(24, 12 * Math.round((target - (home + off)) / 12))); }
+function padTuned(b, p) { const s = SOUNDS.get(state.banks[b][p].sound); return !!(s && s.root != null); }
+function setPadSound(b, p, id) { const pr = state.banks[b][p]; pr.sound = id; pr.pitch = 0; pr.gate = 0; resetForm(pr); delete pr.wsnd; if (ctx) loadSound(id).catch(() => {}); }
+// where the chords go: the selected pad if it plays notes, else the right instrument in group C
+function melPad(kind, mood) {
+  const H = state.harmony, want = kind === "chords" ? mood[6] : mood[7];
+  let b = state.bank, p = state.pad;
+  // the selected pad is the other part: each part keeps its own pad
+  if (H && kind === "chords" && H.mb === b && H.mp === p && H.b != null) return { b: H.b, p: H.p };
+  if (H && kind === "melody" && H.b === b && H.p === p && H.mb != null) return { b: H.mb, p: H.mp };
+  if (padTuned(b, p) && !(kind === "melody" && H && H.b === b && H.p === p)) return { b, p };
+  let q = state.banks[2].findIndex(pr => pr.sound === want);
+  if (q < 0 || (kind === "melody" && H && H.b === 2 && H.p === q)) {
+    q = kind === "chords" ? 1 : [9, 4, 5, 3].find(x => !(H && H.b === 2 && H.p === x));
+    setPadSound(2, q, want);
+  }
+  return { b: 2, p: q };
+}
+function writeChords() {
+  if (!initAudio()) return;
+  const mood = moodOf($("melMood").value), m = pm(), len = m.bars * m.div, n = m.bars === 1 ? 2 : 4, span = len / n;
+  if (m.div !== 16) { msg("L’ASSISTENTE VA SULLA GRIGLIA A SEDICESIMI"); return; }
+  if (state.scale !== mood[2] && state.scale !== 8) { state.scale = mood[2]; $("scale").value = state.scale; }
+  const { b, p } = melPad("chords", mood), degs = moodChords(mood, n), row = new Array(len).fill(0);
+  padRegister(b, p, degreeOffset(degs[0]), 55);
+  degs.forEach((d, i) => {
+    const at = i * span, off = degreeOffset(d);
+    if (mood[5] === "stab") { row[at] = [2, off, 1, 100, mood[4], 3]; if (span >= 8) row[at + 6] = [1, off, 1, 100, mood[4], 2]; if (span >= 16) row[at + 10] = [3, off, 1, 100, mood[4], 2]; }
+    else row[at] = [1, off, 1, 100, mood[4], span];
+  });
+  state.patterns[state.pattern][b][p] = row;
+  state.harmony = { mood: mood[0], degs, size: mood[4], b, p, n, mb: state.harmony && state.harmony.mood === mood[0] ? state.harmony.mb : undefined, mp: state.harmony && state.harmony.mood === mood[0] ? state.harmony.mp : undefined };
+  state.bank = b; state.pad = p; state.view = "roll";
+  save(); renderAll(); renderMelGiro();
+  msg("GIRO " + mood[1].toUpperCase() + " SU " + padLabel(b, p) + " · ORA 🎲 MELODIA");
+}
+// a melody that fits: chord notes on the beats, steps of the scale in between, a phrase that comes back and closes
+function makeMelody(len, degs, n, size, level, keep, shift = 0) {
+  const L = scaleNotes().length, span = len / n, M = len >= 32 ? 16 : 8, units = len / M;
+  const chordAt = s => degs[Math.min(n - 1, Math.floor(s / span))];
+  const tones = s => { const r = chordAt(s), t = [r, r + 2, r + 4]; if (size >= 4) t.push(r + 6); return t; };
+  const near = (x, s) => { let best = null; for (const t of tones(s)) for (let k = -2; k <= 3; k++) { const c = t + k * L; if (best === null || Math.abs(c - x) < Math.abs(best - x)) best = c; } return best; };
+  const lo = L - 3, hi = 2 * L, clamp = x => Math.max(lo, Math.min(hi, x));
+  const rhythm = (sparseEnd) => {
+    const f = [0.6, 1, 1.35][level], r = [];
+    for (let s = 0; s < M; s++) {
+      const w = s % 4 === 0 ? 0.72 : s % 2 === 0 ? 0.5 : level === 0 ? 0 : level === 1 ? 0.14 : 0.24;
+      if (Math.random() < w * f) r.push(s);
+    }
+    if (!r.includes(0) && !r.includes(2)) r.unshift(Math.random() < 0.6 ? 0 : 2);
+    const cut = sparseEnd ? M - Math.max(3, M / 4) : M;
+    const out = r.filter(s => s < cut).sort((a, b) => a - b);
+    return out.length >= 2 ? out : [0, 4, 8].filter(s => s < M);
+  };
+  const walk = (rh, base, start, prevP) => {
+    let p = prevP != null ? prevP : near(L + 2, base), up = Math.random() < 0.5;
+    return rh.map((s, i) => {
+      const at = base + s, strong = s % 4 === 0 || i === 0;
+      if (strong) { const c = tones(at).flatMap(t => [t, t + L, t - L, t + 2 * L]).filter(x => x >= lo && x <= hi && Math.abs(x - p) <= 4); p = c.length ? c[Math.floor(Math.random() * c.length)] : near(p, at); }
+      else { const r = Math.random(); p = clamp(p + (r < 0.6 ? (up ? 1 : -1) : r < 0.82 ? (up ? 2 : -2) : 0)); }
+      if (i === Math.floor(rh.length / 2)) up = !up;   // up then down: the shape of a sung line
+      return [at, p];
+    });
+  };
+  const row = new Array(len).fill(0), notes = [];
+  const RA = rhythm(false);
+  let A = null;
+  for (let u = 0; u < units; u++) {
+    const base = u * M, last = u === units - 1;
+    if (keep && keep[u]) { notes.push(...keep[u]); continue; }
+    let un;
+    if (units >= 4 && (u === 1 || u === 2) && A) {
+      // the motif again over the new chord: the notes on the beats move to its chord notes, A' changes its ending
+      un = A.map(([at, p]) => { const a2 = at + base; return [a2, at % 4 === 0 ? near(p, a2) : p]; });
+      if (u === 1) un = un.map(([at, p], i) => i >= un.length - 2 ? [at, near(p + (Math.random() < 0.5 ? 2 : -2), at)] : [at, p]);
+    } else if (units === 2 && u === 1 && A) {
+      un = A.map(([at, p], i) => [at + M, i >= A.length - 2 ? near(p + (Math.random() < 0.5 ? 2 : -2), at + M) : near(p, at + M)]);
+    } else un = walk(last && units > 1 ? rhythm(true) : RA, base, 0, notes.length ? notes[notes.length - 1][1] : null);
+    if (u === 0) A = un;
+    if (last) {   // the phrase closes on the root of the chord, the one nearest to where the line is
+      const z = un[un.length - 1], prev = un.length > 1 ? un[un.length - 2][1] : z[1], r = chordAt(z[0]);
+      let best = r; for (let k = -3; k <= 4; k++) { const c = r + k * L; if (c >= lo && c <= hi && Math.abs(c - prev) < Math.abs(best - prev)) best = c; }
+      z[1] = best;
+    }
+    notes.push(...un);
+  }
+  notes.sort((a, b) => a[0] - b[0]);
+  notes.forEach(([at, p], i) => {
+    if (at >= len) return;
+    const nx = i + 1 < notes.length ? notes[i + 1][0] : len, cap = [6, 4, 3][level], ln = Math.max(1, Math.min(nx - at, i === notes.length - 1 ? 8 : cap));
+    row[at] = [at % M === 0 ? 2 : 1, degreeOffset(p) + shift, 1, 100, 1, ln > 1 ? ln : undefined];
+  });
+  return row;
+}
+function writeMelody(keepHalf) {
+  if (!initAudio()) return;
+  const m = pm(), len = m.bars * m.div;
+  if (m.div !== 16) { msg("L’ASSISTENTE VA SULLA GRIGLIA A SEDICESIMI"); return; }
+  let H = state.harmony;
+  const mood = moodOf(H ? H.mood : $("melMood").value), n = m.bars === 1 ? 2 : 4;
+  if (!H || H.n !== n) { const degs = moodChords(mood, n); H = Object.assign({}, H || {}, { mood: mood[0], degs, size: mood[4], n }); }
+  const { b, p } = keepHalf && state.harmony && state.harmony.mb != null ? { b: state.harmony.mb, p: state.harmony.mp } : melPad("melody", mood);
+  const L = scaleNotes().length, shift = 0;
+  if (!keepHalf) padRegister(b, p, degreeOffset(L + 2), 71);
+  let keep = null;
+  if (keepHalf) {
+    // the notes of the first half stay as they are
+    const old = state.patterns[state.pattern][b][p], M = len >= 32 ? 16 : 8, units = len / M; keep = [];
+    for (let u = 0; u < Math.floor(units / 2); u++) { keep[u] = []; for (let s = u * M; s < (u + 1) * M; s++) if (old[s]) { let d = null; for (let k = -40; k <= 60 && d === null; k++) if (degreeOffset(k) + shift === old[s][1]) d = k; if (d !== null) keep[u].push([s, d]); } }
+    if (units === 1) keep = null;
+  }
+  state.patterns[state.pattern][b][p] = makeMelody(len, H.degs, n, H.size, melLevel, keep, shift);
+  state.harmony = Object.assign({}, H, { mb: b, mp: p });
+  state.bank = b; state.pad = p; state.view = "roll";
+  save(); renderAll(); renderMelGiro();
+  if (!playing) start();
+  msg((keepHalf ? "RIFATTA LA SECONDA METÀ" : "MELODIA " + ["SEMPLICE", "MEDIA", "MOVIMENTATA"][melLevel]) + " SU " + padLabel(b, p) + " · ANCORA PER UN’ALTRA · CTRL+Z PER TORNARE");
+}
+function renderMelGiro() {
+  const box = $("melGiro"); if (!box) return;
+  const H = state.harmony;
+  [...$("melLevel").children].forEach((x, i) => x.setAttribute("aria-pressed", i === melLevel));
+  if (H && H.mood) $("melMood").value = H.mood;
+  if (!H || !H.degs) { box.textContent = "Scegli l’atmosfera, poi 🎹 Accordi e 🎲 Melodia"; return; }
+  const home = H.b != null ? baseNote(SOUNDS.get(state.banks[H.b][H.p].sound)) : 60;
+  box.textContent = "Giro: " + H.degs.map(d => chordName(degreeOffset(d), H.size, home)).join(" → ") + (H.b != null ? " · accordi su " + padLabel(H.b, H.p) : "") + (H.mb != null ? " · melodia su " + padLabel(H.mb, H.mp) : "");
+}
+function bindMelody() {
+  const sel = $("melMood");
+  MOODS.forEach(([id, name]) => sel.appendChild(new Option(name, id)));
+  sel.addEventListener("change", () => { if (state.harmony) state.harmony = Object.assign({}, state.harmony, { mood: sel.value }); writeChords(); });
+  MEL_LEVELS.forEach(([name, v]) => { const b = el("button", null, name); b.type = "button"; b.addEventListener("click", () => { melLevel = v; writeMelody(false); }); $("melLevel").appendChild(b); });
+  $("melChords").addEventListener("click", writeChords);
+  $("melIdea").addEventListener("click", () => writeMelody(false));
+  $("melKeep").addEventListener("click", () => writeMelody(true));
+  renderMelGiro();
+}
 // the settings a step can lock: key, name, range, neutral value, how the bar is drawn, how the value reads
 const LOCKS = [
   ["cut", "Filtro", 0, 1, 1, false, x => x >= 0.995 ? "aperto" : Math.round(cutHz(x)) + " Hz"],
@@ -7911,7 +8094,7 @@ function renderLane() {
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
-const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol", "groove", "fills"];
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol", "groove", "fills", "harmony"];
 function f32ToB64(d) {
   const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
   for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
