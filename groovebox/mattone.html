@@ -223,6 +223,21 @@ select { height: 30px; border-radius: 6px; border: 1px solid var(--line); backgr
 .pads.notes .pad { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 22%, var(--rubber-hi)), var(--rubber) 75%); }
 .pads.notes .pad.root { background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--hue) 50%, var(--rubber-hi)), color-mix(in srgb, var(--hue) 18%, var(--rubber)) 80%); }
 .pads.notes .pad .nm { font-family: var(--f-vfd); font-weight: 400; font-size: 26px; }
+/* the keyboard: white keys in a row, the black ones on top */
+.kbd { display: grid; grid-template-rows: auto minmax(120px, 1fr) auto; gap: 10px; min-height: 0; }
+.kbdbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.kbdnow { font-family: var(--f-vfd); font-size: 22px; color: var(--led); min-width: 120px; }
+.kkeys { position: relative; display: flex; padding: 10px; background: var(--well); border-radius: 8px; box-shadow: inset 0 2px 8px rgba(0,0,0,.7); touch-action: none; user-select: none; min-height: 150px; }
+.kk { position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 8px; cursor: pointer; font-family: var(--f-label); }
+.kk.w { flex: 1 1 0; margin: 0 1px; border-radius: 0 0 7px 7px; background: linear-gradient(180deg, #e9e4d8, #fbf8f0 70%, #d9d3c5); box-shadow: inset 0 -5px 0 rgba(0,0,0,.18), 0 2px 3px rgba(0,0,0,.5); color: #4a463d; }
+.kk.b { position: absolute; top: 10px; height: 60%; z-index: 2; border-radius: 0 0 5px 5px; background: linear-gradient(180deg, #111, #2b2b2b 85%, #444); box-shadow: inset 0 -4px 0 rgba(255,255,255,.08), 0 3px 4px rgba(0,0,0,.6); color: #9a958a; }
+.kk b { font-size: 11px; letter-spacing: .04em; } .kk small { font-size: 9px; opacity: .65; margin-top: 2px; text-transform: uppercase; }
+.kk.c b { color: var(--led); }
+.kk.w.on { background: linear-gradient(180deg, color-mix(in srgb, var(--hue) 55%, #fff), color-mix(in srgb, var(--hue) 35%, #fff)); box-shadow: inset 0 -2px 0 rgba(0,0,0,.2), 0 0 14px color-mix(in srgb, var(--hue) 60%, transparent); }
+.kk.b.on { background: linear-gradient(180deg, color-mix(in srgb, var(--hue) 70%, #000), color-mix(in srgb, var(--hue) 40%, #000)); }
+.kk.inscale::after { content: ""; position: absolute; top: 6px; width: 5px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--hue) 80%, transparent); }
+.kbd .hint { font-size: 12px; color: var(--cream-3); }
+.synbox { display: grid; gap: 6px; margin-top: 10px; }
 .scalebar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 12px; }
 .scalebar label { display: flex; align-items: center; gap: 6px; }
 .scalebar .hint { flex-basis: 100%; font-size: 12px; color: var(--cream-3); }
@@ -744,7 +759,7 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
   .pg-suona { height: 100%; }
   .pg-suona .col { max-height: 100%; min-height: 0; overflow: auto; scrollbar-width: thin; }   /* the pads keep the page's height; the pad's panel scrolls */
   .pg-suona .pads { grid-template-rows: repeat(3, minmax(64px, 1fr)); }
-  .pg-suona .padunit:has(#scalebar:not([hidden])) .nrbar .hint { display: none; }   /* with the note controls open, the help line gives them its room */
+  .pg-suona .padunit:has(#scalebar:not([hidden])) .nrbar .hint, .pg-suona .padunit:has(#kbd:not([hidden])) .nrbar .hint { display: none; }   /* with the note controls open, the help line gives them its room */
   .pg-suona .scalebar { gap: 6px 12px; margin-top: 10px; }
   .pg-suona .pad { aspect-ratio: auto; min-height: 64px; overflow: hidden; }   /* its size comes from the grid, not from its labels */
   .pg-piatto .deckwrap { min-height: 100%; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 28px; align-items: start; }
@@ -1498,9 +1513,19 @@ html.intro-on { overflow: hidden; }
           <div class="seg" role="group" aria-label="Modalità">
             <button type="button" id="modePad" aria-pressed="true">Suoni</button>
             <button type="button" id="modeNote" aria-pressed="false">Note</button>
+            <button type="button" id="modeKeys" aria-pressed="false" title="Una tastiera da pianoforte: suoni il pad scelto con il mouse, con i tasti del computer o con una tastiera MIDI">🎹 Tastiera</button>
           </div>
         </div>
         <div class="pads" id="pads"></div>
+        <div class="kbd" id="kbd" hidden>
+          <div class="kbdbar">
+            <div class="oct"><span class="lbl">Ottava</span><button class="key" id="kbDown" type="button" aria-label="Ottava giù (Z)">−</button><output id="kbOct">Do3–Do5</output><button class="key" id="kbUp" type="button" aria-label="Ottava su (X)">+</button></div>
+            <button class="key small" id="kbSus" type="button" aria-pressed="false" title="Le note restano finché non lo spegni, come il pedale del pianoforte (sulla tastiera MIDI: il pedale)"><span class="ledi"></span>Pedale</button>
+            <span class="kbdnow" id="kbNow"></span>
+          </div>
+          <div class="kkeys" id="kbKeys" role="group" aria-label="Tastiera"></div>
+          <span class="hint" id="kbHint"></span>
+        </div>
         <div class="scalebar" id="scalebar" hidden>
           <label class="lbl">Tonalità <select id="root"></select></label>
           <label class="lbl">Scala <select id="scale"></select></label>
@@ -1537,6 +1562,7 @@ html.intro-on { overflow: hidden; }
             <button class="key" id="toDeck" type="button">Metti sul piatto</button>
           </div>
           <div class="knobs" id="knobs"></div>
+          <div class="synbox" id="synBox" hidden><span class="lbl">Synth · le manopole di questo pad</span><div class="knobs" id="synKnobs"></div></div>
           <div class="padcolrow"><span class="lbl">Colore del pad</span><div class="padcols" id="padCols" role="group" aria-label="Colore del pad"></div></div>
           <div class="gate"><span class="lbl">Durata nota</span><div class="seg" id="gate" role="group" aria-label="Durata nota"></div></div>
           <div class="form">
@@ -1915,6 +1941,8 @@ html.intro-on { overflow: hidden; }
             <li><b>Canzone</b> (sotto il sequencer): metti in fila i pattern, ognuno ripetuto quante volte vuoi, accendi «Suona la canzone» e premi Play. «Registra la canzone» la esporta tutta.</li>
             <li><b>Note repeat</b> (sotto i pad, tasto <kbd>H</kbd>): tieni premuto un pad e viene ripetuto a tempo, da 1/4 a 1/32, anche a terzine. Con il REC acceso le ripetizioni finiscono nel pattern: perfetto per charleston e rullate.</li>
             <li><b>✂ Taglia in pezzi</b> (sotto il pad selezionato): apre il suono del pad, trova da solo i colpi di un loop o di un break e lo divide fino a 48 pezzi: 12 per gruppo, poi continua nei gruppi successivi. Può scrivere il pattern che li risuona al loro posto e portare il tempo a quello del loop: poi li rimescoli come vuoi.</li>
+            <li><b>🎹 Tastiera</b> (Suona, accanto a Suoni e Note): il pad scelto diventa un pianoforte di due ottave. Lo suoni col mouse o col dito (più in basso tocchi il tasto, più forte suona; trascina per scivolare sui tasti), coi tasti del computer (A S D F G H J K L Ò i bianchi, W E T Y U O P i neri, Z e X cambiano ottava) o con una tastiera MIDI collegata, che suona su tutta la sua estensione con la forza dei tasti e il pedale. La nota dura finché tieni premuto; <b>Pedale</b> le tiene anche dopo. Il puntino sui tasti segna le note della scala. Con REC acceso mentre suona, quello che suoni va nel pattern del pad (una nota alla volta).</li>
+            <li><b>Synth da suonare</b> (Libreria → Synth e pad, in cima): quattordici suoni di synth che nascono mentre suoni, non registrati: pad caldo, pad di vetro, archi anni ’80, lead, fischio G-funk, pluck lo-fi, campana FM trap, piano elettrico FM, fiati, organo, basso analogico, basso Reese drill, sub. Tenuti sulla tastiera durano quanto tieni il tasto e si spengono col loro rilascio. Sul pad compaiono le loro manopole: Brillantezza, Attacco, Rilascio, Spessore e Vibrato.</li>
             <li><b>Le tue cartelle</b> (app per PC, Libreria → 📁 Cartelle): «+ Aggiungi una cartella» e scegli dove tieni i tuoi campioni. Le sfogli con le sottocartelle, cerchi per nome, tocchi un file e lo senti già sul pad; con ↑ ↓ li provi uno dopo l’altro. Puoi anche trascinare un suono della libreria su un pad qualsiasi, o trascinare uno o più file da Esplora file sui pad (vanno sui pad dopo quello su cui li lasci). Il Mat.Tone legge solo le cartelle che scegli e non cambia niente dentro; quando salvi il progetto, i suoni delle cartelle vanno dentro il file, così si apre anche su un altro computer.</li>
             <li><b>Colpi mai uguali</b> (Sequencer, accanto a Mano umana; acceso di serie): ogni colpo di batteria è un po’ diverso dal precedente. I rullanti Frankensnare, i battimani veri e il tamburello alternano 3–5 registrazioni diverse dello stesso colpo; tutti gli altri colpi cambiano di pochissimo intonazione e volume. Spegnilo per i colpi identici da drum machine.</li>
             <li><b>Dinamiche vere</b> (app per PC): i suoni con scritto «3 dinamiche» o «4 dinamiche» (i rullanti Frankensnare, la batteria da studio, il pianoforte Splendid, il Wurlitzer) sono registrati piano, medio e forte. Un colpo fantasma del sequencer (o un tocco leggero sul controller) suona la registrazione piano, un accento quella forte: cambia il colore del suono, non solo il volume. Kit pronti: <b>Batteria da studio (dinamica)</b> e <b>Rullanti veri</b>.</li>
@@ -2584,6 +2612,28 @@ const LAYER_INSTR = [
   ["in_wurli","Piano elettrico Wurlitzer",60,[36,41,47,52,56,61,68,79],4,"Greg Sullivan · Wurlitzer EP200 · CC BY 3.0"],
 ];
 for (const [id, name, home, zones, layers, src] of LAYER_INSTR) SOUNDS.set(id, { id, name, cat: "Strumenti singoli", root: home, kind: "multi", zones, dir: "grandi", layers, src });
+/* the synth of the Mat.Tone, played live: two oscillators (or FM for the bells), a low-pass with its envelope, the volume
+   envelope, vibrato. A note lasts as long as the key is held, then fades with its release. [id, name, root, params]
+   w: waveforms, det: detune between them (cents), oct2: second oscillator up or down (semitones), sub: square an octave below,
+   cut/res: filter, fenv: how many octaves the filter opens on the attack, fa/fd: its attack and decay, a d s r: volume,
+   vib/vibR: vibrato (cents, Hz), fm/fmR: FM index and ratio, len: how long the note lasts when nobody holds it */
+const POLY_ROWS = [
+  ["sy2_pad_warm", "Synth · Pad caldo", 60, { w: ["sawtooth", "sawtooth"], det: 18, cut: 900, res: 0.8, fenv: 0.8, fa: 0.6, fd: 1.5, a: 0.6, d: 1, s: 0.8, r: 1.5, vib: 6, vibR: 4.5, len: 4 }],
+  ["sy2_pad_glass", "Synth · Pad di vetro", 60, { w: ["triangle", "sawtooth"], det: 9, oct2: 12, mix2: 0.5, cut: 3000, res: 1, fenv: 0.5, fa: 0.3, fd: 1.2, a: 0.4, d: 1, s: 0.7, r: 1.8, vib: 4, vibR: 5, len: 4 }],
+  ["sy2_strings", "Synth · Archi anni ’80", 60, { w: ["sawtooth", "sawtooth"], det: 20, cut: 2200, res: 0.7, fenv: 0.4, fa: 0.4, fd: 1, a: 0.35, d: 0.6, s: 0.85, r: 0.8, vib: 5, vibR: 5.5, len: 3 }],
+  ["sy2_lead_saw", "Synth · Lead tagliente", 60, { w: ["sawtooth", "sawtooth"], det: 8, cut: 2400, res: 3, fenv: 1.5, fa: 0.005, fd: 0.3, a: 0.005, d: 0.2, s: 0.8, r: 0.15, vib: 10, vibR: 5.5, len: 2 }],
+  ["sy2_lead_sq", "Synth · Lead quadra morbido", 60, { w: ["square", "square"], det: 6, mix2: 0.6, cut: 1600, res: 1, fenv: 1, fa: 0.01, fd: 0.3, a: 0.01, d: 0.2, s: 0.8, r: 0.2, vib: 8, vibR: 5, len: 2 }],
+  ["sy2_whistle", "Synth · Fischio G-funk", 72, { w: ["sine", "triangle"], det: 3, mix2: 0.3, cut: 5000, res: 0.7, fenv: 0, fa: 0.01, fd: 0.2, a: 0.04, d: 0.2, s: 0.9, r: 0.25, vib: 22, vibR: 6, len: 2 }],
+  ["sy2_pluck", "Synth · Pluck lo-fi", 60, { w: ["triangle", "sawtooth"], det: 5, mix2: 0.6, cut: 1200, res: 1.2, fenv: 2, fa: 0.002, fd: 0.15, a: 0.002, d: 0.35, s: 0, r: 0.3, len: 1.2 }],
+  ["sy2_bell", "Synth · Campana FM (trap)", 72, { w: ["sine", "sine"], fm: 3, fmR: 3.5, cut: 9000, res: 0.7, fenv: 0, fa: 0.01, fd: 0.2, a: 0.001, d: 1.2, s: 0, r: 1, len: 2.5 }],
+  ["sy2_keys", "Synth · Piano elettrico FM", 60, { w: ["sine", "sine"], fm: 1.2, fmR: 1, cut: 7000, res: 0.7, fenv: 0, fa: 0.01, fd: 0.2, a: 0.002, d: 1.4, s: 0.25, r: 0.5, vib: 3, vibR: 5, len: 2.5 }],
+  ["sy2_brass", "Synth · Fiati synth", 60, { w: ["sawtooth", "sawtooth"], det: 10, cut: 900, res: 1, fenv: 2, fa: 0.08, fd: 0.4, a: 0.05, d: 0.3, s: 0.8, r: 0.25, vib: 5, vibR: 5, len: 2 }],
+  ["sy2_organ", "Synth · Organo synth", 60, { w: ["square", "sine"], det: 0, oct2: 12, sub: 0.4, cut: 4000, res: 0.7, fenv: 0, fa: 0.01, fd: 0.2, a: 0.005, d: 0.1, s: 1, r: 0.08, vib: 3, vibR: 6, len: 2 }],
+  ["sy2_bass", "Synth · Basso analogico", 36, { w: ["sawtooth", "square"], det: 4, sub: 0.6, cut: 500, res: 4, fenv: 2.5, fa: 0.003, fd: 0.18, a: 0.003, d: 0.25, s: 0.5, r: 0.08, len: 1.2 }],
+  ["sy2_reese", "Synth · Basso Reese (drill)", 36, { w: ["sawtooth", "sawtooth"], det: 25, cut: 700, res: 2, fenv: 0.5, fa: 0.01, fd: 0.4, a: 0.01, d: 0.3, s: 0.9, r: 0.2, len: 2 }],
+  ["sy2_sub", "Synth · Sub sinusoide", 36, { w: ["sine", "triangle"], det: 0, mix2: 0.15, cut: 1500, res: 0.7, fenv: 0, fa: 0.01, fd: 0.2, a: 0.005, d: 0.3, s: 0.9, r: 0.15, len: 1.5 }],
+];
+for (const [id, name, root, P] of POLY_ROWS) SOUNDS.set(id, { id, name, cat: "Synth", root, kind: "poly", P, src: "Synth del Mat.Tone · suona dal vivo" });
 // the samplers of the golden age, emulated on the recordings above at load time: no extra files
 const DERIVED_ROWS = [
   ["sp_av_kick","Cassa acustica · SP-12","av_kick","sp12"], ["sp_av_kick_low","Cassa acustica · SP-12 rallentata","av_kick2","sp12low"],
@@ -3455,6 +3505,17 @@ function loadSound(id) {
     const L = s.layers || 1, R = s.rr || 1;
     p = Promise.all(Array.from({ length: L }, (_, k) => Promise.all(Array.from({ length: R }, (_, r) => fetchSound(soundUrl(s, id + (s.layers ? "_v" + (k + 1) : "") + (r ? "_r" + (r + 1) : "")))))))
       .then(rows => { rows.flat().forEach(b => levelBuf(s, b)); layerCache.set(id, rows); const t = rows[L - 1][0]; cache.set(id, t); return t; });
+  } else if (s.kind === "poly") {
+    p = (() => {
+      const P = s.P, sr = 44100, oc = new OfflineAudioContext(1, Math.ceil(P.len * sr), sr), v = polySrc(oc, P, mtof(s.root), 0.85, 0.5);
+      v.connect(oc.destination); v.start(0); v.release(Math.max(0.05, P.len - P.r * 1.5)); v.stop(P.len);
+      return oc.startRendering();
+    })().then(b => {
+      const d = b.getChannelData(0); let e = 0, n = 0; for (let i = 0; i < Math.min(d.length, 44100); i++) { e += d[i] * d[i]; n++; }
+      const rms = Math.sqrt(e / Math.max(1, n)) || 0.1; s.peak = Math.min(1.2, 0.5 * 0.16 / rms);   // every preset about as loud as the instruments
+      for (let i = 0; i < d.length; i++) d[i] *= s.peak / 0.5;
+      cache.set(id, b); return b;
+    });
   } else if (s.kind === "folder") {
     p = foldersReady.then(() => fetchSound(folderUrl(s.path))).then(t => { cache.set(id, t); return t; });
   } else if (s.kind === "file") {
@@ -3471,7 +3532,7 @@ function loadSound(id) {
   } else if (s.kind === "derived") {
     p = loadSound(s.base).then(b => { const t = PROC[s.proc](b); cache.set(id, t); return t; });
   } else p = Promise.reject(new Error("mancante"));
-  if (s && s.kind !== "multi" && s.kind !== "user" && s.kind !== "folder") p = p.then(b => levelBuf(s, b));
+  if (s && s.kind !== "multi" && s.kind !== "user" && s.kind !== "folder" && s.kind !== "poly") p = p.then(b => levelBuf(s, b));
   p = p.catch(err => { loading.delete(id); throw err; });
   p.then(() => queueThumbs(), () => {});   // the pads show their waveform as soon as the sound is there
   loading.set(id, p);
@@ -3627,6 +3688,51 @@ function mattoneTuneModule() {
   registerProcessor("mattone-tune", MattoneTune);
 }
 
+// one voice of the synth on context c, at frequency f0 when its rate is 1: it behaves like a buffer source
+// (start, stop, playbackRate for glides and tape stops, onended) plus release(t) for the end of a held note
+function polySrc(c, P, f0, vel, peak) {
+  const out = c.createGain(), flt = c.createBiquadFilter(), rate = c.createConstantSource(), oscs = [];
+  out.gain.value = 0; flt.type = "lowpass"; flt.Q.value = P.res || 0.7; flt.connect(out); rate.offset.value = 1;
+  const osc = (type, mult, lvl, dest) => {
+    const o = c.createOscillator(), fg = c.createGain(), g = c.createGain();
+    o.type = type; o.frequency.value = 0; fg.gain.value = f0 * mult; rate.connect(fg).connect(o.frequency);
+    g.gain.value = lvl; o.connect(g).connect(dest || flt); oscs.push(o); return { o, g };
+  };
+  let mod = null;
+  if (P.fm) {   // FM: a sine moves the frequency of another; the brighter the harder it is played, then it mellows
+    const car = osc("sine", 1, 0.9).o; mod = osc("sine", P.fmR || 1, f0 * (P.fmR || 1) * P.fm, car.frequency);
+  } else {
+    const d = (P.det || 0) / 2400;
+    osc(P.w[0], Math.pow(2, -d), 0.45); osc(P.w[1], Math.pow(2, d + (P.oct2 || 0) / 12), 0.45 * (P.mix2 == null ? 1 : P.mix2));
+    if (P.sub) osc("square", 0.5, 0.35 * P.sub);
+  }
+  let lfo = null;
+  if (P.vib) { lfo = c.createOscillator(); const lg = c.createGain(); lfo.frequency.value = P.vibR || 5; lg.gain.value = P.vib; lfo.connect(lg); oscs.forEach(o => lg.connect(o.detune)); }
+  const R = Math.max(0.02, P.r || 0.1);
+  return {
+    playbackRate: rate.offset, R, buffer: null,
+    connect(n) { return out.connect(n); },
+    set onended(fn) { rate.onended = fn; },
+    start(t) {
+      const pk = peak * (0.55 + 0.45 * vel), A = Math.max(0.002, P.a || 0.005), D = Math.max(0.01, P.d || 0.2), S = P.s == null ? 0.8 : P.s;
+      out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(pk, t + A); out.gain.setTargetAtTime(pk * S, t + A, D / 3);
+      const base = Math.min(18000, (P.cut || 2000) * (0.6 + 0.6 * vel)), top = Math.min(18000, base * Math.pow(2, P.fenv || 0));
+      flt.frequency.setValueAtTime(base, t);
+      if (top > base) { flt.frequency.linearRampToValueAtTime(top, t + Math.max(0.002, P.fa || 0.01)); flt.frequency.setTargetAtTime(base * (1 + (top / base - 1) * 0.15), t + (P.fa || 0.01), (P.fd || 0.3) / 3); }
+      if (mod) { const mg = mod.g.gain, m0 = mg.value * (0.5 + vel); mg.setValueAtTime(m0, t); mg.setTargetAtTime(m0 * 0.25, t + 0.005, 0.35); }
+      rate.start(t); oscs.forEach(o => o.start(t)); if (lfo) lfo.start(t);
+    },
+    release(t) { const g = out.gain; if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t); g.setTargetAtTime(0, t, R / 4); },
+    stop(t) { rate.stop(t); oscs.forEach(o => o.stop(t)); if (lfo) lfo.stop(t); },
+  };
+}
+// the synth with the pad's own knobs on top of the preset
+function polyParams(s, pr) {
+  const P = Object.assign({}, s.P), k = (pr && pr.syn) || {};
+  if (k.cut != null) P.cut = P.cut * Math.pow(2, k.cut);
+  if (k.a != null) P.a = k.a; if (k.r != null) P.r = k.r; if (k.det != null) P.det = k.det; if (k.vib != null) P.vib = k.vib;
+  return P;
+}
 // tape saturation with headroom: the shaper sees the signal 12 dB down, so nothing is clamped below +12 dBFS,
 // and small signals pass at unity gain (the old curve added up to 10 dB and clipped everything over 0 dB)
 function masterSatCurve(amount) {
@@ -3770,17 +3876,20 @@ function playBuffer(soundId, pr, t, vel, note, tag, dur, lk) {
   const rate = Math.pow(2, (root == null ? semis : s.home + semis - root) / 12) * (fxActive.has("lofi") ? 0.94 : 1) * vr;
   // the pad's form: crunched or reversed copy, start and end, attack, low-pass
   const f = formOf(pr);
-  if (s.kind !== "multi" && (pr.warp || pr.wsnd !== pr.sound)) buf = warpPlay(soundId, buf, pr, rate / (fxActive.has("lofi") ? 0.94 : 1));   // a loop that follows the tempo
+  const poly = s.kind === "poly";
+  if (s.kind !== "multi" && !poly && (pr.warp || pr.wsnd !== pr.sound)) buf = warpPlay(soundId, buf, pr, rate / (fxActive.has("lofi") ? 0.94 : 1));   // a loop that follows the tempo
   const fx = lk && lk.fx || "", rv = fx === "rev" ? !f.rv : f.rv;   // the step's own effect: "al contrario" turns the sound round
-  if (f.sp || rv) buf = shapedBuf(soundId + ":" + root + ":" + li + ":" + ri + (buf._wk || ""), buf, f.sp, rv);
-  const D = buf.duration, off = (rv ? 1 - f.en : f.st) * D, seg = Math.max(0.005, (f.en - f.st) * D);
-  const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
+  if ((f.sp || rv) && !poly) buf = shapedBuf(soundId + ":" + root + ":" + li + ":" + ri + (buf._wk || ""), buf, f.sp, rv);
+  const D = buf.duration, off = poly ? 0 : (rv ? 1 - f.en : f.st) * D, seg = poly ? D : Math.max(0.005, (f.en - f.st) * D);
+  const P = poly ? polyParams(s, pr) : null;
+  const src = poly ? polySrc(ctx, P, mtof(s.root), vel, s.peak || 0.5) : ctx.createBufferSource(); if (!poly) src.buffer = buf; src.playbackRate.value = rate;
   const g = ctx.createGain(), level = pr.vol * vel * vv * (lk && lk.vol != null ? lk.vol : 1), full = seg / rate;
   let len = dur ? Math.min(full, dur) : pr.gate > 0 ? Math.min(full, pr.gate * sixteenth()) : full;
   if (lk && lk.dec != null && lk.dec < 1) len = Math.min(len, Math.max(0.02, full * lk.dec));   // a shorter tail for this step
   const att = Math.max(f.att, f.st > 0 || rv ? 0.002 : 0);
   if (att > 0) { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + Math.min(att, len)); } else g.gain.setValueAtTime(level, t);
-  if (len < full) { g.gain.setValueAtTime(level, t + Math.max(att, len - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.03); }
+  if (poly) { /* the synth fades with its own release */ }
+  else if (len < full) { g.gain.setValueAtTime(level, t + Math.max(att, len - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + len + 0.03); }
   else if (f.en < 1) { g.gain.setValueAtTime(level, t + Math.max(att, full - 0.006)); g.gain.linearRampToValueAtTime(0, t + full); }
   const cut = Math.min(f.cut, lk && lk.cut != null ? lk.cut : 1);
   let head = src;
@@ -3797,7 +3906,8 @@ function playBuffer(soundId, pr, t, vel, note, tag, dur, lk) {
   const pv = lk && lk.pan != null ? lk.pan : pr.pan;
   if (ctx.createStereoPanner && pv) { const pan = ctx.createStereoPanner(); pan.pan.value = pv; g.connect(pan).connect(dest); } else g.connect(dest);
   if (pr.rev > 0) { const rs = ctx.createGain(); rs.gain.value = pr.rev * (gi ? state.geq[+gi[1]][3] : 1); g.connect(rs).connect(N.revIn); }   // the group level reaches the reverb too
-  src.start(t, off, seg); src.stop(t + Math.min(full, len + 0.05) + 0.01);
+  if (poly) { src.start(t); src.release(t + len); src.stop(t + len + src.R * 1.6 + 0.05); }
+  else { src.start(t, off, seg); src.stop(t + Math.min(full, len + 0.05) + 0.01); }
   if (fx === "stop") {   // tape stop: the reel slows down to nothing over the note
     const T = Math.max(0.15, Math.min(len, 1.4));
     src.playbackRate.setValueAtTime(rate, t); src.playbackRate.setTargetAtTime(rate * 0.03, t + 0.01, T / 3);
@@ -3808,7 +3918,7 @@ function playBuffer(soundId, pr, t, vel, note, tag, dur, lk) {
     const fb = N.echoFb.gain, base = state.echo.fb * 0.92;
     fb.cancelScheduledValues(t); fb.setTargetAtTime(Math.max(base, 0.74), t, 0.02); fb.setTargetAtTime(base, t + 12 * sixteenth(), 0.5);
   }
-  const v = { src, g, tag, sound: soundId, ch: f.ch, rate, level, end: t + Math.min(full, len), natural: t + full, base: root == null ? null : s.home - root, lofi: fxActive.has("lofi") };
+  const v = { src, g, tag, sound: soundId, ch: f.ch, rate, level, end: t + Math.min(full, len), natural: t + full, base: root == null ? null : s.home - root, lofi: fxActive.has("lofi"), poly };
   voices.push(v);
   src.onended = () => { const i = voices.indexOf(v); if (i >= 0) voices.splice(i, 1); };
   return v;
@@ -5440,6 +5550,15 @@ function build() {
   makeKnob($("knobs"), { label: "Volume", min: 0, max: 1, get: () => curPr().vol, set: (v, c) => { curPr().vol = v; save(); preview(c); }, fmt: v => Math.round(v * 100) });
   makeKnob($("knobs"), { label: "Pan", min: -1, max: 1, center: true, get: () => curPr().pan, set: (v, c) => { curPr().pan = Math.abs(v) < 0.04 ? 0 : v; save(); preview(c); }, fmt: v => Math.abs(v) < 0.04 ? "C" : (v < 0 ? "S" : "D") + Math.round(Math.abs(v) * 100) });
   makeKnob($("knobs"), { label: "Riverbero", min: 0, max: 1, get: () => curPr().rev, set: (v, c) => { curPr().rev = v; save(); preview(c); }, fmt: v => Math.round(v * 100) });
+  // the synth's knobs: they change this pad only, on top of the preset
+  const syn = (label, key, min, max, fmt, def) => makeKnob($("synKnobs"), { label, min, max,
+    get: () => { const pr = curPr(), s = SOUNDS.get(pr.sound); return pr.syn && pr.syn[key] != null ? pr.syn[key] : s && s.P ? (key === "cut" ? 0 : s.P[key] || 0) : def; },
+    set: (v, c) => { const pr = curPr(); pr.syn = Object.assign({}, pr.syn, { [key]: v }); save(); preview(c); }, fmt });
+  syn("Brillantezza", "cut", -2, 2, v => (v > 0 ? "+" : "") + v.toFixed(1), 0);
+  syn("Attacco", "a", 0.002, 1.5, v => v < 1 ? Math.round(v * 1000) + " ms" : v.toFixed(1) + " s", 0.01);
+  syn("Rilascio", "r", 0.02, 3, v => v < 1 ? Math.round(v * 1000) + " ms" : v.toFixed(1) + " s", 0.3);
+  syn("Spessore", "det", 0, 40, v => Math.round(v) + " ¢", 10);
+  syn("Vibrato", "vib", 0, 30, v => Math.round(v) + " ¢", 0);
   makeKnob($("deckKnobs"), { label: "Cupo ↔ chiaro", min: 0, max: 1, get: () => state.deckTone, set: v => { state.deckTone = v; applyDeckColor(); save(); }, fmt: v => Math.round(380 * Math.pow(2, v * 4.4) / 10) * 10 + " Hz" });
   makeKnob($("deckKnobs"), { label: "Sporco", min: 0, max: 1, get: () => state.deckDirt, set: v => { state.deckDirt = v; applyDeckColor(); save(); }, fmt: v => Math.round(v * 100) });
   const mset = (k, v) => { state[k] = v; state.mpreset = ""; document.querySelectorAll("#mPresets button").forEach(b => b.setAttribute("aria-pressed", "false")); applyMaster(); save(); };
@@ -5470,6 +5589,8 @@ function build() {
   $("clear").addEventListener("click", () => armed("clear", "Sicuro?", () => { state.patterns[state.pattern] = emptyPattern(patLen()); save(); renderAll(); msg("PATTERN " + (state.pattern + 1) + " SVUOTATO"); }));
   $("modePad").addEventListener("click", () => setMode("pad"));
   $("modeNote").addEventListener("click", () => setMode("note"));
+  $("modeKeys").addEventListener("click", () => setMode("keys"));
+  buildKeys();
   $("root").addEventListener("change", e => { state.root = +e.target.value; save(); renderAll(); });
   $("scale").addEventListener("change", e => { state.scale = +e.target.value; save(); renderAll(); });
   $("octDown").addEventListener("click", () => { state.oct = Math.max(-3, state.oct - 1); save(); renderAll(); });
@@ -5499,12 +5620,13 @@ function build() {
 
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", e => {
+    if (KB_CODES[e.code] != null) kbOff("k" + e.code);
     const k = e.key.toLowerCase();
     const f = FX.find(x => x.key === k); if (f) fxOff(f.id);
     if (k === "g") deck.cutOff();
     const pi = PAD_KEYS.indexOf(k); if (pi >= 0) nrRelease(pi);
   });
-  window.addEventListener("blur", () => { FX.forEach(f => fxOff(f.id)); deck.cutOff(); held.clear(); });
+  window.addEventListener("blur", () => { FX.forEach(f => fxOff(f.id)); deck.cutOff(); held.clear(); kbAllOff(); });
   window.addEventListener("resize", () => { sizeCanvases(); if (!$("chopBox").hidden && chop.d) { sizeChop(); drawChop(); } });
   sizeCanvases();
 }
@@ -5525,7 +5647,9 @@ function padPress(i) {
 }
 function selectBank(bi) { state.bank = bi; save(); renderAll(); msg("GRUPPO " + BANKS[bi].id + " · " + BANKS[bi].name.toUpperCase() + (state.mutes[bi] ? " (MUTO)" : "")); }
 function setMode(m) {
+  if (m !== "keys") kbAllOff();
   state.mode = m; save(); renderAll();
+  if (m === "keys") { msg("TASTIERA: " + (curSound() ? curSound().name.toUpperCase() : "") + " · MOUSE, TASTI A–L DEL COMPUTER O TASTIERA MIDI"); return; }
   msg(m === "note" ? "NOTE: " + (curSound() ? curSound().name.toUpperCase() : "") + " IN " + NOTE_NAMES[state.root].toUpperCase() + " " + SCALES[state.scale][0].toUpperCase() : "SUONI: UN SUONO PER PAD");
 }
 function selectPattern(i) {
@@ -5735,7 +5859,8 @@ const LIB_GENRES = [["", "Tutti"], ["boombap", "Boom bap"], ["trap", "Trap"], ["
 function roleOf(s) {
   if (s._r) return s._r;
   const n = s.name.toLowerCase(), c = s.cat, R = r => (s._r = r);
-  if (s.kind === "user") return R("tuoi");
+  if (s.kind === "user" || s.kind === "folder") return R("tuoi");
+  if (s.kind === "poly") return R("synth");
   if (/^loop|^rullata (di cassa|che sale)/.test(n)) return R("loop");
   if (/al contrario|riavvolg|frenata|^salita|^discesa|allarme|sirena|air horn|zap|laser|glitch|fruscio|rumore|sparo|elicottero|^telefono|applausi|^mare$|uccellino|goblin|fantascienza|atmosfera|soffio|^blip|^ping|^caduta|botta|modulare|stridio|tamburo del mare|scacciapensieri|didgeridoo|vibraslap|raganella|flexatone|fischietto|bicchiere|cristallo lento|^gong|rullata di timpano/.test(n)) return R("fx");
   if (/^voce|^coro|repetition|respiro/.test(n)) return R("voci");
@@ -5770,8 +5895,9 @@ function genresOf(s) {
   return g;
 }
 // inside a crate the sounds come in small groups: made for the beat first, then by style, then the real instruments
-const LIB_SUBS = ["Per il beat", "Boom bap", "Trap", "808", "Old school · jazz e vintage", "Old school · SP-12 e polvere", "Lo-fi", "Hip hop", "Strumenti veri · 3 ottave", "Elettroniche e acustiche", "Tekno", "Altri"];
+const LIB_SUBS = ["Synth da suonare", "Per il beat", "Boom bap", "Trap", "808", "Old school · jazz e vintage", "Old school · SP-12 e polvere", "Lo-fi", "Hip hop", "Strumenti veri · 3 ottave", "Elettroniche e acustiche", "Tekno", "Altri"];
 function libSub(s) {
+  if (s.kind === "poly") return "Synth da suonare";
   if (s.kind === "multi") return "Strumenti veri · 3 ottave";
   const c = s.cat;
   if (c === "Melodie" || (s.pack === "rap" && c === "Accordi")) return "Per il beat";
@@ -5814,7 +5940,7 @@ function preview(id) {
 }
 function assign(id) {
   const pr = curPr(), s = SOUNDS.get(id);
-  pr.sound = id; pr.pitch = 0; pr.gate = s.root != null && /Bassi|Synth/.test(s.cat) ? 2 : 0; resetForm(pr); folderKeep(s);
+  pr.sound = id; pr.pitch = 0; pr.gate = s.kind !== "poly" && s.root != null && /Bassi|Synth/.test(s.cat) ? 2 : 0; delete pr.syn; resetForm(pr); folderKeep(s);
   state.recent = [id, ...state.recent.filter(x => x !== id)].slice(0, 10);
   save(); renderAll(); renderLibrary(); preview(id); msg("PAD " + padLabel(state.bank, state.pad) + ": " + s.name.toUpperCase());
 }
@@ -5829,7 +5955,7 @@ function toggleFav(id) {
 }
 function soundRow(s, cur, showCat) {
   const row = el("div", "item" + (s.id === cur ? " cur" : ""));
-  const tx = el("button", "tx", (s.id === cur ? EQ_ICON : '<i class="pvi">' + PV_ICON + "</i>") + "<span><b>" + esc(s.name) + "</b><small>" + (showCat ? esc(ROLE_NAME[roleOf(s)] || s.cat) + " · " : "") + (s.layers ? s.layers + " dinamiche · " : "") + (s.rr ? s.rr + " varianti · " : "") + (s.kind === "multi" ? "più ottave · " : s.root != null ? "intonato · " : "") + esc(s.src) + "</small></span>");
+  const tx = el("button", "tx", (s.id === cur ? EQ_ICON : '<i class="pvi">' + PV_ICON + "</i>") + "<span><b>" + esc(s.name) + "</b><small>" + (showCat ? esc(ROLE_NAME[roleOf(s)] || s.cat) + " · " : "") + (s.layers ? s.layers + " dinamiche · " : "") + (s.rr ? s.rr + " varianti · " : "") + (s.kind === "poly" ? "synth dal vivo · " : s.kind === "multi" ? "più ottave · " : s.root != null ? "intonato · " : "") + esc(s.src) + "</small></span>");
   tx.type = "button"; tx.dataset.id = s.id; tx.setAttribute("aria-label", s.name + (s.id === cur ? ", sul pad" : ", mettilo sul pad"));
   tx.draggable = true;   // or drag it onto any pad
   tx.addEventListener("dragstart", e => { e.dataTransfer.setData("text/x-mattone-sound", s.id); e.dataTransfer.effectAllowed = "copy"; document.documentElement.classList.add("dragsound"); });
@@ -5984,6 +6110,7 @@ function onKeyDown(e) {
   if (k === "o") { flipSide(!SB.on); return; }
   if (SB.on && (k === "1" || k === "2" || k === "3")) { e.preventDefault(); sbCue(+k - 1, e.shiftKey); return; }
   if (SB.on && k === "l") { sbLever(); return; }
+  if (state.mode === "keys" && curPage === "suona" && kbKey(e)) return;   // the keyboard takes the letters while it is open
   const pi = PAD_KEYS.indexOf(k); if (pi >= 0) { e.preventDefault(); padPress(pi); return; }
   const bi = BANK_KEYS.indexOf(k); if (bi >= 0) { e.preventDefault(); selectBank(bi); return; }
   if (k === "n") { setMode(state.mode === "note" ? "pad" : "note"); return; }
@@ -5993,6 +6120,92 @@ function onKeyDown(e) {
   if (k === "t") { cycleView(); return; }
   if (k === "h") { nrToggle(); return; }
   const f = FX.find(x => x.key === k); if (f) { e.preventDefault(); fxOn(f.id); }
+}
+
+/* ================= la tastiera: il pad scelto suonato come un pianoforte ================= */
+// the computer keys as on most music programs: A S D F G H J K L Ò are the white keys, W E T Y U O P the black ones; Z X change octave
+const KB_CODES = { KeyA: 0, KeyW: 1, KeyS: 2, KeyE: 3, KeyD: 4, KeyF: 5, KeyT: 6, KeyG: 7, KeyY: 8, KeyH: 9, KeyU: 10, KeyJ: 11, KeyK: 12, KeyO: 13, KeyL: 14, KeyP: 15, Semicolon: 16 };
+const KB_LABEL = { 0: "a", 1: "w", 2: "s", 3: "e", 4: "d", 5: "f", 6: "t", 7: "g", 8: "y", 9: "h", 10: "u", 11: "j", 12: "k", 13: "o", 14: "l", 15: "p", 16: "ò" };
+const KB = { held: new Map(), pedal: false, sus: new Set(), oct: 0 };
+const kbLow = () => 48 + 12 * KB.oct;   // the lowest key shown: C3, one octave up or down per step
+function buildKeys() {
+  const host = $("kbKeys"); host.innerHTML = "";
+  const whites = [0, 2, 4, 5, 7, 9, 11], nW = 15, ww = 100 / nW;
+  let w = 0;
+  for (let i = 0; i <= 24; i++) {
+    const pc = i % 12, white = whites.includes(pc), k = el("div", "kk " + (white ? "w" : "b") + (pc === 0 ? " c" : ""));
+    k.dataset.i = i;
+    if (white) { w++; } else { k.style.left = "calc(10px + (100% - 20px) * " + ((w * ww - ww * 0.3) / 100).toFixed(4) + ")"; k.style.width = "calc((100% - 20px) * " + (ww * 0.6 / 100).toFixed(4) + ")"; }
+    k.innerHTML = "<b></b><small>" + (KB_LABEL[i] || "") + "</small>";
+    host.appendChild(k);
+  }
+  // play by touching or clicking: lower on the key is louder; slide along to glide over the keys
+  const keyAt = (x, y) => { const e = document.elementFromPoint(x, y); const k = e && e.closest && e.closest(".kk"); return k && host.contains(k) ? k : null; };
+  const velAt = (k, y) => { const r = k.getBoundingClientRect(); return Math.max(0.3, Math.min(1, 0.3 + 0.75 * (y - r.top) / r.height)); };
+  const ptr = new Map();
+  host.addEventListener("pointerdown", e => {
+    const k = keyAt(e.clientX, e.clientY); if (!k) return; e.preventDefault(); initAudio();
+    try { host.setPointerCapture(e.pointerId); } catch (_) { /* fine */ }
+    ptr.set(e.pointerId, k.dataset.i); kbOn(kbLow() + +k.dataset.i, velAt(k, e.clientY), "p" + e.pointerId);
+  });
+  host.addEventListener("pointermove", e => {
+    if (!ptr.has(e.pointerId)) return; const k = keyAt(e.clientX, e.clientY); if (!k || k.dataset.i === ptr.get(e.pointerId)) return;
+    kbOff("p" + e.pointerId); ptr.set(e.pointerId, k.dataset.i); kbOn(kbLow() + +k.dataset.i, velAt(k, e.clientY), "p" + e.pointerId);
+  });
+  const up = e => { if (ptr.has(e.pointerId)) { ptr.delete(e.pointerId); kbOff("p" + e.pointerId); } };
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => host.addEventListener(ev, up));
+  $("kbDown").addEventListener("click", () => kbOctave(-1)); $("kbUp").addEventListener("click", () => kbOctave(1));
+  $("kbSus").addEventListener("click", () => kbPedal(!KB.pedal));
+}
+function renderKeys() {
+  const lo = kbLow(), s = curSound(), sc = new Set(scaleNotes().map(x => (x + state.root) % 12));
+  [...$("kbKeys").children].forEach((k, i) => {
+    const m = lo + i; k.querySelector("b").textContent = i % 12 === 0 || k.classList.contains("w") && i === 24 ? noteName(m) : k.classList.contains("w") ? NOTE_NAMES[m % 12] : "";
+    k.classList.toggle("inscale", sc.has(m % 12));
+    k.classList.toggle("on", [...KB.held.values()].some(h => h.m === m));
+  });
+  $("kbOct").textContent = noteName(lo) + "–" + noteName(lo + 24);
+  $("kbSus").setAttribute("aria-pressed", KB.pedal); $("kbSus").classList.toggle("on", KB.pedal);
+  $("kbHint").textContent = "Suoni " + (s ? s.name : "") + " (pad " + padLabel(state.bank, state.pad) + "). Più in basso tocchi il tasto, più forte suona; trascina per scivolare. Tasti del computer: A S D F G H J K L Ò (bianchi), W E T Y U O P (neri), Z X per l’ottava. Il puntino segna le note della scala di " + NOTE_NAMES[state.root] + " " + SCALES[state.scale][0].toLowerCase() + "." + (recording ? " Stai registrando: le note vanno nel pattern." : "");
+}
+// a note on: the pad's sound at that pitch, held until the key comes up (or the pedal is lifted)
+function kbOn(m, vel, src) {
+  if (!ctx) return;
+  kbOff(src, true);
+  const b = state.bank, p = state.pad, pr = state.banks[b][p], s = SOUNDS.get(pr.sound); if (!s) return;
+  const note = m - baseNote(s), t = ctx.currentTime;
+  if (KB.held.size + KB.sus.size >= 24) { const [k0, h0] = KB.held.entries().next().value || []; if (k0) kbOff(k0); }
+  const v = playBuffer(pr.sound, Object.assign({}, pr, { gate: 0, arp: null }), t, vel, note, b + ":" + p, s.kind === "poly" ? 60 : null);
+  grpHit[b].push({ t, v: Math.min(1, vel * 1.1) }); if (grpHit[b].length > 8) grpHit[b].shift();
+  padHitT[b * 12 + p] = t; padHitV[b * 12 + p] = Math.min(1, vel * 1.1);
+  if (v) KB.held.set(src, { m, v });
+  liveRecord(b, p, note, t);
+  $("kbNow").textContent = noteName(m);
+  renderKeys();
+}
+function kbRelease(h, t) {
+  const v = h.v;
+  if (v.src.release) { try { v.src.release(t); v.src.stop(t + v.src.R * 1.6 + 0.05); } catch (e) { /* ended */ } return; }
+  try { const g = v.g.gain; if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else g.cancelScheduledValues(t); g.setTargetAtTime(0, t, 0.07); v.src.stop(t + 0.5); } catch (e) { /* ended */ }
+}
+function kbOff(src, quiet) {
+  const h = KB.held.get(src); if (!h) return;
+  KB.held.delete(src);
+  if (KB.pedal) KB.sus.add(h); else kbRelease(h, ctx.currentTime);
+  if (!quiet) renderKeys();
+}
+function kbPedal(on) {
+  KB.pedal = on;
+  if (!on && ctx) { for (const h of KB.sus) kbRelease(h, ctx.currentTime); KB.sus.clear(); }
+  if (state.mode === "keys") renderKeys();
+}
+function kbAllOff() { if (!ctx) { KB.held.clear(); KB.sus.clear(); return; } for (const h of KB.held.values()) kbRelease(h, ctx.currentTime); for (const h of KB.sus) kbRelease(h, ctx.currentTime); KB.held.clear(); KB.sus.clear(); }
+function kbOctave(d) { KB.oct = Math.max(-3, Math.min(3, KB.oct + d)); renderKeys(); msg("TASTIERA DA " + noteName(kbLow()) + " A " + noteName(kbLow() + 24)); }
+function kbKey(e) {
+  if (e.code === "KeyZ") { e.preventDefault(); kbOctave(-1); return true; }
+  if (e.code === "KeyX") { e.preventDefault(); kbOctave(1); return true; }
+  const i = KB_CODES[e.code]; if (i == null) return false;
+  e.preventDefault(); initAudio(); kbOn(kbLow() + i, 0.85, "k" + e.code); return true;
 }
 
 /* ================= render ================= */
@@ -6037,7 +6250,8 @@ function renderPads() {
   $("root").value = state.root; $("scale").value = state.scale; $("octOut").textContent = (state.oct > 0 ? "+" : "") + state.oct;
   const s = curSound();
   $("noteHint").textContent = notes ? "Stai suonando " + (s ? s.name : "") + " (pad " + padLabel(state.bank, state.pad) + "). Fila in basso = note gravi." + (s && s.root == null ? " Questo suono non è intonato: per le melodie scegli piano, basso o synth." : "") : "";
-  $("modePad").setAttribute("aria-pressed", !notes); $("modeNote").setAttribute("aria-pressed", notes);
+  $("modePad").setAttribute("aria-pressed", state.mode === "pad"); $("modeNote").setAttribute("aria-pressed", notes); $("modeKeys").setAttribute("aria-pressed", state.mode === "keys");
+  const keys = state.mode === "keys"; pads.hidden = keys; $("kbd").hidden = !keys; if (keys) renderKeys();
   drawPadWaves();
 }
 function renderBanks() {
@@ -6060,6 +6274,7 @@ function renderInspector() {
   knobs.forEach(k => k.draw());
   [...$("gate").children].forEach((b, i) => b.setAttribute("aria-pressed", GATES[i][1] === pr.gate));
   renderForm(); renderPadColor(); renderWarp(); if (typeof renderArp === "function") renderArp();
+  $("synBox").hidden = !(s && s.kind === "poly");
 }
 function renderEditorHead() {
   const roll = state.view === "roll", s = curSound();
@@ -9073,14 +9288,15 @@ function midiMsg(e) {
     if (ML.on && ML.target && (isCC || isOn)) { learnBind(key, isCC); return; }
     const tg = state.midiMap[key];
     if (tg) { midiApply(tg, key, d2, isCC, isOn, isOff); return; }
-    if (isCC) return;
+    if (isCC) { if (d1 === 64) kbPedal(d2 >= 64); return; }   // the sustain pedal
   }
   if (cmd === 0x90 && d2 > 0) midiNote(d1, d2);
-  else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) nrRelease("m" + d1);
+  else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) { if (state.mode === "keys") kbOff("m" + d1); else nrRelease("m" + d1); }
 }
 function midiNote(note, velo) {
   if (!initAudio()) return;
   const vel = 0.25 + 0.75 * velo / 127;
+  if (state.mode === "keys") { kbOn(note, vel, "m" + note); return; }
   if (state.mode === "note") {
     const off = note - 60 + state.root + 12 * state.oct;
     notePress("m" + note, off, vel);
