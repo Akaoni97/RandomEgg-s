@@ -357,6 +357,10 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 .sblk .sn span { font-family: var(--f-vfd); font-size: 19px; color: var(--cream-2); }
 .sblk button:not(.sp) { border: 0; border-radius: 4px; background: rgba(255,255,255,.07); color: var(--cream-2); width: 24px; height: 22px; padding: 0; font-size: 12px; cursor: pointer; }
 .sblk button:not(.sp):hover { background: rgba(255,255,255,.14); }
+.sblk .sperf { position: relative; height: 6px; border-radius: 3px; background: rgba(0,0,0,.3); overflow: hidden; }
+.sblk .sperf i { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--cream-2); }
+.perfrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.perfrow #perfRec.on { animation: blink 1s steps(2) infinite; }
 .nrbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
 .nrbar .seg button { padding: 6px 9px; }
 .nrbar .hint { font-size: 12px; color: var(--cream-3); }
@@ -1676,7 +1680,13 @@ html.intro-on { overflow: hidden; }
           </div>
         </div>
         <div class="songrow" id="songRow"></div>
-        <p class="cnote small"><span id="songInfo"></span> Tocca una parte per partire da lì; × dice quante volte si ripete. «Registra la canzone» la suona tutta dall’inizio e la salva in WAV o MP3 (formato scelto nel Mix).</p>
+        <div class="perfrow">
+          <button class="key small rec2" id="perfRec" type="button" title="Mentre la canzone suona, quello che fai dal vivo resta nella canzone">● Registra la performance</button>
+          <button class="key small" id="perfOn" type="button" aria-pressed="true" title="La canzone rifà da sola le mosse registrate"><span class="ledi"></span>Suona la performance</button>
+          <button class="key small" id="perfClear" type="button">Cancella</button>
+          <span class="lbl" id="perfInfo"></span>
+        </div>
+        <p class="cnote small"><span id="songInfo"></span> Tocca una parte per partire da lì; × dice quante volte si ripete. «Registra la canzone» la suona tutta dall’inizio e la salva in WAV o MP3 (formato scelto nel Mix). «Registra la performance»: mentre la canzone suona, quello che fai dal vivo (gruppi muti o in onda, effetti a pressione, fader e Taglio del piatto) resta nella canzone, e la volta dopo lo rifà da sola; le tacche sotto le parti sono le mosse. Rifalla sopra: cambiano solo i comandi che tocchi.</p>
       </section>
     </div>
     <div class="page pg-mix" data-page="mix" role="tabpanel" aria-label="Mix e registratore" hidden>
@@ -1868,6 +1878,7 @@ html.intro-on { overflow: hidden; }
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
             <li><b>Scocche</b> (in alto a sinistra, o Personalizza): cinque macchine vere, ognuna col suo look completo. «Dodici bit» (campionatore scuro), «Campionatore ’88» (grigio coi pad di gomma), «Ritmo ’80» (drum machine coi tasti rosso, arancio, giallo e crema), «Giradischi ’79» (alluminio e strobo rosso), «Consolle ’73» (banco da studio coi fianchi in noce). Il dado ne sceglie una a caso.</li>
             <li><b>Duplica</b> (in alto, sotto i tasti dei pattern): copia il pattern su qualsiasi altro, anche su quello prima, o scambiali di posto. Si può anche trascinare un tasto 1–8 sopra un altro: si scambiano (con Alt si copia). La canzone segue gli scambi.</li>
+            <li><b>● Registra la performance</b> (Sequencer, Canzone): la canzone parte dalla parte scelta e quello che fai dal vivo resta registrato: gruppi muti o in onda (Silenzia, o «In onda» nel Mix), gli effetti a pressione (Ovatta, Radio, Eco, Ripeti, Lo-fi, tasti 6–0), il fader del piatto, il crossfader e il Taglio del lato B. A fine canzone si ferma (o premi ■). Da lì in poi la canzone rifà da sola le tue mosse, anche quando la registri in WAV o MP3; le tacche sotto le parti mostrano dove sono. Rifalla sopra per correggere: cambiano solo i comandi che tocchi, il resto rimane. «Suona la performance» la spegne senza cancellarla.</li>
             <li><b>🎬 Fammi la canzone</b> (Sequencer, Canzone): dal pattern che hai fatto crea l’<b>intro</b> (solo accordi), la <b>strofa</b> (tutto tranne la melodia, così c’è spazio per il rap), il <b>ritornello</b> (il tuo pattern), lo <b>stacco</b> (solo batteria) e il <b>finale</b>, li mette in fila (intro, strofa, ritornello, strofa, ritornello, stacco, ritornello, finale) e accende i passaggi a fine parte. Usa i pattern vuoti; se non bastano chiede conferma prima di sovrascrivere. Poi la ritocchi come vuoi.</li>
             <li><b>Passaggi automatici</b> (Sequencer, sotto il groove): ogni 2, 4 o 8 battute, o alla fine di ogni parte della canzone, il Mat.Tone suona da solo un passaggio: una <b>rullata</b> sul rullante e sui tom, uno <b>stop</b>, la battuta <b>senza cassa</b> né basso, o una <b>salita</b> che finisce sull’uno. «Misto» li alterna; «Uno adesso» lo fa alla prossima battuta.</li>
             <li><b>Effetto su un colpo</b> (Sequencer, nel menu dello step o nella corsia «Per step» → Effetto): <b>tape stop</b>, <b>al contrario</b>, <b>riverbero al contrario</b> che cresce fino al colpo, <b>eco lanciata</b> solo su quel colpo, <b>stutter</b>. Restano nel pattern.</li>
@@ -2894,6 +2905,13 @@ grooveFix();
 // automatic fills: a roll, a stop, the kick taken out or a riser at the end of every few bars (or of each part of the song)
 function fillsFix() { state.fills = Object.assign({ on: false, style: "misto", every: 4, song: true }, state.fills || {}); }
 fillsFix();
+function perfFix() {   // the live moves recorded into the song: [part, bar in the part, kind, which, value]
+  const P = state.perf = Object.assign({ on: true, ev: [] }, state.perf || {});
+  if (!Array.isArray(P.ev)) P.ev = [];
+  P.ev = P.ev.filter(e => Array.isArray(e) && e.length === 5 && e[0] >= 0 && e[1] >= 0 && "mfxsc".includes(e[2])).slice(0, 20000);
+  P.on = P.on !== false;
+}
+perfFix();
 function patNamesFix() { if (!Array.isArray(state.patNames) || state.patNames.length !== NPAT) state.patNames = new Array(NPAT).fill(""); }   // what each pattern is in the song: intro, strofa…
 patNamesFix();
 if (!state.midiMap || typeof state.midiMap !== "object") state.midiMap = {};   // the controller's knobs and keys: kept with the app, not the project
@@ -2925,7 +2943,7 @@ let saveTimer = 0;
 function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } warpRefresh(); }, 400); histTouch(); }
 // undo / redo of the music (pads, patterns, tempo, swing, mutes): a burst of changes (a knob turned) is one step
 const HIST = { past: [], future: [], cur: null, burst: false, timer: 0, quiet: false };
-const histSnap = () => JSON.stringify([state.banks, state.patterns, state.bpm, state.swing, state.mutes, state.human, state.pmeta, state.song]);
+const histSnap = () => JSON.stringify([state.banks, state.patterns, state.bpm, state.swing, state.mutes, state.human, state.pmeta, state.song, state.perf]);
 function histTouch() {
   if (HIST.quiet || HIST.cur === null) return;
   if (!HIST.burst) { HIST.past.push(HIST.cur); HIST.future = []; HIST.burst = true; }
@@ -2944,8 +2962,8 @@ function histGo(back) {
   const from = back ? HIST.past : HIST.future, to = back ? HIST.future : HIST.past;
   if (!from.length) { msg(back ? "NIENTE DA ANNULLARE" : "NIENTE DA RIFARE"); return; }
   to.push(HIST.cur); HIST.cur = from.pop();
-  const [banks, patterns, bpm, swing, mutes, human, pmeta, song] = JSON.parse(HIST.cur);
-  Object.assign(state, { banks, patterns, swing, mutes, human, pmeta, song });
+  const [banks, patterns, bpm, swing, mutes, human, pmeta, song, perf] = JSON.parse(HIST.cur);
+  Object.assign(state, { banks, patterns, swing, mutes, human, pmeta, song, perf }); perfFix();
   fixPatterns(); edPage = Math.min(edPage, pm().bars - 1);
   if (playing && step >= patLen()) step = 0;
   HIST.quiet = true; setBpm(bpm); save(); HIST.quiet = false;
@@ -3679,12 +3697,13 @@ function applyFx() {
 }
 function fxOn(id) {
   if (!initAudio() || fxActive.has(id)) return;
-  fxActive.add(id);
+  fxActive.add(id); perfMark("f", id, 1);
   if (id === "rip") repeatStep = playing ? Math.max(0, shownStep) : null;
   applyFx(); renderFx();
 }
 function fxOff(id) {
   if (!fxActive.delete(id)) return;
+  perfMark("f", id, 0);
   if (id === "rip") repeatStep = null;
   applyFx(); renderFx();
 }
@@ -3751,6 +3770,8 @@ function schedule() {
     if (m.div === 16 && step % 2 === 1) t += sixteenth() * state.swing / 100;   // triplets already swing
     if (step % m.div === 0) { barT.push(nextTime); if (barT.length > 4) barT.shift(); }
     const s = repeatStep !== null ? Math.min(repeatStep, len - 1) : step;
+    const inSong = state.songOn && state.song.length && !songEnded, sb = songPos.rep * m.bars + step / m.div;
+    if (inSong) perfStep(songPos.i, sb, 1 / m.div, nextTime, stepDur());
     const pat = state.patterns[state.pattern];
     const solo = state.banks.some(bk => bk.some(x => x.solo));
     for (let b = 0; b < BANKS.length && !songEnded && t < playUntil; b++) {
@@ -3775,7 +3796,7 @@ function schedule() {
     if (metronome && !songEnded && step % cpb === 0) click(t, step % m.div === 0);
     drawQ.push({ step: s, time: t });
     const dur = stepDur();
-    stepLog.push({ step: s, time: t, pat: state.pattern, dur }); if (stepLog.length > 128) stepLog.shift();
+    stepLog.push({ step: s, time: t, pat: state.pattern, dur, si: inSong ? songPos.i : -1, sb, sw: 1 / m.div, t0: nextTime }); if (stepLog.length > 128) stepLog.shift();
     nextTime += dur;
     step = (step + 1) % len;
     if (step === 0) patternEnd();
@@ -3845,17 +3866,19 @@ function start() {
   state.patterns[state.pattern].forEach((g, b) => g.forEach((row, p) => { if (row.some(v => v && v[7] && v[7].fx === "rrev")) rrevBuf(state.banks[b][p].sound); }));   // the swells get ready
   playing = true; step = 0; songEnded = false; barCount = 0; FILL = null; songJump = null; stepLog.length = 0; barT.length = 0;
   nextTime = ctx.currentTime + 0.06; gridOrigin = nextTime; drawQ.length = 0;
+  if (song) perfChase(songPos.i, 0);
   schedule(); timer = setInterval(schedule, 20);
   voiceOnStart();
   renderTransport(); renderSong();
   msg((song ? "CANZONE · PARTE " + (songPos.i + 1) + "/" + state.song.length : "IN PLAY") + " · PATTERN " + (state.pattern + 1) + (recording ? " · REC" : ""));
 }
 function stop() {
+  const said = perfOnStop();   // first: where the recorded pass ends is where the song is now
   playing = false; clearInterval(timer); queued = null; repeatStep = null; shownStep = -1; drawQ.length = 0; songEnded = false; songJump = null;
   if (ctx) for (const v of voices.slice()) stopVoice(v, ctx.currentTime);
   renderTransport(); renderPatterns(); renderPlayhead(); renderSong(); $("vPos").textContent = "1.1";
   voiceOnStop();
-  msg("STOP");
+  msg(said || "STOP");
 }
 // a hit played while recording goes on the step nearest to when it sounded (t: when it sounds, now if not given)
 function liveRecord(b, p, note, t, chord) {
@@ -3934,10 +3957,123 @@ function patternEnd() {
   setTimeout(() => {
     if (!playing) return;
     edPage = Math.min(edPage, pm().bars - 1); save(); renderAll();
-    if (ended) { msg("FINE DELLA CANZONE"); return; }
+    if (ended) { if (PERF.rec) { stop(); return; } msg("FINE DELLA CANZONE"); return; }
     const e = state.song[pos.i];
     msg(inSong && e ? "CANZONE · PARTE " + (pos.i + 1) + "/" + state.song.length + " · PATTERN " + (to + 1) + (e.n > 1 ? " · " + (pos.rep + 1) + " DI " + e.n : "") : "PATTERN " + (to + 1));
   }, Math.max(0, (nextTime - ctx.currentTime) * 1000));
+}
+/* ---------- performance: le mosse dal vivo registrate nella canzone ---------- */
+// a move is [part, bar inside the part (repeats included), kind, which, value]; kinds: m group muted, f punch-in effect,
+// x deck fader, s side B crossfader, c cut. Recording works like a latch: a control touched during the pass is rewritten
+// from where the pass began to where it ended, the others keep playing what they had.
+const PERF = { rec: null, auto: false, autoFx: new Set(), last: new Map() };
+const perfCmp = (a, b) => (a[0] - b[0]) || (a[1] - b[1]);
+const perfKey = e => e[2] + ":" + e[3];
+// where the song is at this moment as heard (the beat leaves the speakers a little after it is scheduled); snap: to the nearest step
+function perfPosNow(snap) {
+  const at = ctx.currentTime - VOICE_HEAR;
+  let e = null;
+  if (snap) { for (const x of stepLog) if (x.t0 - x.dur / 2 <= at) e = x; return e && e.si >= 0 ? [e.si, +e.sb.toFixed(4)] : null; }
+  for (const x of stepLog) if (x.t0 <= at) e = x;
+  if (!e) e = stepLog[0];
+  if (!e || e.si < 0) return null;
+  return [e.si, +(e.sb + Math.max(0, Math.min(1, (at - e.t0) / e.dur)) * e.sw).toFixed(4)];
+}
+function perfSnapshot() {
+  const v = [];
+  state.mutes.forEach((m, i) => v.push(["m", i, +!!m]));
+  FX.forEach(f => v.push(["f", f.id, +fxActive.has(f.id)]));
+  v.push(["x", 0, state.xf], ["s", 0, state.sideb.xf], ["c", 0, +!!deck.cut]);
+  return v;
+}
+// a live move: kept when the performance is being recorded
+function perfMark(k, n, v) {
+  const R = PERF.rec; if (!R || PERF.auto || !playing || !ctx) return;
+  const pos = perfPosNow(k === "m" || k === "f"); if (!pos) return;
+  const key = k + ":" + n, now = ctx.currentTime;
+  if (!R.touched.has(key)) {   // the control as it was where the pass began, so that playing from there starts the same way
+    R.touched.add(key);
+    let was = R.snap.find(x => x[0] + ":" + x[1] === key); was = was ? was[2] : null;
+    if (R.from) { let o = null; for (const e of state.perf.ev) if (perfKey(e) === key && perfCmp(e, R.from) <= 0 && (!o || perfCmp(e, o) >= 0)) o = e; if (o) was = o[4]; }
+    if (was != null && R.from) R.ev.push([R.from[0], R.from[1], k, n, was]);
+  }
+  const last = PERF.last.get(key);
+  if ((k === "x" || k === "s") && last && now - last.t < 0.012 && last.e[0] === pos[0]) { last.e[4] = +v.toFixed(3); return; }   // a fader moved fast: one move every 12 ms
+  const e = [pos[0], pos[1], k, n, k === "x" || k === "s" ? +v.toFixed(3) : v];
+  R.ev.push(e); PERF.last.set(key, { t: now, e });
+  R.n++; if (R.n % 4 === 1) perfRender();
+}
+function perfApply(k, n, v) {
+  PERF.auto = true;
+  try {
+    if (k === "m") { if (!!state.mutes[n] !== !!v) { state.mutes[n] = !!v; renderBanks(); renderEditorHead(); renderGroups(); } }
+    else if (k === "f") { if (v) { if (!fxActive.has(n)) { fxOn(n); PERF.autoFx.add(n); } } else { fxOff(n); PERF.autoFx.delete(n); } }
+    else if (k === "x") { state.xf = v; deck1.send({ set: { xf: v } }); $("xf").value = Math.round(v * 100); }
+    else if (k === "s") sbSetXf(v);
+    else if (k === "c") { deck.cut = !!v; deck.send({ set: { cut: !!v } }); $("cut").classList.toggle("on", !!v); $("sbCut").classList.toggle("on", !!v); }
+  } finally { PERF.auto = false; }
+}
+const perfLive = () => state.perf.on && state.perf.ev.length;
+// the scheduler is at this step of the song: the moves inside it, on time (a group goes muted right away, for this step's hits)
+function perfStep(i, b0, w, t0, dur) {
+  if (!perfLive()) return;
+  const R = PERF.rec;
+  for (const e of state.perf.ev) {
+    if (e[0] !== i || e[1] < b0 - 1e-6 || e[1] >= b0 + w - 1e-6) continue;
+    if (R && R.touched.has(perfKey(e))) continue;
+    const when = t0 + (e[1] - b0) / w * dur;
+    if (e[2] === "m") { const n = e[3], v = !!e[4]; state.mutes[n] = v; setTimeout(() => { if (playing) { renderBanks(); renderEditorHead(); renderGroups(); } }, Math.max(0, (when - ctx.currentTime) * 1000)); continue; }
+    setTimeout(() => { if (playing) perfApply(e[2], e[3], e[4]); }, Math.max(0, (when - ctx.currentTime) * 1000));
+  }
+}
+// starting from a part: each control as the moves left it there
+function perfChase(i, b) {
+  if (!perfLive()) return;
+  const st = new Map();
+  for (const e of state.perf.ev) if (perfCmp(e, [i, b]) < 0) { const k = perfKey(e), o = st.get(k); if (!o || perfCmp(e, o) >= 0) st.set(k, e); }
+  for (const e of st.values()) perfApply(e[2], e[3], e[4]);
+}
+function perfOnStop() {
+  const said = PERF.rec ? perfRecStop() : "";
+  for (const id of PERF.autoFx) perfApply("f", id, 0);
+  PERF.autoFx.clear();
+  if (deck.cut && perfLive()) perfApply("c", 0, 0);
+  return said;
+}
+function perfRecStart() {
+  if (!state.song.length) { msg("PRIMA METTI QUALCHE PATTERN NELLA CANZONE"); return; }
+  if (!initAudio()) return;
+  if (!state.songOn) { state.songOn = true; if (playing) { const i = state.song.findIndex(e => e.p === state.pattern); if (i >= 0) songPos = { i, rep: 0 }; else songJump = 0; } }
+  const wasPlaying = playing;
+  PERF.rec = { ev: [], touched: new Set(), snap: [], from: null, n: 0, once: songOnce };
+  PERF.last.clear();
+  songOnce = true;
+  if (!wasPlaying) start();
+  PERF.rec.snap = perfSnapshot();
+  PERF.rec.from = wasPlaying ? perfPosNow(true) || [songPos.i, 0] : [songPos.i, 0];
+  save(); perfRender();
+  msg("REGISTRO LA PERFORMANCE DALLA PARTE " + (PERF.rec.from[0] + 1) + ": GRUPPI, EFFETTI 6–0, FADER E TAGLIO · ■ PER FERMARE");
+}
+function perfRecStop() {
+  const R = PERF.rec; if (!R) return;
+  PERF.rec = null; if (!R.once && !recorder.on) songOnce = false;
+  const to = (playing && perfPosNow(false)) || [state.song.length, 0];
+  if (!R.touched.size) { perfRender(); return msg("PERFORMANCE: NESSUNA MOSSA, NON CAMBIA NIENTE"); }
+  const from = R.from || [0, 0], wrap = perfCmp(to, from) < 0;
+  const inside = e => wrap ? perfCmp(e, from) >= 0 || perfCmp(e, to) <= 0 : perfCmp(e, from) >= 0 && perfCmp(e, to) <= 0;
+  const P = state.perf;
+  P.ev = P.ev.filter(e => !(R.touched.has(perfKey(e)) && inside(e))).concat(R.ev).sort(perfCmp).slice(0, 20000);
+  P.on = true; save(); renderSong();
+  const n = R.ev.length;
+  return msg("PERFORMANCE REGISTRATA: " + n + (n > 1 ? " MOSSE" : " MOSSA") + " · LA CANZONE LE RIFÀ DA SOLA · CTRL+Z PER TORNARE");
+}
+function perfToggleRec() { if (PERF.rec) { if (playing) stop(); else perfRecStop(); } else perfRecStart(); }
+function perfRender() {
+  const r = $("perfRec"); if (!r) return;
+  const on = !!PERF.rec, n = state.perf.ev.length;
+  r.textContent = on ? "■ Ferma la performance" : "● Registra la performance"; r.classList.toggle("on", on);
+  $("perfOn").setAttribute("aria-pressed", state.perf.on); $("perfOn").classList.toggle("on", state.perf.on && n > 0); $("perfOn").disabled = !n; $("perfClear").disabled = !n;
+  $("perfInfo").textContent = on ? "Sto registrando: " + PERF.rec.n + (PERF.rec.n === 1 ? " mossa" : " mosse") : n ? n + (n > 1 ? " mosse nella canzone" : " mossa nella canzone") + (state.perf.on ? "" : " · spente") : "Nessuna mossa registrata";
 }
 /* ---------- arrangiatore: dal pattern alla canzone intera ---------- */
 // from one full pattern: an intro without drums, a verse with room for the voice, the hook, a break, an ending; then in a row
@@ -3970,7 +4106,7 @@ function arrangeSong() {
   state.patNames[src] = "Ritornello";
   const rep = bars => Math.max(1, Math.round(bars / m.bars));
   state.song = [{ p: pi, n: rep(4) }, { p: pv, n: rep(8) }, { p: src, n: rep(8) }, { p: pv, n: rep(8) }, { p: src, n: rep(8) }, { p: pb, n: rep(2) }, { p: src, n: rep(8) }, { p: po, n: rep(4) }];
-  state.songOn = true; songFrom = 0;
+  state.songOn = true; songFrom = 0; state.perf.ev = [];
   Object.assign(state.fills, { on: true, song: true, style: "misto" });   // a fill at the end of each part
   save(); renderAll();
   msg("CANZONE PRONTA: INTRO " + (pi + 1) + " · STROFA " + (pv + 1) + " · RITORNELLO " + (src + 1) + " · STACCO " + (pb + 1) + " · FINE " + (po + 1) + " · PREMI PLAY · CTRL+Z PER TORNARE");
@@ -3988,14 +4124,22 @@ function renderSong() {
     go.addEventListener("click", () => songGo(i));
     const sn = el("div", "sn"); sn.append(songButton("−", "Una volta in meno", () => songEdit(i, -1)), el("span", null, "×" + e.n), songButton("+", "Una volta in più", () => songEdit(i, 1)));
     const sm = el("div", "sm"); sm.append(songButton("◀", "Sposta prima", () => songMove(i, -1)), songButton("✕", "Togli dalla canzone", () => songDel(i)), songButton("▶", "Sposta dopo", () => songMove(i, 1)));
-    b.append(go, sn, sm); row.appendChild(b);
+    b.append(go, sn, sm);
+    const ev = state.perf.ev.filter(x => x[0] === i);
+    if (ev.length) {
+      const pf = el("div", "sperf"); pf.title = ev.length + (ev.length > 1 ? " mosse registrate" : " mossa registrata");
+      const seen = new Set();
+      for (const x of ev) { const at = Math.min(99.5, x[1] / bars * 100), k = Math.round(at * 2); if (seen.has(k)) continue; seen.add(k); const t = el("i"); t.style.left = at + "%"; if (x[2] === "m") t.style.background = "var(--h" + BANKS[x[3]].id + ")"; else if (x[2] === "f") t.style.background = "var(--led)"; pf.appendChild(t); }
+      b.appendChild(pf);
+    }
+    row.appendChild(b);
   });
   if (!state.song.length) row.appendChild(el("p", "lbl songempty", "Vuota: scegli un pattern in alto e premi «+ Aggiungi»."));
   $("songAdd").textContent = "+ Aggiungi pattern " + (state.pattern + 1);
   $("songOn").classList.toggle("on", state.songOn); $("songOn").setAttribute("aria-pressed", state.songOn);
   const bars = songBars();
   $("songInfo").textContent = state.song.length ? state.song.length + (state.song.length > 1 ? " parti · " : " parte · ") + bars + (bars > 1 ? " battute · " : " battuta · ") + fmtTime(bars * 240 / state.bpm) + " a " + state.bpm + " BPM." : "";
-  songRecLabel();
+  songRecLabel(); perfRender();
 }
 function songRecLabel() { const b = $("songRec"); if (!b) return; const on = recorder.on && songOnce; b.textContent = on ? "■ Ferma" : "● Registra la canzone"; b.classList.toggle("on", on); }
 function songGo(i) {
@@ -4008,12 +4152,14 @@ function songEdit(i, d) { const e = state.song[i]; e.n = Math.max(1, Math.min(16
 function songMove(i, d) {
   const j = i + d; if (j < 0 || j >= state.song.length) return;
   [state.song[i], state.song[j]] = [state.song[j], state.song[i]];
+  for (const e of state.perf.ev) if (e[0] === i) e[0] = j; else if (e[0] === j) e[0] = i;
   if (songFrom === i) songFrom = j; else if (songFrom === j) songFrom = i;
   if (playing && state.songOn) { if (songPos.i === i) songPos.i = j; else if (songPos.i === j) songPos.i = i; }
   save(); renderSong();
 }
 function songDel(i) {
   state.song.splice(i, 1);
+  state.perf.ev = state.perf.ev.filter(e => e[0] !== i); for (const e of state.perf.ev) if (e[0] > i) e[0]--;
   songFrom = Math.max(0, Math.min(songFrom, state.song.length - 1));
   if (playing && state.songOn && songPos.i > i) songPos.i--;
   if (!state.song.length) state.songOn = false;
@@ -4777,12 +4923,12 @@ function bindDeckKeys() {
   $("deckSrc").addEventListener("change", e => setDeckSource(e.target.value));
   $("toDeck").addEventListener("click", () => { $("deckSrc").value = "pad"; setDeckSource("pad"); });
   $("xf").value = Math.round(state.xf * 100);
-  $("xf").addEventListener("input", e => { state.xf = +e.target.value / 100; deck.send({ set: { xf: state.xf } }); save(); });
+  $("xf").addEventListener("input", e => { state.xf = +e.target.value / 100; deck.send({ set: { xf: state.xf } }); perfMark("x", 0, state.xf); save(); });
   $("dPitch").value = state.deckPitch; $("dPitchOut").textContent = (state.deckPitch > 0 ? "+" : "") + state.deckPitch;
   $("dPitch").addEventListener("input", e => { state.deckPitch = +e.target.value; $("dPitchOut").textContent = (state.deckPitch > 0 ? "+" : "") + state.deckPitch; deck.send({ set: { pitch: state.deckPitch } }); save(); });
   const cut = $("cut");
-  const cutOn = e => { if (e) e.preventDefault(); initAudio(); deck.cut = true; deck.send({ set: { cut: true } }); cut.classList.add("on"); $("sbCut").classList.add("on"); };
-  const cutOff = () => { if (!deck.cut) return; deck.cut = false; deck.send({ set: { cut: false } }); cut.classList.remove("on"); $("sbCut").classList.remove("on"); };
+  const cutOn = e => { if (e) e.preventDefault(); initAudio(); deck.cut = true; deck.send({ set: { cut: true } }); perfMark("c", 0, 1); cut.classList.add("on"); $("sbCut").classList.add("on"); };
+  const cutOff = () => { if (!deck.cut) return; deck.cut = false; deck.send({ set: { cut: false } }); perfMark("c", 0, 0); cut.classList.remove("on"); $("sbCut").classList.remove("on"); };
   cut.addEventListener("pointerdown", e => { try { cut.setPointerCapture(e.pointerId); } catch (_) {} cutOn(e); });
   ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => cut.addEventListener(ev, cutOff));
   deck.cutOn = cutOn; deck.cutOff = cutOff;
@@ -4940,7 +5086,7 @@ function makeZip(files) {
 const $ = id => document.getElementById(id);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-function msg(t) { $("msg").textContent = t; }
+function msg(t) { $("msg").textContent = t; return t; }
 const scaleNotes = () => SCALES[state.scale][1];
 function degreeOffset(d) { const sc = scaleNotes(), len = sc.length; return state.root + 12 * state.oct + sc[((d % len) + len) % len] + 12 * Math.floor(d / len); }
 const padDegree = i => (2 - Math.floor(i / 4)) * 4 + (i % 4);
@@ -5010,7 +5156,10 @@ function build() {
   $("songAdd").addEventListener("click", songAdd);
   $("songArr").addEventListener("click", arrangeSong);
   $("songRec").addEventListener("click", songRec);
-  $("songClear").addEventListener("click", () => armed("songClear", "Sicuro?", () => { state.song = []; state.songOn = false; songFrom = 0; save(); renderSong(); msg("CANZONE SVUOTATA"); }));
+  $("perfRec").addEventListener("click", perfToggleRec);
+  $("perfOn").addEventListener("click", () => { state.perf.on = !state.perf.on; save(); perfRender(); if (!state.perf.on) { for (const id of PERF.autoFx) perfApply("f", id, 0); PERF.autoFx.clear(); } msg(state.perf.on ? "LA CANZONE RIFÀ LE TUE MOSSE" : "PERFORMANCE SPENTA (NON CANCELLATA)"); });
+  $("perfClear").addEventListener("click", () => armed("perfClear", "Sicuro?", () => { state.perf.ev = []; save(); renderSong(); msg("PERFORMANCE CANCELLATA · CTRL+Z PER TORNARE"); }));
+  $("songClear").addEventListener("click", () => armed("songClear", "Sicuro?", () => { state.song = []; state.perf.ev = []; state.songOn = false; songFrom = 0; save(); renderSong(); msg("CANZONE SVUOTATA"); }));
   bindChop(); bindForm(); bindWarp(); buildPadColors();
   CHORDS.forEach(([v, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = v; b.addEventListener("click", () => { state.chord = v; save(); renderChords(); msg(v > 1 ? "ACCORDI: " + name.toUpperCase() + " SULLA SCALA" : "UNA NOTA PER PAD"); }); $("chordSeg").appendChild(b); });
   $("strum").addEventListener("change", e => { state.strum = +e.target.value; save(); });
@@ -5091,7 +5240,7 @@ function build() {
   $("tabRoll").addEventListener("click", () => { state.view = "roll"; save(); renderEditor(); });
   $("idea808").addEventListener("click", idea808);
   bindMelody();
-  $("muteBank").addEventListener("click", () => { state.mutes[state.bank] = !state.mutes[state.bank]; save(); renderBanks(); renderEditorHead(); renderGroups(); msg("GRUPPO " + BANKS[state.bank].id + (state.mutes[state.bank] ? " MUTO" : " ATTIVO")); });
+  $("muteBank").addEventListener("click", () => { state.mutes[state.bank] = !state.mutes[state.bank]; perfMark("m", state.bank, +state.mutes[state.bank]); save(); renderBanks(); renderEditorHead(); renderGroups(); msg("GRUPPO " + BANKS[state.bank].id + (state.mutes[state.bank] ? " MUTO" : " ATTIVO")); });
   $("clearTrack").addEventListener("click", () => { state.patterns[state.pattern][state.bank][state.pad] = new Array(patLen()).fill(0); save(); renderPads(); renderEditor(); renderPatterns(); renderLeds(); msg("CANCELLATO " + padLabel(state.bank, state.pad)); });
   $("openLib").addEventListener("click", openLibrary);
   $("closeLib").addEventListener("click", closeLibrary);
@@ -7504,7 +7653,7 @@ function buildStrips() {
     const g = el("div", "gstrip");
     g.style.setProperty("--g", "var(--h" + bk.id + ")");
     g.innerHTML = '<div class="gtop"><b>' + bk.id + '</b><span class="gn">' + esc(bk.name) + '</span><button class="gonair" type="button"></button></div><div class="gbody"><span class="gm"><i></i><b></b></span><div class="gknobs"></div></div>';
-    g.querySelector(".gonair").addEventListener("click", () => { state.mutes[i] = !state.mutes[i]; save(); renderBanks(); renderEditorHead(); renderGroups(); msg("GRUPPO " + bk.id + (state.mutes[i] ? " MUTO" : " IN ONDA")); });
+    g.querySelector(".gonair").addEventListener("click", () => { state.mutes[i] = !state.mutes[i]; perfMark("m", i, +state.mutes[i]); save(); renderBanks(); renderEditorHead(); renderGroups(); msg("GRUPPO " + bk.id + (state.mutes[i] ? " MUTO" : " IN ONDA")); });
     const host = g.querySelector(".gknobs"), col = () => getComputedStyle(document.documentElement).getPropertyValue("--h" + bk.id).trim();
     ["Bassi", "Medi", "Alti"].forEach((label, k) => makeKnob(host, { label, min: -12, max: 12, center: true, col, get: () => state.geq[i][k], set: v => { state.geq[i][k] = Math.abs(v) < 0.3 ? 0 : Math.round(v * 2) / 2; save(); applyEq(); }, fmt: fmtG }));
     [["Eco", 4], ["Riverb.", 5], ["Comp.", 6]].forEach(([label, k]) => makeKnob(host, { label, min: 0, max: 1, col, get: () => state.geq[i][k] || 0, set: v => { state.geq[i][k] = v < 0.02 ? 0 : v; save(); applyEq(); }, fmt: v => Math.round(v * 100) }));
@@ -8498,7 +8647,7 @@ function renderLane() {
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
-const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol", "groove", "fills", "harmony", "patNames"];
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol", "groove", "fills", "harmony", "patNames", "perf"];
 function f32ToB64(d) {
   const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
   for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
@@ -8556,7 +8705,7 @@ function openProject(file) {
     }
     const st = proj.state; PROJ_KEYS.forEach(k => { if (st[k] !== undefined) state[k] = st[k]; });
     if (st.voice === undefined) state.voice = null;
-    voiceFix(); videoFix(); sidebFix(); grooveFix(); fillsFix(); patNamesFix(); voiceSoloStop();
+    voiceFix(); videoFix(); sidebFix(); grooveFix(); fillsFix(); patNamesFix(); perfFix(); voiceSoloStop();
     for (const t of proj.voices || []) { const b = voiceBufFrom(b64ToF32(t.data), t.sr || 44100); VO.bufs.set(t.id, b); VO.peaks.delete(t.id); voiceKeep(t.id, b); }
     state.voice.takes = state.voice.takes.filter(t => VO.bufs.has(t.id)); if (!vTake()) state.voice.sel = state.voice.takes.length ? state.voice.takes[0].id : null;
     state.banks.forEach((bk, bi) => bk.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
@@ -9708,7 +9857,7 @@ function sbXfGain(p) {
 }
 function sbSetXf(p) {
   state.sideb.xf = Math.max(0, Math.min(1, p));
-  state.xf = sbXfGain(state.sideb.xf); deck1.send({ set: { xf: state.xf } });
+  state.xf = sbXfGain(state.sideb.xf); deck1.send({ set: { xf: state.xf } }); perfMark("s", 0, state.sideb.xf);
   if (D2.on) deck2.send({ set: { xf: sbXfGain(1 - state.sideb.xf) } });   // the other side of the fader
   $("xf").value = Math.round(state.xf * 100);
   sbXfDraw();
