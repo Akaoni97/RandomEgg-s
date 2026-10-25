@@ -592,6 +592,11 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 .sbrecrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .sbrec.on { color: #fff; background: linear-gradient(180deg, #e0412f, #9e1b12); animation: sbRecBlink 1s steps(2) infinite; }
 @keyframes sbRecBlink { 50% { filter: brightness(1.35); } }
+.schlist { flex-wrap: wrap; }
+.schlist button { padding: 6px 8px; }
+.schlist button small { margin-left: 4px; color: var(--led); font-size: 9px; letter-spacing: 0; }
+.schdesc { margin: 0; font-size: 12px; line-height: 1.4; color: var(--cream-2); min-height: 2.8em; }
+#schCv { width: 100%; height: auto; aspect-ratio: 640 / 150; border-radius: 6px; display: block; background: #070605; box-shadow: inset 0 2px 8px rgba(0,0,0,.8), 0 0 0 1px var(--edge); }
 .sbrecinfo { font-family: var(--f-lcd, monospace); font-size: 15px; color: var(--led); }
 .sbpad { min-height: 46px; padding: 4px; border: 0; border-radius: 6px; background: radial-gradient(120% 90% at 50% 0%, var(--rubber-hi), var(--rubber) 70%); color: var(--pad-ink); font-family: var(--f-label); font-size: 9px; letter-spacing: .02em; text-transform: uppercase; box-shadow: 0 3px 0 rgba(0,0,0,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sbpad[aria-pressed="true"] { background: var(--hue); color: #15120c; transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.5), 0 0 16px -2px var(--hue); }
@@ -1433,6 +1438,12 @@ html.intro-on { overflow: hidden; }
     <div class="unit sbmix">
       <div class="sbsec"><span class="lbl">Disco sul piatto · trascina la puntina per spostarti nel disco</span><div class="sbsrcrow"><select id="sbSrc" aria-label="Disco sul piatto"></select><button class="key small" id="sbGrab" type="button">Campiona il beat</button></div><div class="sbmarks" id="sbMarks" hidden></div></div>
       <div class="sbsec"><span class="lbl">Adesivi · tocca per attaccarlo dove sta la puntina, poi per tornarci · tieni premuto per toglierlo</span><div class="sbcues" id="sbCues"></div></div>
+      <div class="sbsec sbschool"><span class="lbl">🎓 Scuola di scratch · guarda la mossa, poi rifalla tu sul disco a tempo</span>
+        <div class="seg schlist" id="schList" role="group" aria-label="Lezioni"></div>
+        <p class="schdesc" id="schDesc"></p>
+        <canvas id="schCv" width="640" height="150" aria-label="La mossa da fare: la linea è il disco, le zone scure sono il fader chiuso"></canvas>
+        <div class="sbrecrow"><button class="key small" id="schWatch" type="button">👀 Guarda</button><button class="key small on" id="schTry" type="button">🎯 Ora tu</button><span class="sbrecinfo" id="schScore"></span></div>
+      </div>
       <div class="sbsec"><span class="lbl">Scratch a tempo · tocca il disco per riprenderlo</span><div class="sbpads" id="sbPads"></div></div>
       <div class="sbsec"><span class="lbl">Il tuo scratch · si registra per un giro del pattern, poi lo suona a tempo</span><div class="sbrecrow"><button class="key small sbrec" id="sbRec" type="button"><span class="ledi"></span>● Registra</button><button class="key small" id="sbRecPlay" type="button" aria-pressed="false">▶ Suona il tuo</button><button class="key small" id="sbRecDel" type="button">Cancella</button><span class="sbrecinfo" id="sbRecInfo"></span></div></div>
       <div class="sbsec sbrow"><div class="knobs sbknobs" id="sbKnobs"></div><label class="sbvol"><span class="lbl">Volume del piatto</span><input type="range" id="sbVol" min="0" max="150" value="100"></label></div>
@@ -1869,7 +1880,7 @@ html.intro-on { overflow: hidden; }
             <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
             <li><b>VIS</b> accanto allo schermo (o <kbd>B</kbd>) cambia la grafica a tempo: spettro, specchio, oscilloscopio, cerchio e cascata, più l’equalizzatore anni 80 a segmenti, il goniometro XY dello stereo, le colline, il tunnel, l’iperspazio, il fuoco, il radar che gira una volta a battuta e la pioggia digitale.</li>
             <li><b>FX</b> (o <kbd>J</kbd>) accende gli effetti visivi a tempo su tutta la stanza: <b>Club</b> (luci sul muro, laser, scintille, scossa), <b>VHS</b>, <b>Cinema</b>, <b>Glitch</b> e <b>Sogno</b>. In Personalizza → Luci e animazioni li combini come vuoi e ne regoli l’intensità.</li>
-            <li><b>⟲ Lato B</b> (in alto o nel Piatto, tasto <kbd>O</kbd>): il Mat.Tone si gira e sotto c’è il giradischi da battaglia, grande. Start/Stop, 33 e 45 giri, pitch, la <b>leva della puntina</b> (<kbd>L</kbd>), tre <b>adesivi</b> per tornare al punto giusto del disco (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>, tieni premuto per toglierli), nove scratch a tempo, e il <b>crossfader</b> vero: si trascina, ha la curva a taglio netto o morbida e l’interruttore hamster; <b>Taglio</b> (<kbd>G</kbd>) lo apre e chiude al volo. La <b>puntina</b> si prende per la testina e si lascia dove vuoi nel disco. I <b>dischi da battaglia</b> hanno più suoni, ognuno col suo adesivo giallo e il suo tasto. <b>● Registra</b> prende il tuo scratch (disco e crossfader) per un giro del pattern e poi lo suona a tempo, come gli scratch automatici. <b>＋ Piatto 2</b> mette un secondo giradischi dall’altra parte del mixer, con una copia dello stesso disco: il crossfader passa da un piatto all’altro e <b>▶ A tempo</b> fa ripartire un disco dal suo adesivo sul prossimo tempo del beat, già a velocità. È il <b>beat juggling</b>: campiona il beat, attacca l’adesivo sull’uno in tutti e due, e alterna i piatti. Sul disco puoi mettere anche la tua voce. Il beat continua a suonare, e col tasto Play lo fermi o lo fai ripartire anche da qui.</li>
+            <li><b>⟲ Lato B</b> (in alto o nel Piatto, tasto <kbd>O</kbd>): il Mat.Tone si gira e sotto c’è il giradischi da battaglia, grande. Start/Stop, 33 e 45 giri, pitch, la <b>leva della puntina</b> (<kbd>L</kbd>), tre <b>adesivi</b> per tornare al punto giusto del disco (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>, tieni premuto per toglierli), nove scratch a tempo, e il <b>crossfader</b> vero: si trascina, ha la curva a taglio netto o morbida e l’interruttore hamster; <b>Taglio</b> (<kbd>G</kbd>) lo apre e chiude al volo. La <b>puntina</b> si prende per la testina e si lascia dove vuoi nel disco. I <b>dischi da battaglia</b> hanno più suoni, ognuno col suo adesivo giallo e il suo tasto. <b>🎓 Scuola di scratch</b>: scegli la lezione (baby, tear, stab, chirp, flare, transformer), <b>Guarda</b> la fa il Mat.Tone a tempo, poi <b>Ora tu</b>: la rifai sul disco dall’uno e ti dà il voto in percentuale, con le stelle e un consiglio; la linea è il disco, le zone scure sono il fader chiuso. <b>● Registra</b> prende il tuo scratch (disco e crossfader) per un giro del pattern e poi lo suona a tempo, come gli scratch automatici. <b>＋ Piatto 2</b> mette un secondo giradischi dall’altra parte del mixer, con una copia dello stesso disco: il crossfader passa da un piatto all’altro e <b>▶ A tempo</b> fa ripartire un disco dal suo adesivo sul prossimo tempo del beat, già a velocità. È il <b>beat juggling</b>: campiona il beat, attacca l’adesivo sull’uno in tutti e due, e alterna i piatti. Sul disco puoi mettere anche la tua voce. Il beat continua a suonare, e col tasto Play lo fermi o lo fai ripartire anche da qui.</li>
             <li>Il tasto <b>3D</b> accanto alle pagine (o <kbd>T</kbd>) cambia visuale: frontale, sul banco, di tre quarti da destra o da sinistra. Si suona anche in 3D.</li>
             <li><b>Reparto tekno</b>: nella libreria la categoria <b>Tekno</b> (casse 909, dure e col rimbombo, acid 303, hoover, accordi dub techno, loop 909 a 140 BPM). Per la free party ci sono la cassa hardtek, lo stab “mentasm”, l’acid che urla, le rullate e l’allarme. I kit <b>Tekno 140</b>, <b>Acid 140</b>, <b>Loop 909 · 140</b>, <b>Free party 170</b> e <b>Hardtek 180</b> portano il tempo dove serve e, se il pattern è vuoto, ci mettono un groove da cui partire.</li>
             <li><b>Campiona</b> (sotto il pad selezionato), come su una groovebox: dal <b>microfono o da un ingresso</b> (scheda audio, Missaggio stereo, BlackHole…), dall’<b>audio del computer</b> (una scheda con YouTube o Spotify: parte da sola quando arriva il suono) o dal <b>beat</b> che sta suonando (ricampiona le battute scelte, a tempo). Poi <b>✂ Taglia nei pad</b> lo spezza sui pad, oppure lo metti intero su un pad. Resta salvato tra «I tuoi suoni» (✕ nella libreria per eliminarlo).</li>
@@ -2868,7 +2879,7 @@ function voiceFix() { const d = VOICE_DEF(); state.voice = Object.assign(d, stat
 voiceFix();
 function videoFix() { state.video = Object.assign({ fmt: "v", layout: "strumento", len: "8", title: "", artist: "", fx: true, lyrics: true, light: false }, state.video || {}); }
 videoFix();
-function sidebFix() { state.sideb = Object.assign({ curve: "netta", hamster: false, xf: 0, cues: [null, null, null], two: false }, state.sideb || {}); if (!Array.isArray(state.sideb.cues) || state.sideb.cues.length !== 3) state.sideb.cues = [null, null, null]; }
+function sidebFix() { state.sideb = Object.assign({ curve: "netta", hamster: false, xf: 0, cues: [null, null, null], two: false, best: {} }, state.sideb || {}); if (!Array.isArray(state.sideb.cues) || state.sideb.cues.length !== 3) state.sideb.cues = [null, null, null]; }
 sidebFix();
 // the groove: a feel taken from a machine or from a sample, on the groups you choose; and a swing for each group
 function grooveFix() {
@@ -9630,6 +9641,7 @@ function sbLever(up) {
 function sbCuesReset() { state.sideb.cues = [null, null, null]; save(); sbRender(); }
 function sbRender() {
   if (!$("sbPads")) return;
+  schoolRender();
   const st = state.sideb;
   $("sbMotor").classList.toggle("on", deck.motor);
   $("sb45").classList.toggle("on", deck.speed > 1.1); $("sb33").classList.toggle("on", !(deck.speed > 1.1));
@@ -9657,7 +9669,8 @@ function sbRender() {
     (mk ? deck.marks : []).forEach((m, i) => { const b = el("button", "sbmark"); b.type = "button"; b.innerHTML = "<b>" + (i + 1) + "</b>"; b.appendChild(document.createTextNode(m.name)); b.title = "Porta il disco all’inizio di «" + m.name + "»"; b.addEventListener("click", () => sbGoto(Math.round(m.s * deck.sr), m.name)); box.appendChild(b); });
   }
   const T = st.take;
-  $("sbRec").classList.toggle("on", !!SB.rec); $("sbRec").lastChild.textContent = SB.rec === "arm" ? "Aspetto l’uno…" : SB.rec ? "■ Annulla" : "● Registra";
+  const own = SB.rec && !SCH.rec;   // the school uses the same recorder: its takes are not yours
+  $("sbRec").classList.toggle("on", !!own); $("sbRec").lastChild.textContent = own && SB.rec === "arm" ? "Aspetto l’uno…" : own ? "■ Annulla" : "● Registra";
   $("sbRecPlay").disabled = !T; $("sbRecPlay").setAttribute("aria-pressed", deck.auto === "rec"); $("sbRecDel").disabled = !T;
   document.querySelectorAll('[data-auto="rec"]').forEach(b => { b.disabled = !T; });
   if (!SB.rec) $("sbRecInfo").textContent = T ? T.du / 16 + (T.du > 16 ? " battute" : " battuta") + " registrat" + (T.du > 16 ? "e" : "a") : "";
@@ -9682,8 +9695,105 @@ function sbRecBegin(t0) {
   SB.rec = "on"; SB.recEnd = t0 + du * sixteenth();
   setTimeout(() => { if (SB.rec === "on") { sbRender(); msg("● REC SCRATCH · " + du / 16 + (du > 16 ? " BATTUTE" : " BATTUTA")); } }, Math.max(0, (t0 - ctx.currentTime) * 1000));
 }
+// the school: the moves of the automatic scratches are the lessons; your take is measured against them
+const LESSONS = [
+  ["baby", "Baby", 1, "Avanti e indietro a tempo, il fader resta aperto. È la base di tutto: segui la linea, su quando sale e giù quando scende."],
+  ["tear", "Tear", 1, "Avanti in un colpo solo, indietro in due tempi con una piccola fermata a metà. Fader aperto."],
+  ["stab", "Stab", 2, "Un colpo secco in avanti e il fader si chiude subito, prima di tornare indietro: si sente solo l’attacco."],
+  ["chirp", "Chirp", 2, "Il fader si chiude alla fine di ogni colpo in avanti: il suono si mozza e cinguetta."],
+  ["flare", "Flare", 3, "Fader aperto, lo chiudi un istante a metà di ogni colpo: un suono diventa due."],
+  ["trans", "Transformer", 3, "Il disco va lento e il fader apre e chiude a tempo, a raffica: le zone scure sono il fader chiuso."],
+];
+const SCH = { id: "baby", rec: false, live: [], a0: null, last: null };
+// the move of a lesson over n points of du sixteenths: position in seconds and the fader
+function lessonCurve(id, du, n) {
+  const c = new DeckCore(deck.sr || SR); c.bsr = deck.sr || SR; c.auto = id; c.anchor = 0;
+  const p = new Float32Array(n), g = new Float32Array(n);
+  for (let k = 0; k < n; k++) { const r = c.pattern(k / n * du); p[k] = r[0] / c.bsr; g[k] = r[1]; }
+  return { p, g };
+}
+// how close the hand was: the motion (with a little room on the timing), the size of the moves, and the fader
+function lessonScore(id, take) {
+  const n = take.n, du = take.du, T = lessonCurve(id, du, n), sr = deck.sr || SR, up = Array.from(take.p, x => x / sr), ug = take.g;
+  const vel = a => { const v = new Float32Array(n); for (let k = 1; k < n - 1; k++) v[k] = (a[k + 1] - a[k - 1]) / 2; return v; };
+  const vt = vel(T.p), vu = vel(up), W = Math.round(n / du / 3);
+  let best = -1, bestS = 0;
+  for (let s = -W; s <= W; s++) {
+    let a = 0, b = 0, c = 0;
+    for (let k = W; k < n - W; k++) { const x = vt[k], y = vu[k + s]; a += x * y; b += x * x; c += y * y; }
+    const r = b && c ? a / Math.sqrt(b * c) : 0; if (r > best) { best = r; bestS = s; }
+  }
+  const range = a => { let lo = Infinity, hi = -Infinity; for (const x of a) { lo = Math.min(lo, x); hi = Math.max(hi, x); } return hi - lo; };
+  const ratio = range(up) / Math.max(1e-4, range(T.p)), amp = Math.max(0, 1 - Math.min(1, Math.abs(Math.log2(Math.max(1e-3, ratio))) / 1.6));
+  const motion = Math.max(0, best) * 0.8 + amp * 0.2;
+  const usesFader = T.g.some(x => x < 0.5);
+  let fader = 1;
+  if (usesFader) {
+    let m = 0, cnt = 0;
+    for (let k = W; k < n - W; k++) { cnt++; if ((ug[k + bestS] > 0.5) === (T.g[k] > 0.5)) m++; }
+    fader = Math.max(0, (m / cnt - 0.5) / 0.5);
+  }
+  const total = Math.round(100 * (usesFader ? 0.6 * motion + 0.4 * fader : motion));
+  const tips = [];
+  if (best < 0.5) tips.push("segui la linea: avanti quando sale, indietro quando scende");
+  else if (ratio < 0.6) tips.push("movimenti più lunghi");
+  else if (ratio > 1.7) tips.push("movimenti più corti");
+  if (usesFader && fader < 0.6) tips.push("chiudi il fader (o tieni «Taglio», tasto G) dove la striscia è scura");
+  if (Math.abs(bestS) > W * 0.7) tips.push(bestS > 0 ? "sei un po’ in ritardo" : "sei un po’ in anticipo");
+  return { total, tips, user: up, ug, shift: bestS };
+}
+const stars = s => s >= 80 ? "★★★" : s >= 60 ? "★★☆" : s >= 40 ? "★☆☆" : "☆☆☆";
+function schoolRender() {
+  const box = $("schList"); if (!box) return;
+  const best = state.sideb.best || {};
+  if (!box.children.length) LESSONS.forEach(([id, name]) => { const b = el("button"); b.type = "button"; b.dataset.id = id; b.addEventListener("click", () => { SCH.id = id; SCH.last = null; $("schScore").textContent = ""; schoolRender(); }); box.appendChild(b); });
+  [...box.children].forEach(b => { const L = LESSONS.find(x => x[0] === b.dataset.id); b.innerHTML = esc(L[1]) + (best[L[0]] != null ? "<small>" + stars(best[L[0]]) + "</small>" : ""); b.setAttribute("aria-pressed", b.dataset.id === SCH.id); });
+  const L = LESSONS.find(x => x[0] === SCH.id);
+  $("schDesc").textContent = ["Facile", "Media", "Difficile"][L[2] - 1] + " · " + L[3] + (best[L[0]] != null ? " Il tuo record: " + best[L[0]] + "%." : "");
+  $("schTry").textContent = SCH.rec ? (SB.rec === "arm" ? "Aspetto l’uno…" : "● Scratcha ora!") : "🎯 Ora tu";
+  schoolDraw();
+}
+function schoolDraw() {
+  const cv = $("schCv"); if (!cv || !cv.offsetParent) return;
+  const c = cv.getContext("2d"), W = cv.width, H = cv.height, du = pm().bars * 16, n = 256, T = lessonCurve(SCH.id, du, n);
+  const led = getComputedStyle($("app")).getPropertyValue("--led").trim() || "#ff9f2e";
+  c.fillStyle = "#070605"; c.fillRect(0, 0, W, H);
+  let lo = Infinity, hi = -Infinity; for (const x of T.p) { lo = Math.min(lo, x); hi = Math.max(hi, x); }
+  const pad = (hi - lo) * 0.25 + 0.02, Y = v => H - 10 - (v - lo + pad) / (hi - lo + 2 * pad) * (H - 20), X = k => k / n * W;
+  for (let k = 0; k < n; k++) if (T.g[k] < 0.5) { c.fillStyle = "rgba(255,255,255,.07)"; c.fillRect(X(k), 0, W / n + 1, H); c.fillStyle = "rgba(0,0,0,.55)"; c.fillRect(X(k), H - 6, W / n + 1, 6); }
+  for (let b = 0; b <= du; b += 4) { c.fillStyle = b % 16 ? "rgba(255,255,255,.08)" : "rgba(255,255,255,.2)"; c.fillRect(Math.round(b / du * W), 0, 1, H); }
+  c.strokeStyle = led; c.lineWidth = 3; c.globalAlpha = 0.9; c.beginPath(); for (let k = 0; k < n; k++) { const x = X(k), y = Y(T.p[k]); k ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); c.globalAlpha = 1;
+  // your last take, or the one being made
+  const draw = (pts, col) => { if (!pts || pts.length < 2) return; c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); pts.forEach(([u, v], i) => { const x = u / du * W, y = Y(v + (T.p[0])); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke(); };
+  if (SCH.last) { const L = SCH.last, m = L.user.length; draw(Array.from({ length: m }, (_, k) => [k / m * du, L.user[(k + L.shift + m) % m] - L.user[0]]), "rgba(255,255,255,.85)"); }
+  if (SCH.rec && SCH.live.length) draw(SCH.live, "#ffffff");
+  if (playing && ctx) { const u = ((ctx.currentTime - gridOrigin) / sixteenth() % du + du) % du; c.fillStyle = "#fff"; c.fillRect(Math.round(u / du * W), 0, 2, H); }
+  c.fillStyle = "rgba(255,255,255,.45)"; c.font = "16px VT323, monospace"; c.textAlign = "right"; c.fillText(SCH.last ? "TU" : "", W - 6, 16);
+}
+function schoolWatch() {
+  if (!initAudio()) return;
+  if (!playing) start();
+  SCH.rec = false; setAuto(SCH.id); schoolRender();
+  msg("GUARDA E ASCOLTA: " + LESSONS.find(x => x[0] === SCH.id)[1].toUpperCase() + " · POI «ORA TU»");
+}
+function schoolTry() {
+  if (!initAudio()) return;
+  if (SCH.rec) { deck.send({ rec: false }); SB.rec = ""; SCH.rec = false; schoolRender(); msg("PROVA ANNULLATA"); return; }
+  if (deck.auto) setAuto("");
+  SCH.rec = true; SCH.live = []; SCH.a0 = null; SB.rec = "arm"; if (!playing) start();
+  schoolRender(); msg("● TOCCA A TE: SCRATCHA DALL’UNO PER " + pm().bars + (pm().bars > 1 ? " BATTUTE" : " BATTUTA"));
+}
+function schoolDone(R) {
+  SCH.rec = false; SB.rec = "";
+  const r = lessonScore(SCH.id, R), best = state.sideb.best = state.sideb.best || {}, prev = best[SCH.id], rec = prev == null ? r.total >= 40 : r.total > prev;
+  if (prev == null || r.total > prev) best[SCH.id] = r.total;
+  SCH.last = r; save(); sbRender();
+  $("schScore").textContent = r.total + "% " + stars(r.total) + (rec ? " · nuovo record!" : "");
+  msg((r.total >= 80 ? "BRAVO! " : r.total >= 60 ? "CI SEI QUASI · " : "RIPROVA · ") + r.total + "%" + (r.tips.length ? " · " + r.tips[0].toUpperCase() : ""));
+}
 function deckMsg(d) {
   if (!d || !d.take) return;
+  if (SCH.rec) { schoolDone(d.take); return; }   // a take for the school is measured, not kept
   const R = d.take, sr = deck.sr, n = R.n;
   SB.rec = "";
   let move = 0, open = 0;
@@ -9699,13 +9809,18 @@ function deckMsg(d) {
 }
 // every frame while side B is up: the beat strip
 function sbTick() {
+  if (SCH.rec && SB.rec === "on" && ctx) {
+    const du = pm().bars * 16, u = (ctx.currentTime - (SB.recEnd - du * sixteenth())) / sixteenth();
+    if (u >= 0 && u <= du) { if (SCH.a0 == null) SCH.a0 = deck.pos; SCH.live.push([u, (deck.pos - SCH.a0) / deck.sr]); }
+  }
+  if (playing || SCH.rec) schoolDraw();
   const pos = (playing ? "▶ " : "■ ") + "P" + String(state.pattern + 1).padStart(2, "0") + " · " + state.bpm + " BPM · " + $("vPos").textContent;
   if (pos !== SB.lastPos) { SB.lastPos = pos; $("sbPos").textContent = pos; $("sbPlay").classList.toggle("on", playing); $("sbPlay").textContent = playing ? "■ Stop" : "▶ Play"; }
   const m = $("msg").textContent; if (m !== SB.lastMsg) { SB.lastMsg = m; $("sbMsg").textContent = m; }
   $("sbBeat").classList.toggle("on", kickGlow > 0.4);
   if (SB.rec === "arm" && !playing) { SB.rec = ""; sbRender(); }
-  if (SB.rec === "on" && ctx) { const left = SB.recEnd - ctx.currentTime, beats = Math.max(0, Math.ceil(left / (4 * sixteenth()))), txt = left > 0 ? "● REC · ancora " + beats + (beats === 1 ? " tempo" : " tempi") : "● REC · fatto"; if ($("sbRecInfo").textContent !== txt) $("sbRecInfo").textContent = txt; }
-  else if (SB.rec === "arm" && ctx && playing) { const D = patLen() * stepDur(), left = D - ((ctx.currentTime - gridOrigin) % D + D) % D, txt = "Parte tra " + Math.max(1, Math.ceil(left / (4 * sixteenth()))) + "…"; if ($("sbRecInfo").textContent !== txt) $("sbRecInfo").textContent = txt; }
+  if (SB.rec === "on" && ctx && !SCH.rec) { const left = SB.recEnd - ctx.currentTime, beats = Math.max(0, Math.ceil(left / (4 * sixteenth()))), txt = left > 0 ? "● REC · ancora " + beats + (beats === 1 ? " tempo" : " tempi") : "● REC · fatto"; if ($("sbRecInfo").textContent !== txt) $("sbRecInfo").textContent = txt; }
+  else if (SB.rec === "arm" && ctx && playing && !SCH.rec) { const D = patLen() * stepDur(), left = D - ((ctx.currentTime - gridOrigin) % D + D) % D, txt = "Parte tra " + Math.max(1, Math.ceil(left / (4 * sixteenth()))) + "…"; if ($("sbRecInfo").textContent !== txt) $("sbRecInfo").textContent = txt; }
 }
 function buildSideB() {
   const st = state.sideb;
@@ -9745,6 +9860,8 @@ function buildSideB() {
     });
   }
   $("sbRec").addEventListener("click", sbRecToggle);
+  $("schWatch").addEventListener("click", schoolWatch);
+  $("schTry").addEventListener("click", schoolTry);
   $("sbRecPlay").addEventListener("click", () => { setAuto(deck.auto === "rec" ? "" : "rec"); sbRender(); });
   $("sbRecDel").addEventListener("click", () => { if (deck.auto === "rec") setAuto(""); delete state.sideb.take; save(); sbRender(); msg("SCRATCH CANCELLATO"); });
   $("sbGrab").addEventListener("click", () => { $("grab").click(); setTimeout(sbRender, 2500); });
