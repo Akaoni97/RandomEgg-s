@@ -447,6 +447,8 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 
 /* ---------- library ---------- */
 .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 30; }
+.dragsound .scrim { pointer-events: none; background: rgba(0,0,0,.2); }   /* a sound dragged from the library can reach the pads */
+.libdirname { font-family: var(--f-logo); font-weight: 400; font-size: 15px; color: var(--cream); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100%); z-index: 31; background: var(--chassis); border-left: 1px solid var(--edge);
   display: grid; grid-template-rows: auto auto auto minmax(0,1fr) auto; gap: 12px;
@@ -1631,6 +1633,7 @@ html.intro-on { overflow: hidden; }
           </div>
           <div class="acts">
             <label class="lbl humanl" title="Sposta di pochi millesimi tempi e volumi, come un batterista vero">Mano umana <input type="range" id="human" min="0" max="100" value="0" aria-label="Mano umana"><output id="humanOut">0%</output></label>
+            <button class="key small" id="varyBtn" type="button" aria-pressed="true" title="Ogni colpo di batteria è un po’ diverso dal precedente: si alternano le registrazioni dello stesso colpo e cambiano di poco intonazione e volume"><span class="ledi"></span>Colpi mai uguali</button>
             <select id="ideaSel" aria-label="Un groove pronto per il gruppo"><option value="">🎲 Idea per il gruppo…</option></select>
             <button class="key small" id="variaBtn" type="button" title="Piccoli cambi al groove del gruppo">Varia</button>
             <button class="key small" id="idea808" type="button" hidden title="Una linea di 808 sulla cassa del gruppo A, con note lunghe e un glissato">🎲 Idea 808</button>
@@ -1912,6 +1915,8 @@ html.intro-on { overflow: hidden; }
             <li><b>Canzone</b> (sotto il sequencer): metti in fila i pattern, ognuno ripetuto quante volte vuoi, accendi «Suona la canzone» e premi Play. «Registra la canzone» la esporta tutta.</li>
             <li><b>Note repeat</b> (sotto i pad, tasto <kbd>H</kbd>): tieni premuto un pad e viene ripetuto a tempo, da 1/4 a 1/32, anche a terzine. Con il REC acceso le ripetizioni finiscono nel pattern: perfetto per charleston e rullate.</li>
             <li><b>✂ Taglia in pezzi</b> (sotto il pad selezionato): apre il suono del pad, trova da solo i colpi di un loop o di un break e lo divide fino a 48 pezzi: 12 per gruppo, poi continua nei gruppi successivi. Può scrivere il pattern che li risuona al loro posto e portare il tempo a quello del loop: poi li rimescoli come vuoi.</li>
+            <li><b>Le tue cartelle</b> (app per PC, Libreria → 📁 Cartelle): «+ Aggiungi una cartella» e scegli dove tieni i tuoi campioni. Le sfogli con le sottocartelle, cerchi per nome, tocchi un file e lo senti già sul pad; con ↑ ↓ li provi uno dopo l’altro. Puoi anche trascinare un suono della libreria su un pad qualsiasi, o trascinare uno o più file da Esplora file sui pad (vanno sui pad dopo quello su cui li lasci). Il Mat.Tone legge solo le cartelle che scegli e non cambia niente dentro; quando salvi il progetto, i suoni delle cartelle vanno dentro il file, così si apre anche su un altro computer.</li>
+            <li><b>Colpi mai uguali</b> (Sequencer, accanto a Mano umana; acceso di serie): ogni colpo di batteria è un po’ diverso dal precedente. I rullanti Frankensnare, i battimani veri e il tamburello alternano 3–5 registrazioni diverse dello stesso colpo; tutti gli altri colpi cambiano di pochissimo intonazione e volume. Spegnilo per i colpi identici da drum machine.</li>
             <li><b>Dinamiche vere</b> (app per PC): i suoni con scritto «3 dinamiche» o «4 dinamiche» (i rullanti Frankensnare, la batteria da studio, il pianoforte Splendid, il Wurlitzer) sono registrati piano, medio e forte. Un colpo fantasma del sequencer (o un tocco leggero sul controller) suona la registrazione piano, un accento quella forte: cambia il colore del suono, non solo il volume. Kit pronti: <b>Batteria da studio (dinamica)</b> e <b>Rullanti veri</b>.</li>
             <li><b>Libreria</b> (Cambia suono): i suoni sono divisi per quello che fanno nel beat: <b>Casse</b>, <b>Rullanti e clap</b>, <b>Charleston e piatti</b>, Tom, Percussioni, Loop; <b>808 e bassi</b>, Piano e tastiere, Chitarre, Archi, Fiati, Campane; Synth, Accordi, Voci, Scratch ed effetti. In alto scegli il <b>genere</b> (Boom bap, Trap, Old school, Lo-fi, Tekno) e vedi solo quelli; dentro ogni gruppo prima i suoni fatti per il beat, poi per stile, poi gli strumenti veri su tre ottave. Lo stesso suono non compare due volte. Tocca un suono e lo senti già sul pad; con ↑ ↓ li sfogli, «↺ Rimetti» torna a quello di prima, ☆ lo tiene tra i <b>Preferiti</b>. In alto anche <b>Kit pronti</b> e <b>I tuoi</b> suoni.</li>
             <li><b>Equalizzatori</b> (Mix): ogni gruppo ha bassi, medi, alti e livello, come i canali di un banco; sul master c’è l’<b>EQ ’73</b> da console, con taglia-bassi, bassi e medi a frequenze fisse e alti a 12 kHz, più cinque suoni pronti (Bassi grassi, Polvere ’70, Radio AM, Aria). Doppio clic su una manopola la rimette piatta.</li>
@@ -2028,7 +2033,7 @@ html.intro-on { overflow: hidden; }
     <button class="key on" id="closeLib" type="button">Fatto</button>
   </div>
   <div class="libtabs" id="libTabs" role="tablist" aria-label="Sezioni della libreria">
-    <button type="button" role="tab" data-t="suoni">Suoni<em></em></button><button type="button" role="tab" data-t="kit">Kit pronti<em></em></button><button type="button" role="tab" data-t="fav">★ Preferiti<em></em></button><button type="button" role="tab" data-t="tuoi">I tuoi<em></em></button>
+    <button type="button" role="tab" data-t="suoni">Suoni<em></em></button><button type="button" role="tab" data-t="kit">Kit pronti<em></em></button><button type="button" role="tab" data-t="fav">★ Preferiti<em></em></button><button type="button" role="tab" data-t="tuoi">I tuoi<em></em></button><button type="button" role="tab" data-t="cartelle" hidden>📁 Cartelle<em></em></button>
   </div>
   <div class="libsearch" id="libSearchRow"><input class="search" id="search" type="search" placeholder="Cerca in tutta la libreria: cassa, piano, conga, voce…" aria-label="Cerca un suono" autocomplete="off"><button class="key small" id="searchX" type="button" hidden aria-label="Cancella la ricerca">✕</button></div>
   <div class="libcrumb" id="libCrumb" hidden><button class="key small" id="libBack" type="button">← Tutti i suoni</button><b id="libCrumbName"></b></div>
@@ -2571,6 +2576,9 @@ const LAYER_ROWS = [
   ["av_cow","Campanaccio acustico","Boom bap",null,3,"AV"],
 ];
 for (const [id, name, cat, root, layers, src] of LAYER_ROWS) SOUNDS.set(id, { id, name, cat, root, kind: "file", dir: "grandi", layers, src: LAYER_SRC[src] || src });
+// how many takes of the same stroke (suoni/grandi/<id>[_v<k>]_r<n>.mp3): repeated hits take turns, never the same twice in a row
+const RR_COUNT = { fs_10: 4, fs_12: 4, fs_13b: 4, fs_13b_rim: 4, fs_14a: 4, fs_14a_rim: 4, fs_14d: 4, fs_14p: 4, fs_14p_mute: 4, fs_14s: 4, fs_14t: 4, fs_16: 4, fs_20: 4, fs_20m: 4, fs_20m_tight: 4, fs_22: 4, fs_18_prep: 4, fs_22_spring: 4, fs_14d_brush: 4, fs_ss14a: 4, fs_ss16: 4, fs_clap1: 5, fs_clap2: 4, fs_clap3: 3, fs_clap_stack: 5, fs_tamb: 5 };
+for (const [id, n] of Object.entries(RR_COUNT)) SOUNDS.get(id).rr = n;
 const LAYER_INSTR = [
   ["in_splendid","Pianoforte a coda Splendid",60,[28,32,36,40,44,48,52,56,60,64,68,72,76,80,84,88,92,96,100],3,"Splendid Grand Piano · pubblico dominio"],
   ["in_wurli","Piano elettrico Wurlitzer",60,[36,41,47,52,56,61,68,79],4,"Greg Sullivan · Wurlitzer EP200 · CC BY 3.0"],
@@ -2660,6 +2668,61 @@ function demoPatterns() {
   put(1, 1, 8, [[15]]);
   return P;
 }
+/* ================= le tue cartelle (app per PC): i campioni del computer, sfogliati dalla libreria ================= */
+// the app reads only inside the folders you pick; a file put on a pad is remembered by its path, and goes into the project when you save it
+const FOLDERS_OK = !!(window.matDesktop && window.matDesktop.folderList);
+const folderUrl = path => "_cartelle/" + encodeURIComponent(path);
+let foldersReady = Promise.resolve();
+function folderSound(path) {
+  const id = "fd:" + path; if (SOUNDS.has(id)) return SOUNDS.get(id);
+  const top = ((typeof state !== "undefined" && state.folders) || []).find(f => path.startsWith(f.path));
+  const s = { id, name: path.split(/[\\/]/).pop().replace(/\.[^.]+$/, "").slice(0, 40), cat: "I tuoi suoni", root: null, home: null, kind: "folder", path, src: "Cartella · " + (top ? top.name : "computer") };
+  SOUNDS.set(id, s); return s;
+}
+function folderKeep(s) { if (s && s.kind === "folder" && !state.folderSounds.includes(s.path)) { state.folderSounds.push(s.path); if (state.folderSounds.length > 600) state.folderSounds.shift(); } }
+let libDir = null, libDirList = null;   // the folder open in the library and what is in it
+function folderOpen(path) { libDir = path; libDirList = null; renderLibrary(); }
+function folderLoad(dir) {
+  window.matDesktop.folderList(dir).then(r => { libDirList = Object.assign({ dir, dirs: [], files: [] }, r || { err: true }); if (libTab === "cartelle" && libDir === dir) renderLibrary(); }, () => { libDirList = { dir, err: true, dirs: [], files: [] }; renderLibrary(); });
+}
+function folderAdd() {
+  window.matDesktop.folderPick().then(f => {
+    if (!f) return;
+    if (!state.folders.some(x => x.path === f.path)) state.folders.push(f);
+    save(); msg("CARTELLA AGGIUNTA: " + f.name.toUpperCase()); folderOpen(f.path);
+  });
+}
+function folderRemove(i) {
+  const f = state.folders.splice(i, 1)[0]; save();
+  window.matDesktop.foldersSet(state.folders.map(x => x.path));
+  msg("CARTELLA TOLTA DALLA LIBRERIA: " + f.name.toUpperCase() + " (I FILE RESTANO DOVE SONO)"); renderLibrary();
+}
+function renderFolders(list, q, cur, head) {
+  if (!libDir) {
+    const acts = el("div", "libacts"), add = el("button", "key small on", "+ Aggiungi una cartella"); add.type = "button"; add.addEventListener("click", folderAdd); acts.appendChild(add); list.appendChild(acts);
+    if (!state.folders.length) { list.appendChild(el("p", "libempty", "Scegli le cartelle dove tieni i tuoi campioni: pacchetti scaricati, suoni registrati, loop. Le sfogli da qui, li ascolti con un tocco e li metti sul pad (o li trascini su un pad qualsiasi). Il Mat.Tone legge solo le cartelle che scegli e non cambia niente dentro.")); return; }
+    head("Le tue cartelle · " + state.folders.length, "Tocca per aprire");
+    state.folders.forEach((f, i) => {
+      const row = el("div", "item"), tx = el("button", "tx", '<i class="pvi">📁</i><span><b>' + esc(f.name) + "</b><small>" + esc(f.path) + "</small></span>"); tx.type = "button";
+      tx.addEventListener("click", () => folderOpen(f.path));
+      const del = el("button", "del", "✕"); del.type = "button"; del.title = "Togli dalla libreria (i file restano)";
+      del.addEventListener("click", () => { if (del.classList.contains("sure")) folderRemove(i); else { del.classList.add("sure"); del.textContent = "Togli?"; setTimeout(() => { del.classList.remove("sure"); del.textContent = "✕"; }, 2500); } });
+      row.append(tx, del); list.appendChild(row);
+    });
+    return;
+  }
+  const L = libDirList, bar = el("div", "libacts"), up = el("button", "key small", "← " + (L && L.up ? "Su" : "Le tue cartelle")); up.type = "button";
+  up.addEventListener("click", () => { if (L && L.up) folderOpen(L.up); else { libDir = null; renderLibrary(); } });
+  bar.append(up, el("b", "libdirname", esc(L && L.name ? L.name : libDir.split(/[\\/]/).pop()))); list.appendChild(bar);
+  if (!L || L.dir !== libDir) { list.appendChild(el("p", "libempty", "Apro la cartella…")); folderLoad(libDir); return; }
+  if (L.err) { list.appendChild(el("p", "libempty", "Questa cartella non si apre (spostata, cancellata o su un disco staccato).")); return; }
+  const dirs = L.dirs.filter(d => !q || d.name.toLowerCase().includes(q)), files = L.files.filter(f => !q || f.name.toLowerCase().includes(q));
+  if (dirs.length) { head("Cartelle · " + dirs.length); dirs.forEach(d => { const row = el("div", "item"), tx = el("button", "tx", '<i class="pvi">📁</i><span><b>' + esc(d.name) + "</b></span>"); tx.type = "button"; tx.addEventListener("click", () => folderOpen(d.path)); row.appendChild(tx); list.appendChild(row); }); }
+  if (files.length) { head("Suoni · " + files.length, "Tocca: lo senti ed è sul pad · trascinalo su un altro pad"); files.forEach(f => list.appendChild(soundRow(folderSound(f.path), cur))); }
+  if (!dirs.length && !files.length) list.appendChild(el("p", "libempty", q ? "Niente qui per “" + esc(q) + "”." : "Qui non ci sono suoni (wav, mp3, flac, ogg, m4a) né cartelle."));
+  if (L.more) list.appendChild(el("p", "libempty", "Ne mostro i primi 3000: per gli altri apri le sottocartelle o cerca per nome."));
+}
+
 /* ================= i tuoi suoni: registrati dal microfono o caricati, salvati sul dispositivo ================= */
 // the sound itself goes in IndexedDB (mono samples); the list of names in localStorage, so the pads know them at once
 const USER_META_KEY = "mattone-suoni-tuoi", USER_MAX_SEC = 60;
@@ -2958,13 +3021,16 @@ let state = {
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
   warmth: 0.35, volume: 0.85, dust: 0.25, wow: 0.25, glue: 0.35, pump: 0, push: 1.5, mpreset: "boombap", human: 0, xf: 1, deckPitch: 0, deckTone: 0.62, deckDirt: 0.25, vis: 0, skin: "sp12", ver: 4, custom: null,
   pmeta: defaultPmeta(), song: [{ p: 0, n: 3 }, { p: 1, n: 1 }], songOn: false, follow: true, nr: false, nrRate: 4,
-  meq: { hp: 0, lo: 0, loF: 60, mid: 0, midF: 1600, hi: 0 }, eqPreset: "piatto", geq: [[0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0]], favs: [], recent: [],
+  meq: { hp: 0, lo: 0, loF: 60, mid: 0, midF: 1600, hi: 0 }, eqPreset: "piatto", geq: [[0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0]], favs: [], recent: [], vary: true, folders: [], folderSounds: [],
   echo: { time: "8d", fb: 0.4, tone: 0.45, wear: 0.35, ret: 0.8 }, rev: { type: "stanza", ret: 0.8, tone: 0.7 }, chord: 1, strum: 0,
 };
 try {
   const saved = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem("mattone-groovebox-v2") || "null");
   if (saved && saved.banks && saved.patterns) {
     state = Object.assign(state, saved);
+    if (!Array.isArray(state.folders)) state.folders = [];
+    if (!Array.isArray(state.folderSounds)) state.folderSounds = [];
+    state.folderSounds.forEach(folderSound);   // the files from your folders that are on the pads
     state.banks.forEach((b, bi) => b.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
     if ((saved.ver || 0) < 4) { state.deckTone = 0.62; state.deckDirt = 0.25; }
     state.ver = 4;
@@ -3070,6 +3136,8 @@ const N = {};
 const cache = new Map(), loading = new Map(), zoneCache = new Map(), layerCache = new Map();
 // the dynamic of a hit: which recording, soft to hard, for this velocity (ghost 0.36, normal 0.72, accent 1)
 const LAYER_EDGES = { 2: [0.6], 3: [0.5, 0.88], 4: [0.3, 0.55, 0.88] };
+const RR_LAST = new Map();
+function rrPick(id, n) { if (n < 2) return 0; let r = Math.floor(Math.random() * n); if (r === RR_LAST.get(id)) r = (r + 1) % n; RR_LAST.set(id, r); return r; }
 function layerIdx(vel, n) { const e = LAYER_EDGES[n] || []; let k = 0; while (k < e.length && vel >= e[k]) k++; return Math.min(k, n - 1); }
 class BQ {
   constructor(type, f, q) { this.type = type; this.x1 = this.x2 = this.y1 = this.y2 = 0; this.set(f, q); }
@@ -3383,9 +3451,12 @@ function loadSound(id) {
   let p;
   if (!s) p = Promise.reject(new Error("sconosciuto"));
   else if (s.kind === "synth") p = new Promise(res => { const b = SYNTH[id](); cache.set(id, b); res(b); });
-  else if (s.kind === "file" && s.layers) {
-    p = Promise.all(Array.from({ length: s.layers }, (_, k) => fetchSound(soundUrl(s, id + "_v" + (k + 1)))))
-      .then(bs => { bs.forEach(b => levelBuf(s, b)); layerCache.set(id, bs); const t = bs[bs.length - 1]; cache.set(id, t); return t; });
+  else if (s.kind === "file" && (s.layers || s.rr)) {   // [dynamic][take]
+    const L = s.layers || 1, R = s.rr || 1;
+    p = Promise.all(Array.from({ length: L }, (_, k) => Promise.all(Array.from({ length: R }, (_, r) => fetchSound(soundUrl(s, id + (s.layers ? "_v" + (k + 1) : "") + (r ? "_r" + (r + 1) : "")))))))
+      .then(rows => { rows.flat().forEach(b => levelBuf(s, b)); layerCache.set(id, rows); const t = rows[L - 1][0]; cache.set(id, t); return t; });
+  } else if (s.kind === "folder") {
+    p = foldersReady.then(() => fetchSound(folderUrl(s.path))).then(t => { cache.set(id, t); return t; });
   } else if (s.kind === "file") {
     p = fetchSound(soundUrl(s, id)).then(t => { cache.set(id, t); return t; });
   } else if (s.kind === "pack") {
@@ -3400,7 +3471,7 @@ function loadSound(id) {
   } else if (s.kind === "derived") {
     p = loadSound(s.base).then(b => { const t = PROC[s.proc](b); cache.set(id, t); return t; });
   } else p = Promise.reject(new Error("mancante"));
-  if (s && s.kind !== "multi" && s.kind !== "user") p = p.then(b => levelBuf(s, b));
+  if (s && s.kind !== "multi" && s.kind !== "user" && s.kind !== "folder") p = p.then(b => levelBuf(s, b));
   p = p.catch(err => { loading.delete(id); throw err; });
   p.then(() => queueThumbs(), () => {});   // the pads show their waveform as soon as the sound is there
   loading.set(id, p);
@@ -3690,16 +3761,21 @@ function playBuffer(soundId, pr, t, vel, note, tag, dur, lk) {
     const target = s.home + semis;
     let z = null; for (const q of zoneCache.get(soundId)) if (!z || Math.abs(q.root - target) < Math.abs(z.root - target)) z = q;
     buf = li >= 0 && z.vl ? z.vl[li] : z.buf; root = z.root;
-  } else if (li >= 0 && layerCache.has(soundId)) buf = layerCache.get(soundId)[li];
-  const rate = Math.pow(2, (root == null ? semis : s.home + semis - root) / 12) * (fxActive.has("lofi") ? 0.94 : 1);
+  }
+  let ri = 0;
+  if (s.kind !== "multi" && layerCache.has(soundId)) { const row = layerCache.get(soundId)[Math.max(0, li)]; ri = rrPick(soundId, row.length); buf = row[ri]; }
+  // «colpi mai uguali»: a drum hit a few cents higher or lower and a little softer or louder each time, like a real stroke
+  const vary = state.vary !== false && tag !== "preview" && root == null && !pr.warp && buf.duration < 2;
+  const vr = vary ? Math.pow(2, (Math.random() * 2 - 1) * 7 / 1200) : 1, vv = vary ? 1 + (Math.random() * 2 - 1) * 0.08 : 1;
+  const rate = Math.pow(2, (root == null ? semis : s.home + semis - root) / 12) * (fxActive.has("lofi") ? 0.94 : 1) * vr;
   // the pad's form: crunched or reversed copy, start and end, attack, low-pass
   const f = formOf(pr);
   if (s.kind !== "multi" && (pr.warp || pr.wsnd !== pr.sound)) buf = warpPlay(soundId, buf, pr, rate / (fxActive.has("lofi") ? 0.94 : 1));   // a loop that follows the tempo
   const fx = lk && lk.fx || "", rv = fx === "rev" ? !f.rv : f.rv;   // the step's own effect: "al contrario" turns the sound round
-  if (f.sp || rv) buf = shapedBuf(soundId + ":" + root + ":" + li + (buf._wk || ""), buf, f.sp, rv);
+  if (f.sp || rv) buf = shapedBuf(soundId + ":" + root + ":" + li + ":" + ri + (buf._wk || ""), buf, f.sp, rv);
   const D = buf.duration, off = (rv ? 1 - f.en : f.st) * D, seg = Math.max(0.005, (f.en - f.st) * D);
   const src = ctx.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
-  const g = ctx.createGain(), level = pr.vol * vel * (lk && lk.vol != null ? lk.vol : 1), full = seg / rate;
+  const g = ctx.createGain(), level = pr.vol * vel * vv * (lk && lk.vol != null ? lk.vol : 1), full = seg / rate;
   let len = dur ? Math.min(full, dur) : pr.gate > 0 ? Math.min(full, pr.gate * sixteenth()) : full;
   if (lk && lk.dec != null && lk.dec < 1) len = Math.min(len, Math.max(0.02, full * lk.dec));   // a shorter tail for this step
   const att = Math.max(f.att, f.st > 0 || rv ? 0.002 : 0);
@@ -5335,7 +5411,15 @@ function build() {
     b.addEventListener("keyup", e => { if (e.key === "Enter" || e.key === " ") nrRelease(i); });
     b.addEventListener("dragover", e => { e.preventDefault(); b.classList.add("drop"); });
     b.addEventListener("dragleave", () => b.classList.remove("drop"));
-    b.addEventListener("drop", e => { e.preventDefault(); b.classList.remove("drop"); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) { state.pad = i; renderAll(); loadFile(f); } });
+    b.addEventListener("drop", e => {
+      e.preventDefault(); b.classList.remove("drop"); document.documentElement.classList.remove("dragsound");
+      const sid = e.dataTransfer.getData("text/x-mattone-sound");
+      if (sid && SOUNDS.has(sid)) { state.pad = i; assign(sid); return; }
+      const fs = [...(e.dataTransfer.files || [])].filter(f => /^audio\//.test(f.type) || /\.(wav|mp3|ogg|flac|m4a|aac|aif|aiff)$/i.test(f.name)).slice(0, 12 - i);
+      if (!fs.length) return;
+      state.pad = i; renderAll();
+      fs.reduce((pr, f, k) => pr.then(() => loadFile(f, i + k)), Promise.resolve()).then(() => { if (fs.length > 1) msg(fs.length + " SUONI SUI PAD " + padLabel(state.bank, i) + "–" + padLabel(state.bank, i + fs.length - 1)); });
+    });
     $("pads").appendChild(b);
   });
   NOTE_NAMES.forEach((n, i) => $("root").appendChild(new Option(n, i)));
@@ -5381,6 +5465,8 @@ function build() {
   $("undo").addEventListener("click", () => histGo(true)); $("redo").addEventListener("click", () => histGo(false));
   $("human").value = Math.round(state.human * 100); $("humanOut").textContent = Math.round(state.human * 100) + "%";
   $("human").addEventListener("input", e => { state.human = +e.target.value / 100; $("humanOut").textContent = e.target.value + "%"; save(); });
+  const varyShow = () => { const on = state.vary !== false; $("varyBtn").setAttribute("aria-pressed", on); $("varyBtn").classList.toggle("on", on); };
+  varyShow(); $("varyBtn").addEventListener("click", () => { state.vary = state.vary === false; save(); varyShow(); msg(state.vary ? "COLPI MAI UGUALI: OGNI COLPO È UN PO’ DIVERSO" : "COLPI IDENTICI, COME UNA DRUM MACHINE"); });
   $("clear").addEventListener("click", () => armed("clear", "Sicuro?", () => { state.patterns[state.pattern] = emptyPattern(patLen()); save(); renderAll(); msg("PATTERN " + (state.pattern + 1) + " SVUOTATO"); }));
   $("modePad").addEventListener("click", () => setMode("pad"));
   $("modeNote").addEventListener("click", () => setMode("note"));
@@ -5535,11 +5621,11 @@ function tapTempo() {
   const now = performance.now(); taps = taps.filter(t => now - t < 2500); taps.push(now);
   if (taps.length >= 2) { setBpm(60000 / ((taps[taps.length - 1] - taps[0]) / (taps.length - 1))); msg("TEMPO BATTUTO: " + state.bpm + " BPM"); } else msg("CONTINUA A BATTERE…");
 }
-function loadFile(file) {
-  if (!initAudio()) return;
-  const b = state.bank, p = state.pad;
+function loadFile(file, pad) {
+  if (!initAudio()) return Promise.resolve();
+  const b = state.bank, p = pad == null ? state.pad : pad;
   msg("CARICO " + file.name.toUpperCase() + "…");
-  file.arrayBuffer().then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej))).then(buf => {
+  return file.arrayBuffer().then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej))).then(buf => {
     const t = trimLead(buf), id = addUserSound(file.name.replace(/\.[^.]+$/, ""), "File tuo", t);
     state.banks[b][p].sound = id; state.banks[b][p].gate = 0; resetForm(state.banks[b][p]); save();
     renderAll(); if (!$("drawer").hidden) renderLibrary();
@@ -5712,7 +5798,8 @@ function openLibrary() {
   const pr = curPr(); libStart = { b: state.bank, p: state.pad, sound: pr.sound, pitch: pr.pitch, gate: pr.gate };
   // straight into the crate of the sound on the pad, so the neighbours are one touch away
   const s = SOUNDS.get(pr.sound); if (s && s.kind !== "user") { libCat = roleOf(s); if (state.libGenre && !genresOf(s).has(state.libGenre)) state.libGenre = ""; }
-  libTab = s && s.kind === "user" ? "tuoi" : "suoni";
+  libTab = s && s.kind === "user" ? "tuoi" : s && s.kind === "folder" ? "cartelle" : "suoni";
+  if (s && s.kind === "folder") { const cut = Math.max(s.path.lastIndexOf("/"), s.path.lastIndexOf("\\")); libDir = s.path.slice(0, cut); libDirList = null; }
   renderLibrary(); const cur = $("list").querySelector(".item.cur"); if (cur) cur.scrollIntoView({ block: "center" });
   setTimeout(() => $("closeLib").focus({ preventScroll: true }), 50);
 }
@@ -5727,7 +5814,7 @@ function preview(id) {
 }
 function assign(id) {
   const pr = curPr(), s = SOUNDS.get(id);
-  pr.sound = id; pr.pitch = 0; pr.gate = s.root != null && /Bassi|Synth/.test(s.cat) ? 2 : 0; resetForm(pr);
+  pr.sound = id; pr.pitch = 0; pr.gate = s.root != null && /Bassi|Synth/.test(s.cat) ? 2 : 0; resetForm(pr); folderKeep(s);
   state.recent = [id, ...state.recent.filter(x => x !== id)].slice(0, 10);
   save(); renderAll(); renderLibrary(); preview(id); msg("PAD " + padLabel(state.bank, state.pad) + ": " + s.name.toUpperCase());
 }
@@ -5737,13 +5824,16 @@ function libRevert() {
   save(); renderAll(); renderLibrary(); preview(st.sound); msg("RIMESSO " + (SOUNDS.get(st.sound) || { name: "" }).name.toUpperCase());
 }
 function toggleFav(id) {
-  state.favs = state.favs.includes(id) ? state.favs.filter(x => x !== id) : [id, ...state.favs];
+  state.favs = state.favs.includes(id) ? state.favs.filter(x => x !== id) : [id, ...state.favs]; folderKeep(SOUNDS.get(id));
   save(); renderLibrary();
 }
 function soundRow(s, cur, showCat) {
   const row = el("div", "item" + (s.id === cur ? " cur" : ""));
-  const tx = el("button", "tx", (s.id === cur ? EQ_ICON : '<i class="pvi">' + PV_ICON + "</i>") + "<span><b>" + esc(s.name) + "</b><small>" + (showCat ? esc(ROLE_NAME[roleOf(s)] || s.cat) + " · " : "") + (s.layers ? s.layers + " dinamiche · " : "") + (s.kind === "multi" ? "più ottave · " : s.root != null ? "intonato · " : "") + esc(s.src) + "</small></span>");
+  const tx = el("button", "tx", (s.id === cur ? EQ_ICON : '<i class="pvi">' + PV_ICON + "</i>") + "<span><b>" + esc(s.name) + "</b><small>" + (showCat ? esc(ROLE_NAME[roleOf(s)] || s.cat) + " · " : "") + (s.layers ? s.layers + " dinamiche · " : "") + (s.rr ? s.rr + " varianti · " : "") + (s.kind === "multi" ? "più ottave · " : s.root != null ? "intonato · " : "") + esc(s.src) + "</small></span>");
   tx.type = "button"; tx.dataset.id = s.id; tx.setAttribute("aria-label", s.name + (s.id === cur ? ", sul pad" : ", mettilo sul pad"));
+  tx.draggable = true;   // or drag it onto any pad
+  tx.addEventListener("dragstart", e => { e.dataTransfer.setData("text/x-mattone-sound", s.id); e.dataTransfer.effectAllowed = "copy"; document.documentElement.classList.add("dragsound"); });
+  tx.addEventListener("dragend", () => document.documentElement.classList.remove("dragsound"));
   tx.addEventListener("click", () => assign(s.id));
   const fav = el("button", "fav" + (state.favs.includes(s.id) ? " on" : ""), state.favs.includes(s.id) ? "★" : "☆"); fav.type = "button";
   fav.setAttribute("aria-label", (state.favs.includes(s.id) ? "Togli dai preferiti " : "Aggiungi ai preferiti ") + s.name); fav.addEventListener("click", () => toggleFav(s.id));
@@ -5766,13 +5856,14 @@ function renderLibrary() {
   $("libUndo").hidden = !changed; if (changed) $("libUndo").textContent = "↺ Rimetti " + (SOUNDS.get(libStart.sound) || { name: "" }).name;
   [...$("libTabs").children].forEach(b => {
     b.setAttribute("aria-selected", b.dataset.t === libTab);
-    const n = b.dataset.t === "fav" ? state.favs.length : b.dataset.t === "tuoi" ? users.length : 0;
+    const n = b.dataset.t === "fav" ? state.favs.length : b.dataset.t === "tuoi" ? users.length : b.dataset.t === "cartelle" ? state.folders.length : 0;
     b.querySelector("em").textContent = n ? n : "";
   });
   $("searchX").hidden = !q;
   const inCrate = libTab === "suoni" && !q && libCat !== "Tutti";
   $("libCrumb").hidden = !inCrate; if (inCrate) $("libCrumbName").textContent = (ROLE_NAME[libCat] || libCat) + (state.libGenre ? " · " + LIB_GENRES.find(g => g[0] === state.libGenre)[1] : "");
   $("libSearchRow").hidden = libTab === "kit";
+  if (libTab === "cartelle") { list.innerHTML = ""; list.scrollTop = 0; renderFolders(list, q, cur, (t, sub) => list.appendChild(el("div", "grp", esc(t) + (sub ? "<small>" + esc(sub) + "</small>" : "")))); return; }
   list.innerHTML = ""; list.scrollTop = 0;
   const head = (t, sub) => list.appendChild(el("div", "grp", esc(t) + (sub ? "<small>" + esc(sub) + "</small>" : "")));
   if (q) {   // search everything, in every tab, crate by crate
@@ -5855,6 +5946,10 @@ function libKey(e) {
 }
 function bindLibrary() {
   [...$("libTabs").children].forEach(b => b.addEventListener("click", () => { libTab = b.dataset.t; libCat = "Tutti"; $("search").value = ""; renderLibrary(); }));
+  if (FOLDERS_OK) {
+    $("libTabs").querySelector('[data-t="cartelle"]').hidden = false;
+    foldersReady = window.matDesktop.foldersSet(state.folders.map(f => f.path)).catch(() => {});
+  }
   $("libBack").addEventListener("click", () => { libCat = "Tutti"; renderLibrary(); });
   $("libUndo").addEventListener("click", libRevert);
   $("libPlay").addEventListener("click", () => preview(curPr().sound));
@@ -8888,7 +8983,7 @@ function b64ToF32(b) {
 async function saveProject() {
   if (!initAudio()) return;
   msg("PREPARO IL PROGETTO…");
-  const ids = [...new Set(state.banks.flat().map(p => p.sound))].filter(id => (SOUNDS.get(id) || {}).kind === "user");
+  const ids = [...new Set(state.banks.flat().map(p => p.sound))].filter(id => /^(user|folder)$/.test((SOUNDS.get(id) || {}).kind));
   const sounds = [];
   for (const id of ids) {
     try { const b = cache.get(id) || await loadSound(id), s = SOUNDS.get(id); sounds.push({ id, name: s.name, src: s.src, sr: b.sampleRate, data: f32ToB64(b.getChannelData(0)) }); }
