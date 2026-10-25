@@ -1762,6 +1762,7 @@ html.intro-on { overflow: hidden; }
         <div class="hd"><h2>Catena voce</h2><span class="lbl">non tocca la registrazione: la cambi quando vuoi</span></div>
         <div class="seg vseg" id="vPresets" role="group" aria-label="Suono della voce"></div>
         <div class="vfrow"><span class="lbl">Filtro</span><div class="seg vseg" id="vFilt" role="group" aria-label="Filtro della voce"></div></div>
+        <div class="vfrow"><span class="lbl" title="Porta ogni nota cantata sulla scala del beat (Sequencer → tonalità e scala)">Intonazione</span><div class="seg vseg" id="vTune" role="group" aria-label="Intonazione della voce"></div></div>
         <div class="knobs vknobs" id="vKnobs"></div>
       </section>
       <section class="unit vtext" aria-label="Testo">
@@ -1877,6 +1878,7 @@ html.intro-on { overflow: hidden; }
             <li><b>Assistente melodia</b> (Sequencer → Melodia): scegli l’atmosfera (malinconico, soul anni 70, cupo, jazz anni 90, epico, sognante), poi <b>🎹 Accordi</b> scrive un giro di accordi della tonalità e <b>🎲 Melodia</b> inventa una melodia che ci sta sopra: note dell’accordo sui tempi, note della scala in mezzo, una frase che torna e si chiude. Premi ancora per un’altra; Semplice, Media o Movimentata cambia quante note; <b>Tieni l’inizio</b> rifà solo la seconda metà. <b>🎤 Canticchia</b>: canta o fischia la melodia per un giro del pattern, dall’uno; diventa note a tempo sulla scala (se non ci sono accordi, la tonalità la prende dal tuo canto). Ogni accordo del giro è un tasto: toccalo per cambiarlo (★ quelli che suonano bene lì; passaci sopra per sentirli), per dargli un altro colore (triade, settima, nona) o per alzarlo e abbassarlo; melodia e basso lo seguono. <b>Arpeggio</b> (anche in modalità Note): gli accordi del pad si sgranano nota per nota, su, giù, su e giù o a caso, in 1/8, 1/16 o terzine, su una o due ottave; tenendo un pad lo suona finché lo tieni. <b>🎸 Basso</b> scrive un 808 che prende le note del giro, a tempo con la cassa. <b>🔍 Tonalità del campione</b> ascolta il loop dei pad e imposta tonalità e scala, così gli accordi stanno bene col campione. Se il pad scelto non suona note, usa uno strumento del gruppo C. Poi correggi a mano quello che vuoi.</li>
             <li><b>Basso 808</b> (Sequencer → Melodia): trascina una nota verso destra per allungarla; col tasto destro (o tenendo premuto) scegli lunghezza e <b>glissato</b>, così la nota prima scivola in quella nuova come nella trap. <b>🎲 Idea 808</b> scrive una linea sulla cassa del gruppo A e, se il pad non ha un suono intonato, ci mette l’808. In libreria, categoria 808: lungo pulito, sporco e corto.</li>
             <li><b>🎬 Video per i social</b> (Mix o Voce): verticale per TikTok, Reels e Shorts, quadrato o orizzontale. Tre stili: <b>Strumento</b> (schermo, lancette e pad che si accendono), <b>Disco</b> (il vinile che gira con lo spettro intorno) e <b>Testo</b> (le barre grandi, a tempo). Titolo, nome d’arte, effetti FX e testo a tempo; il video si registra mentre suona e si salva in MP4.</li>
+            <li><b>Effetti della voce</b> (Voce, Catena voce): filtro <b>Megafono</b> oltre a telefono, radio e cassetta; <b>Eco code</b>: quando finisci una frase l’ultima parola va nell’eco a nastro, da sola; <b>Intonazione</b> leggera o robotica: ogni nota cantata va sulla scala del beat (la tonalità del Sequencer). Le prese registrate non cambiano: è tutto nella catena.</li>
             <li><b>Voce</b>: registra il rap sul beat. Il beat riparte, una battuta d’attacco col click e poi tocca a te; ogni presa resta e scegli quella che suona. Trascina sulla forma d’onda per rifare solo qualche battuta. La <b>catena voce</b> (pulita, boom bap, telefono, radio AM, cassetta, doppia, eco dub) si cambia anche dopo, e il <b>testo</b> scritto una riga per battuta si accende mentre suona. La voce finisce nel WAV, nelle tracce separate e nel progetto.</li>
             <li><b>VIS</b> accanto allo schermo (o <kbd>B</kbd>) cambia la grafica a tempo: spettro, specchio, oscilloscopio, cerchio e cascata, più l’equalizzatore anni 80 a segmenti, il goniometro XY dello stereo, le colline, il tunnel, l’iperspazio, il fuoco, il radar che gira una volta a battuta e la pioggia digitale.</li>
             <li><b>FX</b> (o <kbd>J</kbd>) accende gli effetti visivi a tempo su tutta la stanza: <b>Club</b> (luci sul muro, laser, scintille, scossa), <b>VHS</b>, <b>Cinema</b>, <b>Glitch</b> e <b>Sogno</b>. In Personalizza → Luci e animazioni li combini come vuoi e ne regoli l’intensità.</li>
@@ -2874,7 +2876,7 @@ try {
 if (!state.custom) state.custom = Object.assign({}, CUSTOM_DEFAULT_EARLY);
 // the voice page: takes (their samples are in IndexedDB), the chain, the lyrics
 const VOICE_DEF = () => ({ takes: [], sel: null, count: 0, len: 8, preroll: true, click: true, monitor: false, rep: false, mute: false, lyrics: "", preset: "boombap",
-  ch: { comp: 0.6, ess: 0.45, warm: 0.35, bri: 0.25, dbl: 0.15, echo: 0.1, rev: 0.16, filt: "no", vol: 0.9 } });
+  ch: { comp: 0.6, ess: 0.45, warm: 0.35, bri: 0.25, dbl: 0.15, echo: 0.1, rev: 0.16, filt: "no", vol: 0.9, throw: 0, tune: "no" } });
 function voiceFix() { const d = VOICE_DEF(); state.voice = Object.assign(d, state.voice || {}); state.voice.ch = Object.assign(VOICE_DEF().ch, state.voice.ch || {}); if (!Array.isArray(state.voice.takes)) state.voice.takes = []; }
 voiceFix();
 function videoFix() { state.video = Object.assign({ fmt: "v", layout: "strumento", len: "8", title: "", artist: "", fx: true, lyrics: true, light: false }, state.video || {}); }
@@ -8105,7 +8107,9 @@ function renderMelGiro() {
 }
 /* ---------- canticchia: dal microfono alle note ---------- */
 // YIN on a copy at 12 kHz: the pitch of each 10 ms, and how loud it is
-function pitchTrack(x, sr) {
+function pitchTrack(x, sr) { const g = pitchTrackGen(x, sr); let r; while (!(r = g.next()).done); return r.value; }
+// the same, pausing every so many frames (for long takes worked out in the background)
+function* pitchTrackGen(x, sr) {
   const q = Math.max(1, Math.round(sr / 12000)), fs = sr / q, n = Math.floor(x.length / q), d = new Float32Array(n);
   for (let i = 0; i < n; i++) { let s = 0; for (let k = 0; k < q; k++) s += x[i * q + k]; d[i] = s / q; }
   const W = 512, hop = Math.round(fs * 0.01), tmin = Math.floor(fs / 1000), tmax = Math.ceil(fs / 70), out = [], df = new Float32Array(tmax + 1);
@@ -8121,6 +8125,7 @@ function pitchTrack(x, sr) {
     let f = 0;
     if (tau > 0) { const a = df[tau - 1], b = df[tau], c = df[tau + 1], den = a - 2 * b + c, sh = den ? (a - c) / (2 * den) : 0; f = fs / (tau + sh); }
     out.push({ t: o / fs, rms, midi: f > 0 ? 69 + 12 * Math.log2(f / 440) : null, ap: tau > 0 ? df[tau] : 1 });
+    if (out.length % 40 === 0) yield;
   }
   return out;
 }
@@ -8801,7 +8806,8 @@ function buildStudio() {
 // the takes' samples live in their own IndexedDB; the list, the chain and the lyrics travel with the state
 const VOICE_MAX = 12, VOICE_XF = 0.02;
 const VO = { ready: false, stream: null, src: null, mono: null, an: null, inLat: 0.01, rec: null, play: null, playG: null, solo: null, skip: 0, sel: null, drag: null, bufs: new Map(), peaks: new Map(), waveKey: "", bar: -1, lastMeter: 0 };
-const VOICE_FILTERS = [["no", "Nessuno"], ["tel", "Telefono"], ["radio", "Radio AM"], ["cass", "Cassetta"]];
+const VOICE_FILTERS = [["no", "Nessuno"], ["tel", "Telefono"], ["radio", "Radio AM"], ["cass", "Cassetta"], ["mega", "Megafono"]];
+const VOICE_TUNES = [["no", "No"], ["leggera", "Leggera"], ["robot", "Robotica"]];
 const VOICE_PRESETS = [
   ["pulita", "Pulita", { comp: 0.3, ess: 0.3, warm: 0.1, bri: 0.15, dbl: 0, echo: 0, rev: 0.08, filt: "no" }],
   ["boombap", "Boom bap", { comp: 0.6, ess: 0.45, warm: 0.35, bri: 0.25, dbl: 0.15, echo: 0.1, rev: 0.16, filt: "no" }],
@@ -8810,6 +8816,8 @@ const VOICE_PRESETS = [
   ["cassetta", "Cassetta", { comp: 0.55, ess: 0.35, warm: 0.6, bri: -0.3, dbl: 0.1, echo: 0.08, rev: 0.12, filt: "cass" }],
   ["doppia", "Doppia", { comp: 0.55, ess: 0.45, warm: 0.3, bri: 0.3, dbl: 0.7, echo: 0.05, rev: 0.14, filt: "no" }],
   ["dub", "Eco dub", { comp: 0.5, ess: 0.4, warm: 0.4, bri: 0.1, dbl: 0.1, echo: 0.45, rev: 0.22, filt: "no" }],
+  ["megafono", "Megafono", { comp: 0.8, ess: 0.2, warm: 0.6, bri: 0, dbl: 0, echo: 0.1, rev: 0.12, filt: "mega", throw: 0.3, tune: "no" }],
+  ["robot", "Intonata", { comp: 0.6, ess: 0.45, warm: 0.25, bri: 0.35, dbl: 0.35, echo: 0.08, rev: 0.16, filt: "no", throw: 0.25, tune: "robot" }],
 ];
 const vbar = () => 240 / state.bpm;
 const vTake = id => state.voice.takes.find(t => t.id === (id || state.voice.sel));
@@ -8852,6 +8860,11 @@ function initVoice() {
   V.dbl.connect(V.out);
   V.es = ctx.createGain(); V.rs = ctx.createGain();
   V.out.connect(N.master); V.out.connect(V.tap); V.out.connect(V.es).connect(N.echoIn); V.out.connect(V.rs).connect(N.revIn);
+  V.thrD = ctx.createDelay(1); V.thrD.delayTime.value = 0.3; V.thrG = ctx.createGain(); V.thrG.gain.value = 0;
+  V.lvl = ctx.createAnalyser(); V.lvl.fftSize = 1024;
+  V.out.connect(V.thrD).connect(V.thrG).connect(N.echoIn); V.out.connect(V.lvl);
+  V.thr = { loud: false, quiet: 0, buf: new Float32Array(1024) };
+  setInterval(voiceThrowTick, 15);
   V.ready = true;
   voiceApply();
   // the takes kept from last time
@@ -8863,7 +8876,7 @@ const VOICE_LAT = 0.006, VOICE_HEAR = 0.018;
 function voiceApply() {
   if (!VO.ready) return;
   const c = state.voice.ch, t = ctx.currentTime, V = VO, set = (p, v) => p.setTargetAtTime(v, t, 0.03);
-  const F = { no: [20, 0.7, 20000, 0.7, 0], tel: [450, 0.9, 3000, 1.4, 0.35], radio: [700, 1.1, 2400, 2, 0.5], cass: [70, 0.6, 7000, 0.5, 0.15] }[c.filt] || [20, 0.7, 20000, 0.7, 0];
+  const F = { no: [20, 0.7, 20000, 0.7, 0], tel: [450, 0.9, 3000, 1.4, 0.35], radio: [700, 1.1, 2400, 2, 0.5], cass: [70, 0.6, 7000, 0.5, 0.15], mega: [950, 1.8, 2500, 2.6, 1.6] }[c.filt] || [20, 0.7, 20000, 0.7, 0];
   set(V.fa.frequency, F[0]); set(V.fa.Q, F[1]); set(V.fb.frequency, F[2]); set(V.fb.Q, F[3]);
   set(V.ess.threshold, -8 - c.ess * 32);
   set(V.comp.threshold, -c.comp * 34); set(V.comp.ratio, 1.5 + c.comp * 6); set(V.mk.gain, Math.pow(10, c.comp * 11 / 20));
@@ -8872,6 +8885,78 @@ function voiceApply() {
   V.sat.curve = cv;
   set(V.bri.gain, c.bri * 8); set(V.dbl.gain, c.dbl * 0.7);
   set(V.es.gain, c.echo * 0.9); set(V.rs.gain, c.rev * 0.9); set(V.out.gain, state.voice.mute ? 0 : c.vol);
+}
+// a phrase ends when the voice was loud and has gone quiet for a moment: then its last word goes into the echo
+function voiceThrowTick() {
+  const V = VO, k = state.voice.ch.throw || 0;
+  if (!V.ready || !k || !(V.play || V.solo)) { V.thr.loud = false; return; }
+  V.lvl.getFloatTimeDomainData(V.thr.buf); let s = 0; for (const x of V.thr.buf) s += x * x;
+  const rms = Math.sqrt(s / V.thr.buf.length), now = ctx.currentTime;
+  if (rms > 0.05) { V.thr.loud = true; V.thr.quiet = 0; return; }
+  if (!V.thr.loud) return;
+  if (rms < 0.015) { if (!V.thr.quiet) V.thr.quiet = now; else if (now - V.thr.quiet > 0.08) {
+    V.thr.loud = false; V.thr.quiet = 0;
+    const g = V.thrG.gain; g.cancelScheduledValues(now); g.setValueAtTime(0, now); g.linearRampToValueAtTime(k * 1.3, now + 0.02); g.setValueAtTime(k * 1.3, now + 0.3); g.linearRampToValueAtTime(0, now + 0.38);
+    const fb = N.echoFb.gain, base = state.echo.fb * 0.92; fb.cancelScheduledValues(now); fb.setTargetAtTime(Math.max(base, 0.6), now, 0.02); fb.setTargetAtTime(base, now + 1.6, 0.4);
+  } } else V.thr.quiet = 0;
+}
+// the take in tune: each 10 ms moved to the nearest note of the scale of the beat (gently, or at once like a robot)
+function tuneBuf(buf, mode) { const g = tuneGen(buf, mode); let r; while (!(r = g.next()).done); return r.value; }
+function* tuneGen(buf, mode) {
+  const sr = buf.sampleRate, x = buf.getChannelData(0), tr = yield* pitchTrackGen(x, sr), L = tr.length, n = x.length;
+  const pcs = new Set(scaleNotes().map(s => (s + state.root) % 12)), ratio = new Float32Array(Math.max(1, L));
+  let cur = 1;
+  for (let i = 0; i < L; i++) {
+    const f = tr[i]; let r = 1;
+    if (f.midi != null && f.ap < 0.25 && f.rms > 0.008) {
+      let best = null; for (let m = Math.floor(f.midi) - 2; m <= Math.ceil(f.midi) + 2; m++) if (pcs.has(((m % 12) + 12) % 12) && (best === null || Math.abs(m - f.midi) < Math.abs(best - f.midi))) best = m;
+      if (best !== null) r = Math.pow(2, (best - f.midi) * (mode === "robot" ? 1 : 0.75) / 12);
+    }
+    cur = mode === "robot" ? r : cur + (r - cur) * 0.3;
+    ratio[i] = cur;
+  }
+  // a read head that runs faster or slower than the clock; when it drifts too far it jumps back by whole periods of the voice
+  // (so the wave stays in phase) and the two heads cross over in 10 ms
+  const fh = L > 1 ? tr[1].t - tr[0].t : 0.01, per = new Float32Array(Math.max(1, L)), y = new Float32Array(n), XF = Math.round(sr * 0.01);
+  for (let i = 0; i < L; i++) per[i] = tr[i].midi != null && tr[i].ap < 0.25 ? sr / (440 * Math.pow(2, (tr[i].midi - 69) / 12)) : 0;
+  const at = q => { const i0 = Math.floor(q), fr = q - i0; return i0 >= 0 && i0 + 1 < n ? x[i0] * (1 - fr) + x[i0 + 1] * fr : 0; };
+  let q = 0, q2 = 0, xf = 0;
+  for (let t = 0; t < n; t++) {
+    const fi = Math.min(L - 1, Math.max(0, Math.round(t / sr / fh))), r = ratio[fi] || 1;
+    q += r; if (xf) q2 += r;
+    const d = q - t, P = per[Math.min(L - 1, Math.max(0, Math.round(q / sr / fh)))] || XF;
+    if (!xf && Math.abs(d) > Math.max(1.5 * P, sr * 0.012)) { let k = Math.round(d / P); if (!k) k = Math.sign(d); q2 = q; q -= k * P; xf = XF; }
+    let v = at(q); if (xf) { const u = xf / XF; v = v * (1 - u) + at(q2) * u; xf--; }
+    y[t] = v;
+    if (t % 16384 === 0) yield;
+  }
+  const out = ctx.createBuffer(1, n, sr); out.getChannelData(0).set(y);
+  return out;
+}
+VO.tuned = new Map(); VO.tuneJob = null;
+// the buffer a take plays with: in tune when asked, worked out once for each scale, in the background
+// (8 ms at a time, so the beat never stutters); until then the take plays as it was sung
+function voiceBufOf(id) {
+  const buf = VO.bufs.get(id), mode = state.voice.ch.tune || "no";
+  if (!buf || mode === "no") return buf;
+  const k = id + "|" + mode + "|" + state.root + "|" + state.scale, c = VO.tuned.get(k);
+  if (c && c.src === buf) return c.out;
+  if (!VO.tuneJob || VO.tuneJob.k !== k) { VO.tuneJob = { k, id, buf, gen: tuneGen(buf, mode) }; setTimeout(voiceTuneRun, 0); }
+  return buf;
+}
+function voiceTuneRun() {
+  const j = VO.tuneJob; if (!j) return;
+  const t0 = performance.now(); let r;
+  while (performance.now() - t0 < 8) if ((r = j.gen.next()).done) break;
+  if (VO.tuneJob !== j) return;
+  if (!r || !r.done) { setTimeout(voiceTuneRun, 12); return; }
+  VO.tuneJob = null;
+  if (VO.tuned.size > 24) VO.tuned.clear();
+  VO.tuned.set(j.k, { src: j.buf, out: r.value });
+  const t = vTake();
+  if (playing && VO.play && t && t.id === j.id) voicePlaySel();
+  if (VO.solo && VO.solo.id === j.id) { voiceSoloStop(); voiceSolo(j.id); }
+  if (j.say) msg(j.say);
 }
 // where take bar 0 falls on the clock of the transport
 function voiceAnchor(take) {
@@ -8883,7 +8968,7 @@ function voiceStopPlay() { if (VO.play) { try { VO.play.stop(); } catch (e) { /*
 function voicePlaySel() {
   voiceStopPlay();
   const take = vTake(); if (!take || !playing || !VO.ready) return;
-  const buf = VO.bufs.get(take.id); if (!buf) return;
+  const buf = voiceBufOf(take.id); if (!buf) return;
   const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; s.connect(g).connect(VO.in);
   if (state.voice.rep) { s.loop = true; s.loopStart = 0; s.loopEnd = Math.min(buf.duration, take.bars * vbar()); }
   const now = ctx.currentTime + 0.02; let when = voiceAnchor(take), off = 0;
@@ -9045,7 +9130,7 @@ function voiceSolo(id) {
   if (!initAudio()) return;
   if (VO.solo && VO.solo.id === id) { voiceSoloStop(); return; }
   voiceSoloStop();
-  const buf = VO.bufs.get(id); if (!buf) return;
+  const buf = voiceBufOf(id); if (!buf) return;
   const s = ctx.createBufferSource(); s.buffer = buf; s.connect(VO.in); s.start();
   VO.solo = { id, s, t0: ctx.currentTime }; s.onended = () => { if (VO.solo && VO.solo.s === s) { VO.solo = null; voiceRender(); } };
   voiceRender();
@@ -9147,6 +9232,7 @@ function voiceRender() {
   const c = v.ch;
   [...$("vPresets").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === v.preset));
   [...$("vFilt").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === c.filt));
+  [...$("vTune").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === (c.tune || "no")));
   VO.knobs && VO.knobs.forEach(k => k.draw());
   if (document.activeElement !== $("vLyr")) $("vLyr").value = v.lyrics || "";
   VO.waveKey = ""; drawVoiceWave(null);
@@ -9183,12 +9269,23 @@ function voiceLive() {
     for (let i = 0; i < 24; i++) { const x = i / 24 * W, on = i / 24 < u; c.fillStyle = on ? (i >= 22 ? "#ff3b30" : i >= 17 ? "#ffd23f" : "#49e07a") : "rgba(255,255,255,.08)"; c.fillRect(x + 1, 2, W / 24 - 2, H - 4); }
   }
 }
+// in tune: worked out for the selected take, then it plays that way
+function voiceTune(id) {
+  const v = state.voice; v.ch.tune = id; v.preset = ""; save(); voiceRender();
+  if (id === "no") { msg("VOCE COM’È"); if (playing) voicePlaySel(); return; }
+  const t = vTake(); if (!t || !initAudio()) { msg("INTONAZIONE " + id.toUpperCase() + " · VALE PER LE PRESE"); return; }
+  const done = "VOCE INTONATA (" + (id === "robot" ? "ROBOTICA" : "LEGGERA") + ") SU " + NOTE_NAMES[state.root].toUpperCase() + " " + SCALES[state.scale][0].toUpperCase();
+  voiceBufOf(t.id);
+  if (VO.tuneJob && VO.tuneJob.id === t.id) { VO.tuneJob.say = done; msg("INTONO LA PRESA SU " + NOTE_NAMES[state.root].toUpperCase() + " " + SCALES[state.scale][0].toUpperCase() + "…"); }
+  else { if (playing) voicePlaySel(); msg(done); }
+}
 function buildVoice() {
   const v = state.voice;
-  VOICE_PRESETS.forEach(([id, name, p]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { Object.assign(v.ch, p); v.preset = id; save(); voiceApply(); voiceRender(); }); $("vPresets").appendChild(b); });
+  VOICE_PRESETS.forEach(([id, name, p]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { Object.assign(v.ch, { throw: 0, tune: "no" }, p); v.preset = id; save(); voiceApply(); voiceRender(); if (playing) voicePlaySel(); }); $("vPresets").appendChild(b); });
   VOICE_FILTERS.forEach(([id, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => { v.ch.filt = id; v.preset = ""; save(); voiceApply(); voiceRender(); }); $("vFilt").appendChild(b); });
+  VOICE_TUNES.forEach(([id, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = id; b.addEventListener("click", () => voiceTune(id)); $("vTune").appendChild(b); });
   const pct = x => Math.round(x * 100), host = $("vKnobs");
-  VO.knobs = [["Compress.", "comp", 0, 1, pct, 0.5], ["Sibilanti", "ess", 0, 1, pct, 0.4], ["Calore", "warm", 0, 1, pct, 0.3], ["Brillanza", "bri", -1, 1, x => (x > 0 ? "+" : "") + Math.round(x * 8) + "dB", 0], ["Doppia", "dbl", 0, 1, pct, 0], ["Eco", "echo", 0, 1, pct, 0.1], ["Riverbero", "rev", 0, 1, pct, 0.15], ["Volume", "vol", 0, 1.5, pct, 0.9]]
+  VO.knobs = [["Compress.", "comp", 0, 1, pct, 0.5], ["Sibilanti", "ess", 0, 1, pct, 0.4], ["Calore", "warm", 0, 1, pct, 0.3], ["Brillanza", "bri", -1, 1, x => (x > 0 ? "+" : "") + Math.round(x * 8) + "dB", 0], ["Doppia", "dbl", 0, 1, pct, 0], ["Eco", "echo", 0, 1, pct, 0.1], ["Riverbero", "rev", 0, 1, pct, 0.15], ["Eco code", "throw", 0, 1, pct, 0], ["Volume", "vol", 0, 1.5, pct, 0.9]]
     .map(([label, key, min, max, fmt, def]) => makeKnob(host, { label, min, max, def, fmt, center: key === "bri", get: () => v.ch[key], set: x => { v.ch[key] = x; v.preset = ""; save(); voiceApply(); [...$("vPresets").children].forEach(b => b.setAttribute("aria-pressed", false)); } }));
   $("vRec").addEventListener("click", () => voiceRec(false));
   $("vPunch").addEventListener("click", () => voiceRec(true));
