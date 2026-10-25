@@ -738,11 +738,13 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
   .pages { min-height: 0; }
   .page { height: 100%; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
   .pg-suona { align-items: stretch; }
-  .pg-suona .padunit { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; }
+  .pg-suona .padunit { display: grid; grid-template-rows: auto minmax(var(--pads-min, 236px), 1fr) auto; min-height: 0; overflow: auto; scrollbar-width: thin; }   /* the pads never get crushed: below their size the panel scrolls */
   .pg-suona { height: 100%; }
   .pg-suona .col { max-height: 100%; min-height: 0; overflow: auto; scrollbar-width: thin; }   /* the pads keep the page's height; the pad's panel scrolls */
-  .pg-suona .pads { grid-template-rows: repeat(3, minmax(0, 1fr)); min-height: 0; }
-  .pg-suona .pad { aspect-ratio: auto; min-height: 64px; }
+  .pg-suona .pads { grid-template-rows: repeat(3, minmax(64px, 1fr)); }
+  .pg-suona .padunit:has(#scalebar:not([hidden])) .nrbar .hint { display: none; }   /* with the note controls open, the help line gives them its room */
+  .pg-suona .scalebar { gap: 6px 12px; margin-top: 10px; }
+  .pg-suona .pad { aspect-ratio: auto; min-height: 64px; overflow: hidden; }   /* its size comes from the grid, not from its labels */
   .pg-piatto .deckwrap { min-height: 100%; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 28px; align-items: start; }
   .pg-piatto .deckwrap > .hd { grid-column: 1 / -1; }
   .pg-piatto .deckbody { grid-template-columns: auto 46px; }
@@ -765,7 +767,8 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
   .tabs button { padding: 7px 12px; }
   .pg-suona .col { max-height: 100%; overflow: auto; scrollbar-width: thin; }
   .pg-suona .pad { min-height: 44px; }
-  .pg-suona .pads { gap: 8px; padding: 10px; }
+  .pg-suona .pads { gap: 8px; padding: 10px; grid-template-rows: repeat(3, minmax(44px, 1fr)); }
+  .pg-suona .padunit { --pads-min: 172px; }
   .pg-seq .cell, .pg-seq .grid .lab { height: 23px; }
   .decktips { display: none; }
   .pg-piatto .platter { width: clamp(220px, calc(var(--pg-h, 600px) - 132px), 620px); }
@@ -1501,8 +1504,8 @@ html.intro-on { overflow: hidden; }
           <label class="lbl">Scala <select id="scale"></select></label>
           <div class="oct"><span class="lbl">Ottava</span><button class="key" id="octDown" type="button" aria-label="Ottava giù">−</button><output id="octOut">0</output><button class="key" id="octUp" type="button" aria-label="Ottava su">+</button></div>
           <div class="seg chordseg" id="chordSeg" role="group" aria-label="Accordi"></div>
-          <span class="arpbox" data-arp="1"></span>
           <label class="lbl">Pennata <select id="strum"><option value="0">no</option><option value="18">leggera</option><option value="45">lenta</option></select></label>
+          <span class="arpbox" data-arp="1"></span>
           <span class="hint" id="noteHint"></span>
         </div>
         <div class="nrbar">
