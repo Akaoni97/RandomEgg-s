@@ -469,6 +469,9 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 .list .grp small { display: block; margin-top: 2px; font-family: var(--f-body, inherit); font-size: 11px; text-transform: none; letter-spacing: 0; color: var(--cream-3); opacity: .8; }
 .libempty { color: var(--cream-2); font-size: 13px; line-height: 1.5; padding: 14px 6px; margin: 0; }
 .libacts { display: flex; gap: 8px; padding: 6px; }
+.libgen { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 2px 2px; }
+.libgen button { border: 0; border-radius: 999px; padding: 6px 12px; font-family: var(--f-label); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--cream-2); background: rgba(255,255,255,.07); cursor: pointer; }
+.libgen button[aria-pressed="true"] { background: var(--led); color: #111; box-shadow: 0 0 10px color-mix(in srgb, var(--led) 50%, transparent); }
 .crates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 2px 0 6px; }
 .crate { --c: var(--hA); position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; align-content: start; min-height: 74px; padding: 10px 12px 10px 16px; text-align: left; border: 0; border-radius: 8px; cursor: pointer; color: var(--cream);
   background: repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 2px, transparent 2px 14px), linear-gradient(160deg, color-mix(in srgb, var(--c) 22%, #2a211a), #18130f);
@@ -1906,7 +1909,7 @@ html.intro-on { overflow: hidden; }
             <li><b>Canzone</b> (sotto il sequencer): metti in fila i pattern, ognuno ripetuto quante volte vuoi, accendi «Suona la canzone» e premi Play. «Registra la canzone» la esporta tutta.</li>
             <li><b>Note repeat</b> (sotto i pad, tasto <kbd>H</kbd>): tieni premuto un pad e viene ripetuto a tempo, da 1/4 a 1/32, anche a terzine. Con il REC acceso le ripetizioni finiscono nel pattern: perfetto per charleston e rullate.</li>
             <li><b>✂ Taglia in pezzi</b> (sotto il pad selezionato): apre il suono del pad, trova da solo i colpi di un loop o di un break e lo divide fino a 48 pezzi: 12 per gruppo, poi continua nei gruppi successivi. Può scrivere il pattern che li risuona al loro posto e portare il tempo a quello del loop: poi li rimescoli come vuoi.</li>
-            <li><b>Libreria</b> (Cambia suono): le casse sono divise per famiglia (generi, batteria, strumenti, synth). Tocca un suono e lo senti già sul pad; con ↑ ↓ li sfogli, «↺ Rimetti» torna a quello di prima, ☆ lo tiene tra i <b>Preferiti</b>. In alto anche <b>Kit pronti</b> e <b>I tuoi</b> suoni.</li>
+            <li><b>Libreria</b> (Cambia suono): i suoni sono divisi per quello che fanno nel beat: <b>Casse</b>, <b>Rullanti e clap</b>, <b>Charleston e piatti</b>, Tom, Percussioni, Loop; <b>808 e bassi</b>, Piano e tastiere, Chitarre, Archi, Fiati, Campane; Synth, Accordi, Voci, Scratch ed effetti. In alto scegli il <b>genere</b> (Boom bap, Trap, Old school, Lo-fi, Tekno) e vedi solo quelli; dentro ogni gruppo prima i suoni fatti per il beat, poi per stile, poi gli strumenti veri su tre ottave. Lo stesso suono non compare due volte. Tocca un suono e lo senti già sul pad; con ↑ ↓ li sfogli, «↺ Rimetti» torna a quello di prima, ☆ lo tiene tra i <b>Preferiti</b>. In alto anche <b>Kit pronti</b> e <b>I tuoi</b> suoni.</li>
             <li><b>Equalizzatori</b> (Mix): ogni gruppo ha bassi, medi, alti e livello, come i canali di un banco; sul master c’è l’<b>EQ ’73</b> da console, con taglia-bassi, bassi e medi a frequenze fisse e alti a 12 kHz, più cinque suoni pronti (Bassi grassi, Polvere ’70, Radio AM, Aria). Doppio clic su una manopola la rimette piatta.</li>
             <li><b>Forma del suono</b> (sotto il pad selezionato): trascina le linee di inizio e fine sulla forma d’onda, giralo <b>al contrario</b>, dai un <b>attacco</b> morbido, chiudi il <b>filtro</b> con la risonanza, passalo nell’<b>SP-12</b> a 12 bit. Il <b>choke</b> fa zittire a vicenda i pad dello stesso numero, come charleston aperto e chiuso.</li>
             <li><b>Opzioni dello step</b> (Sequencer): clic destro su una casella, o tienila premuta sul telefono: <b>rullata</b> (2, 3 o 4 colpi dentro lo step) e <b>probabilità</b> (suona il 75, 50 o 25% delle volte, così il beat respira).</li>
@@ -2024,7 +2027,7 @@ html.intro-on { overflow: hidden; }
     <button type="button" role="tab" data-t="suoni">Suoni<em></em></button><button type="button" role="tab" data-t="kit">Kit pronti<em></em></button><button type="button" role="tab" data-t="fav">★ Preferiti<em></em></button><button type="button" role="tab" data-t="tuoi">I tuoi<em></em></button>
   </div>
   <div class="libsearch" id="libSearchRow"><input class="search" id="search" type="search" placeholder="Cerca in tutta la libreria: cassa, piano, conga, voce…" aria-label="Cerca un suono" autocomplete="off"><button class="key small" id="searchX" type="button" hidden aria-label="Cancella la ricerca">✕</button></div>
-  <div class="libcrumb" id="libCrumb" hidden><button class="key small" id="libBack" type="button">← Tutte le casse</button><b id="libCrumbName"></b></div>
+  <div class="libcrumb" id="libCrumb" hidden><button class="key small" id="libBack" type="button">← Tutti i suoni</button><b id="libCrumbName"></b></div>
   <div class="list" id="list"></div>
   <div class="foot"><small>Tocca un suono: lo senti ed è subito sul pad. Con ↑ ↓ sfogli, ☆ lo tieni tra i preferiti.</small><label class="key small" for="file">Carica file</label></div>
 </aside>
@@ -5537,19 +5540,81 @@ function loadKit(id) {
 // The library: crates grouped in families, a tab for the ready kits, the favourites and your own sounds.
 // Touching a sound puts it on the pad and plays it at once, as when you scroll the sounds on a sampler;
 // the sound the pad had when the library opened can always be put back.
+/* the library by what a sound does in a beat (casse, rullanti, 808…); the genre is a filter on top, and the copies
+   of the same sound (the same name in the same crate) show once, the best one: three octaves first */
 const LIB_FAM = [
-  ["Generi", "Suoni scelti per stile", ["Boom bap", "Old school", "Lo-fi", "808", "Trap", "Tekno", "FX hip hop"]],
-  ["Batteria", "Colpi singoli e percussioni", ["Batteria", "Percussioni", "Percussioni intonate"]],
-  ["Strumenti", "Intonati: si suonano anche in modalità Note", ["Strumenti singoli", "Melodie", "Tastiere", "Corde", "Archi", "Fiati", "Voci", "Bassi"]],
-  ["Synth ed effetti", "Elettronici, accordi, rumori e scratch", ["Synth", "Accordi", "Effetti"]],
+  ["Batteria", "Colpi singoli, percussioni e loop", [["casse", "Casse"], ["rullanti", "Rullanti e clap"], ["hat", "Charleston e piatti"], ["tom", "Tom"], ["perc", "Percussioni"], ["loop", "Loop e rullate"]]],
+  ["Bassi e strumenti", "Intonati: si suonano anche in modalità Note", [["bassi", "808 e bassi"], ["piano", "Piano e tastiere"], ["chit", "Chitarre e corde"], ["archi", "Archi"], ["fiati", "Fiati"], ["mallet", "Campane e mallet"]]],
+  ["Synth, voci ed effetti", "Elettronici, accordi, voci, rumori e scratch", [["synth", "Synth e pad"], ["accordi", "Accordi e stab"], ["voci", "Voci e cori"], ["fx", "Scratch ed effetti"]]],
 ];
+const ROLE_NAME = Object.fromEntries(LIB_FAM.flatMap(f => f[2]));
+ROLE_NAME.tuoi = "I tuoi suoni";
+const LIB_GENRES = [["", "Tutti"], ["boombap", "Boom bap"], ["trap", "Trap"], ["oldschool", "Old school"], ["lofi", "Lo-fi"], ["tekno", "Tekno"]];
+function roleOf(s) {
+  if (s._r) return s._r;
+  const n = s.name.toLowerCase(), c = s.cat, R = r => (s._r = r);
+  if (s.kind === "user") return R("tuoi");
+  if (/^loop|^rullata (di cassa|che sale)/.test(n)) return R("loop");
+  if (/al contrario|riavvolg|frenata|^salita|^discesa|allarme|sirena|air horn|zap|laser|glitch|fruscio|rumore|sparo|elicottero|^telefono|applausi|^mare$|uccellino|goblin|fantascienza|atmosfera|soffio|^blip|^ping|^caduta|botta|modulare|stridio|tamburo del mare|scacciapensieri|didgeridoo|vibraslap|raganella|flexatone|fischietto|bicchiere|cristallo lento|^gong|rullata di timpano/.test(n)) return R("fx");
+  if (/^voce|^coro|repetition|respiro/.test(n)) return R("voci");
+  if (/grancassa|^cassa|cassa /.test(n)) return R("casse");
+  if (/charleston|\bride\b|crash|piatt|campana del ride/.test(n)) return R("hat");
+  if (/rullante|clap|battimani|rimshot|\brim\b|side stick|cross-stick|flam|schiocco|bordo rullante|spazzola|tamburo da parata|rullata a buzz/.test(n)) return R("rullanti");
+  if (/\btom\b/.test(n)) return R("tom");
+  if (/stab|accordo|orchestra hit/.test(n) || c === "Accordi") return R("accordi");
+  if (/conga|bongo|caj|darbuka|tamburell|maracas|shaker|campanaccio|campanelli nepalesi|claves|woodblock|agog|triangolo|güiro|cabasa|sonagli|mridangam|taiko|incudine|percussione|colpo industriale|frusta|tamburo|cimbalini|timpan/.test(n) || c === "Percussioni") return R("perc");
+  if (/violin|viola|violoncello|archi|pizzicato|con arco/.test(n) || c === "Archi") return R("archi");
+  if (/sax|tromba|trombone|flauto|fiati|clarinetto|oboe|fagotto|corno|tuba|ottavino|armonica|ocarina|shakuhachi|fischio|bottiglia|cornamusa/.test(n) || c === "Fiati") return R("fiati");
+  if (/^lead|^pad|pluck/.test(n)) return R("synth");
+  if (/^808|basso|contrabbasso|pedaliera|acid 303|acid che/.test(n) || c === "Bassi") return R("bassi");
+  if (/marimba|vibrafono|xilofono|glock|kalimba|mbira|balafon|campan|carillon|celesta|steel drum|cristallo trap/.test(n) || c === "Percussioni intonate") return R("mallet");
+  if (/piano|rhodes|organo|clav|fisarmonica|clavicembalo/.test(n) || c === "Tastiere") return R("piano");
+  if (/chitarra|arpa|banjo|sitar|koto|shamisen|salterio|zither|strumstick|đàn|corde/.test(n) || c === "Corde") return R("chit");
+  if (/synth|chiptune|fm|hoover|acid|cristallo/.test(n) || c === "Synth") return R("synth");
+  if (c === "Voci") return R("voci");
+  return R("fx");
+}
+function genresOf(s) {
+  if (s._g) return s._g;
+  const n = s.name.toLowerCase(), c = s.cat, g = s._g = new Set();
+  const m = { "Boom bap": "boombap", "Trap": "trap", "Old school": "oldschool", "Lo-fi": "lofi", "Tekno": "tekno", "808": "trap" }[c]; if (m) g.add(m);
+  if (/trap|drill|bounce/.test(n)) g.add("trap");
+  if (/lo-fi|impolverat|polvere|vinile/.test(n)) g.add("lofi");
+  if (/sp-12|polvere|soul|gospel|jazz|vintage|sporc|da vinile|g-funk/.test(n)) g.add("boombap");
+  if (/jazz|vintage|arrugginit|parata|banda|chicken scratch|clavinet funk/.test(n)) g.add("oldschool");
+  if (c === "FX hip hop") { g.add("boombap"); g.add("trap"); }
+  if (/808/.test(n) && s.kind !== "user") g.add("trap");
+  return g;
+}
+// inside a crate the sounds come in small groups: made for the beat first, then by style, then the real instruments
+const LIB_SUBS = ["Per il beat", "Boom bap", "Trap", "808", "Old school · jazz e vintage", "Old school · SP-12 e polvere", "Lo-fi", "Hip hop", "Strumenti veri · 3 ottave", "Elettroniche e acustiche", "Tekno", "Altri"];
+function libSub(s) {
+  if (s.kind === "multi") return "Strumenti veri · 3 ottave";
+  const c = s.cat;
+  if (c === "Melodie") return "Per il beat";
+  if (c === "Old school") return /sp-12|polvere/i.test(s.name) ? "Old school · SP-12 e polvere" : "Old school · jazz e vintage";
+  if (c === "FX hip hop") return "Hip hop";
+  if (c === "Batteria") return "Elettroniche e acustiche";
+  return LIB_SUBS.includes(c) ? c : "Altri";
+}
+const LIB_RANK = { multi: 0, pack: 1, file: 2, derived: 3, synth: 4 };
+// one of each name: the sound on the pad if it is one of the copies, otherwise the best kind
+function libDedupe(items, cur) {
+  const best = new Map();
+  for (const s of items) {
+    const k = s.name.toLowerCase().replace(/\s+(gm|hd)$/, "").trim(), o = best.get(k);
+    if (!o || (s.id === cur) || (o.id !== cur && (LIB_RANK[s.kind] ?? 5) < (LIB_RANK[o.kind] ?? 5))) best.set(k, s);
+  }
+  return items.filter(s => best.get(s.name.toLowerCase().replace(/\s+(gm|hd)$/, "").trim()) === s);
+}
+const libPick = (all, role, cur) => libDedupe(all.filter(s => roleOf(s) === role && (!state.libGenre || genresOf(s).has(state.libGenre))), cur);
 let libCat = "Tutti", libTab = "suoni", libStart = null;
 const EQ_ICON = '<i class="eqi"><b></b><b></b><b></b></i>';
 function openLibrary() {
   initAudio(); $("drawer").hidden = false; $("scrim").hidden = false; libCat = "Tutti"; $("search").value = "";
   const pr = curPr(); libStart = { b: state.bank, p: state.pad, sound: pr.sound, pitch: pr.pitch, gate: pr.gate };
   // straight into the crate of the sound on the pad, so the neighbours are one touch away
-  const s = SOUNDS.get(pr.sound); if (s && s.kind !== "user" && CATS.includes(s.cat)) libCat = s.cat;
+  const s = SOUNDS.get(pr.sound); if (s && s.kind !== "user") { libCat = roleOf(s); if (state.libGenre && !genresOf(s).has(state.libGenre)) state.libGenre = ""; }
   libTab = s && s.kind === "user" ? "tuoi" : "suoni";
   renderLibrary(); const cur = $("list").querySelector(".item.cur"); if (cur) cur.scrollIntoView({ block: "center" });
   setTimeout(() => $("closeLib").focus({ preventScroll: true }), 50);
@@ -5580,7 +5645,7 @@ function toggleFav(id) {
 }
 function soundRow(s, cur, showCat) {
   const row = el("div", "item" + (s.id === cur ? " cur" : ""));
-  const tx = el("button", "tx", (s.id === cur ? EQ_ICON : '<i class="pvi">' + PV_ICON + "</i>") + "<span><b>" + esc(s.name) + "</b><small>" + (showCat ? esc(s.cat) + " · " : "") + (s.root != null ? "intonato · " : "") + esc(s.src) + "</small></span>");
+  const tx = el("button", "tx", (s.id === cur ? EQ_ICON : '<i class="pvi">' + PV_ICON + "</i>") + "<span><b>" + esc(s.name) + "</b><small>" + (showCat ? esc(ROLE_NAME[roleOf(s)] || s.cat) + " · " : "") + (s.kind === "multi" ? "3 ottave · " : s.root != null ? "intonato · " : "") + esc(s.src) + "</small></span>");
   tx.type = "button"; tx.dataset.id = s.id; tx.setAttribute("aria-label", s.name + (s.id === cur ? ", sul pad" : ", mettilo sul pad"));
   tx.addEventListener("click", () => assign(s.id));
   const fav = el("button", "fav" + (state.favs.includes(s.id) ? " on" : ""), state.favs.includes(s.id) ? "★" : "☆"); fav.type = "button";
@@ -5609,16 +5674,16 @@ function renderLibrary() {
   });
   $("searchX").hidden = !q;
   const inCrate = libTab === "suoni" && !q && libCat !== "Tutti";
-  $("libCrumb").hidden = !inCrate; if (inCrate) $("libCrumbName").textContent = libCat;
+  $("libCrumb").hidden = !inCrate; if (inCrate) $("libCrumbName").textContent = (ROLE_NAME[libCat] || libCat) + (state.libGenre ? " · " + LIB_GENRES.find(g => g[0] === state.libGenre)[1] : "");
   $("libSearchRow").hidden = libTab === "kit";
   list.innerHTML = ""; list.scrollTop = 0;
   const head = (t, sub) => list.appendChild(el("div", "grp", esc(t) + (sub ? "<small>" + esc(sub) + "</small>" : "")));
-  if (q) {   // search everything, in every tab
+  if (q) {   // search everything, in every tab, crate by crate
     let count = 0;
-    for (const c of CATS) {
-      const items = all.filter(s => s.cat === c && (s.name.toLowerCase().includes(q) || c.toLowerCase().includes(q) || (s.src || "").toLowerCase().includes(q)));
+    for (const [role, name] of LIB_FAM.flatMap(f => f[2]).concat([["tuoi", "I tuoi suoni"]])) {
+      const items = libDedupe(all.filter(s => roleOf(s) === role && (s.name.toLowerCase().includes(q) || name.toLowerCase().includes(q) || s.cat.toLowerCase().includes(q) || [...genresOf(s)].some(g => g.includes(q)) || (s.src || "").toLowerCase().includes(q))), cur);
       if (!items.length) continue;
-      head(c + " · " + items.length); items.forEach(s => list.appendChild(soundRow(s, cur))); count += items.length;
+      head(name + " · " + items.length); items.forEach(s => list.appendChild(soundRow(s, cur))); count += items.length;
     }
     if (!count) list.appendChild(el("p", "libempty", "Nessun suono per “" + esc(q) + "”. Prova con parole come cassa, rullante, piano, basso, voce."));
     return;
@@ -5649,9 +5714,15 @@ function renderLibrary() {
     else { head("I tuoi suoni · " + users.length, "Salvati su questo dispositivo"); users.slice().reverse().forEach(s => list.appendChild(soundRow(s, cur))); }
     return;
   }
-  if (libCat !== "Tutti") {   // inside a crate
-    const items = all.filter(s => s.cat === libCat);
-    items.forEach(s => list.appendChild(soundRow(s, cur)));
+  // the genres, above the crates and inside them
+  const chips = el("div", "libgen"); chips.setAttribute("role", "group"); chips.setAttribute("aria-label", "Genere");
+  LIB_GENRES.forEach(([g, name]) => { const b = el("button", null, esc(name)); b.type = "button"; b.setAttribute("aria-pressed", (state.libGenre || "") === g); b.addEventListener("click", () => { state.libGenre = g; save(); renderLibrary(); }); chips.appendChild(b); });
+  list.appendChild(chips);
+  if (libCat !== "Tutti") {   // inside a crate: in small groups
+    const items = libPick(all, libCat, cur);
+    if (!items.length) list.appendChild(el("p", "libempty", "Niente di " + esc(LIB_GENRES.find(g => g[0] === state.libGenre)[1]) + " qui: tocca «Tutti»."));
+    const subs = LIB_SUBS.filter(x => items.some(s => libSub(s) === x));
+    subs.forEach(x => { const its = items.filter(s => libSub(s) === x); if (subs.length > 1) head(x + " · " + its.length); its.forEach(s => list.appendChild(soundRow(s, cur))); });
     return;
   }
   // the crates
@@ -5662,17 +5733,17 @@ function renderLibrary() {
     recent.forEach(s => { const b = el("button", "rchip" + (s.id === cur ? " cur" : ""), esc(s.name)); b.type = "button"; b.addEventListener("click", () => assign(s.id)); strip.appendChild(b); });
     list.appendChild(strip);
   }
-  LIB_FAM.forEach(([fam, sub, cats], fi) => {
-    head(fam, sub);
+  LIB_FAM.forEach(([fam, sub, roles], fi) => {
     const grid = el("div", "crates");
-    cats.forEach(c => {
-      const items = all.filter(s => s.cat === c); if (!items.length) return;
-      const has = items.some(s => s.id === cur);
-      const b = el("button", "crate f" + fi + (has ? " has" : ""), "<b>" + esc(c) + "</b><em>" + items.length + "</em><small>" + esc(items.slice(0, 3).map(s => s.name).join(" · ")) + "</small>");
-      b.type = "button"; b.addEventListener("click", () => { libCat = c; renderLibrary(); });
+    roles.forEach(([role, name]) => {
+      const items = libPick(all, role, cur); if (!items.length) return;
+      const has = items.some(s => s.id === cur), pick = items.slice().sort((a, b) => LIB_SUBS.indexOf(libSub(a)) - LIB_SUBS.indexOf(libSub(b)));
+      const b = el("button", "crate f" + fi + (has ? " has" : ""), "<b>" + esc(name) + "</b><em>" + items.length + "</em><small>" + esc(pick.slice(0, 3).map(s => s.name).join(" · ")) + "</small>");
+      b.type = "button"; b.addEventListener("click", () => { libCat = role; renderLibrary(); });
       grid.appendChild(b);
     });
-    list.appendChild(grid);
+    if (!grid.children.length) return;
+    head(fam, sub); list.appendChild(grid);
   });
 }
 // arrows browse the open list: each step puts the sound on the pad and plays it
@@ -5691,7 +5762,7 @@ function bindLibrary() {
   $("libUndo").addEventListener("click", libRevert);
   $("libPlay").addEventListener("click", () => preview(curPr().sound));
   $("searchX").addEventListener("click", () => { $("search").value = ""; renderLibrary(); $("search").focus(); });
-  $("drawer").addEventListener("keydown", libKey, true);
+  document.addEventListener("keydown", libKey, true);   // the list is rebuilt on each pick: the arrows work wherever the focus went
 }
 
 /* ================= keyboard ================= */
@@ -5765,7 +5836,7 @@ function renderPads() {
       elp.classList.toggle("root", ((off - state.root) % 12 + 12) % 12 === 0); elp.classList.remove("sel", "used");
       elp.setAttribute("aria-label", "Nota " + noteName(base + off));
     } else {
-      idx.textContent = padLabel(state.bank, i); nm.textContent = s ? s.name : "—"; sub.textContent = s ? (s.root != null ? "intonato" : s.cat) : "";
+      idx.textContent = padLabel(state.bank, i); nm.textContent = s ? s.name : "—"; sub.textContent = s ? (s.root != null ? "intonato" : ROLE_NAME[roleOf(s)] || s.cat) : "";
       elp.classList.remove("root"); elp.classList.toggle("sel", i === state.pad); elp.classList.toggle("used", pat[i].some(Boolean));
       elp.setAttribute("aria-label", "Pad " + padLabel(state.bank, i) + ", " + (s ? s.name : ""));
     }
@@ -5793,7 +5864,7 @@ function renderInspector() {
   $("tag").textContent = padLabel(state.bank, state.pad);
   $("insEyebrow").textContent = "Pad " + padLabel(state.bank, state.pad) + " · " + BANKS[state.bank].name;
   $("insName").textContent = s ? s.name : "—";
-  $("insChips").innerHTML = s ? '<span class="chip">' + esc(s.cat) + "</span>" + (s.root != null ? '<span class="chip tuned">intonato · ' + noteName(s.home) + "</span>" : '<span class="chip">non intonato</span>') + '<span class="chip">' + esc(s.src) + "</span>" : "";
+  $("insChips").innerHTML = s ? '<span class="chip">' + esc(ROLE_NAME[roleOf(s)] || s.cat) + "</span>" + (s.root != null ? '<span class="chip tuned">intonato · ' + noteName(s.home) + "</span>" : '<span class="chip">non intonato</span>') + '<span class="chip">' + esc(s.src) + "</span>" : "";
   knobs.forEach(k => k.draw());
   [...$("gate").children].forEach((b, i) => b.setAttribute("aria-pressed", GATES[i][1] === pr.gate));
   renderForm(); renderPadColor(); renderWarp(); if (typeof renderArp === "function") renderArp();
