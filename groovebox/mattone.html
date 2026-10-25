@@ -1658,6 +1658,7 @@ html.intro-on { overflow: hidden; }
           <h2>Canzone · i pattern in fila</h2>
           <div class="acts">
             <button class="key small" id="songOn" type="button" aria-pressed="false"><span class="ledi"></span>Suona la canzone</button>
+            <button class="key small on" id="songArr" type="button" title="Dal pattern che hai fatto: intro senza batteria, strofa senza melodia, ritornello, stacco di sola batteria e finale, in fila coi passaggi">🎬 Fammi la canzone</button>
             <button class="key small" id="songAdd" type="button">+ Aggiungi pattern 1</button>
             <button class="key small rec2" id="songRec" type="button">● Registra la canzone</button>
             <button class="key small" id="songClear" type="button">Svuota</button>
@@ -1855,6 +1856,7 @@ html.intro-on { overflow: hidden; }
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
             <li><b>Scocche</b> (in alto a sinistra, o Personalizza): cinque macchine vere, ognuna col suo look completo. «Dodici bit» (campionatore scuro), «Campionatore ’88» (grigio coi pad di gomma), «Ritmo ’80» (drum machine coi tasti rosso, arancio, giallo e crema), «Giradischi ’79» (alluminio e strobo rosso), «Consolle ’73» (banco da studio coi fianchi in noce). Il dado ne sceglie una a caso.</li>
             <li><b>Duplica</b> (in alto, sotto i tasti dei pattern): copia il pattern su qualsiasi altro, anche su quello prima, o scambiali di posto. Si può anche trascinare un tasto 1–8 sopra un altro: si scambiano (con Alt si copia). La canzone segue gli scambi.</li>
+            <li><b>🎬 Fammi la canzone</b> (Sequencer, Canzone): dal pattern che hai fatto crea l’<b>intro</b> (solo accordi), la <b>strofa</b> (tutto tranne la melodia, così c’è spazio per il rap), il <b>ritornello</b> (il tuo pattern), lo <b>stacco</b> (solo batteria) e il <b>finale</b>, li mette in fila (intro, strofa, ritornello, strofa, ritornello, stacco, ritornello, finale) e accende i passaggi a fine parte. Usa i pattern vuoti; se non bastano chiede conferma prima di sovrascrivere. Poi la ritocchi come vuoi.</li>
             <li><b>Passaggi automatici</b> (Sequencer, sotto il groove): ogni 2, 4 o 8 battute, o alla fine di ogni parte della canzone, il Mat.Tone suona da solo un passaggio: una <b>rullata</b> sul rullante e sui tom, uno <b>stop</b>, la battuta <b>senza cassa</b> né basso, o una <b>salita</b> che finisce sull’uno. «Misto» li alterna; «Uno adesso» lo fa alla prossima battuta.</li>
             <li><b>Effetto su un colpo</b> (Sequencer, nel menu dello step o nella corsia «Per step» → Effetto): <b>tape stop</b>, <b>al contrario</b>, <b>riverbero al contrario</b> che cresce fino al colpo, <b>eco lanciata</b> solo su quel colpo, <b>stutter</b>. Restano nel pattern.</li>
             <li><b>Per step</b> (Sequencer): ogni colpo può avere il suo <b>filtro</b>, <b>tono</b>, <b>volume</b>, <b>pan</b> e <b>coda</b>, come i «parameter lock» delle groovebox. Sotto la griglia c’è la corsia del pad scelto: scegli l’impostazione e disegnala trascinando sugli step (doppio clic: torna come il pad); oppure tasto destro su uno step e i cursori «Solo per questo step». Gli step con impostazioni proprie hanno un puntino.</li>
@@ -2879,6 +2881,8 @@ grooveFix();
 // automatic fills: a roll, a stop, the kick taken out or a riser at the end of every few bars (or of each part of the song)
 function fillsFix() { state.fills = Object.assign({ on: false, style: "misto", every: 4, song: true }, state.fills || {}); }
 fillsFix();
+function patNamesFix() { if (!Array.isArray(state.patNames) || state.patNames.length !== NPAT) state.patNames = new Array(NPAT).fill(""); }   // what each pattern is in the song: intro, strofa…
+patNamesFix();
 if (!state.midiMap || typeof state.midiMap !== "object") state.midiMap = {};   // the controller's knobs and keys: kept with the app, not the project
 // every pattern has its length and grid, every row as many steps as that; the song points only at patterns that exist
 function fixPatterns() {
@@ -3922,6 +3926,42 @@ function patternEnd() {
     msg(inSong && e ? "CANZONE · PARTE " + (pos.i + 1) + "/" + state.song.length + " · PATTERN " + (to + 1) + (e.n > 1 ? " · " + (pos.rep + 1) + " DI " + e.n : "") : "PATTERN " + (to + 1));
   }, Math.max(0, (nextTime - ctx.currentTime) * 1000));
 }
+/* ---------- arrangiatore: dal pattern alla canzone intera ---------- */
+// from one full pattern: an intro without drums, a verse with room for the voice, the hook, a break, an ending; then in a row
+function arrangePlan() {
+  const src = state.pattern, free = [];
+  for (let i = 0; i < NPAT && free.length < 4; i++) if (i !== src && !patHas(i)) free.push(i);
+  for (let i = 0; i < NPAT && free.length < 4; i++) if (i !== src && !free.includes(i)) free.push(i);   // not enough empty ones: the others get overwritten
+  return { src, slots: free, overwrite: free.filter(i => patHas(i)) };
+}
+function arrangeSong() {
+  const plan = arrangePlan();
+  if (!patHas(plan.src)) { msg("PRIMA FAI UN PATTERN CON BATTERIA E MUSICA, POI LA CANZONE"); return; }
+  if (plan.overwrite.length && !arrangeSong.ok) { arrangeSong.ok = true; setTimeout(() => { arrangeSong.ok = false; }, 4000); msg("SOVRASCRIVE I PATTERN " + plan.overwrite.map(i => i + 1).join(", ") + ": TOCCA ANCORA PER CONFERMARE"); return; }
+  arrangeSong.ok = false;
+  const H = state.harmony, src = plan.src, P = state.patterns[src], m = pm(src), [pi, pv, pb, po] = plan.slots;
+  const melo = H && H.mb != null ? H.mb + ":" + H.mp : null, bass = H && H.bb != null ? H.bb + ":" + H.bp : null;
+  // which rows a part keeps
+  const isDrum = b => b <= 1, isBassRow = (b, p) => (bass && bass === b + ":" + p) || (() => { const s = SOUNDS.get(state.banks[b][p].sound); return !!(s && s.root != null && /808|bass|bas|sub/i.test(state.banks[b][p].sound + " " + s.name)); })();
+  const make = (to, keep, name, extra) => {
+    const out = P.map((g, b) => g.map((row, p) => keep(b, p) ? JSON.parse(JSON.stringify(row)) : new Array(row.length).fill(0)));
+    if (extra) extra(out);
+    state.patterns[to] = out; state.pmeta[to] = Object.assign({}, m); state.patNames[to] = name;
+  };
+  const crash = padRoles(0).perc.find(p => /crash|piatt|cym/i.test(state.banks[0][p].sound + " " + ((SOUNDS.get(state.banks[0][p].sound) || {}).name || "")));
+  const withCrash = out => { if (crash != null) out[0][crash][0] = [2, 0]; };
+  make(pi, (b, p) => !isDrum(b) && !(melo === b + ":" + p) && !isBassRow(b, p), "Intro");                     // the chords alone
+  make(pv, (b, p) => !(melo === b + ":" + p), "Strofa");                                                      // everything but the melody: room for the rap
+  make(pb, (b, p) => isDrum(b) && !isBassRow(b, p), "Stacco");                                                // the drums alone
+  make(po, (b, p) => !isDrum(b) && !isBassRow(b, p), "Fine", withCrash);                                       // the music with the melody, a crash on the one
+  state.patNames[src] = "Ritornello";
+  const rep = bars => Math.max(1, Math.round(bars / m.bars));
+  state.song = [{ p: pi, n: rep(4) }, { p: pv, n: rep(8) }, { p: src, n: rep(8) }, { p: pv, n: rep(8) }, { p: src, n: rep(8) }, { p: pb, n: rep(2) }, { p: src, n: rep(8) }, { p: po, n: rep(4) }];
+  state.songOn = true; songFrom = 0;
+  Object.assign(state.fills, { on: true, song: true, style: "misto" });   // a fill at the end of each part
+  save(); renderAll();
+  msg("CANZONE PRONTA: INTRO " + (pi + 1) + " · STROFA " + (pv + 1) + " · RITORNELLO " + (src + 1) + " · STACCO " + (pb + 1) + " · FINE " + (po + 1) + " · PREMI PLAY · CTRL+Z PER TORNARE");
+}
 function songButton(txt, label, fn) { const b = el("button", null, txt); b.type = "button"; b.setAttribute("aria-label", label); b.title = label; b.addEventListener("click", fn); return b; }
 function renderSong() {
   const row = $("songRow"); if (!row) return;
@@ -3930,7 +3970,7 @@ function renderSong() {
   state.song.forEach((e, i) => {
     const bars = pm(e.p).bars * e.n, b = el("div", "sblk" + (i === now ? " now" : "") + (now < 0 && i === songFrom ? " from" : ""));
     b.style.setProperty("--w", Math.min(8, bars));
-    const go = el("button", "sp", "<b>" + (e.p + 1) + "</b><small>" + bars + (bars > 1 ? " battute" : " battuta") + "</small>"); go.type = "button";
+    const nm = state.patNames[e.p], go = el("button", "sp", "<b>" + (e.p + 1) + "</b><small>" + (nm ? esc(nm) + " · " : "") + bars + (bars > 1 ? " battute" : " battuta") + "</small>"); go.type = "button";
     go.setAttribute("aria-label", "Parte " + (i + 1) + ": pattern " + (e.p + 1) + " per " + e.n + (e.n > 1 ? " volte" : " volta") + ". Tocca per partire da qui");
     go.addEventListener("click", () => songGo(i));
     const sn = el("div", "sn"); sn.append(songButton("−", "Una volta in meno", () => songEdit(i, -1)), el("span", null, "×" + e.n), songButton("+", "Una volta in più", () => songEdit(i, 1)));
@@ -4955,6 +4995,7 @@ function build() {
   $("nrBtn").addEventListener("click", nrToggle);
   $("songOn").addEventListener("click", songToggle);
   $("songAdd").addEventListener("click", songAdd);
+  $("songArr").addEventListener("click", arrangeSong);
   $("songRec").addEventListener("click", songRec);
   $("songClear").addEventListener("click", () => armed("songClear", "Sicuro?", () => { state.song = []; state.songOn = false; songFrom = 0; save(); renderSong(); msg("CANZONE SVUOTATA"); }));
   bindChop(); bindForm(); bindWarp(); buildPadColors();
@@ -5096,13 +5137,14 @@ function selectPattern(i) {
 const patHas = i => state.patterns[i].some(bk => bk.some(p => p.some(Boolean)));
 function patCopy(from, to) {
   if (from === to) return;
-  state.patterns[to] = JSON.parse(JSON.stringify(state.patterns[from])); state.pmeta[to] = Object.assign({}, pm(from));
+  state.patterns[to] = JSON.parse(JSON.stringify(state.patterns[from])); state.pmeta[to] = Object.assign({}, pm(from)); state.patNames[to] = state.patNames[from] || "";
   save(); selectPattern(to); msg("PATTERN " + (from + 1) + " COPIATO SUL " + (to + 1) + " · CTRL+Z PER TORNARE");
 }
 function patSwap(a, b) {
   if (a === b) return;
   [state.patterns[a], state.patterns[b]] = [state.patterns[b], state.patterns[a]];
   [state.pmeta[a], state.pmeta[b]] = [state.pmeta[b], state.pmeta[a]];
+  [state.patNames[a], state.patNames[b]] = [state.patNames[b], state.patNames[a]];
   state.song.forEach(e => { if (e.p === a) e.p = b; else if (e.p === b) e.p = a; });   // the song keeps playing the same music
   if (state.pattern === a) state.pattern = b; else if (state.pattern === b) state.pattern = a;
   if (queued === a) queued = b; else if (queued === b) queued = a;
@@ -5523,7 +5565,7 @@ function renderBanks() {
   knobs.forEach(k => k.draw());
 }
 function renderPatterns() {
-  [...$("pats").children].forEach((b, i) => { b.setAttribute("aria-pressed", i === state.pattern); b.classList.toggle("queued", i === queued); b.classList.toggle("has", state.patterns[i].some(bk => bk.some(p => p.some(Boolean)))); });
+  [...$("pats").children].forEach((b, i) => { b.title = "Pattern " + (i + 1) + (state.patNames[i] ? " · " + state.patNames[i] : ""); b.setAttribute("aria-pressed", i === state.pattern); b.classList.toggle("queued", i === queued); b.classList.toggle("has", state.patterns[i].some(bk => bk.some(p => p.some(Boolean)))); });
   $("vPat").textContent = String(state.pattern + 1).padStart(2, "0");
 }
 function renderInspector() {
@@ -8440,7 +8482,7 @@ function renderLane() {
 }
 
 /* ---------- progetto: tutto in un file, campioni compresi ---------- */
-const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol", "groove", "fills", "harmony"];
+const PROJ_KEYS = ["banks", "patterns", "pmeta", "song", "songOn", "bpm", "swing", "mutes", "human", "meq", "eqPreset", "geq", "echo", "rev", "warmth", "wow", "glue", "pump", "push", "mpreset", "dust", "volume", "root", "scale", "oct", "custom", "skin", "voice", "video", "sideb", "deckVol", "groove", "fills", "harmony", "patNames"];
 function f32ToB64(d) {
   const n = d.length, u = new Uint8Array(n * 2), v = new DataView(u.buffer);
   for (let i = 0; i < n; i++) v.setInt16(i * 2, Math.round(Math.max(-1, Math.min(1, d[i])) * 32767), true);
@@ -8498,7 +8540,7 @@ function openProject(file) {
     }
     const st = proj.state; PROJ_KEYS.forEach(k => { if (st[k] !== undefined) state[k] = st[k]; });
     if (st.voice === undefined) state.voice = null;
-    voiceFix(); videoFix(); sidebFix(); grooveFix(); fillsFix(); voiceSoloStop();
+    voiceFix(); videoFix(); sidebFix(); grooveFix(); fillsFix(); patNamesFix(); voiceSoloStop();
     for (const t of proj.voices || []) { const b = voiceBufFrom(b64ToF32(t.data), t.sr || 44100); VO.bufs.set(t.id, b); VO.peaks.delete(t.id); voiceKeep(t.id, b); }
     state.voice.takes = state.voice.takes.filter(t => VO.bufs.has(t.id)); if (!vTake()) state.voice.sel = state.voice.takes.length ? state.voice.takes[0].id : null;
     state.banks.forEach((bk, bi) => bk.forEach((pr, pi) => { if (!SOUNDS.has(pr.sound)) pr.sound = BANKS[bi].sounds[pi]; }));
