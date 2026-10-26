@@ -1,7 +1,7 @@
 {
   "name": "mattone",
   "productName": "Mat.Tone",
-  "version": "1.0.49",
+  "version": "1.0.50",
   "description": "Mat.Tone, groovebox hip hop con pad, sequencer, scratch ed esportazione WAV/MP3",
   "main": "main.js",
   "license": "MIT",

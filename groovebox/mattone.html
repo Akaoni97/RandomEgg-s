@@ -1888,6 +1888,7 @@ html.intro-on { overflow: hidden; }
               <h3>Luce col beat</h3><p class="cnote">Una luce colorata dietro lo strumento che si accende su ogni cassa. Lo strumento resta fermo, cambia solo la luce.</p>
               <div class="opts" id="cPulse"></div>
               <h4>Animazioni</h4><p class="cnote small">Pagine che scorrono, pezzi che si spostano quando cambi la disposizione, schede che entrano.</p><div class="opts" id="cMotion" style="margin-top:8px"></div>
+              <h4>Modalità leggera</h4><p class="cnote small">Per telefoni e computer lenti: il display e gli indicatori si ridisegnano la metà delle volte e senza bagliore, e gli effetti visivi a tempo restano spenti. Il suono non cambia. «Automatica» la accende da sola sui telefoni.</p><div class="opts" id="cLite" style="margin-top:8px"></div>
               <h4>Scia sui pad</h4><p class="cnote small">Un’onda di luce parte dal pad ogni volta che suona.</p><div class="opts" id="cRipple" style="margin-top:8px"></div>
               <h4>Effetti visivi a tempo</h4><p class="cnote small">Sopra e dietro lo strumento, a ritmo con la musica, e si possono combinare. Il tasto <b>FX</b> accanto allo schermo (o <kbd>J</kbd>) passa da un insieme all’altro.</p>
               <div class="opts" id="cVfxPre" style="margin-top:8px"></div>
@@ -2500,7 +2501,7 @@ const PACK_POS = {
   basso: {in_darkblack_28: [0.3, 2.6], in_darkblack_33: [3.2, 2.6], in_darkblack_38: [6.1, 2.6], in_darkblack_43: [9.0, 2.6], in_darkblack_48: [11.9, 2.6], in_darkblack_53: [14.8, 2.6], in_growly_28: [17.7, 0.5172], in_growly_33: [18.5172, 0.3864], in_growly_39: [19.2036, 0.431], in_growly_45: [19.9347, 0.3207], in_growly_51: [20.5554, 0.4199], bs_ghost: [21.2753, 0.4], bs_scrape: [21.9753, 1.2]},
   sax: {in_weresax_50: [0.3, 2.4], in_weresax_55: [3.0, 2.4], in_weresax_60: [5.7, 2.4], in_weresax_65: [8.4, 2.4], in_weresax_70: [11.1, 2.4], in_weresax_75: [13.8, 2.4], in_bearsax_40: [16.5, 2.6], in_bearsax_44: [19.4, 2.6], in_bearsax_48: [22.3, 2.6], in_bearsax_52: [25.2, 2.6], sx_growl: [28.1, 1.6], sx_growl2: [30.0, 1.6], sx_growl3: [31.9, 1.6], sx_keys: [33.8, 0.3839]},
   chitarra: {in_shiny_40: [0.3, 2.4], in_shiny_45: [3.0, 2.4], in_shiny_51: [5.7, 2.4], in_shiny_57: [8.4, 2.4], in_shiny_63: [11.1, 2.4], in_shiny_69: [13.8, 2.4], in_shinyac_40: [16.5, 2.4], in_shinyac_45: [19.2, 2.4], in_shinyac_51: [21.9, 2.4], in_shinyac_57: [24.6, 2.4], in_shinyac_63: [27.3, 2.4], in_shinyac_69: [30.0, 2.4], in_emily_40: [32.7, 2.4], in_emily_45: [35.4, 2.4], in_emily_51: [38.1, 2.4], in_emily_57: [40.8, 2.4], in_emily_63: [43.5, 2.4], in_emily_69: [46.2, 2.4], gt_mute: [48.9, 0.1369], gt_mute2: [49.3369, 0.2466], gt_mute3: [49.8835, 0.0727], gt_finger: [50.2562, 0.4688], gt_perc: [51.025, 0.3314], gt_perc2: [51.6564, 0.4688]},
-  rap: {av_kick_soft: [0.3, 0.8], av_snare_ghost: [1.4, 0.4], av_snare_edge: [2.1, 0.3987], av_splash: [2.7987, 1.4], av_maraca: [4.4986, 0.1921], km_deep: [4.9907, 0.2344], km_deep2: [5.5251, 0.1465], km_deep3: [5.9716, 0.1852], km_dist: [6.4568, 0.4688], km_dist2: [7.2255, 0.4688], km_snap: [7.9943, 0.1758], km_snap2: [8.4701, 0.2344], in_pianet_41: [9.0044, 2.0], in_pianet_49: [11.3044, 2.0], in_pianet_57: [13.6044, 2.0], in_pianet_65: [15.9044, 2.0], in_pianet_73: [18.2044, 2.0], in_pianet_81: [20.5044, 2.0], in_cp80_42: [22.8044, 2.6], in_cp80_50: [25.7044, 2.6], in_cp80_57: [28.6044, 2.6], in_cp80_65: [31.5044, 2.6], in_cp80_72: [34.4044, 2.6], in_cp80_80: [37.3044, 2.6], ch_wurli_m9: [40.2044, 2.4], ch_wurli_maj9: [42.9044, 2.4], ch_pianet_m7: [45.6044, 1.8], ch_cp80_m11: [47.7044, 2.4], st_horn_min: [50.4044, 0.55], st_horn_maj: [51.2544, 0.55], st_str_min: [52.1044, 0.75], ch_str_long: [53.1544, 2.6], ch_piano_m9: [56.0544, 2.4], ch_piano_dim: [58.7544, 2.0]},
+  rap: {av_kick: [0.3, 0.9], av_kick2: [1.5, 0.8], av_kick_soft: [2.6, 0.8], av_snare: [3.7, 0.7], av_snare2: [4.7, 0.7], av_snare_pork: [5.7, 0.6], av_snare_ghost: [6.6, 0.4], av_snare_edge: [7.3, 0.3987], av_sstick: [7.9986, 0.35], av_clap: [8.6486, 0.5], av_hat: [9.4486, 0.3468], av_hat_ped: [10.0954, 0.3454], av_hat_semi: [10.7408, 0.5994], av_ride: [11.6402, 2.4], av_ride_bell: [14.3402, 2.0], av_crash: [16.6402, 2.6], av_splash: [19.5402, 1.4], av_tom_hi: [21.2402, 1.0], av_tom_lo: [22.5402, 1.2], av_tamb: [24.0402, 0.5312], av_cow: [24.8713, 0.6], av_maraca: [25.7713, 0.1921], km_deep: [26.2634, 0.2344], km_deep2: [26.7978, 0.1465], km_deep3: [27.2443, 0.1852], km_dist: [27.7295, 0.4688], km_dist2: [28.4982, 0.4688], km_snap: [29.267, 0.1758], km_snap2: [29.7428, 0.2344], in_wurli_36: [30.2771, 2.6], in_wurli_41: [33.1771, 2.6], in_wurli_47: [36.0771, 2.6], in_wurli_52: [38.9771, 2.37], in_wurli_56: [41.6471, 2.4993], in_wurli_61: [44.4465, 2.2033], in_wurli_68: [46.9498, 2.6], in_wurli_79: [49.8498, 0.9502], in_pianet_41: [51.0999, 2.0], in_pianet_49: [53.3999, 2.0], in_pianet_57: [55.6999, 2.0], in_pianet_65: [57.9999, 2.0], in_pianet_73: [60.2999, 2.0], in_pianet_81: [62.5999, 2.0], in_cp80_42: [64.8999, 2.6], in_cp80_50: [67.7999, 2.6], in_cp80_57: [70.6999, 2.6], in_cp80_65: [73.5999, 2.6], in_cp80_72: [76.4999, 2.6], in_cp80_80: [79.3999, 2.6], ch_wurli_m9: [82.2999, 2.4], ch_wurli_maj9: [84.9999, 2.4], ch_pianet_m7: [87.6999, 1.8], ch_cp80_m11: [89.7999, 2.4], st_horn_min: [92.4999, 0.55], st_horn_maj: [93.3499, 0.55], st_str_min: [94.1999, 0.75], ch_str_long: [95.2499, 2.6], ch_piano_m9: [98.1499, 2.4], ch_piano_dim: [100.8499, 2.0]},
   tekno: {ws_stab1: [0.3, 0.1106], ws_stab2: [0.7106, 0.259], ws_stab3: [1.2696, 1.1796], tl_loop1: [2.7491, 1.7143], tl_loop2: [4.7634, 1.7143], tl_loop3: [6.7777, 1.7143], tl_loop4: [8.792, 1.7143], tl_loop5: [10.8063, 1.7143], tl_loop6: [12.8206, 1.7143]}
 };
 const PACK_SRC = { rap: "AVL Drumkits · Glen MacArthur · CC BY-SA 3.0", tekno: "sounds-wavestab · Zach Lannes · CC0", unruly: "Karoryfer Unruly Drums · CC0", basso: "Karoryfer basses · CC0", sax: "Karoryfer Weresax e Bear Sax · CC0", chitarra: "Karoryfer Shiny ed Emily guitar · CC0" };
@@ -2612,6 +2613,14 @@ const LAYER_INSTR = [
   ["in_wurli","Piano elettrico Wurlitzer",60,[36,41,47,52,56,61,68,79],4,"Greg Sullivan · Wurlitzer EP200 · CC BY 3.0"],
 ];
 for (const [id, name, home, zones, layers, src] of LAYER_INSTR) SOUNDS.set(id, { id, name, cat: "Strumenti singoli", root: home, kind: "multi", zones, dir: "grandi", layers, src });
+// the page on claude.ai has no suoni/grandi (only the desktop app, or a local server, has them): there the studio kit and the
+// Wurlitzer play their one-take copies from the rap pack, and the sounds that exist only in the app are left out
+const FULL = location.protocol === "app:" || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+if (!FULL) for (const s of [...SOUNDS.values()]) if (s.dir === "grandi") {
+  if (PACK_POS.rap[s.id]) Object.assign(s, { kind: "pack", pack: "rap", dir: undefined, layers: 0, rr: 0 });
+  else if (s.kind === "multi" && PACK_POS.rap[s.id + "_" + s.zones[0]]) Object.assign(s, { pack: "rap", dir: undefined, layers: 0 });
+  else SOUNDS.delete(s.id);
+}
 /* the synth of the Mat.Tone, played live: two oscillators (or FM for the bells), a low-pass with its envelope, the volume
    envelope, vibrato. A note lasts as long as the key is held, then fades with its release. [id, name, root, params]
    w: waveforms, det: detune between them (cents), oct2: second oscillator up or down (semitones), sub: square an octave below,
@@ -3065,7 +3074,7 @@ function userDelete(id) {
   save(); renderAll(); renderLibrary();
 }
 const CUSTOM_DEFAULT_EARLY = { screen: "auto", led: "auto", pad: "skin", vinyl: "nero", disc: "lp", label: "auto", labelText: "MAT.TONE", logo: "MAT.TONE", room: "studio", wear: 25, intro: "si", lcd: "oled", meter: "ago", knob: "skin", font: "bungee", stickers: [],
-  shape: "rettangolo", rack: "classica", padside: "sinistra", tabs: "alto", padshape: "arrotondati", pulse: "no", motion: "piene", ripple: "si", view: "piatta", vfx: [], vfxAmt: 70 };
+  shape: "rettangolo", rack: "classica", padside: "sinistra", tabs: "alto", padshape: "arrotondati", pulse: "no", motion: "piene", ripple: "si", view: "piatta", vfx: [], vfxAmt: 70, lite: "auto" };
 let state = {
   bpm: 88, swing: 16, pattern: 0, bank: 0, pad: 0, mode: "pad", view: "grid",
   root: 0, scale: 0, oct: 0, banks: defaultBanks(), patterns: demoPatterns(), mutes: [false, false, false, false],
@@ -5774,7 +5783,7 @@ function setRollNote(s, off) {
 
 
 /* ================= kit pronti ================= */
-const KITS = [
+const KITS = (FULL ? x => x : list => list.filter(k => k[2].every(id => SOUNDS.has(id))))([
   ["studiodin", "Batteria da studio (dinamica)", ["av_kick", "fs_14a", "fs_ss14a", "av_hat", "av_hat_ped", "av_hat_semi", "av_ride", "av_tom_hi", "av_tom_lo", "fs_clap_stack", "fs_tamb", "av_crash"]],
   ["rullanti", "Rullanti veri", ["av_kick", "fs_14d", "fs_13b", "fs_14p_mute", "fs_16", "fs_20m", "fs_22", "fs_13b_rim", "fs_14a_rim", "fs_ss16", "fs_14d_brush", "fs_clap_stack"]],
   ["boombapac", "Boom bap acustico", ["av_kick", "av_snare_pork", "av_sstick", "av_hat", "av_hat_semi", "av_ride", "sp_av_kick", "av_snare_ghost", "av_tamb", "in_wurli", "ch_wurli_m9", "st_horn_min"]],
@@ -5801,7 +5810,7 @@ const KITS = [
   ["melolofi", "Melodie lo-fi", ["mk_rhodes_lofi", "mk_piano_dust", "mk_vibes_lofi", "mk_jazzgtr", "mk_choir_lofi", "sy_lofipad", "mk_kalimba", "mk_rhodes", "vc_sax", "mk_flute", "mk_strings", "mk_synthbass"]],
   ["melotrap", "Melodie trap", ["sy_trapbell", "mk_musicbox", "mk_piano_dark", "mk_flute", "mk_choir", "mk_strings_dark", "sy_pluck2", "mk_glock", "mk_harp", "mk_crystal", "mk_tremolo", "bh_808sub"]],
   ["fx", "Scratch & FX", ["sy_ahh", "sy_yeah", "sy_hey", "rp_male", "rp_robot", "sy_airhorn", "sy_rewind", "sy_brake", "gm_orchhit", "sy_riser", "gm_revcym", "sy_vinyl"]],
-];
+]);
 // the tekno kits go to their tempo (140, free party 170, hardtek 180) and, if this group's pattern is empty, bring a groove to start from:
 // pad -> [[step, accent, note offset]...]
 const TEKNO_GROOVES = {
@@ -6215,9 +6224,11 @@ function flash(b, p, note) {
   if (state.mode === "note") { if (p !== state.pad) return; for (let i = 0; i < 12; i++) if (degreeOffset(padDegree(i)) === note) target = pads[i]; }
   else target = pads[p];
   if (!target) return;
-  target.classList.remove("hit"); void target.offsetWidth; target.classList.add("hit");
+  const lite = LITE();
+  if (lite) { target.classList.remove("hit"); requestAnimationFrame(() => target.classList.add("hit")); }   // no forced reflow on a phone
+  else { target.classList.remove("hit"); void target.offsetWidth; target.classList.add("hit"); }
   if (target.classList.contains("pad")) vfxBurst(target);
-  if (state.custom.ripple !== "no" && state.custom.motion !== "ridotte" && target.childElementCount < 8) {
+  if (!lite && state.custom.ripple !== "no" && state.custom.motion !== "ridotte" && target.childElementCount < 8) {
     const r = el("span", "ripple"); target.appendChild(r); r.addEventListener("animationend", () => r.remove());
     // a few sparks fly out of the middle of the pad
     if (target.classList.contains("pad")) for (let k = 0; k < 6; k++) {
@@ -6479,8 +6490,8 @@ function renderAll() {
 const DPR = () => Math.min(2, window.devicePixelRatio || 1);
 let specCv, deckCv, deckBase = null, deckSize = 0;
 function sizeCanvases() {
-  specCv = $("spec"); deckCv = $("deck");
-  const r = { width: specCv.clientWidth }, k = Math.max(2, Math.round(r.width * DPR() / LCD_W));   // whole device pixels per dot (layout size: right also in 3D)
+  specCv = $("spec"); deckCv = $("deck"); vuKey.L = vuKey.R = "";
+  const r = { width: specCv.clientWidth }, k = Math.max(2, Math.round(r.width * (LITE() ? 1 : DPR()) / LCD_W));   // whole device pixels per dot (layout size: right also in 3D)
   specCv.width = LCD_W * k; specCv.height = LCD_H * k;
   const size = Math.max(1, Math.round(Math.min(deckCv.clientWidth, deckCv.clientHeight) * DPR()));
   if (size !== deckSize) { deckSize = size; deckCv.width = deckCv.height = size; deckBase = null; recordCv = null; sheenCv = null; labelCv = null; armR = 0; }
@@ -6656,8 +6667,9 @@ function renderMatrix(cv, buf, cols, rows, pal) {
   st.small.getContext("2d").putImageData(st.img, 0, 0);
   c.drawImage(st.bg, 0, 0);
   c.save();
-  if (pal.reflect) { c.globalAlpha = 0.24; c.imageSmoothingEnabled = false; c.drawImage(st.small, k * 0.45, k * 0.55, W, H); }   // liquid crystals cast a shadow on the backing
-  if (pal.glow) {
+  const lite = LITE();
+  if (pal.reflect && !lite) { c.globalAlpha = 0.24; c.imageSmoothingEnabled = false; c.drawImage(st.small, k * 0.45, k * 0.55, W, H); }   // liquid crystals cast a shadow on the backing
+  if (pal.glow && !lite) {
     c.imageSmoothingEnabled = true;
     c.globalAlpha = Math.min(1, 0.32 * pal.glow); c.drawImage(st.small, -k, -k, W + k * 2, H + k * 2);
     c.globalAlpha = Math.min(1, 0.2 * pal.glow); c.drawImage(st.small, -k * 3, -k * 2, W + k * 6, H + k * 4);
@@ -6786,8 +6798,14 @@ function drawSpec(idle) {
     lcdText(full + full, 2 - off, 71);
   }
   clipL = 0; clipR = LCD_W;
+  // only when a dot changed (or the screen flickers like a tube): a still screen costs nothing
+  let lh = 2166136261; for (let i = 0; i < lcdBuf.length; i++) lh = Math.imul(lh ^ lcdBuf[i], 16777619);
+  const key = lh + "|" + specCv.width + "x" + specCv.height + "|" + (LCDPAL ? LCDPAL.key : "") + "|" + LITE();
+  if (key === lcdLast && !(LCDPAL && LCDPAL.crt)) return;
+  lcdLast = key;
   lcdRender();
 }
+let lcdLast = "";
 // more visualizers: they draw inside the window of the screen and nowhere else
 const vpx = (x, y, v = 1) => { x |= 0; y |= 0; if (x >= VX && x < VX + VW && y >= VY && y < VY + VH) lcdBuf[y * LCD_W + x] = v; };
 function vLine(x0, y0, x1, y1, v = 1) { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let i = 0; i <= n; i++) vpx(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), v); }
@@ -6993,7 +7011,7 @@ const VFX_SCREEN = { get W() { return innerWidth; }, get H() { return innerHeigh
 function drawVfx(now) {
   const S = VX_ST;
   if (!S.on.size) return;
-  if (lowMotion() || introRun || document.hidden) { vfxClear(); return; }
+  if (lowMotion() || LITE() || introRun || document.hidden) { vfxClear(); return; }
   const { tx, ty, sc } = vfxPaint(S, VFX_SCREEN, now);
   const tf = Math.abs(tx) + Math.abs(ty) + Math.abs(sc - 1) < 0.02 ? "" : tx.toFixed(1) + "px " + ty.toFixed(1) + "px|" + sc.toFixed(4);
   if (tf !== S.tf) { const a = $("app").style, [t, s] = tf ? tf.split("|") : ["", ""]; a.translate = t; a.scale = s; S.tf = tf; }
@@ -7145,6 +7163,7 @@ function level(an) {
   an.getFloatTimeDomainData(tbuf); let s = 0; for (let i = 0; i < tbuf.length; i++) s += tbuf[i] * tbuf[i];
   return Math.sqrt(s / tbuf.length);
 }
+const vuKey = { L: "", R: "" };
 function drawVU(idle) {
   const style = state.custom.meter || "ago";
   [["vuL", "L"], ["vuR", "R"]].forEach(([id, ch]) => {
@@ -7153,6 +7172,9 @@ function drawVU(idle) {
     vuState[ch] += (target - vuState[ch]) * (target > vuState[ch] ? 0.35 : 0.12);
     vuPeak[ch] = Math.max(vuState[ch], vuPeak[ch] - 0.006);
     vuDb[ch] += (Math.max(-60, db) - vuDb[ch]) * 0.25;
+    const key = style + (SK.vuInk || "") + vuState[ch].toFixed(3) + vuPeak[ch].toFixed(3) + vuDb[ch].toFixed(1);
+    if (vuKey[ch] === key) return;   // the needle did not move: nothing to draw
+    vuKey[ch] = key;
     drawMeter($(id).getContext("2d"), style, ch, vuState[ch], vuPeak[ch], vuDb[ch]);
   });
 }
@@ -7775,6 +7797,7 @@ function buildCustom() {
   PADSHAPES.forEach(([id, name]) => cardButton($("cPadShape"), id, name, "", el("span", "padprev pp-" + id, "<i></i><i></i><i></i><i></i>"), v => setCustom("padshape", v)));
   [["si", "Accesa"], ["no", "Spenta"]].forEach(([id, name]) => optButton($("cPulse"), id, name, null, v => setCustom("pulse", v)));
   [["piene", "Piene e fluide"], ["ridotte", "Ridotte"]].forEach(([id, name]) => optButton($("cMotion"), id, name, null, v => setCustom("motion", v)));
+  [["auto", "Automatica" + (PHONE ? " (accesa qui)" : "")], ["si", "Sempre"], ["no", "Mai"]].forEach(([id, name]) => optButton($("cLite"), id, name, null, v => { setCustom("lite", v); LCDPAL = null; vuKey.L = vuKey.R = ""; SCENE.base = null; paintScene(); sizeCanvases(); }));
   VIEWS.forEach(([id, name]) => optButton($("cView"), id, name, null, v => setView(v)));
   [["si", "Sì"], ["no", "No"]].forEach(([id, name]) => optButton($("cRipple"), id, name, null, v => setCustom("ripple", v)));
   buildVfxCustom();
@@ -7809,7 +7832,7 @@ function renderCustom() {
   const C = state.custom, stk = new Set(C.stickers || []);
   const mark = (id, v) => [...$(id).children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
   mark("cSkin", state.skin); mark("cLcd", C.lcd); mark("cScreen", C.screen); mark("cVis", String(state.vis || 0)); mark("cMeter", C.meter); mark("cKnob", C.knob);
-  mark("cView", C.view || "piatta"); mark("cDisc", discId()); if ($("discSel")) $("discSel").value = discId(); mark("cShape", C.shape); mark("cRack", C.rack); mark("cPadSide", C.padside); mark("cTabs", C.tabs); mark("cPadShape", C.padshape); mark("cPulse", C.pulse); mark("cMotion", C.motion); mark("cRipple", C.ripple);
+  mark("cView", C.view || "piatta"); mark("cDisc", discId()); if ($("discSel")) $("discSel").value = discId(); mark("cShape", C.shape); mark("cRack", C.rack); mark("cPadSide", C.padside); mark("cTabs", C.tabs); mark("cPadShape", C.padshape); mark("cPulse", C.pulse); mark("cMotion", C.motion); mark("cLite", C.lite || "auto"); mark("cRipple", C.ripple);
   renderVfxCustom();
   mark("cLed", C.led); mark("cPad", C.pad); mark("cVinyl", C.vinyl); mark("cLabel", C.label); mark("cFont", C.font); mark("cRoom", C.room); mark("cIntro", C.intro);
   [...$("cStickers").children].forEach(b => b.setAttribute("aria-pressed", stk.has(b.dataset.v)));
@@ -7909,14 +7932,15 @@ function tick() {
   kickGlow *= 0.86; beatPulse *= 0.9;
   if (state.custom.pulse === "si") { const v = Math.min(1, kickGlow) * 0.9; if (Math.abs(v - beatLightV) > 0.008) { $("beatLight").style.opacity = v.toFixed(3); beatLightV = v; } }
   if (logoDot) logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
-  drawSpec(!ctx); drawVU(!ctx); drawDeck(false); if (D2.on && SB.on) onDeck2(() => drawDeck(false));
+  const full = !LITE() || (++tickN & 1) === 0;
+  if (full) { drawSpec(!ctx); if (!LITE() || (tickN & 3) === 0) drawVU(!ctx); drawDeck(false); if (D2.on && SB.on) onDeck2(() => drawDeck(false)); }
   if ($("vidBox").hidden) drawVfx(performance.now()); else if (VX_ST.tf || $("vfxAdd").width || $("vfxBack").width || $("vfxInk").width) vfxClear();   // behind the video box the screen effects rest
   if (curPage === "voce") voiceLive();
   if (SB.on) sbTick();
   vidTick(performance.now());
   requestAnimationFrame(tick);
 }
-let beatLightV = 0, kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a";
+let beatLightV = 0, kickGlow = 0, beatPulse = 0, logoDot = null, hueColor = "#f2a43a", tickN = 0;
 const SKINS = [
   ["sp12", "Dodici bit", "PERCUSSIONI CAMPIONATE · 12 BIT · 26 KHZ", "#2b2d31", "SER. Nº 1200 · 220V~ 50HZ"],
   ["mpc", "Campionatore ’88", "CAMPIONATORE RITMICO · MOD. 88", "#c9c4b8", "12 BIT · 40 KHZ · MIDI"],
@@ -8010,7 +8034,7 @@ function readSkin() {
   SK.vfdA25 = withAlpha(SK.vfd, 0.25); SK.vfdA18 = withAlpha(SK.vfd, 0.18);
   SK.rgbInk = hexRgb(SK.scrInk); SK.rgbAcc = hexRgb(SK.scrAcc);
   SK.rgb = { bg: hexRgb(SK.vfdBg), mid: hexRgb(SK.vfdMid), vfd: hexRgb(SK.vfd), led: hexRgb(SK.led) };
-  LCDPAL = null;
+  LCDPAL = null; vuKey.L = vuKey.R = "";
 }
 function applySkin(id) {
   if (SKIN_MOVED[id]) {   // a body that is no more: its machine, with the whole look that goes with it
@@ -10953,8 +10977,9 @@ function buildPadColors() {
 }
 // group meters with a peak that holds a moment, then falls
 const peakHold = [0, 0, 0, 0].map(() => ({ v: 0, t: 0 }));
+let meterN = 0;
 function meterGroupsLed() {
-  if (!$("gstrips").offsetParent) return;
+  if (curPage !== "mix" || (LITE() && (++meterN & 1))) return;   // asking the layout every frame would cost a whole reflow
   const now = ctx ? ctx.currentTime : 0, wall = performance.now();
   [...$("gstrips").children].forEach((g, i) => {
     let lv = 0;
@@ -11142,6 +11167,9 @@ const VIEWS = [
 const V3 = { cur: { rx: 0, ry: 0, rz: 0, s: 1, ty: 0 }, vel: { rx: 0, ry: 0, rz: 0, s: 0, ty: 0 }, par: [0, 0], aim: [0, 0], down: false, raf: 0, last: 0, hold: false };
 const can3d = () => matchMedia("(min-width: 901px) and (min-height: 600px)").matches;
 const viewId = () => can3d() && VIEWS.some(v => v[0] === state.custom.view) ? state.custom.view : "piatta";
+// phones and slow machines: the screens redraw every other frame, without glow, and the screen effects stay off
+const PHONE = matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
+const LITE = () => state.custom.lite === "si" || (state.custom.lite !== "no" && PHONE);
 const lowMotion = () => state.custom.motion === "ridotte" || matchMedia("(prefers-reduced-motion: reduce)").matches;
 function setView(id, quiet) {
   state.custom.view = VIEWS.some(v => v[0] === id) ? id : "piatta"; save();
@@ -11464,8 +11492,8 @@ function paintScene() {
   const cv = $("scene"), room = sceneRoom();
   if (!room) { cv.hidden = true; return; }
   cv.hidden = false;
-  const dpr = Math.min(1.5, DPR()), W = innerWidth, H = innerHeight;
-  if (SCENE.room === room && SCENE.w === W && SCENE.h === H && SCENE.base) return;
+  const dpr = LITE() ? 1 : Math.min(1.5, DPR()), W = innerWidth, H = innerHeight;   // a background: on a phone its own pixels are enough
+  if (SCENE.room === room && SCENE.w === W && SCENE.h === H && SCENE.dpr === dpr && SCENE.base) return;
   SCENE.room = room; SCENE.w = W; SCENE.h = H; SCENE.extra = {}; SCENE.dpr = dpr;
   const base = document.createElement("canvas"); base.width = Math.round(W * dpr); base.height = Math.round(H * dpr);
   const c = base.getContext("2d"); c.scale(dpr, dpr);
@@ -11481,7 +11509,7 @@ function drawScene(now) {
   if (!room || !SCENE.base) return;
   const c = cv.getContext("2d");
   c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(SCENE.base, 0, 0);
-  if (ROOM_ANIM[room] && !lowMotion()) {
+  if (ROOM_ANIM[room] && !lowMotion() && !LITE()) {
     const W = SCENE.w, H = SCENE.h;
     c.save();
     // full-size layers (ON AIR, neon) are already at canvas resolution; the rest is drawn in CSS pixels
@@ -11493,7 +11521,7 @@ function drawScene(now) {
 }
 function sceneLoop(now) {
   requestAnimationFrame(sceneLoop);
-  if (document.hidden || !sceneRoom() || lowMotion()) return;
+  if (document.hidden || !sceneRoom() || lowMotion() || LITE()) return;   // in the light mode the room is a still picture
   if (now - SCENE.last < 50) return;
   SCENE.last = now; drawScene(now);
 }
