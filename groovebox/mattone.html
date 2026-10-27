@@ -462,6 +462,9 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 
 /* ---------- library ---------- */
 .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 30; }
+/* the light mode (phones): only what makes music; nothing animates by itself and the room stays dark */
+.lite *, .lite *::before, .lite *::after { animation: none !important; transition: none !important; }
+.lite .scene, .lite #beatLight, .lite #motes, .lite .ripple, .lite .spark { display: none !important; }
 .dragsound .scrim { pointer-events: none; background: rgba(0,0,0,.2); }   /* a sound dragged from the library can reach the pads */
 .libdirname { font-family: var(--f-logo); font-weight: 400; font-size: 15px; color: var(--cream); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .drawer {
@@ -1888,7 +1891,7 @@ html.intro-on { overflow: hidden; }
               <h3>Luce col beat</h3><p class="cnote">Una luce colorata dietro lo strumento che si accende su ogni cassa. Lo strumento resta fermo, cambia solo la luce.</p>
               <div class="opts" id="cPulse"></div>
               <h4>Animazioni</h4><p class="cnote small">Pagine che scorrono, pezzi che si spostano quando cambi la disposizione, schede che entrano.</p><div class="opts" id="cMotion" style="margin-top:8px"></div>
-              <h4>Modalità leggera</h4><p class="cnote small">Per telefoni e computer lenti: il display e gli indicatori si ridisegnano la metà delle volte e senza bagliore, e gli effetti visivi a tempo restano spenti. Il suono non cambia. «Automatica» la accende da sola sui telefoni.</p><div class="opts" id="cLite" style="margin-top:8px"></div>
+              <h4>Modalità leggera · solo musica</h4><p class="cnote small">Per telefoni e computer lenti: via tutto quello che è solo da guardare (stanza, vista 3D, visualizzatore del display, aghi dei VU, bagliori, luce a tempo, scintille, animazioni). Restano pad, sequencer, tastiera, mix, voce e piatto; il suono non cambia. «Automatica» la accende da sola sui telefoni.</p><div class="opts" id="cLite" style="margin-top:8px"></div>
               <h4>Scia sui pad</h4><p class="cnote small">Un’onda di luce parte dal pad ogni volta che suona.</p><div class="opts" id="cRipple" style="margin-top:8px"></div>
               <h4>Effetti visivi a tempo</h4><p class="cnote small">Sopra e dietro lo strumento, a ritmo con la musica, e si possono combinare. Il tasto <b>FX</b> accanto allo schermo (o <kbd>J</kbd>) passa da un insieme all’altro.</p>
               <div class="opts" id="cVfxPre" style="margin-top:8px"></div>
@@ -6376,10 +6379,13 @@ function renderEditor() {
   lastNow = -2; renderPlayhead();
 }
 let lastNow = -2;
+let edStale = false;   // light mode: the grid of a page not on screen catches up when it comes back
 function renderPlayhead() {
   const now = playing ? shownStep : -1;
-  if (now === lastNow) return;
-  for (const c of edCells) { if (c.s === lastNow) c.el.classList.remove("now"); if (c.s === now) c.el.classList.add("now"); }
+  if (now === lastNow && !(edStale && curPage === "seq")) return;
+  if (LITE() && curPage !== "seq") edStale = true;
+  else if (edStale) { for (const c of edCells) c.el.classList.toggle("now", c.s === now); edStale = false; }
+  else for (const c of edCells) { if (c.s === lastNow) c.el.classList.remove("now"); if (c.s === now) c.el.classList.add("now"); }
   const leds = $("leds").children, base = edPage * pm().div;
   for (const l of leds) l.classList.remove("now");
   edCols.forEach((c, k) => c.classList.toggle("now", now >= 0 && now - base === k));
@@ -6712,7 +6718,7 @@ function readBins(idle) {
 }
 function drawSpec(idle) {
   if (!specCv) return;
-  readBins(idle);
+  if (!LITE()) readBins(idle);
   lcdBuf.fill(0); clipL = 0; clipR = LCD_W;
   // top bar: pattern in a lit box, transport, group, visualizer
   let tx = chipText("P" + String(state.pattern + 1).padStart(2, "0"), 4, 2, 2);
@@ -6738,8 +6744,9 @@ function drawSpec(idle) {
     for (let k = 0; k < 2; k++) { px(x0 + k, 64, now ? 2 : on ? 1 : 0); if (now) px(x0 + k, 63, 2); else if (on) px(x0 + k, 63, 1); }
   }
   // visualizer area: fixed size, only its contents move
-  const mode = (VIS[state.vis || 0] || VIS[0])[0], x0 = VX, y0 = VY, w = VW, h = VH;
-  if (VIS_MORE.has(mode)) drawVisMore(mode, idle);
+  const mode = LITE() ? "" : (VIS[state.vis || 0] || VIS[0])[0], x0 = VX, y0 = VY, w = VW, h = VH;
+  if (!mode) lcdText("SOLO MUSICA", x0 + Math.floor((w - 11 * 6) / 2), y0 + Math.floor(h / 2) - 3, 1, 1);   // light mode: the screen shows what matters, nothing dances
+  else if (VIS_MORE.has(mode)) drawVisMore(mode, idle);
   else if (mode === "spec") {
     for (let b = 0; b < 32; b++) {
       const top = Math.round(specBins[b] * (h - 1)), pk = Math.round(specPeak[b] * (h - 1)), bx = x0 + Math.floor(b * w / 32), bw = Math.floor(w / 32) - 1;
@@ -7867,7 +7874,8 @@ function applyCustom() {
   $("app").dataset.pad = C.pad;
   $("app").dataset.lcd = C.lcd;
   Object.assign($("app").dataset, { shape: C.shape, rack: C.rack, padside: C.padside, tabs: C.tabs, padshape: C.padshape });
-  document.documentElement.classList.toggle("lowmotion", C.motion === "ridotte");
+  document.documentElement.classList.toggle("lowmotion", C.motion === "ridotte" || LITE());
+  document.documentElement.classList.toggle("lite", LITE());
   if (C.pulse !== "si") $("beatLight").style.opacity = 0;
   const lt = LCD_TYPES.find(t => t[0] === C.lcd) || LCD_TYPES[0];
   $("lcdName").textContent = "Schermo · " + lt[1];
@@ -7930,10 +7938,10 @@ function tick() {
     while (kickAt.length && kickAt[0] <= now) { kickAt.shift(); kickGlow = 1; }
   }
   kickGlow *= 0.86; beatPulse *= 0.9;
-  if (state.custom.pulse === "si") { const v = Math.min(1, kickGlow) * 0.9; if (Math.abs(v - beatLightV) > 0.008) { $("beatLight").style.opacity = v.toFixed(3); beatLightV = v; } }
-  if (logoDot) logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
+  if (state.custom.pulse === "si" && !LITE()) { const v = Math.min(1, kickGlow) * 0.9; if (Math.abs(v - beatLightV) > 0.008) { $("beatLight").style.opacity = v.toFixed(3); beatLightV = v; } }
+  if (logoDot && !LITE()) logoDot.style.textShadow = kickGlow > 0.05 ? "0 0 " + Math.round(kickGlow * 18) + "px #ff9f2e" : "none";
   const full = !LITE() || (++tickN & 1) === 0;
-  if (full) { drawSpec(!ctx); if (!LITE() || (tickN & 3) === 0) drawVU(!ctx); drawDeck(false); if (D2.on && SB.on) onDeck2(() => drawDeck(false)); }
+  if (full) { drawSpec(!ctx); if (!LITE()) drawVU(!ctx); drawDeck(false); if (D2.on && SB.on) onDeck2(() => drawDeck(false)); }
   if ($("vidBox").hidden) drawVfx(performance.now()); else if (VX_ST.tf || $("vfxAdd").width || $("vfxBack").width || $("vfxInk").width) vfxClear();   // behind the video box the screen effects rest
   if (curPage === "voce") voiceLive();
   if (SB.on) sbTick();
@@ -8079,6 +8087,7 @@ function showPage(id) {
   if (id !== "cust" && !PAGES.some(p => p[0] === id)) id = "suona";
   curPage = id; $("openCust").classList.toggle("on", id === "cust");
   document.querySelectorAll(".page").forEach(pg => { pg.hidden = pg.dataset.page !== id; });
+  if (id === "seq" && edStale) renderPlayhead();
   [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.page === id));
   if (id !== "cust" && state.page !== id) { state.page = id; save(); }
   fitPages(); sizeCanvases(); placeTabGlow(); if (id === "mix") drawEq(); if (id === "suona") drawForm(); if (id === "seq") setTimeout(drawGroove, 50);
@@ -10979,7 +10988,7 @@ function buildPadColors() {
 const peakHold = [0, 0, 0, 0].map(() => ({ v: 0, t: 0 }));
 let meterN = 0;
 function meterGroupsLed() {
-  if (curPage !== "mix" || (LITE() && (++meterN & 1))) return;   // asking the layout every frame would cost a whole reflow
+  if (curPage !== "mix" || LITE()) return;   // asking the layout every frame would cost a whole reflow
   const now = ctx ? ctx.currentTime : 0, wall = performance.now();
   [...$("gstrips").children].forEach((g, i) => {
     let lv = 0;
@@ -11166,11 +11175,11 @@ const VIEWS = [
 ];
 const V3 = { cur: { rx: 0, ry: 0, rz: 0, s: 1, ty: 0 }, vel: { rx: 0, ry: 0, rz: 0, s: 0, ty: 0 }, par: [0, 0], aim: [0, 0], down: false, raf: 0, last: 0, hold: false };
 const can3d = () => matchMedia("(min-width: 901px) and (min-height: 600px)").matches;
-const viewId = () => can3d() && VIEWS.some(v => v[0] === state.custom.view) ? state.custom.view : "piatta";
+const viewId = () => !LITE() && can3d() && VIEWS.some(v => v[0] === state.custom.view) ? state.custom.view : "piatta";
 // phones and slow machines: the screens redraw every other frame, without glow, and the screen effects stay off
 const PHONE = matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
 const LITE = () => state.custom.lite === "si" || (state.custom.lite !== "no" && PHONE);
-const lowMotion = () => state.custom.motion === "ridotte" || matchMedia("(prefers-reduced-motion: reduce)").matches;
+const lowMotion = () => LITE() || state.custom.motion === "ridotte" || matchMedia("(prefers-reduced-motion: reduce)").matches;
 function setView(id, quiet) {
   state.custom.view = VIEWS.some(v => v[0] === id) ? id : "piatta"; save();
   applyView();
@@ -11490,7 +11499,7 @@ const ROOM_ANIM = {
 function sceneRoom() { const r = state.custom.room; return ROOM_PAINT[r] ? r : ""; }
 function paintScene() {
   const cv = $("scene"), room = sceneRoom();
-  if (!room) { cv.hidden = true; return; }
+  if (!room || LITE()) { cv.hidden = true; SCENE.base = null; return; }
   cv.hidden = false;
   const dpr = LITE() ? 1 : Math.min(1.5, DPR()), W = innerWidth, H = innerHeight;   // a background: on a phone its own pixels are enough
   if (SCENE.room === room && SCENE.w === W && SCENE.h === H && SCENE.dpr === dpr && SCENE.base) return;
