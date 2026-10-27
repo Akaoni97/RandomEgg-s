@@ -1384,6 +1384,53 @@ html.intro-on { overflow: hidden; }
   .app.boot .rack, .app.boot .tabs, .app.boot .page .unit { animation-name: fadeIn; }
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+/* a phone turned sideways: one thin strip on top (name, small screen, play, record, tempo, patterns, undo), the tabs, and the page
+   filling the rest; on the Suona page the pads on the left and the pad's panel on the right. Tap, swing, duplicate and clear stay upright */
+@media (orientation: landscape) and (max-height: 520px) {
+  body { margin: 0; height: 100vh; height: 100dvh; overflow: hidden; box-sizing: border-box; padding: 4px max(6px, env(safe-area-inset-right)) 4px max(6px, env(safe-area-inset-left)); }
+  .app { height: 100%; max-width: none; grid-template-rows: auto auto minmax(0, 1fr); gap: 4px; }
+  .app > .pages { min-height: 0; }
+  .app .page { height: 100%; overflow: auto; overscroll-behavior: contain; }
+  .unit { padding: 6px 8px; }
+  .unit.rack { display: flex !important; align-items: center; gap: 8px; padding: 4px 8px !important; }
+  .rack .skinart, .rack .stickers, .rack .badge, .logo .stripes, .logo small, .logo .skins, .logo .flipbtn, .rack .vus, .lcdhead, .rack .steps16,
+  .transport .row:has(#swing), #tap, #copy, #clear { display: none !important; }
+  .rack .logo { display: flex; align-items: center; gap: 6px; padding: 0; flex: none; }
+  .rack .logo b { font-size: 15px; }
+  .rack #openCust { padding: 4px 7px; font-size: 0; } .rack #openCust::before { content: "✎"; font-size: 12px; }
+  .rack .lcdwrap { flex: 1 1 auto; min-width: 110px; }
+  .rack .lcd { padding: 2px; }
+  .rack .lcd canvas { height: 42px; width: 100%; object-fit: contain; }
+  .rack .transport { display: flex !important; align-items: center; gap: 6px; flex: none; }
+  .rack .transport .row { display: flex; gap: 4px; align-items: center; flex-wrap: nowrap; }
+  .rack .bigkey { width: 38px; height: 32px; }
+  .rack .tempo b { font-size: 18px; min-width: 30px; text-align: center; }
+  .rack .key { padding: 4px 7px; }
+  .rack .pats { grid-template-columns: repeat(8, 22px); gap: 2px; }
+  .rack .pats button { height: 26px; font-size: 11px; }
+  .app > .tabs { padding: 2px; gap: 3px; }
+  .app > .tabs button { padding: 0 9px; font-size: 9px; height: 26px; min-height: 0; display: flex; align-items: center; justify-content: center; transform: none !important; }
+  .app .pg-suona { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) !important; height: 100%; align-items: stretch; gap: 6px; }
+  .pg-suona .padunit { display: grid; grid-template-rows: auto minmax(110px, 1fr); grid-auto-rows: auto; min-height: 0; overflow: auto; }
+  .pg-suona .padunit > .hd { gap: 4px; margin-bottom: 4px; flex-wrap: wrap; row-gap: 3px; }
+  .pg-suona .padunit > .hd .banks button { padding: 3px 6px; font-size: 9px; } .pg-suona .padunit > .hd .banks .nmfull { display: none; }
+  .pg-suona .padunit { min-width: 0; grid-template-columns: minmax(0, 1fr); }
+  .pg-suona .padunit > .hd #kitSel { flex: 1 1 0; width: 0; min-width: 0; max-width: 140px; font-size: 11px; padding: 3px 4px; }
+  .pg-suona .padunit > .hd > .seg { flex: none; margin-left: auto; }
+  .pg-suona .padunit > .hd .seg button { padding: 3px 7px; font-size: 9px; }
+  .pg-suona .pads { grid-template-rows: repeat(3, minmax(30px, 1fr)); gap: 4px; padding: 4px; }
+  .pg-suona .pad { aspect-ratio: auto !important; min-height: 0; padding: 4px 6px; overflow: hidden; }
+  .pg-suona .pad .sub, .pg-suona .pad .ky { display: none; }
+  .pg-suona .pad .nm { font-size: 11px; }
+  .pg-suona .col { overflow: auto; min-height: 0; }
+  .pg-suona .nrbar .hint, .pg-suona .scalebar .hint, .pg-suona .kbd .hint { display: none; }
+  .pg-suona .kbd { grid-template-rows: auto minmax(70px, 1fr); }
+  .pg-suona .kkeys { min-height: 70px; }
+}
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 720px) {
+  .rack .lcdwrap, .rack .logo b { display: none !important; }
+  .unit.rack { justify-content: space-between; }
+}
 </style>
 
 <div id="intro" hidden>
@@ -3630,7 +3677,7 @@ function mattoneLimiterModule() {
           const lk = v => -0.691 + 10 * Math.log10(Math.max(1e-12, v));
           const mean = k => { const b = this.blocks.slice(-k); return b.reduce((x, y) => x + y, 0) / b.length; };
           const m = lk(mean(4)), st = lk(mean(30));
-          if (m > -70) this.all.push(mean(4));
+          if (m > -70) { this.all.push(mean(4)); if (this.all.length > 18000) this.all.shift(); }   // the last half hour
           let integ = -70;
           if (this.all.length && (++this.k % 5 === 0 || this.all.length < 5)) {
             const avg = this.all.reduce((x, y) => x + y, 0) / this.all.length, gate = lk(avg) - 10;
@@ -3684,6 +3731,7 @@ function mattoneTuneModule() {
     }
     process(inputs, outputs) {
       const inp = inputs[0] && inputs[0][0], out = outputs[0][0], N = this.N, D = this.D;
+      if (!inp) { out.fill(0); this.q = -1; return true; }   // nothing plugged in (headphones off): no work at all
       for (let i = 0; i < out.length; i++) {
         this.buf[this.w % N] = inp ? inp[i] : 0; this.w++;
         if (++this.cnt >= this.hop) { this.cnt = 0; this.detect(); if (++this.say >= 8) { this.say = 0; this.port.postMessage({ m: this.m, t: this.t }); } }
@@ -3776,7 +3824,8 @@ function initAudio() {
   if (ctx) { if (ctx.state === "suspended") ctx.resume(); return true; }
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) { msg("QUESTO BROWSER NON HA L’AUDIO WEB"); return false; }
-  try { ctx = new AC({ latencyHint: 0 }); } catch (e) { try { ctx = new AC({ latencyHint: "interactive" }); } catch (e2) { ctx = new AC(); } }
+  // light mode (phones): a roomier buffer, so the sound never breaks
+  try { ctx = new AC({ latencyHint: LITE() ? "playback" : 0 }); } catch (e) { try { ctx = new AC({ latencyHint: "interactive" }); } catch (e2) { ctx = new AC(); } }
   SR = ctx.sampleRate;
   // voices -> bus (punch FX) -> master -> tape (wow, saturation, tone) -> soft limiter -> out (no look-ahead anywhere)
   N.bus = ctx.createGain();
@@ -3791,7 +3840,7 @@ function initAudio() {
   // master: glue compressor -> tape (wow, saturation with headroom, tone) -> push -> look-ahead limiter -> volume
   N.comp = ctx.createDynamicsCompressor(); N.comp.knee.value = 8; N.comp.attack.value = 0.012; N.comp.release.value = 0.18;
   N.satIn = ctx.createGain(); N.satIn.gain.value = 0.25;
-  N.sat = ctx.createWaveShaper(); N.sat.oversample = "4x";
+  N.sat = ctx.createWaveShaper(); N.sat.oversample = LITE() ? "2x" : "4x";
   N.tone = ctx.createBiquadFilter(); N.tone.type = "lowpass";
   N.clean = ctx.createBiquadFilter(); N.clean.type = "highpass"; N.clean.frequency.value = 22; N.clean.Q.value = 0.6;   // no sub rumble eating headroom
   N.drive = ctx.createGain();
@@ -3834,7 +3883,7 @@ function initAudio() {
   N.grp = BANKS.map((_, b) => [stripChain(N.bus, b), stripChain(N.duckV, b)]);
   initDeck();
   initStudio();
-  initVoice();
+  if (!LITE() || state.voice.takes.length) initVoice();   // on a phone the voice chain starts when the Voce page is opened
   applyMaster(); updateDelayTime();
   preloadBanks();
   return true;
@@ -4111,7 +4160,7 @@ function fillRiser(t0, barLen) {
   playBuffer(id, { sound: id, pitch: 0, vol: 0.55, pan: 0, rev: 0.2, gate: 0, st }, start, 0.9, 0, null);
 }
 function schedule() {
-  while (nextTime < ctx.currentTime + 0.1) {
+  while (nextTime < ctx.currentTime + (LITE() ? 0.25 : 0.1)) {
     const m = pm(), len = m.bars * m.div, cpb = m.div / 4;
     if (step >= len) step = 0;
     if (step % m.div === 0) { FILL = fillPlan(m); if (FILL && FILL.riser) fillRiser(nextTime, m.div * stepDur()); }
@@ -4916,6 +4965,8 @@ class DeckCore {
   }
   render(out, n, t0) {
     if (!this.buf) { out.fill(0); return; }
+    // a still record nobody touches is silent: nothing to compute
+    if (!this.motor && !this.touch && !this.auto && !this.go && !this.rec && Math.abs(this.rate) < 1e-4 && this.amp < 1e-5) { out.fill(0); return; }
     const buf = this.buf, L = this.L, sr = this.sr, step = this.bsr / sr, mstep = step * (1 + this.pitch / 100);
     let goal = this.motor ? 1 : 0; const kUp = 1 / (0.09 * sr), kDn = 1 / (0.45 * sr);
     const follow = 1 - Math.exp(-1 / (0.0035 * sr));
@@ -6496,7 +6547,7 @@ function renderAll() {
 const DPR = () => Math.min(2, window.devicePixelRatio || 1);
 let specCv, deckCv, deckBase = null, deckSize = 0;
 function sizeCanvases() {
-  specCv = $("spec"); deckCv = $("deck"); vuKey.L = vuKey.R = "";
+  specCv = $("spec"); deckCv = $("deck"); vuKey.L = vuKey.R = ""; lcdLast = "";   // setting a canvas size clears it: draw again
   const r = { width: specCv.clientWidth }, k = Math.max(2, Math.round(r.width * (LITE() ? 1 : DPR()) / LCD_W));   // whole device pixels per dot (layout size: right also in 3D)
   specCv.width = LCD_W * k; specCv.height = LCD_H * k;
   const size = Math.max(1, Math.round(Math.min(deckCv.clientWidth, deckCv.clientHeight) * DPR()));
@@ -8091,7 +8142,7 @@ function showPage(id) {
   [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.page === id));
   if (id !== "cust" && state.page !== id) { state.page = id; save(); }
   fitPages(); sizeCanvases(); placeTabGlow(); if (id === "mix") drawEq(); if (id === "suona") drawForm(); if (id === "seq") setTimeout(drawGroove, 50);
-  if (id === "voce") { if (state.voice.takes.length && !ctx && navigator.userActivation && navigator.userActivation.isActive) initAudio(); voiceRender(); } else if (VO.stream) voiceMicClose();
+  if (id === "voce") { voiceEnsure(); if (state.voice.takes.length && !ctx && navigator.userActivation && navigator.userActivation.isActive) initAudio(); voiceRender(); } else if (VO.stream) voiceMicClose();
 }
 // the LED under the tabs glides to the page you pick
 function placeTabGlow() {
@@ -9457,7 +9508,7 @@ const ECHO_DEF = { time: "8d", fb: 0.4, tone: 0.45, wear: 0.35, ret: 0.8 }, REV_
 // impulse responses made on the spot: a room, a spring tank that drips and boings, a bright dense plate, a small dark cellar
 function makeImpulse(type) {
   const spec = { stanza: [1.7, 3.0, 0.014, 7000], piastra: [2.9, 2.3, 0.004, 11000], cantina: [0.75, 2.4, 0.005, 2800], molla: [2.3, 2.1, 0.008, 5200] }[type] || [1.7, 3, 0.014, 7000];
-  const [sec, curve, pre, lp] = spec, n = Math.floor(SR * sec), b = ctx.createBuffer(2, n, SR), p0 = Math.floor(SR * pre);
+  const [sec0, curve, pre, lp] = spec, sec = LITE() ? Math.min(sec0, 1.2) : sec0, n = Math.floor(SR * sec), b = ctx.createBuffer(2, n, SR), p0 = Math.floor(SR * pre);
   for (let c = 0; c < 2; c++) {
     const d = b.getChannelData(c); let y = 0;
     for (let i = p0; i < n; i++) {
@@ -9707,7 +9758,7 @@ function voicePlaySel() {
   if (when < now) { off = now - when; when = now; if (s.loop) off %= s.loopEnd; else if (off >= buf.duration) return; }
   s.start(when, off); VO.play = s; VO.playG = g;
 }
-function voiceOnStart() { if (!VO.rec) VO.skip = 0; if (VO.rec && !VO.rec.punch) return; voicePlaySel(); }
+function voiceOnStart() { if (state.voice.takes.length) voiceEnsure(); if (!VO.rec) VO.skip = 0; if (VO.rec && !VO.rec.punch) return; voicePlaySel(); }
 function voiceOnStop() { voiceStopPlay(); if (VO.rec) voiceRecFinish(); }
 
 /* ---------- the microphone ---------- */
@@ -9724,6 +9775,7 @@ function voiceDevices() {
 function voiceMicOpen() {
   if (VO.stream) return Promise.resolve(true);
   if (!initAudio()) return Promise.resolve(false);
+  voiceEnsure();
   const md = navigator.mediaDevices;
   if (!md || !md.getUserMedia) { voiceStatus("Questo browser non può usare il microfono: registra col telefono e usa «Carica una voce».", true); return Promise.resolve(false); }
   voiceStatus("Chiedo il permesso del microfono…");
@@ -9776,9 +9828,11 @@ function voiceTuneSeen(d) {
 }
 
 /* ---------- recording: a new take, or one part of a take again ---------- */
+function voiceEnsure() { if (ctx && !VO.ready) initVoice(); }
 function voiceRec(punch) {
   if (VO.rec) { voiceRecFinish(); return; }
   if (!initAudio()) return;
+  voiceEnsure();
   const take = punch ? vTake() : null;
   if (punch) {
     if (!take || !VO.sel) { voiceStatus("Prima trascina sulla forma d’onda le battute da rifare.", true); return; }
@@ -9875,6 +9929,7 @@ function voiceDelete(id) {
 function voiceSoloStop() { if (VO.solo) { try { VO.solo.s.stop(); } catch (e) { /* ended */ } VO.solo = null; voiceRender(); } }
 function voiceSolo(id) {
   if (!initAudio()) return;
+  voiceEnsure();
   if (VO.solo && VO.solo.id === id) { voiceSoloStop(); return; }
   voiceSoloStop();
   const buf = voiceBufOf(id); if (!buf) return;
