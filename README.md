@@ -6,6 +6,10 @@ appunti, ordini, calendario, storico. Tutto in italiano, usabile da PC e da tele
 
 Tutti i dati sono **dimostrativi e inventati** (lotti `DEMO-…`).
 
+## Anche nel repository
+
+`motori/` contiene il **Banco Suono 2JZ**, simulatore del suono del motore della Toyota Supra: vedi `motori/README.md`.
+
 ## Avvio rapido
 
 Serve **Node.js 22.5 o successivo**. Il progetto non ha dipendenze da installare.

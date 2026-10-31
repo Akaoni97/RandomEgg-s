@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Banco Suono 2JZ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: quadro strumenti a tutta larghezza, sotto la consolle (guida · cambio · preparazione), poi telemetria e note. */
+:root {
+  color-scheme: dark;
+  --bg: #0a0b0d;
+  --bg-2: #101216;
+  --panel: #15181d;
+  --panel-2: #1b1f25;
+  --line: #2a2f37;
+  --fg: #ebe7dc;
+  --muted: #8f949c;
+  --dial: #f3eee2;
+  --amber: #ffa53a;
+  --needle: #ff5a1f;
+  --ok: #3fd27f;
+  --warn: #ffc93d;
+  --crit: #ff3d2e;
+  --info: #5aa8ff;
+  --f-display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --f-data: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--f-body);
+  background-image: radial-gradient(1200px 500px at 50% -120px, #1a1d23 0%, transparent 70%);
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+.wrap {
+  max-width: 1320px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px;
+  display: grid; gap: 16px;
+}
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.badge {
+  font: 700 15px/1 var(--f-display); letter-spacing: .12em; padding: 9px 11px 8px; border-radius: 6px;
+  color: #120a05; background: linear-gradient(180deg, #ffb760, #ff7a2a); box-shadow: 0 0 0 1px #000 inset;
+}
+h1 { margin: 0; font: 700 clamp(24px, 3.4vw, 34px)/1 var(--f-display); letter-spacing: .02em; text-wrap: balance; }
+.brand p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+.audio-state {
+  font: 600 12px/1 var(--f-data); letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; display: flex; gap: 8px; align-items: center;
+}
+.audio-state i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.audio-state.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.audio-state.on { color: var(--fg); }
+
+/* ---- quadro strumenti ---- */
+.cluster {
+  position: relative; border-radius: 22px; padding: 14px 14px 12px;
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.018) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.25) 0 2px, transparent 2px 4px),
+    linear-gradient(180deg, #121418, #08090b);
+  box-shadow: 0 0 0 1px #000, 0 0 0 2px #23272e, 0 24px 60px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05);
+  display: grid; gap: 10px;
+}
+.shiftlights { display: flex; justify-content: center; gap: 6px; padding-top: 2px; }
+.shiftlights i {
+  width: clamp(14px, 3.2vw, 34px); height: 8px; border-radius: 3px; background: #1d2026;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.6); transition: background .04s;
+}
+.shiftlights i.on.lg { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+.shiftlights i.on.ly { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+.shiftlights i.on.lr { background: var(--crit); box-shadow: 0 0 12px var(--crit); }
+#gauges { width: 100%; display: block; }
+.msg {
+  position: absolute; left: 50%; top: 34px; transform: translateX(-50%); max-width: calc(100% - 32px);
+  font: 600 13px/1.3 var(--f-data); letter-spacing: .03em; color: #120a05; background: var(--amber);
+  padding: 7px 12px; border-radius: 6px; text-align: center; opacity: 0; transition: opacity .25s; pointer-events: none;
+}
+.msg.show { opacity: 1; }
+.lamps { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.lamp {
+  font: 600 11px/1 var(--f-data); letter-spacing: .08em; padding: 5px 8px; border-radius: 4px;
+  color: #3a3f47; border: 1px solid #22262c; background: #0d0f12;
+}
+.lamp.on.red { color: #ffe1dc; background: #6d140d; border-color: var(--crit); box-shadow: 0 0 10px rgba(255,61,46,.45); }
+.lamp.on.amb { color: #1a0f02; background: var(--amber); border-color: var(--amber); box-shadow: 0 0 10px rgba(255,165,58,.45); }
+.lamp.on.grn { color: #04150b; background: var(--ok); border-color: var(--ok); }
+.lamp.on.blu { color: #031021; background: var(--info); border-color: var(--info); }
+.pods { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.pod { background: #0c0e11; border: 1px solid #1f2329; border-radius: 8px; padding: 8px 10px 9px; min-width: 0; }
+.pod b { display: block; font: 600 10.5px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.pod span { display: block; font: 600 22px/1.15 var(--f-display); color: var(--dial); font-variant-numeric: tabular-nums; margin-top: 3px; }
+.pod span small { font-size: 12px; color: var(--muted); margin-left: 3px; }
+.pod .bar { height: 4px; background: #1d2127; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+.pod .bar i { display: block; height: 100%; width: 0; background: var(--amber); border-radius: 2px; }
+.cluster.off .pod span { color: #474c54; }
+
+/* ---- consolle ---- */
+.deck { display: grid; grid-template-columns: 1.15fr 1fr 1.25fr; gap: 16px; align-items: start; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; display: grid; gap: 14px; }
+.panel h2 { margin: 0; font: 600 13px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.panel h2 em { font-style: normal; color: var(--amber); }
+
+.keyrow { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; }
+.kbtn {
+  border: 1px solid var(--line); background: var(--panel-2); border-radius: 8px; padding: 10px 8px;
+  font: 700 14px/1.1 var(--f-display); letter-spacing: .08em; text-transform: uppercase; text-align: center;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+.kbtn small { display: block; font: 500 11px/1.2 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--muted); margin-top: 3px; }
+.kbtn:hover { border-color: #3a404a; }
+.kbtn.lit { border-color: var(--amber); color: var(--amber); }
+.start {
+  background: radial-gradient(circle at 50% 35%, #3a1a10, #1a0d08); border-color: #5b2a18; color: #ffd6c2;
+}
+.start.on { background: radial-gradient(circle at 50% 35%, #c2410f, #6a1f07); color: #fff; border-color: var(--needle); box-shadow: 0 0 18px rgba(255,90,31,.45); }
+
+.pedals { display: grid; grid-template-columns: 0.9fr 1.1fr 1fr; gap: 10px; align-items: end; }
+.pedal {
+  position: relative; height: 150px; border-radius: 8px 8px 12px 12px; border: 1px solid var(--line);
+  background:
+    repeating-linear-gradient(0deg, transparent 0 9px, rgba(255,255,255,.05) 9px 11px),
+    #0e1013;
+  overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.pedal.gas { height: 170px; }
+.pedal .fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, rgba(255,90,31,.85), rgba(255,165,58,.55)); }
+.pedal.brake .fill { background: linear-gradient(0deg, rgba(255,61,46,.85), rgba(255,61,46,.4)); }
+.pedal.clutch .fill { background: linear-gradient(0deg, rgba(90,168,255,.8), rgba(90,168,255,.35)); }
+.pedal label { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font: 700 13px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; pointer-events: none; }
+.pedal output { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font: 600 13px/1 var(--f-data); pointer-events: none; font-variant-numeric: tabular-nums; }
+.pedal kbd { position: absolute; left: 0; right: 0; top: 26px; text-align: center; pointer-events: none; }
+.pedal.disabled { opacity: .45; }
+kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 2px 5px; background: #0e1013; }
+.hint { margin: 0; color: var(--muted); font-size: 13px; }
+
+.gate-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, auto); gap: 8px; }
+.g {
+  border: 1px solid var(--line); background: var(--panel-2); border-radius: 8px; padding: 12px 0;
+  font: 700 22px/1 var(--f-display); text-align: center; touch-action: manipulation;
+}
+.g:hover { border-color: #3a404a; }
+.g.cur { background: var(--amber); color: #1a0f02; border-color: var(--amber); box-shadow: 0 0 14px rgba(255,165,58,.4); }
+.g.n { grid-column: 1 / -1; font-size: 15px; padding: 7px 0; letter-spacing: .2em; }
+.g.r { color: var(--crit); }
+.g.r.cur { color: #fff; background: var(--crit); border-color: var(--crit); }
+.g.blank { visibility: hidden; }
+.seq { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.seq .kbtn { font-size: 18px; padding: 12px 8px; }
+.ratio { font: 500 13px/1.4 var(--f-data); color: var(--muted); font-variant-numeric: tabular-nums; }
+.ratio b { color: var(--fg); font-weight: 600; }
+
+.field { display: grid; gap: 6px; }
+.field > span { font: 600 11px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; background: #0e1013; border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
+.seg button { flex: 1 1 0; min-width: max-content; border: 0; background: transparent; border-radius: 6px; padding: 7px 9px; font-weight: 500; font-size: 13.5px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--fg); box-shadow: 0 0 0 1px #3a404a inset, 0 -2px 0 var(--amber) inset; }
+.toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+.tg { display: flex; align-items: center; gap: 9px; font-size: 14px; cursor: pointer; min-width: 0; }
+.tg input { appearance: none; -webkit-appearance: none; width: 34px; height: 20px; border-radius: 10px; background: #2a2f37; position: relative; flex: none; margin: 0; cursor: pointer; transition: background .15s; }
+.tg input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #c9c5bb; transition: transform .15s; }
+.tg input:checked { background: var(--needle); }
+.tg input:checked::after { transform: translateX(14px); background: #fff; }
+.vol { display: flex; align-items: center; gap: 10px; }
+.vol input[type=range] { flex: 1; accent-color: var(--needle); min-width: 0; }
+.vol output { font: 600 13px/1 var(--f-data); width: 3.5ch; text-align: right; }
+
+/* ---- telemetria ---- */
+.tele { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.t { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; min-width: 0; }
+.t b { display: block; font: 600 11px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.t span { display: block; font: 600 28px/1.1 var(--f-display); font-variant-numeric: tabular-nums; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t span small { font-size: 14px; color: var(--muted); margin-left: 3px; }
+.t p { margin: 3px 0 0; font: 500 12px/1.3 var(--f-data); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.notes { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+.notes .panel { gap: 10px; }
+.notes p, .notes li { color: #c9c5bb; font-size: 14.5px; max-width: 68ch; }
+.notes p { margin: 0; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 7px 12px; align-items: center; font-size: 14px; color: #c9c5bb; }
+.keys div:nth-child(odd) { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* ---- schermata iniziale ---- */
+.gate {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+  padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(5,6,8,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.gate .card { max-width: 440px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; gap: 14px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+.gate h2 { margin: 0; font: 700 28px/1.05 var(--f-display); letter-spacing: .02em; }
+.gate p { margin: 0; color: #c9c5bb; }
+.gate .go { background: linear-gradient(180deg, #ff7a2a, #e14b12); color: #fff; border: 0; border-radius: 10px; padding: 14px; font: 700 18px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; }
+.gate small { color: var(--muted); }
+
+@media (max-width: 1080px) {
+  .deck { grid-template-columns: 1fr 1fr; }
+  .deck .setup { grid-column: 1 / -1; }
+  .tele { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pods { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .deck, .notes { grid-template-columns: 1fr; }
+  .tele { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .toggles { grid-template-columns: 1fr; }
+  .cluster { padding: 10px 8px; border-radius: 16px; }
+  .msg { top: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="badge">2JZ-GTE</span>
+      <div>
+        <h1>Banco Suono 2JZ</h1>
+        <p>Toyota Supra RZ · JZA80 · 3.0 L sei in linea biturbo · cambio Getrag V160 a 6 marce</p>
+      </div>
+    </div>
+    <div class="audio-state" id="audioState"><i></i><span>Audio spento</span></div>
+  </header>
+
+  <section class="cluster off" id="cluster" aria-label="Quadro strumenti">
+    <div class="shiftlights" id="shiftlights" aria-hidden="true"></div>
+    <canvas id="gauges" role="img" aria-label="Contagiri, tachimetro e manometro della pressione turbo"></canvas>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <div class="lamps" id="lamps">
+      <span class="lamp red" data-l="check">CHECK</span>
+      <span class="lamp red" data-l="batt">BATT</span>
+      <span class="lamp red" data-l="oil">OIL</span>
+      <span class="lamp grn" data-l="t2">TURBO 2</span>
+      <span class="lamp blu" data-l="launch">LAUNCH</span>
+      <span class="lamp amb" data-l="cut">LIMITATORE</span>
+    </div>
+    <div class="pods">
+      <div class="pod"><b>Olio</b><span id="pOilT">—</span><div class="bar"><i id="bOilT"></i></div></div>
+      <div class="pod"><b>Acqua</b><span id="pWat">—</span><div class="bar"><i id="bWat"></i></div></div>
+      <div class="pod"><b>Press. olio</b><span id="pOilP">—</span><div class="bar"><i id="bOilP"></i></div></div>
+      <div class="pod"><b>AFR</b><span id="pAfr">—</span><div class="bar"><i id="bAfr"></i></div></div>
+      <div class="pod"><b>Batteria</b><span id="pVolt">—</span><div class="bar"><i id="bVolt"></i></div></div>
+      <div class="pod"><b>Benzina</b><span id="pFuel">—</span><div class="bar"><i id="bFuel"></i></div></div>
+    </div>
+  </section>
+
+  <section class="deck">
+    <div class="panel drive">
+      <h2>Guida <em id="engState">motore spento</em></h2>
+      <div class="keyrow">
+        <button class="kbtn" id="btnIgn" type="button">Quadro<small>tasto I</small></button>
+        <button class="kbtn start" id="btnStart" type="button">Avviamento<small>tieni premuto · Invio</small></button>
+        <button class="kbtn" id="btnOff" type="button">Spegni<small>tasto O</small></button>
+      </div>
+      <div class="pedals">
+        <div class="pedal clutch" id="pedClutch" data-p="clutch"><label>Frizione</label><kbd>Spazio</kbd><div class="fill"></div><output>0%</output></div>
+        <div class="pedal brake" id="pedBrake" data-p="brake"><label>Freno</label><kbd>S ↓</kbd><div class="fill"></div><output>0%</output></div>
+        <div class="pedal gas" id="pedGas" data-p="thr"><label>Gas</label><kbd>W ↑</kbd><div class="fill"></div><output>0%</output></div>
+      </div>
+      <p class="hint" id="pedHint">Tocca e trascina un pedale per dosarlo. Più in alto premi, più affondi.</p>
+    </div>
+
+    <div class="panel gearbox">
+      <h2>Cambio <em id="gearName">folle</em></h2>
+      <div class="gate-grid" id="gateGrid">
+        <button class="g r" data-g="-1" type="button" aria-label="Retromarcia">R</button>
+        <button class="g" data-g="1" type="button">1</button>
+        <button class="g" data-g="3" type="button">3</button>
+        <button class="g" data-g="5" type="button">5</button>
+        <button class="g n" data-g="0" type="button">FOLLE</button>
+        <span class="g blank"></span>
+        <button class="g" data-g="2" type="button">2</button>
+        <button class="g" data-g="4" type="button">4</button>
+        <button class="g" data-g="6" type="button">6</button>
+      </div>
+      <div class="seq">
+        <button class="kbtn" id="btnDown" type="button">− Scala<small>Q · ←</small></button>
+        <button class="kbtn" id="btnUp" type="button">+ Sali<small>E · →</small></button>
+      </div>
+      <div class="ratio" id="ratio">Rapporti: 3,827 · 2,360 · 1,685 · 1,312 · 1,000 · 0,793 · finale 3,133</div>
+    </div>
+
+    <div class="panel setup">
+      <h2>Preparazione <em id="cfgName">originale</em></h2>
+      <div class="field"><span>Turbo</span>
+        <div class="seg" data-k="turbo">
+          <button type="button" data-v="twin">Biturbo sequenziale</button>
+          <button type="button" data-v="single">Single turbo 1,4 bar</button>
+        </div>
+      </div>
+      <div class="field"><span>Scarico</span>
+        <div class="seg" data-k="exhaust">
+          <button type="button" data-v="0">Originale</button>
+          <button type="button" data-v="1">Sportivo</button>
+          <button type="button" data-v="2">Straight pipe</button>
+        </div>
+      </div>
+      <div class="field"><span>Valvola pop-off</span>
+        <div class="seg" data-k="valve">
+          <button type="button" data-v="recirc">Ricircolo</button>
+          <button type="button" data-v="bov">Blow-off</button>
+          <button type="button" data-v="flutter">Nessuna (flutter)</button>
+        </div>
+      </div>
+      <div class="field"><span>Ascolto</span>
+        <div class="seg" data-k="view">
+          <button type="button" data-v="0">Abitacolo</button>
+          <button type="button" data-v="1">Esterno</button>
+          <button type="button" data-v="2">Vano motore</button>
+        </div>
+      </div>
+      <div class="toggles">
+        <label class="tg"><input type="checkbox" id="tAuto">Frizione automatica</label>
+        <label class="tg"><input type="checkbox" id="tRev">Doppietta in scalata</label>
+        <label class="tg"><input type="checkbox" id="tPops">Mappa pop &amp; bang</label>
+        <label class="tg"><input type="checkbox" id="tLaunch">Launch control 4300</label>
+      </div>
+      <div class="field"><span>Volume</span>
+        <div class="vol"><input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"><output id="volOut">80</output></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tele" aria-label="Telemetria">
+    <div class="t"><b>Coppia</b><span id="tTq">0<small>Nm</small></span><p id="tTqMax">picco —</p></div>
+    <div class="t"><b>Potenza</b><span id="tPw">0<small>CV</small></span><p id="tPwMax">picco —</p></div>
+    <div class="t"><b>Farfalla</b><span id="tThr">0<small>%</small></span><p id="tMap">collettore — bar</p></div>
+    <div class="t"><b>Slittamento</b><span id="tSlip">0<small>%</small></span><p id="tWheel">ruote 0 km/h</p></div>
+    <div class="t"><b>0–100 km/h</b><span id="t100">—</span><p id="t100b">migliore —</p></div>
+    <div class="t"><b>400 m</b><span id="t400">—</span><p id="t400b">migliore —</p></div>
+  </section>
+
+  <section class="notes">
+    <div class="panel">
+      <h2>Come nasce il suono</h2>
+      <p>Non ci sono registrazioni: ogni scoppio è calcolato in tempo reale sull'angolo di manovella, campione per campione (44 100 o 48 000 volte al secondo). I sei cilindri scoppiano nell'ordine 1‑5‑3‑6‑2‑4, uno ogni 120°. Il loro impulso di scarico attraversa il collettore (ghisa 3+3 di serie o tubolare 6‑1 col single), la turbina che lo smorza, un tubo che risuona a quarto d'onda e il silenziatore scelto.</p>
+      <ul>
+        <li>Variazioni ciclo per ciclo e piccole differenze tra cilindri: il minimo "respira" come un motore vero.</li>
+        <li>Biturbo sequenziale: il secondo turbo entra verso 4000 giri, si sente il cambio di fischio.</li>
+        <li>Rilascio con boost: soffio del blow-off, sussurro del ricircolo o "stu-tu-tu" del compressore in pompaggio.</li>
+        <li>Limitatore, 2‑step e mappa pop &amp; bang fanno esplodere il carburante incombusto nello scarico.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Comandi</h2>
+      <div class="keys">
+        <div><kbd>I</kbd></div><div>Quadro acceso / spento</div>
+        <div><kbd>Invio</kbd></div><div>Avviamento (tieni premuto)</div>
+        <div><kbd>W</kbd><kbd>↑</kbd></div><div>Acceleratore</div>
+        <div><kbd>S</kbd><kbd>↓</kbd></div><div>Freno</div>
+        <div><kbd>Spazio</kbd></div><div>Frizione (modo manuale)</div>
+        <div><kbd>E</kbd><kbd>→</kbd> <kbd>Q</kbd><kbd>←</kbd></div><div>Sali / scala marcia</div>
+        <div><kbd>1</kbd>–<kbd>6</kbd> <kbd>N</kbd> <kbd>R</kbd></div><div>Marcia diretta, folle, retromarcia</div>
+        <div><kbd>V</kbd> <kbd>L</kbd> <kbd>M</kbd></div><div>Ascolto · launch control · muto</div>
+        <div><kbd>Pad</kbd></div><div>RT gas, LT freno, A/X marce, B frizione, Y avviamento</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="gate" id="gate">
+  <div class="card">
+    <h2>Sali a bordo</h2>
+    <p>Il motore suona solo dopo un tuo tocco: il browser blocca l'audio finché non interagisci con la pagina.</p>
+    <p>Poi gira la chiave: <kbd>I</kbd> per il quadro e <kbd>Invio</kbd> tenuto premuto per l'avviamento. Meglio con le cuffie.</p>
+    <button class="go" id="goBtn" type="button">Accendi l'audio</button>
+    <small>Partenza in folle, frizione automatica attiva.</small>
+  </div>
+</div>
+
+<script src="dsp.js"></script>
+<script src="sim.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
+  const fmt = (x, d = 0) => x.toLocaleString('it-IT', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const sim = new SupraSim();
+  const S = { turbo: 'twin', exhaust: 1, valve: 'bov', pops: false, launch: false, autoClutch: true, revMatch: true, view: 0, vol: 80, muted: false };
+  try { Object.assign(S, JSON.parse(localStorage.getItem('banco2jz') || '{}')); } catch (e) { /* storage non disponibile */ }
+
+  // ---------------------------------------------------------------- audio
+  const audio = { ctx: null, send: () => {}, ready: false, starting: null };
+  function dspCfg() {
+    return { turbo: S.turbo === 'twin' ? 0 : 1, exhaust: +S.exhaust, valve: { recirc: 0, bov: 1, flutter: 2 }[S.valve],
+      pops: S.pops ? 1 : 0, view: +S.view, vol: S.muted ? 0 : S.vol / 100 };
+  }
+  function ensureAudio() {
+    if (audio.ctx) { if (audio.ctx.state !== 'running') audio.ctx.resume(); return audio.starting; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { flash('Questo browser non supporta Web Audio'); return null; }
+    const ctx = new AC({ latencyHint: 'interactive' });
+    audio.ctx = ctx;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -8; comp.knee.value = 6; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.12;
+    comp.connect(ctx.destination);
+    const fallback = () => {
+      const dsp = new EngineDSP(ctx.sampleRate);
+      const node = ctx.createScriptProcessor(1024, 1, 2);
+      node.onaudioprocess = (ev) => { const b = ev.outputBuffer; dsp.render(b.getChannelData(0), b.getChannelData(1), b.length); };
+      node.connect(comp);
+      audio.send = (m) => dsp.msg(m);
+    };
+    const src = BQ.toString() + '\n' + EngineDSP.toString() + `
+      class P extends AudioWorkletProcessor {
+        constructor() { super(); this.d = new EngineDSP(sampleRate); this.port.onmessage = (e) => this.d.msg(e.data); }
+        process(i, o) { const out = o[0]; this.d.render(out[0], out[1] || out[0], out[0].length); return true; }
+      }
+      registerProcessor('motore-2jz', P);`;
+    audio.starting = (async () => {
+      try {
+        if (!ctx.audioWorklet) throw new Error('no worklet');
+        try { await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([src], { type: 'application/javascript' }))); }
+        catch (e1) { await ctx.audioWorklet.addModule('data:application/javascript;charset=utf-8,' + encodeURIComponent(src)); }
+        const node = new AudioWorkletNode(ctx, 'motore-2jz', { numberOfInputs: 0, outputChannelCount: [2] });
+        node.connect(comp);
+        audio.send = (m) => node.port.postMessage(m);
+      } catch (e) { console.warn("AudioWorklet non disponibile, uso ScriptProcessor:", e && e.message); fallback(); }
+      audio.ready = true;
+      audio.send({ cfg: dspCfg() });
+      if (ctx.state !== 'running') await ctx.resume();
+      $('audioState').classList.add('on');
+      $('audioState').querySelector('span').textContent = 'Audio attivo · ' + (ctx.sampleRate / 1000) + ' kHz';
+    })();
+    return audio.starting;
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!audio.ctx) return;
+    if (document.hidden) audio.ctx.suspend(); else audio.ctx.resume();
+  });
+
+  // ---------------------------------------------------------------- messaggi
+  let msgT = 0;
+  function flash(text, sec = 2.2) { const m = $('msg'); m.textContent = text; m.classList.add('show'); msgT = sec; }
+
+  // ---------------------------------------------------------------- impostazioni
+  function applySettings() {
+    Object.assign(sim.cfg, { turbo: S.turbo, valve: S.valve, pops: S.pops, launch: S.launch, autoClutch: S.autoClutch, revMatch: S.revMatch });
+    if (!S.autoClutch) sim.lock = false;
+    audio.send({ cfg: dspCfg() });
+    document.querySelectorAll('.seg').forEach((seg) => {
+      const k = seg.dataset.k;
+      seg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v) === String(S[k])));
+    });
+    $('tAuto').checked = S.autoClutch; $('tRev').checked = S.revMatch; $('tPops').checked = S.pops; $('tLaunch').checked = S.launch;
+    $('tRev').disabled = !S.autoClutch;
+    $('vol').value = S.vol; $('volOut').textContent = S.muted ? 'muto' : S.vol;
+    $('pedClutch').classList.toggle('disabled', S.autoClutch);
+    $('pedHint').textContent = S.autoClutch
+      ? 'Frizione automatica: cambia con E/Q. Tocca e trascina un pedale per dosarlo.'
+      : 'Frizione manuale: tienila giù (Spazio) per cambiare e per partire, poi rilasciala dando gas.';
+    const tuned = S.turbo !== 'twin' || +S.exhaust !== 0 || S.valve !== 'recirc' || S.pops;
+    $('cfgName').textContent = tuned ? (S.turbo === 'single' ? 'single turbo' : 'elaborata') : 'originale';
+    try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (e) { /* ignora */ }
+  }
+  document.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    const k = seg.dataset.k, v = b.dataset.v;
+    S[k] = (k === 'exhaust' || k === 'view') ? +v : v;
+    applySettings();
+  }));
+  $('tAuto').addEventListener('change', (e) => { S.autoClutch = e.target.checked; applySettings(); });
+  $('tRev').addEventListener('change', (e) => { S.revMatch = e.target.checked; applySettings(); });
+  $('tPops').addEventListener('change', (e) => { S.pops = e.target.checked; applySettings(); });
+  $('tLaunch').addEventListener('change', (e) => { S.launch = e.target.checked; applySettings(); if (S.launch) flash(S.autoClutch ? 'Launch: in 1ª tieni il freno, gas a fondo, poi molla il freno' : 'Launch: frizione giù, gas a fondo, poi rilascia la frizione'); });
+  $('vol').addEventListener('input', (e) => { S.vol = +e.target.value; S.muted = false; applySettings(); });
+
+  // ---------------------------------------------------------------- comandi
+  const keys = new Set();
+  const inp = { thr: 0, brake: 0, clutch: 0, touch: { thr: null, brake: null, clutch: null }, pad: { thr: 0, brake: 0, clutch: 0 } };
+  const GEAR_NAMES = { '-1': 'retromarcia', 0: 'folle', 1: 'prima', 2: 'seconda', 3: 'terza', 4: 'quarta', 5: 'quinta', 6: 'sesta' };
+
+  function shiftTo(g) {
+    ensureAudio();
+    const before = sim.gear;
+    const ok = sim.shift(g);
+    if (!ok && g !== before && !sim.shiftSeq) {
+      if (g === -1 && Math.abs(sim.v) > 1.2) flash('Retromarcia solo da fermo');
+      else if (!S.autoClutch) flash('Grattata! Premi la frizione (Spazio) per cambiare');
+    }
+  }
+  const shiftUp = () => { const g = sim.shiftSeq ? sim.shiftSeq.target : sim.gear; if (g < 6) shiftTo(g === -1 ? 0 : g + 1); };
+  const shiftDown = () => { const g = sim.shiftSeq ? sim.shiftSeq.target : sim.gear; if (g > 0) shiftTo(g - 1); };
+
+  function ignToggle() { ensureAudio(); sim.setIgnition(!sim.ign); }
+  function startOn() { ensureAudio(); if (sim.running) return; sim.setStarter(true); $('btnStart').classList.add('on'); }
+  function startOff() { sim.setStarter(false); $('btnStart').classList.remove('on'); }
+  function engineOff() { sim.setIgnition(false); startOff(); }
+
+  $('btnIgn').addEventListener('click', ignToggle);
+  $('btnOff').addEventListener('click', engineOff);
+  const bs = $('btnStart');
+  bs.addEventListener('pointerdown', (e) => { e.preventDefault(); bs.setPointerCapture(e.pointerId); startOn(); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((t) => bs.addEventListener(t, startOff));
+  bs.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); startOn(); } });
+  bs.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') { e.stopPropagation(); startOff(); } });
+  $('btnUp').addEventListener('click', shiftUp);
+  $('btnDown').addEventListener('click', shiftDown);
+  $('gateGrid').addEventListener('click', (e) => { const b = e.target.closest('[data-g]'); if (b) shiftTo(+b.dataset.g); });
+
+  document.querySelectorAll('.pedal').forEach((el) => {
+    const p = el.dataset.p;
+    const set = (e) => { const r = el.getBoundingClientRect(); inp.touch[p] = clamp(1 - (e.clientY - r.top - 18) / (r.height - 36), 0, 1); };
+    el.addEventListener('pointerdown', (e) => { if (p === 'clutch' && S.autoClutch) return; ensureAudio(); el.setPointerCapture(e.pointerId); set(e); });
+    el.addEventListener('pointermove', (e) => { if (inp.touch[p] !== null) set(e); });
+    const up = () => { inp.touch[p] = null; };
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
+  });
+
+  const KEYMAP = { arrowup: 'w', arrowdown: 's', arrowright: 'e', arrowleft: 'q' };
+  window.addEventListener('keydown', (e) => {
+    if (e.target.closest && e.target.closest('input, textarea')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
+    if ([' ', 'w', 's', 'e', 'q'].includes(k) || e.key.startsWith('Arrow')) e.preventDefault();
+    if (e.key === 'Enter') { e.preventDefault(); if (!e.repeat) startOn(); return; }
+    if (e.repeat) return;
+    ensureAudio(); hideGate();
+    keys.add(k);
+    if (k === 'e') shiftUp();
+    else if (k === 'q') shiftDown();
+    else if (k >= '1' && k <= '6') shiftTo(+k);
+    else if (k === 'n') shiftTo(0);
+    else if (k === 'r') shiftTo(-1);
+    else if (k === 'i') ignToggle();
+    else if (k === 'o') engineOff();
+    else if (k === 'v') { S.view = (S.view + 1) % 3; applySettings(); flash('Ascolto: ' + ['abitacolo', 'esterno', 'vano motore'][S.view], 1.2); }
+    else if (k === 'l') { S.launch = !S.launch; applySettings(); flash(S.launch ? 'Launch control inserito' : 'Launch control disinserito', 1.2); }
+    else if (k === 'm') { S.muted = !S.muted; applySettings(); }
+  });
+  window.addEventListener('keyup', (e) => {
+    let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
+    keys.delete(k);
+    if (e.key === 'Enter') startOff();
+  });
+  window.addEventListener('blur', () => { keys.clear(); startOff(); });
+
+  // gamepad
+  const padPrev = [];
+  function readPad() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const gp = Array.from(pads || []).find((p) => p && p.connected);
+    if (!gp) { inp.pad.thr = inp.pad.brake = inp.pad.clutch = 0; return; }
+    const b = (i) => (gp.buttons[i] ? gp.buttons[i].value : 0);
+    inp.pad.thr = b(7); inp.pad.brake = b(6); inp.pad.clutch = b(1);
+    const edge = (i) => { const now = b(i) > 0.5, was = padPrev[i]; padPrev[i] = now; return now && !was; };
+    if (edge(0) || edge(5)) shiftUp();
+    if (edge(2) || edge(4)) shiftDown();
+    const y = b(3) > 0.5;
+    if (y && !padPrev[3]) startOn(); if (!y && padPrev[3]) startOff();
+    padPrev[3] = y;
+  }
+
+  function updateInputs(dt) {
+    const k = (c) => keys.has(c);
+    const tgt = (p, key) => {
+      if (inp.touch[p] !== null) return { v: inp.touch[p], direct: true };
+      const pad = inp.pad[p];
+      if (pad > 0.02) return { v: pad, direct: true };
+      return { v: key ? 1 : 0, direct: false };
+    };
+    const ramp = (cur, t, up, down) => (t.direct ? t.v : t.v > cur ? Math.min(t.v, cur + up * dt) : Math.max(t.v, cur - down * dt));
+    inp.thr = ramp(inp.thr, tgt('thr', k('w')), 10, 14);
+    inp.brake = ramp(inp.brake, tgt('brake', k('s')), 8, 10);
+    inp.clutch = ramp(inp.clutch, tgt('clutch', k(' ')), 9, 2.3);
+    sim.in.thr = inp.thr; sim.in.brake = inp.brake; sim.in.clutch = S.autoClutch ? 0 : inp.clutch;
+  }
+
+  // ---------------------------------------------------------------- quadro strumenti (canvas)
+  const cv = $('gauges'), ctx = cv.getContext('2d');
+  let W = 0, H = 0, DPR = 1, G = [], faceCache = new Map();
+  const css = getComputedStyle(document.documentElement);
+  const C = (n) => css.getPropertyValue(n).trim();
+  const COL = { dial: C('--dial'), needle: C('--needle'), crit: C('--crit'), amber: C('--amber'), muted: C('--muted'), info: C('--info'), ok: C('--ok') };
+  const FD = C('--f-display'), FM = C('--f-data');
+
+  function gaugeDefs(compact) {
+    const tach = { id: 'tach', min: 0, max: 9, major: 1, minor: 0.25, red: 7, label: (v) => v, title: 'x1000 r/min' };
+    const speed = { id: 'speed', min: 0, max: 320, major: 20, minor: 10, labelEvery: 40, label: (v) => v, title: 'km/h' };
+    const boost = { id: 'boost', min: -1, max: 2, major: 0.5, minor: 0.1, red: 1.6, label: (v) => fmt(v, v % 1 ? 1 : 0), title: 'turbo · bar', zero: 0 };
+    if (!compact) {
+      const Rt = H * 0.46, Rs = H * 0.37, gap = H * 0.05, off = Rt + Rs + gap;
+      return [Object.assign(speed, { x: W / 2 - off, y: H * 0.53, R: Rs }), Object.assign(tach, { x: W / 2, y: H * 0.5, R: Rt }), Object.assign(boost, { x: W / 2 + off, y: H * 0.53, R: Rs })];
+    }
+    const Rt = W * 0.37, Rs = W * 0.215;
+    return [Object.assign(tach, { x: W / 2, y: Rt + W * 0.03, R: Rt }), Object.assign(speed, { x: W * 0.25, y: Rt * 2 + W * 0.04 + Rs * 0.92, R: Rs }), Object.assign(boost, { x: W * 0.75, y: Rt * 2 + W * 0.04 + Rs * 0.92, R: Rs })];
+  }
+  function layout() {
+    DPR = Math.min(2.5, window.devicePixelRatio || 1);
+    W = cv.clientWidth;
+    const compact = W < 640;
+    H = compact ? W * 1.17 : Math.min(W / 2.6, 470);
+    cv.style.height = H + 'px';
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    G = gaugeDefs(compact);
+    faceCache.clear();
+  }
+  const A0 = Math.PI * 0.75, SWEEP = Math.PI * 1.5;   // da 135° (in basso a sinistra) per 270°
+  const ang = (g, v) => A0 + SWEEP * (clamp(v, g.min, g.max) - g.min) / (g.max - g.min);
+
+  function drawFace(g, lit) {
+    const key = g.id + lit + Math.round(g.R);
+    if (faceCache.has(key)) return faceCache.get(key);
+    const R = g.R, pad = R * 0.12, size = Math.ceil((R + pad) * 2 * DPR);
+    const oc = document.createElement('canvas'); oc.width = oc.height = size;
+    const c = oc.getContext('2d'); c.scale(DPR, DPR); c.translate(R + pad, R + pad);
+    // ghiera
+    const bz = c.createLinearGradient(0, -R * 1.08, 0, R * 1.08);
+    bz.addColorStop(0, '#5a6069'); bz.addColorStop(0.45, '#1a1d22'); bz.addColorStop(1, '#3d424a');
+    c.beginPath(); c.arc(0, 0, R * 1.06, 0, Math.PI * 2); c.fillStyle = bz; c.fill();
+    c.beginPath(); c.arc(0, 0, R * 1.0, 0, Math.PI * 2); c.fillStyle = '#050607'; c.fill();
+    const face = c.createRadialGradient(0, -R * 0.25, R * 0.1, 0, 0, R);
+    face.addColorStop(0, '#1b1e23'); face.addColorStop(1, '#07080a');
+    c.beginPath(); c.arc(0, 0, R * 0.97, 0, Math.PI * 2); c.fillStyle = face; c.fill();
+    const fg = lit ? COL.dial : '#4a4f57';
+    // zona rossa
+    if (g.red !== undefined) {
+      c.beginPath(); c.arc(0, 0, R * 0.885, ang(g, g.red), ang(g, g.max)); c.lineWidth = R * 0.07;
+      c.strokeStyle = lit ? COL.crit : '#4a1612'; c.globalAlpha = lit ? 0.9 : 1; c.stroke(); c.globalAlpha = 1;
+    }
+    // tacche
+    if (lit) { c.shadowColor = 'rgba(255,190,120,.55)'; c.shadowBlur = R * 0.04; }
+    const n = Math.round((g.max - g.min) / g.minor);
+    for (let i = 0; i <= n; i++) {
+      const v = g.min + i * g.minor, a = ang(g, v);
+      const isMaj = Math.abs((v - g.min) / g.major - Math.round((v - g.min) / g.major)) < 1e-6;
+      const half = !isMaj && Math.abs((v - g.min) / (g.major / 2) - Math.round((v - g.min) / (g.major / 2))) < 1e-6;
+      const r1 = R * 0.93, r0 = R * (isMaj ? 0.79 : half ? 0.85 : 0.88);
+      c.beginPath(); c.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); c.lineTo(Math.cos(a) * r1, Math.sin(a) * r1);
+      c.lineWidth = isMaj ? R * 0.022 : R * 0.009;
+      c.strokeStyle = g.red !== undefined && v >= g.red ? (lit ? '#ffd7d2' : '#5a2a26') : fg;
+      c.stroke();
+    }
+    // numeri
+    c.fillStyle = fg; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = `600 ${Math.round(R * (g.id === 'tach' ? 0.17 : 0.135))}px ${FD}`;
+    const every = g.labelEvery || g.major;
+    const m = Math.round((g.max - g.min) / every);
+    for (let i = 0; i <= m; i++) {
+      const v = +(g.min + i * every).toFixed(3), a = ang(g, v), rr = R * (g.id === 'tach' ? 0.64 : 0.63);
+      if (g.id === 'boost' && Math.abs(v % 1) > 0.01 && v !== 0.5 && v !== 1.5 && v !== -0.5) continue;
+      c.fillStyle = g.red !== undefined && v >= g.red ? (lit ? '#ffb4ab' : '#5a2a26') : fg;
+      c.fillText(g.label(v), Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    c.shadowBlur = 0;
+    c.fillStyle = lit ? COL.muted : '#3a3f46';
+    c.font = `600 ${Math.round(R * 0.075)}px ${FM}`;
+    c.fillText(g.title.toUpperCase(), 0, -R * 0.3);
+    if (g.id === 'tach') { c.font = `700 ${Math.round(R * 0.07)}px ${FD}`; c.fillText('TOYOTA 2JZ-GTE · 24V DOHC', 0, R * 0.2); }
+    faceCache.set(key, oc);
+    return oc;
+  }
+
+  function drawNeedle(g, v, lit) {
+    const a = ang(g, v), R = g.R;
+    ctx.save(); ctx.translate(g.x, g.y); ctx.rotate(a);
+    ctx.shadowColor = lit ? 'rgba(255,90,31,.8)' : 'transparent'; ctx.shadowBlur = R * 0.06;
+    ctx.beginPath();
+    ctx.moveTo(-R * 0.16, -R * 0.022); ctx.lineTo(R * 0.86, -R * 0.007); ctx.lineTo(R * 0.9, 0); ctx.lineTo(R * 0.86, R * 0.007); ctx.lineTo(-R * 0.16, R * 0.022);
+    ctx.closePath(); ctx.fillStyle = lit ? COL.needle : '#8a3a1e'; ctx.fill();
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(g.x, g.y, R * 0.075, 0, Math.PI * 2);
+    const hub = ctx.createRadialGradient(g.x - R * 0.02, g.y - R * 0.02, 1, g.x, g.y, R * 0.075);
+    hub.addColorStop(0, '#4b5059'); hub.addColorStop(1, '#0c0d10'); ctx.fillStyle = hub; ctx.fill();
+  }
+
+  function lcd(x, y, w, h, R) {
+    ctx.fillStyle = '#020303'; ctx.strokeStyle = '#23272d'; ctx.lineWidth = Math.max(1, R * 0.008);
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y - h / 2, w, h, R * 0.03) : ctx.rect(x - w / 2, y - h / 2, w, h);
+    ctx.fill(); ctx.stroke();
+  }
+
+  const disp = { rpm: 0, kmh: 0, boost: -1 };
+  function draw() {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const lit = sim.ign;
+    const boostVal = sim.ign ? (sim.running || sim.rpm > 50 ? clamp(sim.charge - 1, -1, 2.2) : 0) : 0;
+    disp.rpm += (sim.rpm - disp.rpm) * 0.55;
+    disp.kmh += (sim.kmh - disp.kmh) * 0.25;
+    disp.boost += (boostVal - disp.boost) * 0.3;
+    for (const g of G) {
+      const f = drawFace(g, lit), pad = g.R * 0.12;
+      ctx.drawImage(f, g.x - g.R - pad, g.y - g.R - pad, (g.R + pad) * 2, (g.R + pad) * 2);
+      const R = g.R;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (g.id === 'tach') {
+        const gearTxt = sim.gear === -1 ? 'R' : sim.gear === 0 ? 'N' : String(sim.gear);
+        lcd(g.x, g.y + R * 0.58, R * 0.42, R * 0.36, R);
+        ctx.fillStyle = lit ? (sim.gear === -1 ? COL.crit : COL.amber) : '#2b2f35';
+        ctx.font = `700 ${Math.round(R * 0.32)}px ${FD}`;
+        ctx.fillText(sim.shiftSeq ? '–' : gearTxt, g.x, g.y + R * 0.6);
+        ctx.fillStyle = lit ? COL.dial : '#2b2f35';
+        ctx.font = `600 ${Math.round(R * 0.085)}px ${FM}`;
+        ctx.fillText(lit ? fmt(Math.round(disp.rpm / 10) * 10) + ' r/min' : '', g.x, g.y + R * 0.33);
+        drawNeedle(g, disp.rpm / 1000, lit);
+      } else if (g.id === 'speed') {
+        lcd(g.x, g.y + R * 0.58, R * 0.62, R * 0.3, R);
+        ctx.fillStyle = lit ? COL.dial : '#2b2f35';
+        ctx.font = `700 ${Math.round(R * 0.22)}px ${FD}`;
+        ctx.fillText(lit ? fmt(Math.round(disp.kmh)) : '', g.x, g.y + R * 0.59);
+        ctx.fillStyle = lit ? COL.muted : '#2b2f35';
+        ctx.font = `500 ${Math.round(R * 0.07)}px ${FM}`;
+        ctx.fillText(lit ? 'ODO ' + fmt(sim.odo, 1) : '', g.x, g.y + R * 0.83);
+        drawNeedle(g, disp.kmh, lit);
+      } else {
+        lcd(g.x, g.y + R * 0.58, R * 0.62, R * 0.3, R);
+        ctx.fillStyle = lit ? (disp.boost > 0.05 ? COL.amber : COL.dial) : '#2b2f35';
+        ctx.font = `700 ${Math.round(R * 0.2)}px ${FD}`;
+        ctx.fillText(lit ? (disp.boost >= 0 ? '+' : '') + fmt(disp.boost, 2) : '', g.x, g.y + R * 0.59);
+        ctx.fillStyle = lit ? COL.muted : '#2b2f35';
+        ctx.font = `500 ${Math.round(R * 0.07)}px ${FM}`;
+        const st = S.turbo === 'twin' ? (sim.sec > 0.6 ? 'PRIMARIO + SECONDARIO' : 'PRIMARIO') : 'SINGLE';
+        ctx.fillText(lit ? st : '', g.x, g.y + R * 0.83);
+        drawNeedle(g, disp.boost, lit);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- spie, strumenti, telemetria
+  const leds = [];
+  const sl = $('shiftlights');
+  for (let i = 0; i < 10; i++) { const el = document.createElement('i'); el.className = i < 4 ? 'lg' : i < 7 ? 'ly' : 'lr'; sl.appendChild(el); leds.push(el); }
+  const lamp = {}; document.querySelectorAll('.lamp').forEach((l) => { lamp[l.dataset.l] = l; });
+  const pedEls = { clutch: $('pedClutch'), brake: $('pedBrake'), thr: $('pedGas') };
+  const gateBtns = Array.from(document.querySelectorAll('#gateGrid [data-g]'));
+  let peakTq = 0, peakPw = 0, blink = 0, textT = 0, lastGear = null;
+
+  function setPod(id, bar, txt, frac, color) {
+    $(id).innerHTML = txt; const b = $(bar); b.style.width = (clamp(frac, 0, 1) * 100).toFixed(1) + '%'; b.style.background = color || '';
+  }
+  function updateDom(dt) {
+    blink += dt;
+    const rpm = sim.rpm, lit = sim.ign;
+    const atLimit = sim.cut === 2 || sim.cut === 3 || rpm > 6800;
+    const flashOn = reduceMotion ? true : Math.floor(blink * 12) % 2 === 0;
+    leds.forEach((l, i) => l.classList.toggle('on', lit && (atLimit ? flashOn : rpm > 5000 + i * 180)));
+    lamp.check.classList.toggle('on', lit && !sim.running);
+    lamp.batt.classList.toggle('on', lit && !sim.running);
+    lamp.oil.classList.toggle('on', lit && sim.oilP < 0.3);
+    lamp.t2.classList.toggle('on', lit && S.turbo === 'twin' && sim.sec > 0.6);
+    lamp.launch.classList.toggle('on', lit && sim.launchArmed);
+    lamp.cut.classList.toggle('on', lit && (sim.cut === 2 || sim.cut === 3));
+    $('cluster').classList.toggle('off', !lit);
+    for (const p of ['clutch', 'brake', 'thr']) {
+      const v = p === 'clutch' ? (S.autoClutch ? sim.clutch : inp.clutch) : inp[p];
+      const el = pedEls[p]; el.querySelector('.fill').style.height = (v * 100).toFixed(1) + '%';
+      el.querySelector('output').textContent = Math.round(v * 100) + '%';
+    }
+    if (sim.gear !== lastGear) {
+      lastGear = sim.gear;
+      gateBtns.forEach((b) => b.classList.toggle('cur', +b.dataset.g === sim.gear));
+      $('gearName').textContent = GEAR_NAMES[sim.gear];
+      const g = sim.gear;
+      $('ratio').innerHTML = g === 0 ? 'Rapporti: 3,827 · 2,360 · 1,685 · 1,312 · 1,000 · 0,793 · finale 3,133'
+        : `<b>${GEAR_NAMES[g]}</b> ${fmt(Math.abs(g < 0 ? sim.P.rev : sim.P.gears[g]), 3)} : 1 × finale 3,133 · ${fmt(1000 / (Math.abs(sim.ratio(g)) / sim.P.r) * 0.10472 * 3.6, 1)} km/h ogni 1000 giri`;
+    }
+    $('btnIgn').classList.toggle('lit', sim.ign);
+    if (sim.running && sim.starter === false) $('btnStart').classList.remove('on');
+    textT += dt;
+    if (textT < 0.08) return;
+    textT = 0;
+    $('engState').textContent = sim.running ? (sim.cut === 2 ? 'limitatore' : sim.cut === 3 ? '2-step' : 'in moto') : sim.starter ? 'avviamento…' : sim.ign ? 'quadro acceso' : 'motore spento';
+    if (lit) {
+      setPod('pOilT', 'bOilT', fmt(sim.oilT) + '<small>°C</small>', (sim.oilT - 40) / 100);
+      setPod('pWat', 'bWat', fmt(sim.waterT) + '<small>°C</small>', (sim.waterT - 40) / 80);
+      setPod('pOilP', 'bOilP', fmt(sim.oilP, 1) + '<small>bar</small>', sim.oilP / 6, sim.oilP < 0.3 ? 'var(--crit)' : '');
+      let afr = '—', afrF = 0;
+      if (sim.running) {
+        const a = sim.cut ? 22.4 : (sim.pipeP > 0.12 || sim.air > 0.85) ? 11.6 - 0.6 * Math.min(1, sim.pipeP) : 14.7;
+        afr = sim.cut ? 'magro' : fmt(a + (Math.random() - 0.5) * 0.12, 1); afrF = (a - 10) / 12;
+      }
+      setPod('pAfr', 'bAfr', afr, afrF, sim.cut ? 'var(--info)' : '');
+      setPod('pVolt', 'bVolt', fmt(sim.volt, 1) + '<small>V</small>', (sim.volt - 9) / 6, sim.volt < 11 ? 'var(--warn)' : '');
+      setPod('pFuel', 'bFuel', fmt(sim.fuel * 100) + '<small>%</small>', sim.fuel);
+    } else ['pOilT', 'pWat', 'pOilP', 'pAfr', 'pVolt', 'pFuel'].forEach((id, i) => setPod(id, ['bOilT', 'bWat', 'bOilP', 'bAfr', 'bVolt', 'bFuel'][i], '—', 0));
+    const tq = sim.running ? Math.max(0, sim.Tnet) : 0, pw = tq * rpm / 7023;
+    peakTq = Math.max(peakTq, tq); peakPw = Math.max(peakPw, pw);
+    $('tTq').innerHTML = fmt(tq) + '<small>Nm</small>'; $('tTqMax').textContent = 'picco ' + fmt(peakTq) + ' Nm';
+    $('tPw').innerHTML = fmt(pw) + '<small>CV</small>'; $('tPwMax').textContent = 'picco ' + fmt(peakPw) + ' CV';
+    $('tThr').innerHTML = fmt(sim.thr * 100) + '<small>%</small>';
+    $('tMap').textContent = 'collettore ' + (sim.ign && sim.rpm > 50 ? (sim.charge - 1 >= 0 ? '+' : '') + fmt(sim.charge - 1, 2) : '—') + ' bar';
+    const vw = sim.ww * sim.P.r, slip = Math.abs(sim.v) > 0.5 || Math.abs(vw) > 0.5 ? clamp((vw - sim.v) / Math.max(Math.abs(sim.v), 1), -1, 9.99) : 0;
+    $('tSlip').innerHTML = fmt(Math.abs(slip) * 100) + '<small>%</small>';
+    $('tWheel').textContent = 'ruote ' + fmt(Math.abs(vw) * 3.6) + ' km/h';
+    const r = sim.run0;
+    $('t100').innerHTML = sim.last100 ? fmt(sim.last100, 2) + '<small>s</small>' : r && !r.armed && !r.done100 ? fmt(r.t, 1) + '<small>s</small>' : '—';
+    $('t100b').textContent = 'migliore ' + (sim.best100 ? fmt(sim.best100, 2) + ' s' : '—');
+    $('t400').innerHTML = sim.last400 ? fmt(sim.last400.t, 2) + '<small>s</small>' : r && !r.armed && !r.done400 && r.d > 0 ? fmt(r.d) + '<small>m</small>' : '—';
+    $('t400b').textContent = sim.best400 ? 'migliore ' + fmt(sim.best400.t, 2) + ' s · ' + fmt(sim.best400.v) + ' km/h' : 'migliore —';
+  }
+
+  // ---------------------------------------------------------------- ciclo principale
+  let last = performance.now(), wasRunning = false;
+  function frame(now) {
+    const dt = clamp((now - last) / 1000, 0, 0.05); last = now;
+    readPad(); updateInputs(dt);
+    sim.update(dt);
+    const ev = sim.events.splice(0);
+    for (const e of ev) if (e.type === 'grind' && S.autoClutch && Math.abs(sim.v) > 1.2) flash('Retromarcia solo da fermo');
+    if (wasRunning && !sim.running && sim.stalled) flash('Motore spento: stallo. Folle e riavvia', 3);
+    wasRunning = sim.running;
+    if (audio.ready) audio.send({ p: sim.audioParams(), ev });
+    if (msgT > 0) { msgT -= dt; if (msgT <= 0) $('msg').classList.remove('show'); }
+    draw(); updateDom(dt);
+    requestAnimationFrame(frame);
+  }
+
+  // ---------------------------------------------------------------- avvio
+  function hideGate() { $('gate').hidden = true; }
+  $('goBtn').addEventListener('click', () => { ensureAudio(); hideGate(); setTimeout(() => $('btnIgn').focus(), 50); });
+  window.addEventListener('resize', layout);
+  if (window.ResizeObserver) new ResizeObserver(() => { if (Math.abs(cv.clientWidth - W) > 1) layout(); }).observe(cv);
+  applySettings();
+  layout();
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => faceCache.clear());
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
