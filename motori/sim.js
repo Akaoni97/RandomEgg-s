@@ -10,7 +10,7 @@ class SupraSim {
     this.P = {
       idle: 750, limiter: 7000, limHyst: 130, launchRpm: 4300,
       Ie: 0.21, Iw: 3.0, mass: 1570, r: 0.322, cd: 0.31, A: 1.95, crr: 0.012, mu: 1.1, cgH: 0.48, wb: 2.55, rearW: 0.47,
-      gears: [0, 3.827, 2.360, 1.685, 1.312, 1.000, 0.793], rev: -3.280, fd: 3.133, clutchMax: 820,
+      tank: 70, gears: [0, 3.827, 2.360, 1.685, 1.312, 1.000, 0.793], rev: -3.280, fd: 3.133, clutchMax: 820,
       // coppia indicata a pieno carico atmosferico (Nm) — il turbo la moltiplica
       tq: [[0, 140], [500, 160], [1000, 212], [1500, 240], [2000, 258], [2500, 270], [3000, 281], [3500, 290],
         [4000, 296], [4500, 298], [5000, 295], [5500, 287], [6000, 275], [6500, 260], [7000, 244], [7500, 225]],
@@ -94,7 +94,7 @@ class SupraSim {
 
   update(dt) {
     if (!(dt > 0)) return;
-    dt = Math.min(dt, 0.05);
+    dt = Math.min(dt, 0.1);
     const n = Math.max(1, Math.ceil(dt * 4000)), h = dt / n;
     for (let i = 0; i < n; i++) this.step(h);
     // grandezze lente: temperature, carburante, cronometri
@@ -105,7 +105,12 @@ class SupraSim {
     this.oilP += (oilTarget - this.oilP) * Math.min(1, dt * 4);
     const voltT = !this.ign ? 12.5 : this.starter && !this.running ? 10.3 : this.running ? 14.1 : 12.2;
     this.volt += (voltT - this.volt) * Math.min(1, dt * 6);
-    if (this.running) this.fuel = Math.max(0, this.fuel - dt * (0.000004 + 0.00006 * load));
+    // consumo: ~300 g/kWh di potenza effettiva + minimo; serbatoio da 70 litri
+    if (this.running) {
+      const kw = Math.max(0, this.Tnet) * this.rpm / 9549;
+      this.fuelRate = (0.00035 + kw * 300 / 740 / 3600);            // litri al secondo
+      this.fuel = Math.max(0, this.fuel - dt * this.fuelRate / this.P.tank);
+    } else this.fuelRate = 0;
     const dist = Math.abs(this.v) * dt / 1000;
     this.odo += dist; this.trip += dist;
     this.pumpT = Math.max(0, this.pumpT - dt);
@@ -198,6 +203,7 @@ class SupraSim {
     } else { this.cutLim = this.cutLaunch = this.dfco = false; }
     this.cut = !this.running ? 0 : this.cutLaunch ? 3 : this.cutLim ? 2 : this.dfco ? 1 : 0;
     this.ovr = this.cut === 1 ? this.ovr + h : 0;
+    if (this.running && this.fuel <= 0) { this.running = false; this.stalled = true; this.dry = true; }
     const burning = this.running && this.cut === 0;
 
     // ---- turbo ---------------------------------------------------------------------------
@@ -288,7 +294,7 @@ class SupraSim {
     if (this.running) this.runT += h;
     if (this.ign && this.starter && !this.running) {
       this.crankT += h;
-      if (this.crankT > this.catchAt && rpm > 110) { this.running = true; this.runT = 0; this.iacI = 0.05; }
+      if (this.crankT > this.catchAt && rpm > 110 && this.fuel > 0) { this.running = true; this.runT = 0; this.iacI = 0.05; }
     }
     if (this.running && this.starter && rpm > 500) this.starter = false;
     if (this.running && rpm < 300 && !this.starter) { this.running = false; this.stalled = true; }

@@ -10,7 +10,7 @@ class Garage3D {
     this.T = T;
     this.canvas = canvas;
     const r = this.renderer = new T.WebGLRenderer({ canvas, antialias: true });
-    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     r.outputEncoding = T.sRGBEncoding;
     r.toneMapping = T.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
     r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap;
@@ -25,19 +25,19 @@ class Garage3D {
     c.maxPolarAngle = Math.PI * 0.48; c.autoRotate = true; c.autoRotateSpeed = 0.35; c.enablePan = false;
     c.addEventListener('start', () => { c.autoRotate = false; });
 
-    sc.add(new T.HemisphereLight(0xc9d8ff, 0x1a120c, 0.55));
+    this.hemi = new T.HemisphereLight(0xc9d8ff, 0x1a120c, 0.55); sc.add(this.hemi);
     const key = new T.DirectionalLight(0xfff0dc, 1.6);
     key.position.set(4, 7, 3); key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
     Object.assign(key.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 1, far: 20 });
-    sc.add(key);
-    const rim = new T.DirectionalLight(0x6fa8ff, 0.9); rim.position.set(-5, 3, -4); sc.add(rim);
-    const warm = new T.PointLight(0xff8a3d, 0.7, 12); warm.position.set(-3.5, 1.2, 2.5); sc.add(warm);
+    sc.add(key); this.key = key;
+    const rim = this.rim = new T.DirectionalLight(0x6fa8ff, 0.9); rim.position.set(-5, 3, -4); sc.add(rim);
+    const warm = this.warm = new T.PointLight(0xff8a3d, 0.7, 12); warm.position.set(-3.5, 1.2, 2.5); sc.add(warm);
 
     const floor = new T.Mesh(new T.CircleGeometry(14, 64), new T.MeshStandardMaterial({ color: 0x0d0e11, roughness: 0.78, metalness: 0.1 }));
-    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+    floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor); this.floor = floor;
     const grid = new T.GridHelper(28, 56, 0x2a2f37, 0x1c1f24);
-    grid.material.transparent = true; grid.material.opacity = 0.35; grid.position.y = 0.002; sc.add(grid);
+    grid.material.transparent = true; grid.material.opacity = 0.35; grid.position.y = 0.002; sc.add(grid); this.grid = grid;
 
     this.root = new T.Group(); sc.add(this.root);      // auto intera (ruote incluse)
     this.body = new T.Group(); this.root.add(this.body); // carrozzeria che beccheggia e vibra

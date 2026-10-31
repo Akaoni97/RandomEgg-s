@@ -8,7 +8,7 @@ Tutti i dati sono **dimostrativi e inventati** (lotti `DEMO-…`).
 
 ## Anche nel repository
 
-`motori/` contiene il **Banco Suono 2JZ**, simulatore del suono del motore della Toyota Supra: vedi `motori/README.md`.
+`motori/` contiene **2JZ Night Run**, gioco di guida notturna con simulatore del suono della Toyota Supra: vedi `motori/README.md`.
 
 ## Avvio rapido
 

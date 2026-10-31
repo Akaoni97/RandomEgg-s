@@ -1,4 +1,22 @@
-# Banco Suono 2JZ
+# 2JZ Night Run
+
+Gioco di guida notturna con gestione di soldi e pezzi, costruito sul Banco Suono 2JZ.
+Quadro strumenti in alto, strada 3D a scorrimento sotto, consolle di guida, officina.
+
+## La carriera
+
+- Si parte con € 3.000, una Supra di serie e 50 litri di benzina (serbatoio da 70, consumo reale).
+- L'auto resta in prima corsia; se davanti c'è traffico più lento sorpassa da sola e poi rientra.
+- Lungo la strada arrivano proposte a tempo (pulsanti o tasti 1-2-3; senza risposta vale l'ultima):
+  distributore (pieno, € 20 o tiri dritto), sfide da semaforo sui 400 m con posta, lavoretti di consegna
+  con bonus di puntualità.
+- Polizia: se le passi accanto in sesta ti ferma, multa in base alla velocità e al livello di ricercato
+  (5 stelle, scende col tempo). Un avviso in alto segnala le pattuglie in arrivo.
+- Officina: i pezzi si pagano coi contanti e si montano solo da fermo. Le preparazioni pronte mostrano
+  quanto manca per completarle.
+- Modalità libera: tutto sbloccato, nessun evento, benzina infinita (il vecchio banco suono).
+- La carriera si salva nel browser. `window.nightRun` espone simulazione e gioco dalla console.
+
 
 Simulatore del suono del motore di una **Toyota Supra RZ (JZA80)** con 2JZ-GTE e cambio Getrag V160:
 plancia completa, acceleratore, freno, frizione, cambio a 6 marce. Funziona nel browser, senza dipendenze.
@@ -69,5 +87,7 @@ con modello di aderenza, resistenza aerodinamica e frenata. Con la configurazion
 | `sim.js` | Fisica del veicolo |
 | `tuning.js` | Catalogo del reparto tuning |
 | `samples.js` | Lettore dei campioni audio caricati |
-| `car3d.js` | Garage 3D |
+| `car3d.js` | Modello 3D dell'auto e sue animazioni |
+| `street3d.js` | Strada notturna, città, traffico, polizia, distributore |
+| `game.js` | Carriera: soldi, eventi, polizia, sfide, consegne, pilota automatico per le fermate |
 | `../test/motori.test.js` | Prove con `npm test` |

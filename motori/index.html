@@ -3,263 +3,325 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Banco Suono 2JZ</title>
+<title>2JZ Night Run</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,600&family=Share+Tech+Mono&display=swap">
 <style>
-/* Layout: quadro strumenti a tutta larghezza, sotto la consolle (guida · cambio · preparazione), poi telemetria e note. */
+/* Layout: quadro in alto, strada 3D notturna con HUD sotto, poi consolle, officina, telemetria ed extra.
+   Look unico e deliberato: notte metropolitana, neon ciano e lime su blu asfalto, pannelli a spigoli tagliati. */
 :root {
   color-scheme: dark;
-  --bg: #0a0b0d;
-  --bg-2: #101216;
-  --panel: #15181d;
-  --panel-2: #1b1f25;
-  --line: #2a2f37;
-  --fg: #ebe7dc;
-  --muted: #8f949c;
-  --dial: #f3eee2;
-  --amber: #ffa53a;
-  --needle: #ff5a1f;
-  --ok: #3fd27f;
-  --warn: #ffc93d;
-  --crit: #ff3d2e;
-  --info: #5aa8ff;
-  --f-display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
-  --f-body: "Barlow", "Helvetica Neue", Arial, sans-serif;
-  --f-data: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --r: 10px;
+  --bg: #03050a;
+  --bg-2: #070b13;
+  --panel: #0a0f18;
+  --panel-2: #111a29;
+  --line: #1c2a3c;
+  --fg: #e6f2ff;
+  --muted: #7e90a7;
+  --dial: #eaf7ff;
+  --amber: #2ee6ff;      /* illuminazione e accento principale: ciano neon */
+  --lime: #b8ff3a;       /* soldi, successo */
+  --needle: #ff2e63;
+  --ok: #b8ff3a;
+  --warn: #ffb000;
+  --crit: #ff2e4d;
+  --info: #4f7bff;
+  --pink: #ff2e88;
+  --f-display: "Russo One", "Arial Black", Impact, sans-serif;
+  --f-body: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+  --f-data: "Share Tech Mono", ui-monospace, Menlo, monospace;
+  --cut: 14px;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { min-height: 100%; }
 body {
-  margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--f-body);
-  background-image: radial-gradient(1200px 500px at 50% -120px, #1a1d23 0%, transparent 70%);
+  margin: 0; color: var(--fg); font: 16px/1.45 var(--f-body);
+  background:
+    radial-gradient(900px 420px at 8% -8%, rgba(46,230,255,.13), transparent 70%),
+    radial-gradient(800px 500px at 100% 30%, rgba(255,46,136,.08), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(46,230,255,.025) 0 1px, transparent 1px 64px),
+    linear-gradient(180deg, #050912 0%, var(--bg) 60%);
+  background-color: var(--bg);
 }
-button, input { font: inherit; color: inherit; }
+button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
 .wrap {
-  max-width: 1320px; margin: 0 auto;
+  max-width: 1360px; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 18px 40px;
+  padding-block: 16px 40px;
   display: grid; gap: 16px;
 }
-.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cutbox { clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut))); }
+
+/* ---- testata ---- */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .badge {
-  font: 700 15px/1 var(--f-display); letter-spacing: .12em; padding: 9px 11px 8px; border-radius: 6px;
-  color: #120a05; background: linear-gradient(180deg, #ffb760, #ff7a2a); box-shadow: 0 0 0 1px #000 inset;
+  font: 400 14px/1 var(--f-display); letter-spacing: .1em; padding: 9px 14px 8px; color: #041006; background: var(--lime);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
 }
-h1 { margin: 0; font: 700 clamp(24px, 3.4vw, 34px)/1 var(--f-display); letter-spacing: .02em; text-wrap: balance; }
-.brand p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+h1 {
+  margin: 0; font: 400 clamp(26px, 4vw, 40px)/1 var(--f-display); letter-spacing: .04em; text-transform: uppercase; font-style: italic;
+  color: var(--fg); text-shadow: 0 0 18px rgba(46,230,255,.55), 2px 2px 0 #0b3a52;
+}
+h1 span { color: var(--amber); }
+.brand p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.career { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chip {
+  display: grid; gap: 1px; padding: 6px 14px 6px 12px; background: var(--panel-2); min-width: 0;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+.chip b { font: 400 10.5px/1 var(--f-data); letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+.chip span { font: 400 18px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.chip.money span { color: var(--lime); text-shadow: 0 0 10px rgba(184,255,58,.4); }
+.chip.money.neg span { color: var(--crit); }
+.heat { display: flex; gap: 3px; padding-top: 3px; }
+.heat i { width: 12px; height: 12px; background: #1b2638; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+.heat i.on { background: var(--crit); filter: drop-shadow(0 0 4px var(--crit)); }
+.modesw { display: flex; background: var(--panel); border: 1px solid var(--line); padding: 3px; gap: 3px; }
+.modesw button { border: 0; background: transparent; padding: 7px 12px; font: 400 13px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.modesw button[aria-pressed="true"] { background: var(--amber); color: #021016; }
+.linkbtn { border: 0; background: none; color: var(--muted); text-decoration: underline; font-size: 13px; padding: 4px; }
+.career.free .chip { opacity: .35; }
 .audio-state {
-  font: 600 12px/1 var(--f-data); letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
-  border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; display: flex; gap: 8px; align-items: center;
+  font: 400 12px/1 var(--f-data); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--line); padding: 8px 12px; display: flex; gap: 8px; align-items: center;
 }
 .audio-state i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
-.audio-state.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.audio-state.on i { background: var(--lime); box-shadow: 0 0 8px var(--lime); }
 .audio-state.on { color: var(--fg); }
 
 /* ---- quadro strumenti ---- */
 .cluster {
-  position: relative; border-radius: 22px; padding: 14px 14px 12px;
+  position: relative; padding: 14px 14px 12px; display: grid; gap: 10px;
   background:
-    repeating-linear-gradient(45deg, rgba(255,255,255,.018) 0 2px, transparent 2px 4px),
-    repeating-linear-gradient(-45deg, rgba(0,0,0,.25) 0 2px, transparent 2px 4px),
-    linear-gradient(180deg, #121418, #08090b);
-  box-shadow: 0 0 0 1px #000, 0 0 0 2px #23272e, 0 24px 60px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.05);
-  display: grid; gap: 10px;
+    repeating-linear-gradient(45deg, rgba(46,230,255,.025) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.3) 0 2px, transparent 2px 4px),
+    linear-gradient(180deg, #0b1220, #04070c);
+  box-shadow: inset 0 0 0 1px #12233a, inset 0 1px 0 rgba(46,230,255,.35), inset 0 -40px 80px rgba(46,230,255,.04);
 }
 .shiftlights { display: flex; justify-content: center; gap: 6px; padding-top: 2px; }
-.shiftlights i {
-  width: clamp(14px, 3.2vw, 34px); height: 8px; border-radius: 3px; background: #1d2026;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,.6); transition: background .04s;
-}
-.shiftlights i.on.lg { background: var(--ok); box-shadow: 0 0 10px var(--ok); }
+.shiftlights i { width: clamp(14px, 3.2vw, 36px); height: 8px; background: #121b29; transform: skewX(-20deg); transition: background .04s; }
+.shiftlights i.on.lg { background: var(--lime); box-shadow: 0 0 10px var(--lime); }
 .shiftlights i.on.ly { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
 .shiftlights i.on.lr { background: var(--crit); box-shadow: 0 0 12px var(--crit); }
 #gauges { width: 100%; display: block; }
 .msg {
-  position: absolute; left: 50%; top: 34px; transform: translateX(-50%); max-width: calc(100% - 32px);
-  font: 600 13px/1.3 var(--f-data); letter-spacing: .03em; color: #120a05; background: var(--amber);
-  padding: 7px 12px; border-radius: 6px; text-align: center; opacity: 0; transition: opacity .25s; pointer-events: none;
+  position: absolute; left: 50%; top: 34px; transform: translateX(-50%) skewX(-8deg); max-width: calc(100% - 32px);
+  font: 400 14px/1.3 var(--f-display); letter-spacing: .03em; color: #021016; background: var(--amber);
+  padding: 7px 14px; text-align: center; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 3;
 }
 .msg.show { opacity: 1; }
 .lamps { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-.lamp {
-  font: 600 11px/1 var(--f-data); letter-spacing: .08em; padding: 5px 8px; border-radius: 4px;
-  color: #3a3f47; border: 1px solid #22262c; background: #0d0f12;
-}
-.lamp.on.red { color: #ffe1dc; background: #6d140d; border-color: var(--crit); box-shadow: 0 0 10px rgba(255,61,46,.45); }
-.lamp.on.amb { color: #1a0f02; background: var(--amber); border-color: var(--amber); box-shadow: 0 0 10px rgba(255,165,58,.45); }
-.lamp.on.grn { color: #04150b; background: var(--ok); border-color: var(--ok); }
-.lamp.on.blu { color: #031021; background: var(--info); border-color: var(--info); }
+.lamp { font: 400 11px/1 var(--f-data); letter-spacing: .1em; padding: 5px 8px; color: #2a3546; border: 1px solid #172234; background: #060a10; }
+.lamp.on.red { color: #ffe1e5; background: #5c0f1c; border-color: var(--crit); box-shadow: 0 0 10px rgba(255,46,77,.5); }
+.lamp.on.amb { color: #1a0f02; background: var(--warn); border-color: var(--warn); box-shadow: 0 0 10px rgba(255,176,0,.5); }
+.lamp.on.grn { color: #061200; background: var(--lime); border-color: var(--lime); }
+.lamp.on.blu { color: #fff; background: var(--info); border-color: var(--info); }
 .pods { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
-.pod { background: #0c0e11; border: 1px solid #1f2329; border-radius: 8px; padding: 8px 10px 9px; min-width: 0; }
-.pod b { display: block; font: 600 10.5px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.pod span { display: block; font: 600 22px/1.15 var(--f-display); color: var(--dial); font-variant-numeric: tabular-nums; margin-top: 3px; }
-.pod span small { font-size: 12px; color: var(--muted); margin-left: 3px; }
-.pod .bar { height: 4px; background: #1d2127; border-radius: 2px; margin-top: 5px; overflow: hidden; }
-.pod .bar i { display: block; height: 100%; width: 0; background: var(--amber); border-radius: 2px; }
-.cluster.off .pod span { color: #474c54; }
+.pod { background: #050910; border: 1px solid #13213a; padding: 8px 10px 9px; min-width: 0; }
+.pod b { display: block; font: 400 10.5px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.pod span { display: block; font: 400 21px/1.15 var(--f-display); color: var(--dial); font-variant-numeric: tabular-nums; margin-top: 4px; }
+.pod span small { font: 400 12px/1 var(--f-body); color: var(--muted); margin-left: 3px; }
+.pod .bar { height: 3px; background: #121b29; margin-top: 6px; overflow: hidden; }
+.pod .bar i { display: block; height: 100%; width: 0; background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.cluster.off .pod span { color: #344257; }
+
+/* ---- strada 3D ---- */
+.road { background: #04060b; box-shadow: inset 0 0 0 1px var(--line); }
+.stage { position: relative; }
+#g3d { display: block; width: 100%; aspect-ratio: 16 / 7.4; max-width: 100%; touch-action: none; }
+.g3d-msg { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; padding: 16px; text-align: center; color: var(--muted); }
+.hud { position: absolute; inset: 0; pointer-events: none; padding: 12px; }
+.hud > * { pointer-events: auto; }
+.hud-l { position: absolute; left: 12px; top: 12px; display: grid; gap: 6px; }
+.hud-tag { background: rgba(3,6,12,.72); border-left: 3px solid var(--amber); padding: 5px 10px; font: 400 13px/1.25 var(--f-data); letter-spacing: .04em; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.hud-tag b { color: var(--muted); font-weight: 400; margin-right: 6px; }
+.hud-tag.fuel-low { border-color: var(--warn); color: var(--warn); }
+.radar {
+  position: absolute; left: 50%; top: 12px; transform: translateX(-50%) skewX(-10deg);
+  font: 400 15px/1 var(--f-display); letter-spacing: .08em; padding: 8px 16px; color: #fff;
+  background: linear-gradient(90deg, #c4001f, #1c3cff); animation: siren .5s steps(2) infinite;
+}
+@keyframes siren { 50% { background: linear-gradient(90deg, #1c3cff, #c4001f); } }
+.racebox { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); text-align: center; pointer-events: none; }
+.racebox .big { font: 400 clamp(54px, 11vw, 120px)/1 var(--f-display); font-style: italic; color: var(--lime); text-shadow: 0 0 30px rgba(184,255,58,.6), 4px 4px 0 #0b2a00; }
+.racebox .big.red { color: var(--crit); text-shadow: 0 0 30px rgba(255,46,77,.6), 4px 4px 0 #2a0008; }
+.racebox .sub { font: 400 15px/1.3 var(--f-data); background: rgba(3,6,12,.75); padding: 6px 12px; display: inline-block; margin-top: 6px; }
+.prompt {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(560px, calc(100% - 24px));
+  background: linear-gradient(180deg, rgba(14,22,36,.96), rgba(6,10,18,.96)); padding: 14px 16px 12px; display: grid; gap: 8px;
+  box-shadow: inset 0 0 0 1px #24405f, inset 0 2px 0 var(--amber), 0 18px 40px rgba(0,0,0,.6);
+}
+.prompt h3 { margin: 0; font: 400 19px/1.1 var(--f-display); letter-spacing: .05em; text-transform: uppercase; font-style: italic; color: var(--amber); }
+.prompt.police h3 { color: var(--crit); } .prompt.race h3 { color: var(--lime); }
+.prompt p { margin: 0; font-size: 15.5px; color: #cfdbe8; }
+.prompt .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.prompt .opts button {
+  border: 0; padding: 9px 16px 8px; font: 400 14px/1 var(--f-display); letter-spacing: .05em; text-transform: uppercase;
+  background: #18273d; color: var(--fg); clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+}
+.prompt .opts button:first-child { background: var(--lime); color: #061200; }
+.prompt .opts button kbd { margin-left: 6px; }
+.prompt .timer { height: 3px; background: #18273d; } .prompt .timer i { display: block; height: 100%; background: var(--amber); }
+.toasts { position: absolute; right: 12px; top: 12px; display: grid; gap: 6px; justify-items: end; max-width: min(380px, 60%); }
+.toast { font: 400 13.5px/1.3 var(--f-data); padding: 6px 10px; background: rgba(3,6,12,.82); border-right: 3px solid var(--amber); animation: tin .25s ease-out; }
+.toast.money { border-color: var(--lime); color: var(--lime); }
+.toast.police, .toast.lose { border-color: var(--crit); color: #ffb3bf; }
+.toast.buy { border-color: var(--pink); }
+@keyframes tin { from { transform: translateX(16px); opacity: 0; } }
+.roadbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--panel); }
+.roadbar .kbtn { padding: 8px 12px; font-size: 12.5px; }
+.roadbar .hint { margin-left: auto; }
+.swatches { display: flex; gap: 6px; }
+.swatches button { width: 24px; height: 24px; border: 2px solid #26354b; padding: 0; transform: skewX(-12deg); }
+.swatches button[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 2px var(--amber); }
+.file { position: relative; overflow: hidden; }
+.file input, .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
 /* ---- consolle ---- */
-.deck { display: grid; grid-template-columns: 1.15fr 1fr 1.25fr; gap: 16px; align-items: start; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; display: grid; gap: 14px; }
-.panel h2 { margin: 0; font: 600 13px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
-.panel h2 em { font-style: normal; color: var(--amber); }
-
+.deck { display: grid; grid-template-columns: 1.15fr 1fr 1.1fr; gap: 16px; align-items: start; }
+.panel { background: linear-gradient(180deg, rgba(17,26,41,.95), rgba(9,14,23,.95)); padding: 16px; min-width: 0; display: grid; gap: 14px; box-shadow: inset 0 0 0 1px var(--line), inset 0 1px 0 rgba(46,230,255,.22); }
+.panel h2 { margin: 0; font: 400 16px/1 var(--f-display); letter-spacing: .08em; text-transform: uppercase; font-style: italic; color: var(--fg); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.panel h2 em { font: 400 13px/1 var(--f-data); letter-spacing: .06em; font-style: normal; color: var(--amber); text-transform: none; }
 .keyrow { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; }
 .kbtn {
-  border: 1px solid var(--line); background: var(--panel-2); border-radius: 8px; padding: 10px 8px;
-  font: 700 14px/1.1 var(--f-display); letter-spacing: .08em; text-transform: uppercase; text-align: center;
+  border: 0; background: linear-gradient(180deg, #172539, #0d1624); padding: 10px 12px; color: var(--fg);
+  font: 400 14px/1.1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; text-align: center;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
   touch-action: manipulation; user-select: none; -webkit-user-select: none;
 }
-.kbtn small { display: block; font: 500 11px/1.2 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--muted); margin-top: 3px; }
-.kbtn:hover { border-color: #3a404a; }
-.kbtn.lit { border-color: var(--amber); color: var(--amber); }
-.start {
-  background: radial-gradient(circle at 50% 35%, #3a1a10, #1a0d08); border-color: #5b2a18; color: #ffd6c2;
-}
-.start.on { background: radial-gradient(circle at 50% 35%, #c2410f, #6a1f07); color: #fff; border-color: var(--needle); box-shadow: 0 0 18px rgba(255,90,31,.45); }
-
+.kbtn small { display: block; font: 500 12px/1.2 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--muted); margin-top: 3px; }
+.kbtn:hover { background: linear-gradient(180deg, #1d3150, #0f1b2c); }
+.kbtn.lit { background: linear-gradient(180deg, #0f4a5a, #0a2b36); color: var(--amber); }
+.start { background: linear-gradient(180deg, #3a0d1c, #1d0610); color: #ffc2d0; }
+.start.on { background: linear-gradient(180deg, #ff2e63, #a8002c); color: #fff; box-shadow: 0 0 18px rgba(255,46,99,.5); }
 .pedals { display: grid; grid-template-columns: 0.9fr 1.1fr 1fr; gap: 10px; align-items: end; }
 .pedal {
-  position: relative; height: 150px; border-radius: 8px 8px 12px 12px; border: 1px solid var(--line);
-  background:
-    repeating-linear-gradient(0deg, transparent 0 9px, rgba(255,255,255,.05) 9px 11px),
-    #0e1013;
+  position: relative; height: 150px; border: 1px solid var(--line);
+  background: repeating-linear-gradient(0deg, transparent 0 9px, rgba(46,230,255,.06) 9px 11px), #060a11;
   overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .pedal.gas { height: 170px; }
-.pedal .fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, rgba(255,90,31,.85), rgba(255,165,58,.55)); }
-.pedal.brake .fill { background: linear-gradient(0deg, rgba(255,61,46,.85), rgba(255,61,46,.4)); }
-.pedal.clutch .fill { background: linear-gradient(0deg, rgba(90,168,255,.8), rgba(90,168,255,.35)); }
-.pedal label { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font: 700 13px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; pointer-events: none; }
-.pedal output { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font: 600 13px/1 var(--f-data); pointer-events: none; font-variant-numeric: tabular-nums; }
-.pedal kbd { position: absolute; left: 0; right: 0; top: 26px; text-align: center; pointer-events: none; }
+.pedal .fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, rgba(184,255,58,.9), rgba(46,230,255,.5)); }
+.pedal.brake .fill { background: linear-gradient(0deg, rgba(255,46,77,.9), rgba(255,46,77,.35)); }
+.pedal.clutch .fill { background: linear-gradient(0deg, rgba(79,123,255,.85), rgba(79,123,255,.3)); }
+.pedal label { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font: 400 13px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; pointer-events: none; }
+.pedal output { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font: 400 14px/1 var(--f-data); pointer-events: none; }
+.pedal kbd { position: absolute; left: 50%; transform: translateX(-50%); top: 27px; pointer-events: none; }
 .pedal.disabled { opacity: .45; }
-kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 2px 5px; background: #0e1013; }
-.hint { margin: 0; color: var(--muted); font-size: 13px; }
-
-.gate-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, auto); gap: 8px; }
-.g {
-  border: 1px solid var(--line); background: var(--panel-2); border-radius: 8px; padding: 12px 0;
-  font: 700 22px/1 var(--f-display); text-align: center; touch-action: manipulation;
-}
-.g:hover { border-color: #3a404a; }
-.g.cur { background: var(--amber); color: #1a0f02; border-color: var(--amber); box-shadow: 0 0 14px rgba(255,165,58,.4); }
-.g.n { grid-column: 1 / -1; font-size: 15px; padding: 7px 0; letter-spacing: .2em; }
+kbd { font: 400 11px/1 var(--f-data); color: var(--muted); border: 1px solid var(--line); border-bottom-width: 2px; padding: 2px 5px; background: #060a11; }
+.hint { margin: 0; color: var(--muted); font-size: 14px; }
+.gate-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.g { border: 1px solid var(--line); background: #0b1320; padding: 12px 0; font: 400 22px/1 var(--f-display); text-align: center; touch-action: manipulation; color: var(--fg); }
+.g:hover { border-color: #2c4566; }
+.g.cur { background: var(--amber); color: #021016; border-color: var(--amber); box-shadow: 0 0 16px rgba(46,230,255,.45); }
+.g.n { grid-column: 1 / -1; font-size: 15px; padding: 7px 0; letter-spacing: .25em; }
 .g.r { color: var(--crit); }
 .g.r.cur { color: #fff; background: var(--crit); border-color: var(--crit); }
 .g.blank { visibility: hidden; }
 .seq { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .seq .kbtn { font-size: 18px; padding: 12px 8px; }
-.ratio { font: 500 13px/1.4 var(--f-data); color: var(--muted); font-variant-numeric: tabular-nums; }
-.ratio b { color: var(--fg); font-weight: 600; }
-
+.ratio { font: 400 13.5px/1.4 var(--f-data); color: var(--muted); }
+.ratio b { color: var(--fg); font-weight: 400; }
 .field { display: grid; gap: 6px; }
-.field > span { font: 600 11px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.seg { display: flex; flex-wrap: wrap; gap: 4px; background: #0e1013; border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
-.seg button { flex: 1 1 0; min-width: max-content; border: 0; background: transparent; border-radius: 6px; padding: 7px 9px; font-weight: 500; font-size: 13.5px; color: var(--muted); }
-.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--fg); box-shadow: 0 0 0 1px #3a404a inset, 0 -2px 0 var(--amber) inset; }
+.field > span { font: 400 11px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; background: #060a11; border: 1px solid var(--line); padding: 3px; }
+.seg button { flex: 1 1 0; min-width: max-content; border: 0; background: transparent; padding: 7px 9px; font-weight: 600; font-size: 14px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: #13253b; color: var(--fg); box-shadow: inset 0 -2px 0 var(--amber); }
 .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
-.tg { display: flex; align-items: center; gap: 9px; font-size: 14px; cursor: pointer; min-width: 0; }
-.tg input { appearance: none; -webkit-appearance: none; width: 34px; height: 20px; border-radius: 10px; background: #2a2f37; position: relative; flex: none; margin: 0; cursor: pointer; transition: background .15s; }
-.tg input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #c9c5bb; transition: transform .15s; }
-.tg input:checked { background: var(--needle); }
-.tg input:checked::after { transform: translateX(14px); background: #fff; }
+.tg { display: flex; align-items: center; gap: 9px; font-size: 15px; cursor: pointer; min-width: 0; }
+.tg input { appearance: none; -webkit-appearance: none; width: 34px; height: 18px; background: #1b2638; position: relative; flex: none; margin: 0; cursor: pointer; transition: background .15s; transform: skewX(-12deg); }
+.tg input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; background: #8fa3bb; transition: transform .15s; }
+.tg input:checked { background: var(--amber); box-shadow: 0 0 10px rgba(46,230,255,.4); }
+.tg input:checked::after { transform: translateX(16px); background: #021016; }
+.tg input:disabled { opacity: .4; }
 .vol { display: flex; align-items: center; gap: 10px; }
-.vol input[type=range] { flex: 1; accent-color: var(--needle); min-width: 0; }
-.vol output { font: 600 13px/1 var(--f-data); width: 3.5ch; text-align: right; }
+.vol input[type=range] { flex: 1; accent-color: var(--amber); min-width: 0; }
+.vol output { font: 400 13px/1 var(--f-data); width: 4ch; text-align: right; }
 
-/* ---- telemetria ---- */
+/* ---- officina ---- */
+.tuning { gap: 12px; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.presets button { border: 0; background: #13213a; padding: 8px 16px 7px; font: 400 13px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%); }
+.presets button small { font: 400 12px/1 var(--f-data); color: var(--lime); margin-left: 6px; letter-spacing: 0; text-transform: none; }
+.presets button[aria-pressed="true"] { background: var(--amber); color: #021016; }
+.presets button[aria-pressed="true"] small { color: #021016; }
+.tgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.part { background: #060a11; border: 1px solid var(--line); padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
+.part > span { font: 400 11px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.part select { width: 100%; background: #0f1828; border: 1px solid #23344d; padding: 7px 8px; font: 600 15px/1.2 var(--f-body); color: var(--fg); }
+.part p { margin: 0; font-size: 14px; line-height: 1.4; color: #aebccd; }
+.part.mod { border-color: #1f5a66; box-shadow: inset 0 0 0 1px rgba(46,230,255,.15); }
+.part.mod > span { color: var(--amber); }
+
+/* ---- telemetria ed extra ---- */
 .tele { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
-.t { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; min-width: 0; }
-.t b { display: block; font: 600 11px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.t span { display: block; font: 600 28px/1.1 var(--f-display); font-variant-numeric: tabular-nums; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.t span small { font-size: 14px; color: var(--muted); margin-left: 3px; }
-.t p { margin: 3px 0 0; font: 500 12px/1.3 var(--f-data); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.notes { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
-.notes .panel { gap: 10px; }
-.notes p, .notes li { color: #c9c5bb; font-size: 14.5px; max-width: 68ch; }
-.notes p { margin: 0; }
-.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
-.keys { display: grid; grid-template-columns: auto 1fr; gap: 7px 12px; align-items: center; font-size: 14px; color: #c9c5bb; }
+.t { background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); padding: 12px 14px; min-width: 0; }
+.t b { display: block; font: 400 11px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.t span { display: block; font: 400 26px/1.1 var(--f-display); font-variant-numeric: tabular-nums; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t span small { font: 400 14px/1 var(--f-body); color: var(--muted); margin-left: 3px; }
+.t p { margin: 3px 0 0; font: 400 12.5px/1.3 var(--f-data); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.extras { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 16px; align-items: start; }
+.extras p, .extras li { color: #c3d0de; font-size: 15px; max-width: 68ch; }
+.extras p { margin: 0; }
+.extras ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 7px 12px; align-items: center; font-size: 15px; color: #c3d0de; }
 .keys div:nth-child(odd) { display: flex; gap: 4px; flex-wrap: wrap; }
+.drop { position: relative; display: grid; gap: 4px; padding: 16px; border: 1.5px dashed #2a3d57; text-align: center; cursor: pointer; }
+.drop:hover, .drop.over { border-color: var(--amber); }
+.drop b { font: 400 15px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; }
+.drop span { font-size: 14px; color: var(--muted); }
+code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
+.smp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 260px; overflow: auto; }
+.smp-list li { display: grid; grid-template-columns: minmax(0, 1fr) 78px 96px 30px; gap: 6px; align-items: center; background: #060a11; border: 1px solid var(--line); padding: 5px 6px 5px 10px; }
+.smp-list .nm { font: 400 12.5px/1.2 var(--f-data); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.smp-list .lv { height: 3px; background: var(--amber); width: 0; margin-top: 4px; }
+.smp-list input, .smp-list select { width: 100%; background: #0f1828; border: 1px solid #23344d; padding: 4px 5px; font: 400 12.5px/1 var(--f-data); color: var(--fg); }
+.smp-list button { border: 1px solid var(--line); background: transparent; height: 26px; color: var(--muted); }
+.samples .vol small { color: var(--muted); font-size: 12px; }
 
 /* ---- schermata iniziale ---- */
 .gate {
   position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
   padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
-  background: rgba(5,6,8,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  background: rgba(2,4,8,.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
 }
-.gate .card { max-width: 440px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; gap: 14px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
-.gate h2 { margin: 0; font: 700 28px/1.05 var(--f-display); letter-spacing: .02em; }
-.gate p { margin: 0; color: #c9c5bb; }
-.gate .go { background: linear-gradient(180deg, #ff7a2a, #e14b12); color: #fff; border: 0; border-radius: 10px; padding: 14px; font: 700 18px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; }
+.gate .card { max-width: 480px; background: linear-gradient(180deg, #0f1828, #070b13); padding: 26px; display: grid; gap: 14px; box-shadow: inset 0 0 0 1px #24405f, inset 0 2px 0 var(--amber), 0 30px 80px rgba(0,0,0,.7); }
+.gate h2 { margin: 0; font: 400 32px/1.05 var(--f-display); font-style: italic; text-transform: uppercase; color: var(--fg); text-shadow: 0 0 18px rgba(46,230,255,.5); }
+.gate p { margin: 0; color: #c3d0de; }
+.gate .go { border: 0; background: var(--lime); color: #061200; padding: 14px; font: 400 18px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
 .gate small { color: var(--muted); }
 
-/* ---- tuning ---- */
-.tuning { gap: 12px; }
-.presets { display: flex; flex-wrap: wrap; gap: 8px; }
-.presets button { border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px; padding: 7px 14px; font: 600 14px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; }
-.presets button[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); }
-.tgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.part { background: #0e1013; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
-.part > span { font: 600 11px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.part select { width: 100%; background: var(--panel-2); border: 1px solid #343a43; border-radius: 6px; padding: 7px 8px; font: 500 14px/1.2 var(--f-body); color: var(--fg); }
-.part p { margin: 0; font-size: 13px; line-height: 1.4; color: #b9b5ab; }
-.part.mod { border-color: #5a3a1c; }
-.part.mod > span { color: var(--amber); }
-/* ---- garage e campioni ---- */
-.garage-wrap { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; align-items: start; }
-.g3d { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: #0b0c0e; }
-#g3d { display: block; width: 100%; aspect-ratio: 16 / 8; max-width: 100%; touch-action: none; }
-.g3d-msg { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; padding: 16px; text-align: center; color: var(--muted); }
-.g3d-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.g3d-bar .kbtn { padding: 8px 12px; font-size: 13px; }
-.swatches { display: flex; gap: 6px; margin-right: auto; }
-.swatches button { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #2a2f37; padding: 0; }
-.swatches button[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--amber); }
-.file { position: relative; overflow: hidden; }
-.file input, .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.drop { position: relative; display: grid; gap: 4px; padding: 16px; border: 1.5px dashed #3a404a; border-radius: 8px; text-align: center; cursor: pointer; }
-.drop:hover, .drop.over { border-color: var(--amber); }
-.drop b { font: 700 16px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; }
-.drop span { font-size: 13px; color: var(--muted); }
-code { font: 500 12px/1 var(--f-data); color: var(--amber); }
-.smp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 260px; overflow: auto; }
-.smp-list li { display: grid; grid-template-columns: minmax(0, 1fr) 78px 96px 30px; gap: 6px; align-items: center; background: #0e1013; border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px 5px 10px; }
-.smp-list .nm { font: 500 12.5px/1.2 var(--f-data); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.smp-list .lv { height: 3px; background: var(--amber); border-radius: 2px; width: 0; margin-top: 4px; }
-.smp-list input, .smp-list select { width: 100%; background: var(--panel-2); border: 1px solid #343a43; border-radius: 5px; padding: 4px 5px; font: 500 12.5px/1 var(--f-data); color: var(--fg); }
-.smp-list button { border: 1px solid var(--line); background: transparent; border-radius: 5px; height: 26px; color: var(--muted); }
-.samples .vol small { color: var(--muted); font-size: 12px; }
-
 @media (max-width: 1080px) {
-  .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .garage-wrap { grid-template-columns: 1fr; }
   .deck { grid-template-columns: 1fr 1fr; }
   .deck .setup { grid-column: 1 / -1; }
   .tele { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pods { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .extras { grid-template-columns: 1fr 1fr; }
+  .extras .samples { grid-column: 1 / -1; }
 }
 @media (max-width: 700px) {
-  .deck, .notes, .tgrid { grid-template-columns: 1fr; }
-  #g3d { aspect-ratio: 4 / 3; }
+  .deck, .extras, .tgrid { grid-template-columns: 1fr; }
   .tele { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .toggles { grid-template-columns: 1fr; }
-  .cluster { padding: 10px 8px; border-radius: 16px; }
+  .cluster { padding: 10px 8px; }
   .msg { top: 22px; }
+  #g3d { aspect-ratio: 4 / 4.2; }
+  .hud-tag { font-size: 12px; padding: 4px 8px; }
+  .radar { top: 84px; font-size: 13px; }
+  .prompt { padding: 10px 12px; } .prompt p { font-size: 14px; }
+  .toasts { top: auto; bottom: 50%; }
+  .roadbar .hint { margin-left: 0; }
 }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
@@ -268,14 +330,24 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
     <div class="brand">
       <span class="badge">2JZ-GTE</span>
       <div>
-        <h1>Banco Suono 2JZ</h1>
-        <p>Toyota Supra RZ · JZA80 · 3.0 L sei in linea biturbo · cambio Getrag V160 a 6 marce</p>
+        <h1>2JZ <span>Night Run</span></h1>
+        <p>Toyota Supra RZ · JZA80 · sei in linea biturbo · Getrag V160</p>
       </div>
+    </div>
+    <div class="career" id="career">
+      <div class="chip money" id="chipMoney"><b>Contanti</b><span id="hudMoney">€ 3.000</span></div>
+      <div class="chip"><b>Reputazione</b><span id="hudRep">0</span></div>
+      <div class="chip"><b>Ricercato</b><div class="heat" id="hudHeat"><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="modesw" id="modeSw" role="group" aria-label="Modalità">
+        <button type="button" data-m="career">Carriera</button>
+        <button type="button" data-m="free">Libera</button>
+      </div>
+      <button class="linkbtn" type="button" id="btnNew">Nuova carriera</button>
     </div>
     <div class="audio-state" id="audioState"><i></i><span>Audio spento</span></div>
   </header>
 
-  <section class="cluster off" id="cluster" aria-label="Quadro strumenti">
+  <section class="cluster cutbox off" id="cluster" aria-label="Quadro strumenti">
     <div class="shiftlights" id="shiftlights" aria-hidden="true"></div>
     <canvas id="gauges" role="img" aria-label="Contagiri, tachimetro e manometro della pressione turbo"></canvas>
     <div class="msg" id="msg" role="status" aria-live="polite"></div>
@@ -283,6 +355,7 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
       <span class="lamp red" data-l="check">CHECK</span>
       <span class="lamp red" data-l="batt">BATT</span>
       <span class="lamp red" data-l="oil">OIL</span>
+      <span class="lamp amb" data-l="fuel">RISERVA</span>
       <span class="lamp grn" data-l="t2">TURBO 2</span>
       <span class="lamp blu" data-l="launch">LAUNCH</span>
       <span class="lamp amb" data-l="cut">LIMITATORE</span>
@@ -294,6 +367,37 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
       <div class="pod"><b>AFR</b><span id="pAfr">—</span><div class="bar"><i id="bAfr"></i></div></div>
       <div class="pod"><b>Batteria</b><span id="pVolt">—</span><div class="bar"><i id="bVolt"></i></div></div>
       <div class="pod"><b>Benzina</b><span id="pFuel">—</span><div class="bar"><i id="bFuel"></i></div></div>
+    </div>
+  </section>
+
+  <section class="road cutbox" aria-label="Strada">
+    <div class="stage">
+    <canvas id="g3d" aria-label="La Supra sulla strada di notte: trascina per cambiare inquadratura"></canvas>
+    <p class="g3d-msg" id="g3dMsg" hidden></p>
+    <div class="hud">
+      <div class="hud-l">
+        <div class="hud-tag"><b>KM</b><span id="hudDist">0,0</span></div>
+        <div class="hud-tag" id="hudFuelTag"><b>BENZINA</b><span id="hudFuel">—</span></div>
+        <div class="hud-tag" id="hudJob" hidden></div>
+      </div>
+      <div class="radar" id="radar" hidden>POLIZIA</div>
+      <div class="racebox" id="raceBox" hidden><div class="big" id="raceBig">3</div><div class="sub" id="raceSub"></div></div>
+      <div class="toasts" id="toasts" aria-live="polite"></div>
+      <div class="prompt" id="promptBox" hidden>
+        <h3 id="promptTitle"></h3>
+        <p id="promptText"></p>
+        <div class="opts" id="promptOpts"></div>
+        <div class="timer"><i id="promptTimer"></i></div>
+      </div>
+    </div>
+    </div>
+    <div class="roadbar">
+      <div class="swatches" id="swatches" role="group" aria-label="Colore carrozzeria"></div>
+      <label class="kbtn file">Carica modello .glb<input type="file" id="glbIn" accept=".glb,.gltf,model/gltf-binary"></label>
+      <button class="kbtn" type="button" id="glbRot">Ruota 90°</button>
+      <button class="kbtn" type="button" id="glbReset">Modello di base</button>
+      <button class="kbtn" type="button" id="camReset">Inquadratura</button>
+      <p class="hint"><span id="g3dName">modello di base</span> · trascina per girare la visuale</p>
     </div>
   </section>
 
@@ -355,38 +459,11 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
     </div>
   </section>
 
-  <section class="panel tuning" aria-labelledby="tuneTitle">
-    <h2 id="tuneTitle">Reparto tuning <em id="tuneSum">—</em></h2>
+  <section class="panel tuning cutbox" aria-labelledby="tuneTitle">
+    <h2 id="tuneTitle">Officina <em id="tuneSum">—</em></h2>
     <div class="presets" id="presets"></div>
     <div class="tgrid" id="tgrid"></div>
-    <p class="hint">I marchi indicano parti reali per JZA80 e 2JZ. Il carattere sonoro di ciascuna è una nostra modellazione fisica (collettore, turbina, catalizzatore, tubo, silenziatore, valvole), non una registrazione del prodotto.</p>
-  </section>
-
-  <section class="garage-wrap">
-    <div class="panel garage">
-      <h2>Garage 3D <em id="g3dName">modello di base</em></h2>
-      <div class="g3d"><canvas id="g3d" aria-label="Vista 3D dell'auto: trascina per ruotare, rotella per lo zoom"></canvas><p class="g3d-msg" id="g3dMsg" hidden></p></div>
-      <div class="g3d-bar">
-        <div class="swatches" id="swatches" role="group" aria-label="Colore carrozzeria"></div>
-        <label class="kbtn file">Carica modello .glb<input type="file" id="glbIn" accept=".glb,.gltf,model/gltf-binary"></label>
-        <button class="kbtn" type="button" id="glbRot">Ruota 90°</button>
-        <button class="kbtn" type="button" id="glbReset">Modello di base</button>
-      </div>
-      <p class="hint">Trascina per girare intorno all'auto. Un modello di una mod (ad esempio .yft, .kn5, .dae) va prima esportato in GLB con Blender. Il file resta nel tuo browser.</p>
-    </div>
-    <div class="panel samples">
-      <h2>Suoni della mod <em id="smpCount">nessun campione</em></h2>
-      <label class="drop" id="drop">
-        <input type="file" id="smpIn" accept="audio/*,.ogg,.wav,.mp3,.flac" multiple>
-        <b>Carica i campioni audio</b>
-        <span>WAV, OGG, MP3 o FLAC in loop. Il regime si legge dal nome: <code>on_4000.ogg</code>, <code>off_2500.wav</code>.</span>
-      </label>
-      <ul class="smp-list" id="smpList"></ul>
-      <div class="field"><span>Miscela</span>
-        <div class="vol"><small>Sintesi</small><input type="range" id="mix" min="0" max="100" value="70" aria-label="Miscela tra sintesi e campioni"><small>Campioni</small></div>
-      </div>
-      <p class="hint">Ogni file viene intonato sui giri del motore e sfumato con i vicini. "Carico" suona con il gas aperto, "rilascio" quando molli. I file restano nel tuo browser, non vengono caricati da nessuna parte.</p>
-    </div>
+    <p class="hint" id="shopNote">I marchi indicano parti reali per JZA80 e 2JZ. Il carattere sonoro di ciascuna è una nostra modellazione fisica, non una registrazione del prodotto.</p>
   </section>
 
   <section class="tele" aria-label="Telemetria">
@@ -398,27 +475,38 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
     <div class="t"><b>400 m</b><span id="t400">—</span><p id="t400b">migliore —</p></div>
   </section>
 
-  <section class="notes">
+  <section class="extras">
+    <div class="panel samples">
+      <h2>Suoni della mod <em id="smpCount">nessun campione</em></h2>
+      <label class="drop" id="drop">
+        <input type="file" id="smpIn" accept="audio/*,.ogg,.wav,.mp3,.flac" multiple>
+        <b>Carica i campioni audio</b>
+        <span>WAV, OGG, MP3 o FLAC in loop. Il regime si legge dal nome: <code>on_4000.ogg</code>, <code>off_2500.wav</code>.</span>
+      </label>
+      <ul class="smp-list" id="smpList"></ul>
+      <div class="field"><span>Miscela</span>
+        <div class="vol"><small>Sintesi</small><input type="range" id="mix" min="0" max="100" value="70" aria-label="Miscela tra sintesi e campioni"><small>Campioni</small></div>
+      </div>
+      <p class="hint">I campioni vengono intonati sui giri e sfumati tra loro. I file restano nel tuo browser.</p>
+    </div>
     <div class="panel">
-      <h2>Come nasce il suono</h2>
-      <p>Non ci sono registrazioni: ogni scoppio è calcolato in tempo reale sull'angolo di manovella, campione per campione (44 100 o 48 000 volte al secondo). I sei cilindri scoppiano nell'ordine 1‑5‑3‑6‑2‑4, uno ogni 120°. Il loro impulso di scarico attraversa il collettore (ghisa 3+3 di serie o tubolare 6‑1 col single), la turbina che lo smorza, un tubo che risuona a quarto d'onda e il silenziatore scelto.</p>
+      <h2>Come si gioca</h2>
       <ul>
-        <li>Variazioni ciclo per ciclo e piccole differenze tra cilindri: il minimo "respira" come un motore vero.</li>
-        <li>Biturbo sequenziale: il secondo turbo entra verso 4000 giri, si sente il cambio di fischio.</li>
-        <li>Rilascio con boost: soffio del blow-off, sussurro del ricircolo o "stu-tu-tu" del compressore in pompaggio.</li>
-        <li>Limitatore, 2‑step e mappa pop &amp; bang fanno esplodere il carburante incombusto nello scarico.</li>
+        <li>Guidi tu: gas, freno e marce. Resti in prima corsia e sorpassi da solo quando c'è traffico lento.</li>
+        <li>Lungo la strada arrivano proposte: rispondi con i pulsanti o con <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>. Se non rispondi, vale l'ultima.</li>
+        <li>Polizia in vista: se le passi accanto in sesta ti ferma e ti multa. Ogni multa alza il livello di ricercato e le prossime costano di più.</li>
+        <li>Sfide da 400 m: freno, gas su, parti al verde. Partire prima del via costa la posta.</li>
+        <li>La benzina si consuma davvero (70 litri). Le parti dell'officina si comprano e si montano da fermo.</li>
       </ul>
     </div>
     <div class="panel">
       <h2>Comandi</h2>
       <div class="keys">
-        <div><kbd>I</kbd></div><div>Quadro acceso / spento</div>
-        <div><kbd>Invio</kbd></div><div>Avviamento (tieni premuto)</div>
-        <div><kbd>W</kbd><kbd>↑</kbd></div><div>Acceleratore</div>
-        <div><kbd>S</kbd><kbd>↓</kbd></div><div>Freno</div>
-        <div><kbd>Spazio</kbd></div><div>Frizione (modo manuale)</div>
-        <div><kbd>E</kbd><kbd>→</kbd> <kbd>Q</kbd><kbd>←</kbd></div><div>Sali / scala marcia</div>
-        <div><kbd>1</kbd>–<kbd>6</kbd> <kbd>N</kbd> <kbd>R</kbd></div><div>Marcia diretta, folle, retromarcia</div>
+        <div><kbd>I</kbd> <kbd>Invio</kbd></div><div>Quadro · avviamento (tieni premuto)</div>
+        <div><kbd>W</kbd><kbd>↑</kbd> <kbd>S</kbd><kbd>↓</kbd></div><div>Gas · freno</div>
+        <div><kbd>E</kbd><kbd>→</kbd> <kbd>Q</kbd><kbd>←</kbd></div><div>Sali · scala marcia</div>
+        <div><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></div><div>Rispondi alle proposte (altrimenti: marcia diretta)</div>
+        <div><kbd>N</kbd> <kbd>R</kbd> <kbd>Spazio</kbd></div><div>Folle · retro · frizione (manuale)</div>
         <div><kbd>V</kbd> <kbd>L</kbd> <kbd>M</kbd></div><div>Ascolto · launch control · muto</div>
         <div><kbd>Pad</kbd></div><div>RT gas, LT freno, A/X marce, B frizione, Y avviamento</div>
       </div>
@@ -428,11 +516,11 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
 
 <div class="gate" id="gate">
   <div class="card">
-    <h2>Sali a bordo</h2>
-    <p>Il motore suona solo dopo un tuo tocco: il browser blocca l'audio finché non interagisci con la pagina.</p>
-    <p>Poi gira la chiave: <kbd>I</kbd> per il quadro e <kbd>Invio</kbd> tenuto premuto per l'avviamento. Meglio con le cuffie.</p>
-    <button class="go" id="goBtn" type="button">Accendi l'audio</button>
-    <small>Partenza in folle, frizione automatica attiva.</small>
+    <h2>Stanotte si corre</h2>
+    <p>Hai una Supra di serie, € 3.000 in tasca e il serbatoio a tre quarti. Fai soldi con sfide e consegne, monta pezzi in officina e stai lontano dalla polizia in sesta.</p>
+    <p><kbd>I</kbd> quadro, <kbd>Invio</kbd> tenuto premuto per avviare, <kbd>E</kbd> prima marcia, <kbd>W</kbd> gas. Meglio con le cuffie.</p>
+    <button class="go" id="goBtn" type="button">Accendi e parti</button>
+    <small>La carriera si salva in questo browser. In modalità libera è tutto sbloccato e non ci sono eventi.</small>
   </div>
 </div>
 
@@ -444,6 +532,8 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
 <script src="tuning.js"></script>
 <script src="samples.js"></script>
 <script src="car3d.js"></script>
+<script src="street3d.js"></script>
+<script src="game.js"></script>
 <script>
 (() => {
   'use strict';
@@ -453,6 +543,9 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
   const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const sim = new SupraSim();
+  const game = new StreetGame(sim);
+  try { const g = localStorage.getItem('nightrun'); if (g) { game.load(g); if (typeof game.s.fuel === 'number') sim.fuel = game.s.fuel; } } catch (e) { /* storage non disponibile */ }
+  const saveGame = () => { game.s.fuel = sim.fuel; try { localStorage.setItem('nightrun', game.save()); } catch (e) { /* ignora */ } };
   const S = { tune: Object.assign({}, TUNING_PRESETS[0].sel), pops: false, launch: false, autoClutch: true, revMatch: true, view: 0, vol: 80, muted: false, mix: 70, paint: '#c81d11' };
   try {
     const saved = JSON.parse(localStorage.getItem('banco2jz') || '{}');
@@ -610,7 +703,7 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
     keys.add(k);
     if (k === 'e') shiftUp();
     else if (k === 'q') shiftDown();
-    else if (k >= '1' && k <= '6') shiftTo(+k);
+    else if (k >= '1' && k <= '6') { if (game.prompt && +k <= game.prompt.options.length) game.answer(+k - 1); else shiftTo(+k); }
     else if (k === 'n') shiftTo(0);
     else if (k === 'r') shiftTo(-1);
     else if (k === 'i') ignToggle();
@@ -710,7 +803,11 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
       c.strokeStyle = lit ? COL.crit : '#4a1612'; c.globalAlpha = lit ? 0.9 : 1; c.stroke(); c.globalAlpha = 1;
     }
     // tacche
-    if (lit) { c.shadowColor = 'rgba(255,190,120,.55)'; c.shadowBlur = R * 0.04; }
+    if (lit) {
+      c.save(); c.beginPath(); c.arc(0, 0, R * 0.985, 0, Math.PI * 2); c.lineWidth = R * 0.012;
+      c.strokeStyle = 'rgba(46,230,255,.75)'; c.shadowColor = '#2ee6ff'; c.shadowBlur = R * 0.08; c.stroke(); c.restore();
+      c.shadowColor = 'rgba(46,230,255,.6)'; c.shadowBlur = R * 0.045;
+    }
     const n = Math.round((g.max - g.min) / g.minor);
     for (let i = 0; i <= n; i++) {
       const v = g.min + i * g.minor, a = ang(g, v);
@@ -832,9 +929,10 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
     lamp.t2.classList.toggle('on', lit && TP.sim.turbo.twin && sim.sec > 0.6);
     lamp.launch.classList.toggle('on', lit && sim.launchArmed);
     lamp.cut.classList.toggle('on', lit && (sim.cut === 2 || sim.cut === 3));
+    lamp.fuel.classList.toggle('on', lit && sim.fuel < 0.12);
     $('cluster').classList.toggle('off', !lit);
     for (const p of ['clutch', 'brake', 'thr']) {
-      const v = p === 'clutch' ? (S.autoClutch ? sim.clutch : inp.clutch) : inp[p];
+      const v = p === 'clutch' ? (S.autoClutch ? sim.clutch : inp.clutch) : sim.in[p];
       const el = pedEls[p]; el.querySelector('.fill').style.height = (v * 100).toFixed(1) + '%';
       el.querySelector('output').textContent = Math.round(v * 100) + '%';
     }
@@ -887,20 +985,25 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
     if (!grid.childElementCount) {
       for (const [k, cat] of Object.entries(TUNING)) {
         const box = document.createElement('label'); box.className = 'part'; box.dataset.k = k;
-        box.innerHTML = `<span>${cat.label}</span><select id="tu-${k}">${cat.items.map((it) => `<option value="${it.id}">${it.brand === 'Su misura' || it.brand === '—' || it.brand === 'Integrata' ? '' : it.brand + ' · '}${it.name}</option>`).join('')}</select><p></p>`;
-        box.querySelector('select').addEventListener('change', (e) => { S.tune[k] = e.target.value; applySettings(); });
+        box.innerHTML = `<span>${cat.label}</span><select id="tu-${k}">${cat.items.map((it) => `<option value="${it.id}"></option>`).join('')}</select><p></p>`;
+        box.querySelector('select').addEventListener('change', (e) => mountPart(k, e.target.value, e.target));
         grid.appendChild(box);
       }
       const pr = $('presets');
       TUNING_PRESETS.forEach((p) => {
-        const b = document.createElement('button'); b.type = 'button'; b.textContent = p.name; b.dataset.id = p.id;
-        b.addEventListener('click', () => { S.tune = Object.assign({}, p.sel); applySettings(); flash('Preparazione: ' + p.name, 1.4); });
+        const b = document.createElement('button'); b.type = 'button'; b.dataset.id = p.id;
+        b.addEventListener('click', () => mountPreset(p));
         pr.appendChild(b);
       });
     }
     grid.querySelectorAll('.part').forEach((box) => {
       const k = box.dataset.k, it = tuningItem(k, S.tune[k]);
-      box.querySelector('select').value = it.id;
+      const sel = box.querySelector('select');
+      Array.from(sel.options).forEach((o) => {
+        const x = tuningItem(k, o.value), label = (['Su misura', '—', 'Integrata'].includes(x.brand) ? '' : x.brand + ' · ') + x.name;
+        o.textContent = label + (game.owns(k, x.id) ? (x.id === it.id ? '' : ' · tuo') : ` · € ${fmt(x.price)}`);
+      });
+      sel.value = it.id;
       let note = it.note;
       if (k === 'wastegate' && it.id === 'tial' && TP.sim.turbo.twin) note += ' Con il biturbo di serie non ha effetto.';
       box.querySelector('p').textContent = note;
@@ -909,16 +1012,38 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
     $('presets').querySelectorAll('button').forEach((b) => {
       const p = TUNING_PRESETS.find((x) => x.id === b.dataset.id);
       b.setAttribute('aria-pressed', String(Object.keys(p.sel).every((k) => p.sel[k] === S.tune[k])));
+      const cost = presetCost(p);
+      b.innerHTML = p.name + (cost ? `<small>€ ${fmt(cost)}</small>` : '');
     });
     const est = sim.estimatePeak();
     $('tuneSum').textContent = `${fmt(Math.round(est.cv / 5) * 5)} CV a ${fmt(est.rpmCv)} · ${fmt(Math.round(est.nm / 5) * 5)} Nm · ${fmt(TP.sim.turbo.max, 2)} bar · limitatore ${fmt(TP.sim.limiter)}`;
+  }
+
+  function presetCost(p) { return Object.entries(p.sel).reduce((a, [k, id]) => a + game.price(k, id), 0); }
+  function mountPart(k, id, selEl) {
+    const revert = () => { if (selEl) selEl.value = S.tune[k]; };
+    if (!game.canMount()) { revert(); flash(game.race ? 'Non durante una sfida' : 'Le parti si montano da fermo: accosta e frena', 2.4); return; }
+    if (!game.owns(k, id)) {
+      const r = game.buy(k, id);
+      if (!r.ok) { revert(); flash(r.why, 2.4); return; }
+    }
+    S.tune[k] = id; applySettings(); saveGame();
+  }
+  function mountPreset(p) {
+    if (!game.canMount()) { flash('Le parti si montano da fermo: accosta e frena', 2.4); return; }
+    const cost = presetCost(p);
+    if (cost > game.s.money) { flash(`Mancano € ${fmt(cost - Math.floor(game.s.money))} per questa preparazione`, 2.6); return; }
+    for (const [k, id] of Object.entries(p.sel)) if (!game.owns(k, id)) game.buy(k, id);
+    S.tune = Object.assign({}, p.sel); applySettings(); saveGame();
+    flash('Preparazione montata: ' + p.name, 1.6);
   }
 
   // ---------------------------------------------------------------- garage 3D
   let garage = null, garageOn = true;
   const PAINTS = [['#c81d11', 'Rosso'], ['#f2f2ee', 'Bianco'], ['#0d0e10', 'Nero'], ['#9ea3aa', 'Argento'], ['#e2690f', 'Arancio'], ['#1d3f8f', 'Blu']];
   try {
-    garage = new Garage3D($('g3d'));
+    garage = new Street3D($('g3d'));
+    $('camReset').addEventListener('click', () => garage.resetCamera());
     const io = window.IntersectionObserver ? new IntersectionObserver((es) => { garageOn = es[0].isIntersecting; garage.visible = garageOn; }) : null;
     if (io) io.observe($('g3d'));
     if (window.ResizeObserver) new ResizeObserver(() => garage.resize()).observe($('g3d'));
@@ -980,12 +1105,114 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
   $('mix').addEventListener('input', (e) => { S.mix = +e.target.value; applySettings(); });
   renderSamples();
 
+  // ---------------------------------------------------------------- carriera: HUD, proposte, avvisi
+  const heatPips = Array.from(document.querySelectorAll('#hudHeat i'));
+  let promptShown = null, saveT = 0, sirenT = 0;
+  const siren = { osc: null, g: null };
+  function renderGame(dt) {
+    const s = game.s;
+    $('hudMoney').textContent = (s.money < 0 ? '− € ' : '€ ') + fmt(Math.abs(Math.floor(s.money)));
+    $('chipMoney').classList.toggle('neg', s.money < 0);
+    $('hudRep').textContent = fmt(s.rep);
+    heatPips.forEach((p, i) => p.classList.toggle('on', s.heat > i + 0.05));
+    $('hudDist').textContent = fmt(s.dist / 1000, 1);
+    const liters = sim.fuel * sim.P.tank;
+    $('hudFuel').textContent = fmt(liters, 1) + ' L' + (sim.fuelRate > 0.0008 ? ` · ${fmt(sim.fuelRate * 3600, 0)} L/h` : '');
+    $('hudFuelTag').classList.toggle('fuel-low', sim.fuel < 0.15);
+    const j = game.job, jb = $('hudJob');
+    jb.hidden = !j;
+    if (j) jb.innerHTML = `<b>CONSEGNA</b>${fmt(Math.max(0, j.to - s.dist) / 1000, 1)} km · ${Math.max(0, Math.ceil((j.deadline - j.t) / 60))} min per il bonus`;
+    const rd = game.mode === 'career' ? game.radar() : null;
+    $('radar').hidden = rd === null || !!game.race;
+    if (rd !== null) $('radar').textContent = `POLIZIA ${Math.round(rd / 10) * 10} m${sim.gear === 6 ? ' · ESCI DALLA SESTA' : ''}`;
+    // sfida
+    const R = game.race, rb = $('raceBox');
+    if (R && R.phase === 'count') {
+      rb.hidden = false; const n = Math.ceil(R.t);
+      $('raceBig').textContent = n > 0 ? n : 'VIA'; $('raceBig').classList.toggle('red', n > 0);
+      $('raceSub').textContent = `${R.rv.name} · ${R.rv.car} · posta € ${fmt(R.stake)}`;
+    } else if (R && R.phase === 'run') {
+      rb.hidden = false; $('raceBig').textContent = R.tt < 0.8 ? 'VIA' : ''; $('raceBig').classList.remove('red');
+      const riv = game.ents.find((e) => e.kind === 'rival'), gap = riv ? (s.dist - riv.x) : 0;
+      $('raceSub').textContent = `${fmt(Math.max(0, 402 - (s.dist - R.x0)))} m all'arrivo · ${gap >= 0 ? 'davanti' : 'dietro'} di ${fmt(Math.abs(gap), 1)} m`;
+    } else if (R) { rb.hidden = false; $('raceBig').textContent = ''; $('raceSub').textContent = 'Accosta al semaforo…'; }
+    else rb.hidden = true;
+    // proposta
+    const P = game.prompt, pb = $('promptBox');
+    if (P !== promptShown) {
+      promptShown = P; pb.hidden = !P;
+      if (P) {
+        pb.className = 'prompt ' + (P.kind || '');
+        $('promptTitle').textContent = P.title; $('promptText').textContent = P.text;
+        const o = $('promptOpts'); o.innerHTML = '';
+        P.options.forEach((op, i) => {
+          const b = document.createElement('button'); b.type = 'button'; b.innerHTML = `${op.label}<kbd>${i + 1}</kbd>`;
+          b.addEventListener('click', () => { ensureAudio(); game.answer(i); });
+          o.appendChild(b);
+        });
+      }
+    }
+    if (P) $('promptTimer').style.width = (Math.max(0, P.t / P.time) * 100).toFixed(1) + '%';
+    // messaggi
+    for (const m of game.out.splice(0)) {
+      const t = document.createElement('div'); t.className = 'toast ' + m.kind; t.textContent = m.text;
+      const box = $('toasts'); box.prepend(t);
+      while (box.children.length > 4) box.lastChild.remove();
+      setTimeout(() => t.remove(), 5200);
+    }
+    // sirena bitonale
+    if (audio.ctx && audio.ready) {
+      if (!siren.osc) {
+        siren.osc = audio.ctx.createOscillator(); siren.osc.type = 'triangle';
+        siren.g = audio.ctx.createGain(); siren.g.gain.value = 0;
+        siren.osc.connect(siren.g).connect(audio.ctx.destination); siren.osc.start();
+      }
+      sirenT += dt;
+      const on = game.siren && !S.muted;
+      siren.g.gain.setTargetAtTime(on ? 0.05 * S.vol / 100 : 0, audio.ctx.currentTime, 0.05);
+      if (on) siren.osc.frequency.setTargetAtTime(Math.floor(sirenT * 1.6) % 2 ? 660 : 494, audio.ctx.currentTime, 0.01);
+    }
+    saveT += dt; if (saveT > 3) { saveT = 0; saveGame(); }
+  }
+  function renderMode() {
+    document.querySelectorAll('#modeSw button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === game.mode)));
+    $('career').classList.toggle('free', game.mode === 'free');
+    $('shopNote').textContent = game.mode === 'free'
+      ? 'Modalità libera: tutte le parti sono gratis e si montano anche in movimento. I marchi indicano parti reali; il suono è una nostra modellazione fisica.'
+      : 'Le parti si pagano coi contanti della carriera e si montano solo da fermo. I marchi indicano parti reali; il suono è una nostra modellazione fisica.';
+    renderTuning();
+  }
+  $('modeSw').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    game.mode = b.dataset.m; game.prompt = null; game.ap = null; game.race = null; game.ents = [];
+    if (game.mode === 'career') {   // in carriera si torna ai pezzi che si possiedono
+      for (const k of Object.keys(S.tune)) if (!game.owns(k, S.tune[k])) S.tune[k] = TUNING[k].items[0].id;
+    }
+    applySettings(); renderMode(); saveGame();
+  });
+  let newArm = 0;
+  $('btnNew').addEventListener('click', () => {
+    const b = $('btnNew');
+    if (Date.now() - newArm > 4000) { newArm = Date.now(); b.textContent = 'Sicuro? Clicca di nuovo per azzerare'; setTimeout(() => { b.textContent = 'Nuova carriera'; }, 4000); return; }
+    game.reset(); sim.fuel = 0.72; S.tune = Object.assign({}, TUNING_PRESETS[0].sel);
+    b.textContent = 'Nuova carriera'; newArm = 0;
+    applySettings(); renderMode(); saveGame(); flash('Nuova carriera: € 3.000 e una Supra di serie', 2.4);
+  });
+  window.addEventListener('pagehide', saveGame);
+  window.nightRun = { sim, game };   // utile per provare eventi dalla console
+
   // ---------------------------------------------------------------- ciclo principale
   let last = performance.now(), wasRunning = false, smpLoad = 0, flameT = 0;
   function frame(now) {
-    const dt = clamp((now - last) / 1000, 0, 0.05); last = now;
+    const dt = clamp((now - last) / 1000, 0, 0.1); last = now;
     readPad(); updateInputs(dt);
+    const ctl = game.control({ thr: sim.in.thr, brake: sim.in.brake }, dt);
+    sim.in.thr = ctl.thr; sim.in.brake = ctl.brake;
+    if (game.blocked) { sim.in.thr = Math.min(sim.in.thr, 0.12); sim.in.brake = Math.max(sim.in.brake, 0.18); }
+    if (game.mode === 'free') sim.fuel = Math.max(sim.fuel, 0.5);
     sim.update(dt);
+    game.update(dt);
+    renderGame(dt);
     const ev = sim.events.splice(0);
     for (const e of ev) if (e.type === 'grind' && S.autoClutch && Math.abs(sim.v) > 1.2) flash('Retromarcia solo da fermo');
     if (wasRunning && !sim.running && sim.stalled) flash('Motore spento: stallo. Folle e riavvia', 3);
@@ -1000,7 +1227,7 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
     if (garage && garageOn) {
       flameT = (sim.cut === 2 || sim.cut === 3) && TP.sim.sparkCut ? 1 : sim.cut === 1 && sim.cfg.pops && sim.ovr < 3 ? 0.35 : 0;
       garage.update(dt, { v: sim.v, ww: sim.ww, acc: sim.acc, rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
-        ign: sim.ign, brake: inp.brake, flame: flameT });
+        ign: sim.ign, brake: sim.in.brake, flame: flameT }, game);
     }
     if (msgT > 0) { msgT -= dt; if (msgT <= 0) $('msg').classList.remove('show'); }
     draw(); updateDom(dt);
@@ -1012,7 +1239,9 @@ code { font: 500 12px/1 var(--f-data); color: var(--amber); }
   $('goBtn').addEventListener('click', () => { ensureAudio(); hideGate(); setTimeout(() => $('btnIgn').focus(), 50); });
   window.addEventListener('resize', layout);
   if (window.ResizeObserver) new ResizeObserver(() => { if (Math.abs(cv.clientWidth - W) > 1) layout(); }).observe(cv);
+  if (game.mode === 'career') for (const k of Object.keys(S.tune)) if (!game.owns(k, S.tune[k])) S.tune[k] = TUNING[k].items[0].id;
   applySettings();
+  renderMode();
   layout();
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => faceCache.clear());
   requestAnimationFrame(frame);
