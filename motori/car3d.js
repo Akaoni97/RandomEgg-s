@@ -129,23 +129,88 @@ class Garage3D {
         if (this.custom) this.body.remove(this.custom);
         const m = gltf.scene;
         m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-        const box = new T.Box3().setFromObject(m), size = box.getSize(new T.Vector3());
-        const len = Math.max(size.x, size.z) || 1;
-        m.scale.setScalar(4.5 / len);
-        if (size.z > size.x) m.rotation.y = Math.PI / 2;
-        const box2 = new T.Box3().setFromObject(m), ctr = box2.getCenter(new T.Vector3());
-        m.position.set(-ctr.x, -box2.min.y, -ctr.z);
-        this.custom = new T.Group(); this.custom.add(m);
+        this.custom = this.fitModel(m);
         this.body.add(this.custom);
+        this.refloor();
         this.baseParts.forEach((p) => { p.visible = p === this.tips[0]?.fl || p === this.tips[1]?.fl; });
         this.wheels.forEach((w) => { w.visible = false; });
-        res(file.name);
+        res({ name: file.name, wheels: this.customWheels.length, upFixed: this.upFixed });
       }, rej);
     }));
   }
-  rotateModel() { if (this.custom) this.custom.rotation.y += Math.PI / 2; }
+
+  // orienta un modello qualsiasi: lunghezza → X (muso avanti), altezza → Y, larghezza → Z
+  fitModel(m) {
+    const T = this.T;
+    const orient = new T.Group(); orient.add(m);
+    orient.updateMatrixWorld(true);
+    const size = new T.Box3().setFromObject(orient).getSize(new T.Vector3()).toArray();
+    // un'auto è più lunga che larga e più larga che alta: l'asse più corto è l'alto
+    const idx = [0, 1, 2].sort((a, b) => size[b] - size[a]);
+    const L = idx[0], W = idx[1], U = idx[2];
+    this.upFixed = U !== 1;
+    const e = (k, sgn = 1) => { const v = [0, 0, 0]; v[k] = sgn; return v; };
+    const rows = [e(L), e(U), e(W)];
+    const det = (a) => a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0]) + a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);
+    if (det(rows) < 0) rows[2] = e(W, -1);
+    const R = new T.Matrix4().set(...rows[0], 0, ...rows[1], 0, ...rows[2], 0, 0, 0, 0, 1);
+    orient.quaternion.setFromRotationMatrix(R);
+    orient.updateMatrixWorld(true);
+    // muso avanti: i fari devono stare verso +X
+    const avgX = (re) => {
+      let sum = 0, n = 0;
+      m.traverse((o) => { if (o.isMesh && re.test(o.name || '') && !/rest/i.test(o.name || '')) { sum += new T.Box3().setFromObject(o).getCenter(new T.Vector3()).x; n++; } });
+      return n ? sum / n : null;
+    };
+    const head = avgX(/head|front|faro|anterior|grille|griglia|splitter/i), tail = avgX(/tail|rear|posterior|stop|diffuser|exhaust|scarico/i);
+    if ((head !== null && tail !== null && head < tail) || (head !== null && tail === null && head < 0) || (head === null && tail !== null && tail > 0)) {
+      orient.quaternion.premultiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), Math.PI));
+    }
+    const holder = new T.Group(); holder.add(orient);
+    holder.updateMatrixWorld(true);
+    const len = new T.Box3().setFromObject(holder).getSize(new T.Vector3()).x || 1;
+    holder.scale.setScalar(4.5 / len);
+    const custom = new T.Group(); custom.add(holder);
+    custom.updateMatrixWorld(true);
+    // ruote: pezzi con nome da ruota, raggruppati per angolo dell'auto e fatti girare attorno al loro asse
+    const parts = [];
+    custom.traverse((o) => { if (o.isMesh && /tire|tyre|wheel|rim|spoke|hub|bolt|ruota|gomma|cerch/i.test(o.name || '')) parts.push(o); });
+    const ctrAll = new T.Box3().setFromObject(custom).getCenter(new T.Vector3());
+    const groups = new Map();
+    for (const o of parts) {
+      const c = new T.Box3().setFromObject(o).getCenter(new T.Vector3());
+      const key = (c.x > ctrAll.x ? 'F' : 'R') + (c.z > ctrAll.z ? 'd' : 's');
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({ o, c });
+    }
+    this.customWheels = [];
+    if (groups.size >= 2 && groups.size <= 4) {
+      for (const [key, list] of groups) {
+        const box = new T.Box3(); list.forEach(({ o }) => box.expandByObject(o));
+        const pivot = new T.Group(); pivot.position.copy(box.getCenter(new T.Vector3()));
+        custom.add(pivot); custom.updateMatrixWorld(true);
+        list.forEach(({ o }) => pivot.attach(o));
+        this.customWheels.push({ pivot, front: key[0] === 'F' });
+      }
+    }
+    this.customInner = holder;
+    return custom;
+  }
+
+  // appoggia il modello a terra e lo centra
+  refloor() {
+    const T = this.T, c = this.custom; if (!c) return;
+    this.body.remove(c);
+    c.position.set(0, 0, 0); c.updateMatrixWorld(true);
+    const box = new T.Box3().setFromObject(c), ctr = box.getCenter(new T.Vector3());
+    c.position.set(-ctr.x, -box.min.y, -ctr.z);
+    this.body.add(c);
+  }
+  rotateModel() { if (this.custom) { this.custom.rotation.y += Math.PI / 2; this.refloor(); } }
+  uprightModel() { if (this.custom) { this.custom.rotation.x += Math.PI / 2; this.refloor(); } }
   resetModel() {
     if (this.custom) { this.body.remove(this.custom); this.custom = null; }
+    this.customWheels = [];
     this.baseParts.forEach((p) => { p.visible = true; });
     this.setTips(this.dual ? 2 : 1);
   }
@@ -163,6 +228,7 @@ class Garage3D {
     st.spin += s.ww * dt;                 // posteriori: motrici, possono pattinare
     st.front = (st.front || 0) + s.v / 0.322 * dt;
     this.wheels.forEach((w, i) => { w.rotation.z = -(i < 2 ? st.front : st.spin); });
+    (this.customWheels || []).forEach((w) => { w.pivot.rotation.z = -(w.front ? st.front : st.spin); });
     // beccheggio su molla smorzata: si siede in accelerazione, picchia in frenata
     const target = Math.max(-0.045, Math.min(0.045, s.acc * 0.0042));
     st.pitchV += ((target - st.pitch) * 60 - st.pitchV * 9) * dt;

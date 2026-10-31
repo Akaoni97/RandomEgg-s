@@ -395,6 +395,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="swatches" id="swatches" role="group" aria-label="Colore carrozzeria"></div>
       <label class="kbtn file">Carica modello .glb<input type="file" id="glbIn" accept=".glb,.gltf,model/gltf-binary"></label>
       <button class="kbtn" type="button" id="glbRot">Ruota 90°</button>
+      <button class="kbtn" type="button" id="glbUp">Raddrizza</button>
       <button class="kbtn" type="button" id="glbReset">Modello di base</button>
       <button class="kbtn" type="button" id="camReset">Inquadratura</button>
       <p class="hint"><span id="g3dName">modello di base</span> · trascina per girare la visuale</p>
@@ -1060,10 +1061,14 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   $('glbIn').addEventListener('change', async (e) => {
     const f = e.target.files[0]; e.target.value = '';
     if (!f || !garage) return;
-    try { await garage.loadModel(f); $('g3dName').textContent = f.name; }
+    try {
+      const r = await garage.loadModel(f); $('g3dName').textContent = f.name;
+      flash(`${f.name}: ${r.upFixed ? 'raddrizzato (era esportato con Z in alto)' : 'caricato'}${r.wheels ? `, ${r.wheels} ruote animate` : ''}`, 3);
+    }
     catch (err) { flash('Modello non leggibile: serve un file .glb (o .gltf con tutto incorporato)', 3); }
   });
   $('glbRot').addEventListener('click', () => garage && garage.rotateModel());
+  $('glbUp').addEventListener('click', () => garage && garage.uprightModel());
   $('glbReset').addEventListener('click', () => { if (garage) { garage.resetModel(); $('g3dName').textContent = 'modello di base'; } });
 
   // ---------------------------------------------------------------- campioni della mod
