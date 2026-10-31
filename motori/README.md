@@ -3,7 +3,7 @@
 Simulatore del suono del motore di una **Toyota Supra RZ (JZA80)** con 2JZ-GTE e cambio Getrag V160:
 plancia completa, acceleratore, freno, frizione, cambio a 6 marce. Funziona nel browser, senza dipendenze.
 
-Apri `motori/index.html` (doppio clic va bene) e premi **Accendi l'audio**. Poi `I` per il quadro e
+Apri `motori/index.html` (doppio clic va bene; la vista 3D scarica three.js da jsDelivr) e premi **Accendi l'audio**. Poi `I` per il quadro e
 `Invio` tenuto premuto per l'avviamento. Meglio con le cuffie.
 
 ## Da dove viene il suono
@@ -24,6 +24,37 @@ Qui il suono è **sintetizzato fisicamente**, come fanno i simulatori di motore 
    pompa benzina, rotolamento, vento, stridio delle gomme, fischio della retromarcia.
 6. Tre punti d'ascolto: abitacolo, esterno posteriore, vano motore.
 
+## Fluttuazioni del motore
+
+- Giri interpolati campione per campione, senza gradini tra un aggiornamento e l'altro.
+- Ogni scoppio accelera l'albero e la compressione lo rallenta: la velocità oscilla dentro il ciclo.
+- Semiassi e albero di trasmissione elastici: attaccando e staccando il gas l'auto "singhiozza" a 3–5 Hz.
+- Camme lunghe: minimo irregolare con cicli deboli e regime che balla.
+- Frizione bidisco: volano più leggero e tintinnio in folle al minimo.
+- Scarichi a doppia uscita con immagine stereo.
+
+## Reparto tuning
+
+`tuning.js` elenca parti reali per JZA80/2JZ e il loro effetto su fisica e suono: scarichi (HKS Hi-Power,
+Apexi N1 Evolution, Tomei Expreme Ti, Blitz Nür-Spec, straight pipe), downpipe e catalizzatore, turbo
+(CT12B di serie, Garrett GTX3582R, Precision 6466, BorgWarner EFR 9180, HKS T51R SPL), valvole (HKS SSQV,
+Turbosmart Race Port, GReddy Type-RS, nessuna), wastegate TiAL con screamer pipe, aspirazione HKS Super
+Power Flow, camme HKS 264°/272°, centraline Haltech Elite 2500 e Link G4X, frizione bidisco OS Giken.
+Il carattere sonoro è una nostra modellazione fisica, non una registrazione dei prodotti.
+
+## Modello 3D e suoni di una mod
+
+Il garage 3D (three.js) mostra un'auto procedurale che reagisce alla simulazione: ruote, beccheggio,
+vibrazioni, fiammate dallo scarico. Con **Carica modello .glb** si apre un proprio modello; quelli delle
+mod (.yft, .kn5, .dae…) vanno prima esportati in GLB con Blender.
+
+Nel riquadro **Suoni della mod** si caricano campioni in loop (WAV, OGG, MP3, FLAC). Il regime si legge
+dal nome del file (`on_4000.ogg`, `off_2500.wav`) e si può correggere; i campioni vengono intonati sui giri
+e sfumati tra loro, e si possono miscelare con la sintesi.
+
+Modelli e suoni delle mod non sono inclusi nel repository: spesso sono estratti da giochi commerciali e
+non si possono ridistribuire. I file caricati restano nel browser di chi li apre.
+
 ## Fisica
 
 `sim.js` integra a 4000 passi al secondo motore (curva di coppia, farfalla, regolatore del minimo,
@@ -36,4 +67,7 @@ con modello di aderenza, resistenza aerodinamica e frenata. Con la configurazion
 | `index.html` | Plancia, comandi (tastiera, touch, gamepad), collegamento audio |
 | `dsp.js` | Sintesi audio (gira in un AudioWorklet) |
 | `sim.js` | Fisica del veicolo |
+| `tuning.js` | Catalogo del reparto tuning |
+| `samples.js` | Lettore dei campioni audio caricati |
+| `car3d.js` | Garage 3D |
 | `../test/motori.test.js` | Prove con `npm test` |

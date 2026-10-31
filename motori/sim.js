@@ -15,15 +15,17 @@ class SupraSim {
       tq: [[0, 140], [500, 160], [1000, 212], [1500, 240], [2000, 258], [2500, 270], [3000, 281], [3500, 290],
         [4000, 296], [4500, 298], [5000, 295], [5500, 287], [6000, 275], [6500, 260], [7000, 244], [7500, 225]],
     };
-    this.TC = { twin: { max: 0.75, up: 0.26, down: 0.75 }, single: { max: 1.4, up: 0.62, down: 0.9 } };
-    this.cfg = { turbo: 'twin', valve: 'bov', pops: false, launch: false, autoClutch: true, revMatch: true };
+    // parti montate (default: Supra originale). tuning.js → tuningParams(sel).sim
+    this.tune = { turbo: { max: 0.75, a: 1500, b: 3000, up: 0.26, down: 0.75, twin: true }, limiter: 7000, sparkCut: false,
+      ecuLaunch: false, ecuPops: false, idle: 750, camLow: 1, camHigh: 1, lope: 0, Ie: 0.21, valve: 'recirc', pw: 1 };
+    this.cfg = { valve: 'recirc', pops: false, launch: false, autoClutch: true, revMatch: true };
     this.in = { thr: 0, brake: 0, clutch: 0 };
     this.reset();
   }
 
   reset() {
     Object.assign(this, {
-      we: 0, ww: 0, v: 0, acc: 0, theta: 0, gear: 0, ign: false, running: false, starter: false, crankT: 0, catchAt: 0.6,
+      we: 0, ww: 0, wo: 0, phi: 0, v: 0, acc: 0, theta: 0, gear: 0, ign: false, running: false, starter: false, crankT: 0, catchAt: 0.6,
       thr: 0, air: 0, iacI: 0, tur: 0, pipeP: 0, sec: 0, wg: 0, cut: 0, cutLim: false, cutLaunch: false, dfco: false, ovr: 9,
       clutch: 0, lock: false, shiftSeq: null, events: [], runT: 0, pumpT: 0, bovLatch: false, launchArmed: false,
       Tc: 0, Tnet: 0, charge: 0, stalled: false,
@@ -32,6 +34,26 @@ class SupraSim {
     });
   }
 
+  setTune(t) {
+    Object.assign(this.tune, t);
+    this.P.limiter = this.tune.limiter; this.P.idle = this.tune.idle; this.P.Ie = this.tune.Ie;
+    this.cfg.valve = this.tune.valve;
+  }
+  // potenza e coppia massime a regime stabilizzato, per la scheda del tuning
+  estimatePeak() {
+    const tn = this.tune, tc = tn.turbo, P = this.P;
+    let best = { cv: 0, nm: 0, rpmCv: 0, rpmNm: 0 };
+    for (let rpm = 1000; rpm <= P.limiter; rpm += 50) {
+      const frac = tc.twin ? SIM_SS(tc.a, tc.b, rpm) * 0.6 + 0.4 * SIM_SS(3800, 4400, rpm) : Math.pow(SIM_SS(tc.a, tc.b, rpm), 1.3);
+      const boost = tc.max * Math.min(1, frac * 1.18);
+      const camK = SIM_SS(3000, 5500, rpm), camF = tn.camLow * (1 - camK) + tn.camHigh * camK;
+      const T = this.tqAt(rpm) * tn.pw * camF * Math.max(0, (1 + 0.78 * boost) - 0.1) / 0.9 - (16 + 0.0035 * rpm + 0.9e-6 * rpm * rpm);
+      const cv = T * rpm / 7023;
+      if (cv > best.cv) { best.cv = cv; best.rpmCv = rpm; }
+      if (T > best.nm) { best.nm = T; best.rpmNm = rpm; }
+    }
+    return best;
+  }
   get rpm() { return Math.max(0, this.we) * 9.5493; }
   get kmh() { return Math.abs(this.v) * 3.6; }
   ratio(g) { return g === 0 ? 0 : (g < 0 ? this.P.rev : this.P.gears[g]) * this.P.fd; }
@@ -102,11 +124,10 @@ class SupraSim {
   }
 
   step(h) {
-    const P = this.P, I = this.in, cfg = this.cfg, tc = cfg.turbo === 'twin' ? this.TC.twin : this.TC.single;
+    const P = this.P, I = this.in, cfg = this.cfg, tn = this.tune, tc = tn.turbo;
     const rpm = this.rpm;
     let thrCmd = I.thr;
-    const Gnow = this.ratio(this.gear);
-    const wheelRpm = (g) => Math.abs(this.ww * this.ratio(g)) * 9.5493;
+    const wheelRpm = (g) => Math.abs(this.wo * this.ratio(g)) * 9.5493;
 
     // ---- frizione (automatica o pedale) ----------------------------------------
     let clutchPos;
@@ -150,7 +171,7 @@ class SupraSim {
     }
 
     // ---- launch control (2-step) -------------------------------------------------
-    this.launchArmed = cfg.launch && this.running && this.gear >= 1 && Math.abs(this.v) < 1.5 &&
+    this.launchArmed = cfg.launch && tn.ecuLaunch && this.running && this.gear >= 1 && Math.abs(this.v) < 1.5 &&
       (cfg.autoClutch ? I.brake > 0.25 : clutchPos > 0.5);
 
     // ---- farfalla e aria ------------------------------------------------------------
@@ -158,7 +179,7 @@ class SupraSim {
     const rk = Math.max(rpm / 3000, 0.35), k = 4.2 / rk;
     const aThr = (1 - Math.exp(-k * this.thr)) / (1 - Math.exp(-k));
     let iac = 0;
-    const idleT = P.idle + 520 * Math.exp(-this.runT / 4);
+    const idleT = P.idle + 520 * Math.exp(-this.runT / 4) + tn.lope * 45 * Math.sin(this.runT * 4.1) * Math.sin(this.runT * 1.3);
     if (this.running) {
       const err = (idleT - rpm) / idleT;
       if (this.thr < 0.03 && !this.dfco) this.iacI = SIM_CLAMP(this.iacI + err * h * 1.2, -0.08, 0.25);
@@ -181,12 +202,12 @@ class SupraSim {
 
     // ---- turbo ---------------------------------------------------------------------------
     let frac;
-    if (cfg.turbo === 'twin') {
+    if (tc.twin) {
       const secT = rpm > 4000 && this.air > 0.55 ? 1 : rpm < 3700 || this.air < 0.35 ? 0 : this.sec;
       this.sec += (secT - this.sec) * Math.min(1, h / 0.25);
-      frac = SIM_SS(1500, 3000, rpm) * 0.6 + 0.4 * this.sec * SIM_SS(3800, 4400, rpm);
+      frac = SIM_SS(tc.a, tc.b, rpm) * 0.6 + 0.4 * this.sec * SIM_SS(3800, 4400, rpm);
     } else {
-      frac = Math.pow(SIM_SS(2800, 4700, rpm), 1.3); this.sec = 0;
+      frac = Math.pow(SIM_SS(tc.a, tc.b, rpm), 1.3); this.sec = 0;
     }
     let drive = frac * Math.pow(this.air, 1.3) * 1.18;
     if (this.cut === 3) drive += 0.45 * SIM_SS(3000, 4300, rpm);      // anti-lag del 2-step
@@ -207,7 +228,10 @@ class SupraSim {
 
     // ---- coppia motore -------------------------------------------------------------------
     const Tind = this.tqAt(rpm);
-    const Tcomb = burning ? Tind * Math.max(0, this.air * (1 + 0.78 * this.pipeP) - 0.1) / 0.9 : 0;
+    const camK = SIM_SS(3000, 5500, rpm), camF = tn.camLow * (1 - camK) + tn.camHigh * camK;
+    // cilindri non perfettamente uguali: con camme lunghe al minimo uno "zoppica" (mezzo ordine)
+    const lopeF = 1 + tn.lope * 0.22 * Math.sin(this.theta * 0.5) * (1 - SIM_SS(1200, 2600, rpm));
+    const Tcomb = burning ? Tind * tn.pw * camF * lopeF * Math.max(0, this.air * (1 + 0.78 * this.pipeP) - 0.1) / 0.9 : 0;
     const Tfric = rpm > 0 ? 16 + 0.0035 * rpm + 0.9e-6 * rpm * rpm + 9 * (1 - this.air) * (rpm / 3000) : 0;
     let Tcomp = 0;
     if (!this.running && rpm > 0.5) Tcomp = -38 * Math.sin(3 * this.theta) * SIM_CLAMP(1 - rpm / 700, 0, 1);
@@ -225,18 +249,23 @@ class SupraSim {
     const Tload = Ft * P.r + Tloss;
 
     // ---- frizione: coppia trasmessa (aggancio implicito, stabile) ------------------------------
-    const G = Gnow === this.ratio(this.gear) ? Gnow : this.ratio(this.gear);
+    const G = this.ratio(this.gear);
+    // semiassi e albero di trasmissione elastici: oscillazione di 3–5 Hz su attacco e stacco del gas
+    const Ig = 0.5, Ks = 16000, Cs = 260;
+    const Ts = Ks * this.phi + Cs * (this.wo - this.ww);
     const cap = P.clutchMax * SIM_SS(0.15, 0.85, 1 - clutchPos);
     let Tc = 0;
     if (G !== 0 && cap > 0) {
-      const s = this.we - this.ww * G;
-      const Tlock = (s / h + Te / P.Ie + G * Tload / P.Iw) / (1 / P.Ie + G * G / P.Iw);
+      const s = this.we - this.wo * G;
+      const Tlock = (s / h + Te / P.Ie + G * Ts / Ig) / (1 / P.Ie + G * G / Ig);
       Tc = SIM_CLAMP(Tlock, -cap, cap);
     }
     this.Tc = Tc;
     this.we += h * (Te - Tc) / P.Ie;
     if (this.we < 0) this.we = 0;
-    this.ww += h * (Tc * G - Tload) / P.Iw;
+    this.wo += h * (Tc * G - Ts) / Ig;
+    this.ww += h * (Ts - Tload) / P.Iw;
+    this.phi += h * (this.wo - this.ww);
     this.theta = (this.theta + this.we * h) % (4 * Math.PI);
 
     // ---- vettura ---------------------------------------------------------------------------------
@@ -274,7 +303,8 @@ class SupraSim {
       cut: this.cut, ovr: this.ovr, running: this.running ? 1 : 0, starter: this.starter ? 1 : 0,
       speed: Math.abs(this.v), spin: SIM_CLAMP((Math.abs(vw - this.v) - 1.5) / 5, 0, 1),
       drive: Math.abs(this.Tc * this.ratio(this.gear)) / 3000, gearRpm: this.ww * this.ratio(this.gear) * 9.5493,
-      rev: this.gear === -1 ? 1 : 0, wg: this.wg, sec: this.cfg.turbo === 'twin' ? this.sec : 0,
+      rev: this.gear === -1 ? 1 : 0, wg: this.wg, sec: this.tune.turbo.twin ? this.sec : 0,
+      rattle: this.running && (this.gear === 0 || this.shiftSeq) && this.clutch < 0.3 ? 1 - SIM_SS(900, 1600, this.rpm) : 0,
       pump: this.pumpT > 0 ? 1 : this.running ? 0.25 : 0,
     };
   }

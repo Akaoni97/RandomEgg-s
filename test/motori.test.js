@@ -4,8 +4,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const dir = new URL('../motori/', import.meta.url);
-const src = readFileSync(new URL('dsp.js', dir), 'utf8') + readFileSync(new URL('sim.js', dir), 'utf8');
-const { EngineDSP, SupraSim } = new Function(src + ';return { EngineDSP, SupraSim };')();
+const src = ['dsp.js', 'sim.js', 'tuning.js', 'samples.js'].map((f) => readFileSync(new URL(f, dir), 'utf8')).join('\n');
+const { EngineDSP, SupraSim, TUNING, TUNING_PRESETS, tuningParams, SamplePlayer } =
+  new Function(src + ';return { EngineDSP, SupraSim, TUNING, TUNING_PRESETS, tuningParams, SamplePlayer };')();
 
 function drive(sim, seconds, each) {
   for (let t = 0; t < seconds; t += 1 / 60) { each?.(sim, t); sim.update(1 / 60); sim.events.length = 0; }
@@ -76,4 +77,46 @@ test('audio: frequenza di scoppio corretta e uscita senza errori', () => {
   const mag = (f) => { let re = 0, im = 0; for (let i = 0; i < n; i++) { const a = 2 * Math.PI * f * i / sr; re += L[i] * Math.cos(a); im += L[i] * Math.sin(a); } return Math.hypot(re, im); };
   // 3000 giri, sei cilindri a quattro tempi: 3 scoppi per giro = 150 Hz
   assert.ok(mag(150) > 3 * mag(127), 'la terza armonica di giro deve dominare');
+});
+
+test('tuning: potenza stimata coerente con le preparazioni', () => {
+  const cv = (sel) => { const s = new SupraSim(); s.setTune(tuningParams(sel).sim); return s.estimatePeak().cv; };
+  const [stock, street, single, drag] = TUNING_PRESETS.map((p) => cv(p.sel));
+  assert.ok(stock > 290 && stock < 360, `originale ${stock.toFixed(0)} CV`);
+  assert.ok(street > stock && single > street && drag > single);
+});
+
+test('tuning: ogni parte produce audio valido e lo straight pipe è più forte dell\'originale', () => {
+  const sr = 48000;
+  const rms = (sel) => {
+    const dsp = new EngineDSP(sr);
+    dsp.msg({ cfg: { view: 1, tune: tuningParams(sel).dsp }, p: { rpm: 5000, charge: 1.6, air: 1, thr: 1, running: 1, turbo: 0.9, boost: 0.8, wg: 0.4 } });
+    const L = new Float32Array(sr / 2), R = new Float32Array(sr / 2);
+    dsp.render(L, R, L.length); dsp.render(L, R, L.length);
+    let e = 0; for (const x of L) { assert.ok(Number.isFinite(x)); e += x * x; }
+    return Math.sqrt(e / L.length);
+  };
+  const base = TUNING_PRESETS[0].sel;
+  for (const [k, cat] of Object.entries(TUNING)) for (const it of cat.items) rms({ ...base, [k]: it.id });
+  assert.ok(rms({ ...base, exhaust: 'straight' }) > 1.5 * rms(base));
+});
+
+test('centralina originale: niente launch control', () => {
+  const sim = new SupraSim();
+  sim.cfg.launch = true;
+  startEngine(sim);
+  sim.shift(1);
+  drive(sim, 1, (s) => { s.in.brake = 1; s.in.thr = 1; });
+  assert.equal(sim.launchArmed, false);
+  sim.setTune(tuningParams({ ...TUNING_PRESETS[0].sel, ecu: 'haltech' }).sim);
+  drive(sim, 1, (s) => { s.in.brake = 1; s.in.thr = 1; });
+  assert.ok(sim.launchArmed && sim.rpm < 4500, `giri ${sim.rpm.toFixed(0)}`);
+});
+
+test('campioni della mod: regime e tipo letti dal nome, dissolvenza a potenza costante', () => {
+  assert.deepEqual(SamplePlayer.parse('on_4000.ogg'), { rpm: 4000, off: false });
+  assert.deepEqual(SamplePlayer.parse('supra_off_2500.wav'), { rpm: 2500, off: true });
+  const a = { rpm: 2000 }, b = { rpm: 4000 };
+  const w = SamplePlayer.weights([a, b], 3000);
+  assert.ok(Math.abs(w.get(a) ** 2 + w.get(b) ** 2 - 1) < 1e-9);
 });

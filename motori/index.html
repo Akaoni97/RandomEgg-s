@@ -206,14 +206,54 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
 .gate .go { background: linear-gradient(180deg, #ff7a2a, #e14b12); color: #fff; border: 0; border-radius: 10px; padding: 14px; font: 700 18px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; }
 .gate small { color: var(--muted); }
 
+/* ---- tuning ---- */
+.tuning { gap: 12px; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.presets button { border: 1px solid var(--line); background: var(--panel-2); border-radius: 999px; padding: 7px 14px; font: 600 14px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; }
+.presets button[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); }
+.tgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.part { background: #0e1013; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
+.part > span { font: 600 11px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.part select { width: 100%; background: var(--panel-2); border: 1px solid #343a43; border-radius: 6px; padding: 7px 8px; font: 500 14px/1.2 var(--f-body); color: var(--fg); }
+.part p { margin: 0; font-size: 13px; line-height: 1.4; color: #b9b5ab; }
+.part.mod { border-color: #5a3a1c; }
+.part.mod > span { color: var(--amber); }
+/* ---- garage e campioni ---- */
+.garage-wrap { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; align-items: start; }
+.g3d { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: #0b0c0e; }
+#g3d { display: block; width: 100%; aspect-ratio: 16 / 8; max-width: 100%; touch-action: none; }
+.g3d-msg { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; padding: 16px; text-align: center; color: var(--muted); }
+.g3d-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.g3d-bar .kbtn { padding: 8px 12px; font-size: 13px; }
+.swatches { display: flex; gap: 6px; margin-right: auto; }
+.swatches button { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #2a2f37; padding: 0; }
+.swatches button[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--amber); }
+.file { position: relative; overflow: hidden; }
+.file input, .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.drop { position: relative; display: grid; gap: 4px; padding: 16px; border: 1.5px dashed #3a404a; border-radius: 8px; text-align: center; cursor: pointer; }
+.drop:hover, .drop.over { border-color: var(--amber); }
+.drop b { font: 700 16px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; }
+.drop span { font-size: 13px; color: var(--muted); }
+code { font: 500 12px/1 var(--f-data); color: var(--amber); }
+.smp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 260px; overflow: auto; }
+.smp-list li { display: grid; grid-template-columns: minmax(0, 1fr) 78px 96px 30px; gap: 6px; align-items: center; background: #0e1013; border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px 5px 10px; }
+.smp-list .nm { font: 500 12.5px/1.2 var(--f-data); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.smp-list .lv { height: 3px; background: var(--amber); border-radius: 2px; width: 0; margin-top: 4px; }
+.smp-list input, .smp-list select { width: 100%; background: var(--panel-2); border: 1px solid #343a43; border-radius: 5px; padding: 4px 5px; font: 500 12.5px/1 var(--f-data); color: var(--fg); }
+.smp-list button { border: 1px solid var(--line); background: transparent; border-radius: 5px; height: 26px; color: var(--muted); }
+.samples .vol small { color: var(--muted); font-size: 12px; }
+
 @media (max-width: 1080px) {
+  .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .garage-wrap { grid-template-columns: 1fr; }
   .deck { grid-template-columns: 1fr 1fr; }
   .deck .setup { grid-column: 1 / -1; }
   .tele { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pods { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 700px) {
-  .deck, .notes { grid-template-columns: 1fr; }
+  .deck, .notes, .tgrid { grid-template-columns: 1fr; }
+  #g3d { aspect-ratio: 4 / 3; }
   .tele { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .toggles { grid-template-columns: 1fr; }
   .cluster { padding: 10px 8px; border-radius: 16px; }
@@ -294,27 +334,7 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
     </div>
 
     <div class="panel setup">
-      <h2>Preparazione <em id="cfgName">originale</em></h2>
-      <div class="field"><span>Turbo</span>
-        <div class="seg" data-k="turbo">
-          <button type="button" data-v="twin">Biturbo sequenziale</button>
-          <button type="button" data-v="single">Single turbo 1,4 bar</button>
-        </div>
-      </div>
-      <div class="field"><span>Scarico</span>
-        <div class="seg" data-k="exhaust">
-          <button type="button" data-v="0">Originale</button>
-          <button type="button" data-v="1">Sportivo</button>
-          <button type="button" data-v="2">Straight pipe</button>
-        </div>
-      </div>
-      <div class="field"><span>Valvola pop-off</span>
-        <div class="seg" data-k="valve">
-          <button type="button" data-v="recirc">Ricircolo</button>
-          <button type="button" data-v="bov">Blow-off</button>
-          <button type="button" data-v="flutter">Nessuna (flutter)</button>
-        </div>
-      </div>
+      <h2>Ascolto e guida <em id="cfgName">originale</em></h2>
       <div class="field"><span>Ascolto</span>
         <div class="seg" data-k="view">
           <button type="button" data-v="0">Abitacolo</button>
@@ -331,6 +351,41 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
       <div class="field"><span>Volume</span>
         <div class="vol"><input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"><output id="volOut">80</output></div>
       </div>
+      <p class="hint" id="ecuHint"></p>
+    </div>
+  </section>
+
+  <section class="panel tuning" aria-labelledby="tuneTitle">
+    <h2 id="tuneTitle">Reparto tuning <em id="tuneSum">—</em></h2>
+    <div class="presets" id="presets"></div>
+    <div class="tgrid" id="tgrid"></div>
+    <p class="hint">I marchi indicano parti reali per JZA80 e 2JZ. Il carattere sonoro di ciascuna è una nostra modellazione fisica (collettore, turbina, catalizzatore, tubo, silenziatore, valvole), non una registrazione del prodotto.</p>
+  </section>
+
+  <section class="garage-wrap">
+    <div class="panel garage">
+      <h2>Garage 3D <em id="g3dName">modello di base</em></h2>
+      <div class="g3d"><canvas id="g3d" aria-label="Vista 3D dell'auto: trascina per ruotare, rotella per lo zoom"></canvas><p class="g3d-msg" id="g3dMsg" hidden></p></div>
+      <div class="g3d-bar">
+        <div class="swatches" id="swatches" role="group" aria-label="Colore carrozzeria"></div>
+        <label class="kbtn file">Carica modello .glb<input type="file" id="glbIn" accept=".glb,.gltf,model/gltf-binary"></label>
+        <button class="kbtn" type="button" id="glbRot">Ruota 90°</button>
+        <button class="kbtn" type="button" id="glbReset">Modello di base</button>
+      </div>
+      <p class="hint">Trascina per girare intorno all'auto. Un modello di una mod (ad esempio .yft, .kn5, .dae) va prima esportato in GLB con Blender. Il file resta nel tuo browser.</p>
+    </div>
+    <div class="panel samples">
+      <h2>Suoni della mod <em id="smpCount">nessun campione</em></h2>
+      <label class="drop" id="drop">
+        <input type="file" id="smpIn" accept="audio/*,.ogg,.wav,.mp3,.flac" multiple>
+        <b>Carica i campioni audio</b>
+        <span>WAV, OGG, MP3 o FLAC in loop. Il regime si legge dal nome: <code>on_4000.ogg</code>, <code>off_2500.wav</code>.</span>
+      </label>
+      <ul class="smp-list" id="smpList"></ul>
+      <div class="field"><span>Miscela</span>
+        <div class="vol"><small>Sintesi</small><input type="range" id="mix" min="0" max="100" value="70" aria-label="Miscela tra sintesi e campioni"><small>Campioni</small></div>
+      </div>
+      <p class="hint">Ogni file viene intonato sui giri del motore e sfumato con i vicini. "Carico" suona con il gas aperto, "rilascio" quando molli. I file restano nel tuo browser, non vengono caricati da nessuna parte.</p>
     </div>
   </section>
 
@@ -381,8 +436,14 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="dsp.js"></script>
 <script src="sim.js"></script>
+<script src="tuning.js"></script>
+<script src="samples.js"></script>
+<script src="car3d.js"></script>
 <script>
 (() => {
   'use strict';
@@ -392,14 +453,21 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
   const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const sim = new SupraSim();
-  const S = { turbo: 'twin', exhaust: 1, valve: 'bov', pops: false, launch: false, autoClutch: true, revMatch: true, view: 0, vol: 80, muted: false };
-  try { Object.assign(S, JSON.parse(localStorage.getItem('banco2jz') || '{}')); } catch (e) { /* storage non disponibile */ }
+  const S = { tune: Object.assign({}, TUNING_PRESETS[0].sel), pops: false, launch: false, autoClutch: true, revMatch: true, view: 0, vol: 80, muted: false, mix: 70, paint: '#c81d11' };
+  try {
+    const saved = JSON.parse(localStorage.getItem('banco2jz') || '{}');
+    delete saved.turbo; delete saved.exhaust; delete saved.valve;   // impostazioni della versione precedente
+    Object.assign(S, saved);
+    S.tune = Object.assign({}, TUNING_PRESETS[0].sel, saved.tune || {});
+  } catch (e) { /* storage non disponibile */ }
+  let TP = tuningParams(S.tune);
 
   // ---------------------------------------------------------------- audio
   const audio = { ctx: null, send: () => {}, ready: false, starting: null };
+  let player = null;
   function dspCfg() {
-    return { turbo: S.turbo === 'twin' ? 0 : 1, exhaust: +S.exhaust, valve: { recirc: 0, bov: 1, flutter: 2 }[S.valve],
-      pops: S.pops ? 1 : 0, view: +S.view, vol: S.muted ? 0 : S.vol / 100 };
+    const synth = player && player.items.length ? 1 - S.mix / 100 : 1;
+    return { tune: TP.dsp, pops: S.pops && TP.sim.ecuPops ? 1 : 0, view: +S.view, vol: S.muted ? 0 : S.vol / 100 * synth };
   }
   function ensureAudio() {
     if (audio.ctx) { if (audio.ctx.state !== 'running') audio.ctx.resume(); return audio.starting; }
@@ -410,6 +478,7 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -8; comp.knee.value = 6; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.12;
     comp.connect(ctx.destination);
+    player = new SamplePlayer(ctx, comp);
     const fallback = () => {
       const dsp = new EngineDSP(ctx.sampleRate);
       const node = ctx.createScriptProcessor(1024, 1, 2);
@@ -451,7 +520,13 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
 
   // ---------------------------------------------------------------- impostazioni
   function applySettings() {
-    Object.assign(sim.cfg, { turbo: S.turbo, valve: S.valve, pops: S.pops, launch: S.launch, autoClutch: S.autoClutch, revMatch: S.revMatch });
+    TP = tuningParams(S.tune);
+    sim.setTune(TP.sim);
+    Object.assign(sim.cfg, { pops: S.pops && TP.sim.ecuPops, launch: S.launch, autoClutch: S.autoClutch, revMatch: S.revMatch });
+    if (garage) { garage.setTips(TP.dsp.ex.tips); garage.setPaint(S.paint); }
+    renderTuning();
+    $('tPops').disabled = $('tLaunch').disabled = !TP.sim.ecuPops;
+    $('ecuHint').textContent = TP.sim.ecuPops ? '' : 'Pop & bang e launch control richiedono una centralina programmabile: montala nel reparto tuning.';
     if (!S.autoClutch) sim.lock = false;
     audio.send({ cfg: dspCfg() });
     document.querySelectorAll('.seg').forEach((seg) => {
@@ -465,8 +540,8 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
     $('pedHint').textContent = S.autoClutch
       ? 'Frizione automatica: cambia con E/Q. Tocca e trascina un pedale per dosarlo.'
       : 'Frizione manuale: tienila giù (Spazio) per cambiare e per partire, poi rilasciala dando gas.';
-    const tuned = S.turbo !== 'twin' || +S.exhaust !== 0 || S.valve !== 'recirc' || S.pops;
-    $('cfgName').textContent = tuned ? (S.turbo === 'single' ? 'single turbo' : 'elaborata') : 'originale';
+    const pre = TUNING_PRESETS.find((p) => Object.keys(p.sel).every((k) => p.sel[k] === S.tune[k]));
+    $('cfgName').textContent = pre ? pre.name.toLowerCase() : 'su misura';
     try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (e) { /* ignora */ }
   }
   document.querySelectorAll('.seg').forEach((seg) => seg.addEventListener('click', (e) => {
@@ -593,7 +668,7 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
   function gaugeDefs(compact) {
     const tach = { id: 'tach', min: 0, max: 9, major: 1, minor: 0.25, red: 7, label: (v) => v, title: 'x1000 r/min' };
     const speed = { id: 'speed', min: 0, max: 320, major: 20, minor: 10, labelEvery: 40, label: (v) => v, title: 'km/h' };
-    const boost = { id: 'boost', min: -1, max: 2, major: 0.5, minor: 0.1, red: 1.6, label: (v) => fmt(v, v % 1 ? 1 : 0), title: 'turbo · bar', zero: 0 };
+    const boost = { id: 'boost', min: -1, max: 2.5, major: 0.5, minor: 0.1, red: 2.1, label: (v) => fmt(v, v % 1 ? 1 : 0), title: 'turbo · bar', zero: 0 };
     if (!compact) {
       const Rt = H * 0.46, Rs = H * 0.37, gap = H * 0.05, off = Rt + Rs + gap;
       return [Object.assign(speed, { x: W / 2 - off, y: H * 0.53, R: Rs }), Object.assign(tach, { x: W / 2, y: H * 0.5, R: Rt }), Object.assign(boost, { x: W / 2 + off, y: H * 0.53, R: Rs })];
@@ -654,7 +729,7 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
     const m = Math.round((g.max - g.min) / every);
     for (let i = 0; i <= m; i++) {
       const v = +(g.min + i * every).toFixed(3), a = ang(g, v), rr = R * (g.id === 'tach' ? 0.64 : 0.63);
-      if (g.id === 'boost' && Math.abs(v % 1) > 0.01 && v !== 0.5 && v !== 1.5 && v !== -0.5) continue;
+      if (g.id === 'boost' && Math.abs(v % 0.5) > 0.01) continue;
       c.fillStyle = g.red !== undefined && v >= g.red ? (lit ? '#ffb4ab' : '#5a2a26') : fg;
       c.fillText(g.label(v), Math.cos(a) * rr, Math.sin(a) * rr);
     }
@@ -726,7 +801,7 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
         ctx.fillText(lit ? (disp.boost >= 0 ? '+' : '') + fmt(disp.boost, 2) : '', g.x, g.y + R * 0.59);
         ctx.fillStyle = lit ? COL.muted : '#2b2f35';
         ctx.font = `500 ${Math.round(R * 0.07)}px ${FM}`;
-        const st = S.turbo === 'twin' ? (sim.sec > 0.6 ? 'PRIMARIO + SECONDARIO' : 'PRIMARIO') : 'SINGLE';
+        const st = TP.sim.turbo.twin ? (sim.sec > 0.6 ? 'PRIMARIO + SECONDARIO' : 'PRIMARIO') : tuningItem('turbo', S.tune.turbo).name.toUpperCase();
         ctx.fillText(lit ? st : '', g.x, g.y + R * 0.83);
         drawNeedle(g, disp.boost, lit);
       }
@@ -754,7 +829,7 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
     lamp.check.classList.toggle('on', lit && !sim.running);
     lamp.batt.classList.toggle('on', lit && !sim.running);
     lamp.oil.classList.toggle('on', lit && sim.oilP < 0.3);
-    lamp.t2.classList.toggle('on', lit && S.turbo === 'twin' && sim.sec > 0.6);
+    lamp.t2.classList.toggle('on', lit && TP.sim.turbo.twin && sim.sec > 0.6);
     lamp.launch.classList.toggle('on', lit && sim.launchArmed);
     lamp.cut.classList.toggle('on', lit && (sim.cut === 2 || sim.cut === 3));
     $('cluster').classList.toggle('off', !lit);
@@ -806,8 +881,107 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
     $('t400b').textContent = sim.best400 ? 'migliore ' + fmt(sim.best400.t, 2) + ' s · ' + fmt(sim.best400.v) + ' km/h' : 'migliore —';
   }
 
+  // ---------------------------------------------------------------- reparto tuning
+  function renderTuning() {
+    const grid = $('tgrid');
+    if (!grid.childElementCount) {
+      for (const [k, cat] of Object.entries(TUNING)) {
+        const box = document.createElement('label'); box.className = 'part'; box.dataset.k = k;
+        box.innerHTML = `<span>${cat.label}</span><select id="tu-${k}">${cat.items.map((it) => `<option value="${it.id}">${it.brand === 'Su misura' || it.brand === '—' || it.brand === 'Integrata' ? '' : it.brand + ' · '}${it.name}</option>`).join('')}</select><p></p>`;
+        box.querySelector('select').addEventListener('change', (e) => { S.tune[k] = e.target.value; applySettings(); });
+        grid.appendChild(box);
+      }
+      const pr = $('presets');
+      TUNING_PRESETS.forEach((p) => {
+        const b = document.createElement('button'); b.type = 'button'; b.textContent = p.name; b.dataset.id = p.id;
+        b.addEventListener('click', () => { S.tune = Object.assign({}, p.sel); applySettings(); flash('Preparazione: ' + p.name, 1.4); });
+        pr.appendChild(b);
+      });
+    }
+    grid.querySelectorAll('.part').forEach((box) => {
+      const k = box.dataset.k, it = tuningItem(k, S.tune[k]);
+      box.querySelector('select').value = it.id;
+      let note = it.note;
+      if (k === 'wastegate' && it.id === 'tial' && TP.sim.turbo.twin) note += ' Con il biturbo di serie non ha effetto.';
+      box.querySelector('p').textContent = note;
+      box.classList.toggle('mod', it.id !== TUNING[k].items[0].id);
+    });
+    $('presets').querySelectorAll('button').forEach((b) => {
+      const p = TUNING_PRESETS.find((x) => x.id === b.dataset.id);
+      b.setAttribute('aria-pressed', String(Object.keys(p.sel).every((k) => p.sel[k] === S.tune[k])));
+    });
+    const est = sim.estimatePeak();
+    $('tuneSum').textContent = `${fmt(Math.round(est.cv / 5) * 5)} CV a ${fmt(est.rpmCv)} · ${fmt(Math.round(est.nm / 5) * 5)} Nm · ${fmt(TP.sim.turbo.max, 2)} bar · limitatore ${fmt(TP.sim.limiter)}`;
+  }
+
+  // ---------------------------------------------------------------- garage 3D
+  let garage = null, garageOn = true;
+  const PAINTS = [['#c81d11', 'Rosso'], ['#f2f2ee', 'Bianco'], ['#0d0e10', 'Nero'], ['#9ea3aa', 'Argento'], ['#e2690f', 'Arancio'], ['#1d3f8f', 'Blu']];
+  try {
+    garage = new Garage3D($('g3d'));
+    const io = window.IntersectionObserver ? new IntersectionObserver((es) => { garageOn = es[0].isIntersecting; garage.visible = garageOn; }) : null;
+    if (io) io.observe($('g3d'));
+    if (window.ResizeObserver) new ResizeObserver(() => garage.resize()).observe($('g3d'));
+  } catch (e) {
+    const m = $('g3dMsg'); m.hidden = false; m.textContent = 'La vista 3D non è disponibile: three.js non si è caricato o il browser non supporta WebGL.';
+  }
+  const sw = $('swatches');
+  PAINTS.forEach(([hex, name]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.style.background = hex; b.title = name; b.setAttribute('aria-label', 'Colore ' + name);
+    b.addEventListener('click', () => { S.paint = hex; applySettings(); sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); });
+    b.setAttribute('aria-pressed', String(hex === S.paint));
+    sw.appendChild(b);
+  });
+  $('glbIn').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f || !garage) return;
+    try { await garage.loadModel(f); $('g3dName').textContent = f.name; }
+    catch (err) { flash('Modello non leggibile: serve un file .glb (o .gltf con tutto incorporato)', 3); }
+  });
+  $('glbRot').addEventListener('click', () => garage && garage.rotateModel());
+  $('glbReset').addEventListener('click', () => { if (garage) { garage.resetModel(); $('g3dName').textContent = 'modello di base'; } });
+
+  // ---------------------------------------------------------------- campioni della mod
+  function renderSamples() {
+    const ul = $('smpList'); ul.innerHTML = '';
+    const items = player ? player.items : [];
+    $('smpCount').textContent = items.length ? items.length + (items.length === 1 ? ' campione' : ' campioni') : 'nessun campione';
+    items.forEach((it, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<div><div class="nm" title="${it.name.replace(/"/g, '&quot;')}"></div><div class="lv"></div></div>
+        <input type="number" min="400" max="12000" step="50" aria-label="Regime di registrazione" value="${it.rpm}">
+        <select aria-label="Tipo"><option value="on">carico</option><option value="off">rilascio</option></select>
+        <button type="button" aria-label="Rimuovi">✕</button>`;
+      li.querySelector('.nm').textContent = it.name + ' · ' + fmt(it.dur, 1) + ' s';
+      li.querySelector('select').value = it.off ? 'off' : 'on';
+      li.querySelector('input').addEventListener('change', (e) => { it.rpm = clamp(+e.target.value || 3000, 400, 12000); player.sort(); renderSamples(); });
+      li.querySelector('select').addEventListener('change', (e) => { it.off = e.target.value === 'off'; });
+      li.querySelector('button').addEventListener('click', () => { player.remove(it); renderSamples(); applySettings(); });
+      it.meter = li.querySelector('.lv');
+      ul.appendChild(li);
+    });
+    $('mix').disabled = !items.length;
+  }
+  function smpMeter() { player.items.forEach((it) => { if (it.meter) it.meter.style.width = Math.round(it.g.gain.value * 100) + '%'; }); }
+  async function addSamples(files) {
+    await ensureAudio();
+    let bad = 0;
+    for (const f of files) { try { await player.add(f); } catch (e) { bad++; } }
+    renderSamples(); applySettings();
+    if (bad) flash(bad + (bad === 1 ? ' file non decodificato' : ' file non decodificati') + ': il browser legge WAV, OGG, MP3, FLAC', 3);
+    else if (files.length) flash('Campioni caricati: avvia il motore e dai gas', 2);
+  }
+  $('smpIn').addEventListener('change', (e) => { const fs = Array.from(e.target.files); e.target.value = ''; hideGate(); addSamples(fs); });
+  const drop = $('drop');
+  ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, () => drop.classList.remove('over')));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); addSamples(Array.from(e.dataTransfer.files).filter((f) => /^audio\/|\.(ogg|wav|mp3|flac)$/i.test(f.type || f.name))); });
+  $('mix').value = S.mix;
+  $('mix').addEventListener('input', (e) => { S.mix = +e.target.value; applySettings(); });
+  renderSamples();
+
   // ---------------------------------------------------------------- ciclo principale
-  let last = performance.now(), wasRunning = false;
+  let last = performance.now(), wasRunning = false, smpLoad = 0, flameT = 0;
   function frame(now) {
     const dt = clamp((now - last) / 1000, 0, 0.05); last = now;
     readPad(); updateInputs(dt);
@@ -817,6 +991,17 @@ kbd { font: 600 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
     if (wasRunning && !sim.running && sim.stalled) flash('Motore spento: stallo. Folle e riavvia', 3);
     wasRunning = sim.running;
     if (audio.ready) audio.send({ p: sim.audioParams(), ev });
+    if (player && player.items.length) {
+      const onT = sim.running && sim.cut === 0 && sim.thr > 0.06 ? 1 : 0;
+      smpLoad += (onT - smpLoad) * Math.min(1, dt * 10);
+      player.update(sim.rpm, smpLoad, S.muted ? 0 : S.vol / 100 * S.mix / 100 * 1.3);
+      smpMeter(dt);
+    }
+    if (garage && garageOn) {
+      flameT = (sim.cut === 2 || sim.cut === 3) && TP.sim.sparkCut ? 1 : sim.cut === 1 && sim.cfg.pops && sim.ovr < 3 ? 0.35 : 0;
+      garage.update(dt, { v: sim.v, ww: sim.ww, acc: sim.acc, rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
+        ign: sim.ign, brake: inp.brake, flame: flameT });
+    }
     if (msgT > 0) { msgT -= dt; if (msgT <= 0) $('msg').classList.remove('show'); }
     draw(); updateDom(dt);
     requestAnimationFrame(frame);
