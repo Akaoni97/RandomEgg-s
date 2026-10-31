@@ -103,6 +103,9 @@ class Street3D extends Garage3D {
       g.fillStyle = gr; g.fillRect(0, 0, w, w);
     });
     const poolMat = new T.MeshBasicMaterial({ map: pool, transparent: true, blending: T.AdditiveBlending, depthWrite: false, opacity: 0.55 });
+    this.poolMat = poolMat;
+    this.onLook = (px) => { poolMat.opacity = px ? 0.22 : 0.55; };   // in pixel art le pozze di luce vanno più leggere
+    if (this.px) this.onLook(true);
     const poleMat = new T.MeshStandardMaterial({ color: 0x2a2d33, roughness: 0.6, metalness: 0.6 });
     const bulbMat = new T.MeshBasicMaterial({ color: 0xffb35c });
     this.lamps = [];
@@ -232,7 +235,7 @@ class Street3D extends Garage3D {
       let m = this.meshes.get(e.id);
       if (!m) {
         m = e.kind === 'station' ? this.makeStation() : e.kind === 'drop' || e.kind === 'line' ? this.makeGate(e.kind, e.finish) : this.makeCar(e.kind, e.color || 0x777777);
-        this.scene.add(m); this.meshes.set(e.id, m);
+        this.scene.add(m); this.meshes.set(e.id, m); if (this.px) this.restyle(m);
         m.userData.z = GAME_LANE_Z[e.lane];
       }
       const zT = e.kind === 'station' ? 5.4 : e.kind === 'line' ? 1.75 : GAME_LANE_Z[e.lane];
