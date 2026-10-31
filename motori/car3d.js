@@ -51,7 +51,20 @@ class Garage3D {
     this.resize();
   }
 
-  setPaint(hex) { this.paint.color.set(hex); }
+  setPaint(hex) {
+    this.paintHex = hex;
+    if (hex !== 'model') this.paint.color.set(hex);
+    (this.customPaint || []).forEach((m) => m.color.set(hex === 'model' ? m.userData.orig : hex));
+  }
+
+  // profilo dell'asfalto (metri): ondulazioni lievi + giunti di dilatazione ogni 47 m
+  static roadH(x, side) {
+    const ph = side > 0 ? 0.9 : 0;
+    let h = 0.006 * Math.sin(x * 0.61 + ph) + 0.004 * Math.sin(x * 1.73 + 2 * ph) + 0.0025 * Math.sin(x * 4.9 + ph * 3);
+    const j = ((x % 47) + 47) % 47;
+    if (j < 0.45) h += 0.02 * Math.sin(j / 0.45 * Math.PI);
+    return h;
+  }
 
   // carrozzeria coupé anni 90 generica, costruita con estrusioni del profilo laterale
   buildCar() {
@@ -126,15 +139,16 @@ class Garage3D {
     const T = this.T;
     return file.arrayBuffer().then((buf) => new Promise((res, rej) => {
       new T.GLTFLoader().parse(buf, '', (gltf) => {
-        if (this.custom) this.body.remove(this.custom);
+        if (this.custom) { this.body.remove(this.custom); (this.customWheels || []).forEach((w) => this.root.remove(w.pivot)); }
         const m = gltf.scene;
         m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
         this.custom = this.fitModel(m);
         this.body.add(this.custom);
         this.refloor();
+        if (this.paintHex && this.paintHex !== 'model') this.setPaint(this.paintHex);
         this.baseParts.forEach((p) => { p.visible = p === this.tips[0]?.fl || p === this.tips[1]?.fl; });
         this.wheels.forEach((w) => { w.visible = false; });
-        res({ name: file.name, wheels: this.customWheels.length, upFixed: this.upFixed });
+        res({ name: file.name, wheels: this.customWheels.length, upFixed: this.upFixed, paint: this.customPaint.length > 0 });
       }, rej);
     }));
   }
@@ -193,6 +207,18 @@ class Garage3D {
         this.customWheels.push({ pivot, front: key[0] === 'F' });
       }
     }
+    // vernice: il materiale della mesh più grande che non sia vetro, gomma, luci o cromature
+    let best = null, bestV = 0;
+    const skip = /glass|vetro|tire|tyre|rubber|gomma|light|lamp|\bled\b|faro|chrome|crom|rim|alloy|trim|graphite|satin|dark|carbon|black|nero|interior|bolt|hub/i;
+    const prefer = /paint|vernic|carrozz|body|shell|scocca|metallic|perlat/i;
+    custom.traverse((o) => {
+      if (!o.isMesh || !o.material || Array.isArray(o.material) || skip.test(o.material.name || '') || skip.test(o.name || '')) return;
+      const sz = new T.Box3().setFromObject(o).getSize(new T.Vector3());
+      const v = sz.x * sz.y * sz.z * (prefer.test(o.material.name || '') || prefer.test(o.name || '') ? 10 : 1);
+      if (v > bestV) { bestV = v; best = o.material; }
+    });
+    this.customPaint = best && best.color ? [best] : [];
+    this.customPaint.forEach((m) => { m.userData.orig = m.color.getHex(); });
     this.customInner = holder;
     return custom;
   }
@@ -200,17 +226,26 @@ class Garage3D {
   // appoggia il modello a terra e lo centra
   refloor() {
     const T = this.T, c = this.custom; if (!c) return;
+    // le ruote tornano nel modello per misurarlo, poi passano al telaio: la scocca si muove sulle sospensioni
+    const saved = { p: this.body.position.clone(), r: this.body.rotation.clone() };
+    this.body.position.set(0, 0, 0); this.body.rotation.set(0, 0, 0);
+    this.root.updateMatrixWorld(true);
+    (this.customWheels || []).forEach((w) => { w.pivot.position.y = w.y0 ?? w.pivot.position.y; c.attach(w.pivot); });
     this.body.remove(c);
     c.position.set(0, 0, 0); c.updateMatrixWorld(true);
     const box = new T.Box3().setFromObject(c), ctr = box.getCenter(new T.Vector3());
     c.position.set(-ctr.x, -box.min.y, -ctr.z);
     this.body.add(c);
+    this.root.updateMatrixWorld(true);
+    (this.customWheels || []).forEach((w) => { this.root.attach(w.pivot); w.y0 = w.pivot.position.y; w.x0 = w.pivot.position.x; w.z0 = w.pivot.position.z; });
+    this.body.position.copy(saved.p); this.body.rotation.copy(saved.r);
   }
   rotateModel() { if (this.custom) { this.custom.rotation.y += Math.PI / 2; this.refloor(); } }
   uprightModel() { if (this.custom) { this.custom.rotation.x += Math.PI / 2; this.refloor(); } }
   resetModel() {
     if (this.custom) { this.body.remove(this.custom); this.custom = null; }
-    this.customWheels = [];
+    (this.customWheels || []).forEach((w) => this.root.remove(w.pivot));
+    this.customWheels = []; this.customPaint = [];
     this.baseParts.forEach((p) => { p.visible = true; });
     this.setTips(this.dual ? 2 : 1);
   }
@@ -229,19 +264,34 @@ class Garage3D {
     st.front = (st.front || 0) + s.v / 0.322 * dt;
     this.wheels.forEach((w, i) => { w.rotation.z = -(i < 2 ? st.front : st.spin); });
     (this.customWheels || []).forEach((w) => { w.pivot.rotation.z = -(w.front ? st.front : st.spin); });
-    // beccheggio su molla smorzata: si siede in accelerazione, picchia in frenata
-    const target = Math.max(-0.045, Math.min(0.045, s.acc * 0.0042));
-    st.pitchV += ((target - st.pitch) * 60 - st.pitchV * 9) * dt;
-    st.pitch += st.pitchV * dt;
-    // vibrazione del motore: più forte al minimo e con camme lunghe, rollio da coppia di reazione
+    // ---- sospensioni: quattro ruote seguono l'asfalto, la scocca le segue su molle smorzate (~2 Hz)
+    const d = s.dist || 0, wb = 1.28, H = Garage3D.roadH;
+    const hFL = H(d + wb, 1), hFR = H(d + wb, -1), hRL = H(d - wb, 1), hRR = H(d - wb, -1);
+    const sp = Math.min(1, Math.abs(s.v) / 3);          // da fermi l'asfalto non spinge
+    const wh = [hFL, hFR, hRL, hRR].map((h) => h * sp);
+    this.wheels.forEach((w, i) => { w.position.y = 0.33 + wh[i]; });
+    (this.customWheels || []).forEach((w) => {
+      const front = w.x0 > 0, left = w.z0 > 0;
+      w.pivot.position.y = w.y0 + (front ? (left ? wh[0] : wh[1]) : (left ? wh[2] : wh[3]));
+    });
+    const tgtHeave = (wh[0] + wh[1] + wh[2] + wh[3]) / 4;
+    const tgtPitch = ((wh[0] + wh[1]) - (wh[2] + wh[3])) / 2 / (2 * wb) + Math.max(-0.05, Math.min(0.05, s.acc * 0.0042));
+    const tgtRoll = -((wh[0] + wh[2]) - (wh[1] + wh[3])) / 2 / 1.58 - Math.max(-0.05, Math.min(0.05, (s.latAcc || 0) * 0.006))
+      + Math.max(-0.02, Math.min(0.02, s.torque * 0.00003));
+    const K = 160, C = 11;                                // ω ≈ 12,6 rad/s, smorzamento ~0,45
+    for (const [k, tgt] of [['heave', tgtHeave], ['pitch', tgtPitch], ['roll', tgtRoll]]) {
+      const v = k + 'V';
+      st[v] = (st[v] || 0) + ((tgt - (st[k] || 0)) * K - (st[v] || 0) * C) * dt;
+      st[k] = (st[k] || 0) + st[v] * dt;
+    }
+    // vibrazione del motore: più forte al minimo e con camme lunghe
     const idle = s.running ? Math.max(0, 1 - s.rpm / 2200) : 0;
     const amp = s.running ? (0.0012 + 0.0025 * idle * (1 + 2 * s.lope)) : s.rpm > 30 ? 0.002 : 0;
     const f = Math.max(s.rpm, 120) / 60 * 3 * Math.PI * 2;
     const shake = Math.sin(st.t * f) * amp + Math.sin(st.t * f * 0.5 + 1.3) * amp * 0.6 * s.lope;
-    st.roll += ((Math.max(-0.02, Math.min(0.02, s.torque * 0.00003)) + shake * 2) - st.roll) * Math.min(1, dt * 12);
     this.body.rotation.z = st.pitch;
-    this.body.rotation.x = st.roll;
-    this.body.position.y = shake;
+    this.body.rotation.x = st.roll + shake * 2;
+    this.body.position.y = st.heave + shake;
     // fanali e fiammate
     this.lightF.emissiveIntensity = s.ign ? 1.6 : 0.15;
     this.lightR.emissiveIntensity = s.ign ? 0.6 + s.brake * 2.4 : 0.25;

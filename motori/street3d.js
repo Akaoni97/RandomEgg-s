@@ -242,8 +242,16 @@ class Street3D extends Garage3D {
     this.t += dt;
     const dist = game ? game.s.dist : this.dist + s.v * dt;
     this.dist = dist;
-    const z = game ? game.laneZ : 3.5;
+    // cambio corsia morbido: la scocca sterza verso la nuova corsia e si inclina in fuori
+    const zT = game ? game.laneZ : 3.5;
+    this.lz = this.lz ?? zT; this.lzV = this.lzV || 0;
+    const acc = (zT - this.lz) * 9 - this.lzV * 6;       // inseguitore critico, ~0,7 s
+    this.lzV += acc * dt; this.lz += this.lzV * dt;
+    const z = this.lz;
     this.root.position.z = z;
+    this.root.rotation.y = -Math.atan2(this.lzV, Math.max(3, Math.abs(s.v)));
+    s.latAcc = acc;
+    s.dist = dist;
     const dz = z - this.lastZ; this.lastZ = z;
     this.camera.position.z += dz; this.controls.target.z += dz;
     this.roadMap.offset.x = (dist / 24) % 1;

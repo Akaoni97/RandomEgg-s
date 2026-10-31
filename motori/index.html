@@ -181,6 +181,7 @@ h1 span { color: var(--amber); }
 .roadbar .hint { margin-left: auto; }
 .swatches { display: flex; gap: 6px; }
 .swatches button { width: 24px; height: 24px; border: 2px solid #26354b; padding: 0; transform: skewX(-12deg); }
+.swatches .sw-model { background: conic-gradient(#c81d11, #2ee6ff, #b8ff3a, #c81d11); color: #021016; font: 400 11px/1 var(--f-display); }
 .swatches button[aria-pressed="true"] { border-color: var(--fg); box-shadow: 0 0 0 2px var(--amber); }
 .file { position: relative; overflow: hidden; }
 .file input, .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
@@ -1052,8 +1053,10 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const m = $('g3dMsg'); m.hidden = false; m.textContent = 'La vista 3D non è disponibile: three.js non si è caricato o il browser non supporta WebGL.';
   }
   const sw = $('swatches');
+  PAINTS.push(['model', 'Colore del modello']);
   PAINTS.forEach(([hex, name]) => {
-    const b = document.createElement('button'); b.type = 'button'; b.style.background = hex; b.title = name; b.setAttribute('aria-label', 'Colore ' + name);
+    const b = document.createElement('button'); b.type = 'button'; b.title = name; b.setAttribute('aria-label', name === 'Colore del modello' ? name : 'Colore ' + name);
+    if (hex === 'model') { b.textContent = 'M'; b.className = 'sw-model'; b.hidden = true; } else b.style.background = hex;
     b.addEventListener('click', () => { S.paint = hex; applySettings(); sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); });
     b.setAttribute('aria-pressed', String(hex === S.paint));
     sw.appendChild(b);
@@ -1063,13 +1066,20 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (!f || !garage) return;
     try {
       const r = await garage.loadModel(f); $('g3dName').textContent = f.name;
+      sw.querySelector('.sw-model').hidden = false;
+      if (!r.paint) flash('Non trovo il materiale della carrozzeria in questo modello', 2.5);
       flash(`${f.name}: ${r.upFixed ? 'raddrizzato (era esportato con Z in alto)' : 'caricato'}${r.wheels ? `, ${r.wheels} ruote animate` : ''}`, 3);
     }
     catch (err) { flash('Modello non leggibile: serve un file .glb (o .gltf con tutto incorporato)', 3); }
   });
   $('glbRot').addEventListener('click', () => garage && garage.rotateModel());
   $('glbUp').addEventListener('click', () => garage && garage.uprightModel());
-  $('glbReset').addEventListener('click', () => { if (garage) { garage.resetModel(); $('g3dName').textContent = 'modello di base'; } });
+  $('glbReset').addEventListener('click', () => {
+    if (!garage) return;
+    garage.resetModel(); $('g3dName').textContent = 'modello di base';
+    sw.querySelector('.sw-model').hidden = true;
+    if (S.paint === 'model') { S.paint = PAINTS[0][0]; applySettings(); sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.title === PAINTS[0][1]))); }
+  });
 
   // ---------------------------------------------------------------- campioni della mod
   function renderSamples() {
@@ -1207,6 +1217,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   window.nightRun = { sim, game };   // utile per provare eventi dalla console
 
   // ---------------------------------------------------------------- ciclo principale
+  const joints = {};
   let last = performance.now(), wasRunning = false, smpLoad = 0, flameT = 0;
   function frame(now) {
     const dt = clamp((now - last) / 1000, 0, 0.1); last = now;
@@ -1219,6 +1230,12 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     game.update(dt);
     renderGame(dt);
     const ev = sim.events.splice(0);
+    // giunti dell'asfalto ogni 47 m: prima l'asse anteriore, poi il posteriore ("ta-dum")
+    for (const [k, off] of [['jf', 1.28], ['jr', -1.28]]) {
+      const j = Math.floor((game.s.dist + off) / 47);
+      if (joints[k] !== undefined && j !== joints[k] && sim.v > 2) ev.push({ type: 'bump', I: Math.min(1, sim.v / 30) * (k === 'jf' ? 1 : 0.85) });
+      joints[k] = j;
+    }
     for (const e of ev) if (e.type === 'grind' && S.autoClutch && Math.abs(sim.v) > 1.2) flash('Retromarcia solo da fermo');
     if (wasRunning && !sim.running && sim.stalled) flash('Motore spento: stallo. Folle e riavvia', 3);
     wasRunning = sim.running;

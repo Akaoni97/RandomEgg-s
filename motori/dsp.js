@@ -178,6 +178,7 @@ class EngineDSP {
     } else if (e.type === 'grind') this.grind = 1;
     else if (e.type === 'clunk') this.clunk = 1;
     else if (e.type === 'click') this.click = 1;
+    else if (e.type === 'bump') { this.bump = Math.min(1.5, (this.bump || 0) + (e.I || 0.6)); this.bumpPh = 0; }
     void T;
   }
 
@@ -412,7 +413,7 @@ class EngineDSP {
       // ---- strada, vento, gomme, cambio ------------------------------------------------
       const v = S.speed;
       this.brown = this.brown * 0.996 + nz2 * 0.06;
-      const road = this.roadLP.p(this.brown) * Math.min(1.6, Math.pow(v / 30, 1.1)) * 0.5;
+      let road = this.roadLP.p(this.brown) * Math.min(1.6, Math.pow(v / 30, 1.1)) * 0.5;
       const wind = this.windBP.p(nz3) * Math.min(3, (v / 55) * (v / 55)) * 0.22;
       let tire = 0;
       if (S.spin > 0.005) {
@@ -432,6 +433,12 @@ class EngineDSP {
         gear += Math.sin(TAU * this.clPh) * this.clunk * 0.12 + nz * this.clunk * this.clunk * 0.04;
         this.clunk *= Math.exp(-1 / (sr * 0.03));
       } else this.clPh = 0;
+      // giunto della strada: tonfo sordo delle gomme e della sospensione
+      if (this.bump > 1e-3) {
+        this.bumpPh += 47 / sr;
+        road += (Math.sin(TAU * this.bumpPh) * 0.5 + this.roadLP.p(nz) * 2.5) * this.bump * 0.35;
+        this.bump *= Math.exp(-1 / (sr * 0.045));
+      }
       if (this.click > 1e-3) { gear += this.tickHP.p(nz3) * this.click * 0.25; this.click *= Math.exp(-1 / (sr * 0.004)); }
 
       // tintinnio della frizione bidisco in folle al minimo
