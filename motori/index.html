@@ -186,6 +186,59 @@ h1 span { color: var(--amber); }
 .file { position: relative; overflow: hidden; }
 .file input, .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
+/* ---- gara ---- */
+.tree { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); display: grid; gap: 7px; padding: 10px 8px; background: #05070c; box-shadow: inset 0 0 0 2px #1c2a3c; }
+.tree i { width: 26px; height: 26px; border-radius: 50%; background: #1a1f28; box-shadow: inset 0 0 0 2px #0b0e14; }
+.tree i.on.a { background: #ffb000; box-shadow: 0 0 16px #ffb000; }
+.tree i.on.gr { background: var(--lime); box-shadow: 0 0 22px var(--lime); }
+.tree i.on.rd { background: var(--crit); box-shadow: 0 0 22px var(--crit); }
+.revbar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(560px, calc(100% - 120px)); display: grid; gap: 6px; }
+.rb-track { position: relative; height: 18px; background: rgba(5,7,12,.85); box-shadow: inset 0 0 0 1px #24405f; transform: skewX(-14deg); overflow: hidden; }
+.rb-zone { position: absolute; top: 0; bottom: 0; background: rgba(184,255,58,.3); box-shadow: inset 0 0 0 2px var(--lime); }
+.rb-fill { position: absolute; left: 0; top: 4px; bottom: 4px; width: 0; background: linear-gradient(90deg, var(--amber), #ff2e63); }
+.rb-fill.ok { background: var(--lime); }
+.rb-lbl { font: 400 13px/1.2 var(--f-data); text-align: center; background: rgba(3,6,12,.75); padding: 4px 8px; justify-self: center; }
+.grade { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%) skewX(-10deg); font: 400 clamp(28px, 6vw, 58px)/1 var(--f-display); font-style: italic; letter-spacing: .04em; opacity: 0; pointer-events: none; text-shadow: 3px 3px 0 #000; transition: opacity .2s; }
+.grade.show { opacity: 1; }
+.grade.perfetta { color: var(--lime); } .grade.buona { color: var(--amber); } .grade.anticipata { color: var(--warn); } .grade.tardi { color: var(--crit); }
+.result { position: absolute; inset: 0; margin: auto; width: min(460px, calc(100% - 24px)); height: max-content; background: linear-gradient(180deg, rgba(14,22,36,.97), rgba(5,8,14,.97)); padding: 18px; display: grid; gap: 12px; box-shadow: inset 0 0 0 1px #24405f, inset 0 3px 0 var(--lime), 0 20px 60px rgba(0,0,0,.7); }
+.result.lose { box-shadow: inset 0 0 0 1px #4a1d2a, inset 0 3px 0 var(--crit), 0 20px 60px rgba(0,0,0,.7); }
+.res-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.res-head span { font: 400 34px/1 var(--f-display); font-style: italic; color: var(--lime); text-shadow: 0 0 18px rgba(184,255,58,.45); }
+.result.lose .res-head span { color: var(--crit); text-shadow: 0 0 18px rgba(255,46,77,.45); }
+.res-head small { color: var(--muted); font-size: 14px; }
+.res-times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.res-times div { background: #060a11; padding: 8px 10px; box-shadow: inset 0 0 0 1px var(--line); }
+.res-times b { display: block; font: 400 11px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.res-times span { font: 400 28px/1.15 var(--f-display); font-variant-numeric: tabular-nums; }
+.res-dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; font-size: 15px; }
+.res-dl dt { font: 400 12px/1.6 var(--f-data); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.res-dl dd { margin: 0; }
+.res-gain { font: 400 22px/1 var(--f-display); color: var(--lime); }
+.res-gain.neg { color: var(--crit); }
+.go { border: 0; background: var(--lime); color: #061200; padding: 12px; font: 400 16px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.go.small { padding: 10px 26px; font-size: 15px; }
+.go:disabled { background: #1b2638; color: var(--muted); cursor: not-allowed; }
+.go kbd { margin-left: 8px; background: transparent; border-color: rgba(0,0,0,.3); color: #061200; }
+/* ---- scala dei rivali ---- */
+.lad-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.rv { background: #060a11; box-shadow: inset 0 0 0 1px var(--line); padding: 10px 12px; display: grid; gap: 3px; min-width: 0; }
+.rv b { font: 400 16px/1.1 var(--f-display); font-style: italic; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv span { font-size: 14px; color: #aebccd; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv small { font: 400 12.5px/1.3 var(--f-data); color: var(--muted); }
+.rv.done { opacity: .5; } .rv.done b::after { content: " ✓"; color: var(--lime); }
+.rv.cur { box-shadow: inset 0 0 0 2px var(--amber), 0 0 18px rgba(46,230,255,.18); }
+.rv.boss b { color: var(--pink); }
+.lad-foot { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.lad-foot .hint { max-width: 70ch; }
+/* ---- barre prestazioni ---- */
+.stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.st { display: grid; gap: 5px; min-width: 0; }
+.st b { font: 400 11px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+.st b span { color: var(--fg); font-size: 13px; letter-spacing: 0; }
+.st .sb { height: 8px; background: #121b29; transform: skewX(-20deg); overflow: hidden; }
+.st .sb i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--amber), var(--lime)); transition: width .4s; }
+
 /* ---- consolle ---- */
 .deck { display: grid; grid-template-columns: 1.15fr 1fr 1.1fr; gap: 16px; align-items: start; }
 .panel { background: linear-gradient(180deg, rgba(17,26,41,.95), rgba(9,14,23,.95)); padding: 16px; min-width: 0; display: grid; gap: 14px; box-shadow: inset 0 0 0 1px var(--line), inset 0 1px 0 rgba(46,230,255,.22); }
@@ -306,6 +359,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   .tele { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pods { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lad-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .extras { grid-template-columns: 1fr 1fr; }
   .extras .samples { grid-column: 1 / -1; }
 }
@@ -321,6 +376,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   .prompt { padding: 10px 12px; } .prompt p { font-size: 14px; }
   .toasts { top: auto; bottom: 50%; }
   .roadbar .hint { margin-left: 0; }
+  .tree { left: 8px; } .tree i { width: 18px; height: 18px; }
+  .revbar { width: calc(100% - 60px); left: auto; right: 8px; transform: none; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -382,7 +440,28 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         <div class="hud-tag" id="hudJob" hidden></div>
       </div>
       <div class="radar" id="radar" hidden>POLIZIA</div>
-      <div class="racebox" id="raceBox" hidden><div class="big" id="raceBig">3</div><div class="sub" id="raceSub"></div></div>
+      <div class="racebox" id="raceBox" hidden><div class="big" id="raceBig"></div><div class="sub" id="raceSub"></div></div>
+      <div class="tree" id="tree" hidden aria-hidden="true"><i class="a"></i><i class="a"></i><i class="a"></i><i class="gr"></i><i class="rd"></i></div>
+      <div class="revbar" id="revBar" hidden>
+        <div class="rb-track"><div class="rb-zone" id="rbZone"></div><div class="rb-fill" id="rbFill"></div></div>
+        <div class="rb-lbl" id="rbLbl">Freno + gas: giri nella zona verde, molla il freno al verde</div>
+      </div>
+      <div class="grade" id="grade"></div>
+      <div class="result" id="resultBox" hidden>
+        <div class="res-head"><span id="resWin">VITTORIA</span><small id="resVs"></small></div>
+        <div class="res-times">
+          <div><b>Tu</b><span id="resYou">—</span></div>
+          <div><b id="resRvName">Rivale</b><span id="resRv">—</span></div>
+        </div>
+        <dl class="res-dl">
+          <dt>Reazione</dt><dd id="resReact">—</dd>
+          <dt>Partenza</dt><dd id="resLaunch">—</dd>
+          <dt>Cambiate</dt><dd id="resShifts">—</dd>
+          <dt>Velocità d'arrivo</dt><dd id="resV">—</dd>
+        </dl>
+        <div class="res-gain" id="resGain"></div>
+        <button class="go" type="button" id="resOk">Continua <kbd>Invio</kbd></button>
+      </div>
       <div class="toasts" id="toasts" aria-live="polite"></div>
       <div class="prompt" id="promptBox" hidden>
         <h3 id="promptTitle"></h3>
@@ -401,6 +480,13 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <button class="kbtn" type="button" id="camReset">Inquadratura</button>
       <p class="hint"><span id="g3dName">modello di base</span> · trascina per girare la visuale</p>
     </div>
+  </section>
+
+  <section class="panel ladder cutbox" aria-labelledby="ladTitle">
+    <h2 id="ladTitle">Scala dei rivali <em id="ladZone">Porto</em></h2>
+    <div class="lad-row" id="ladRow"></div>
+    <div class="lad-foot"><p class="hint" id="ladHint">Batti i rivali in ordine: il capo del quartiere apre il successivo. Le sfide della scala non costano niente: se vinci incassi il premio.</p>
+      <button class="go small" type="button" id="ladGo">Sfida</button></div>
   </section>
 
   <section class="deck">
@@ -463,6 +549,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 
   <section class="panel tuning cutbox" aria-labelledby="tuneTitle">
     <h2 id="tuneTitle">Officina <em id="tuneSum">—</em></h2>
+    <div class="stats" id="stats"></div>
     <div class="presets" id="presets"></div>
     <div class="tgrid" id="tgrid"></div>
     <p class="hint" id="shopNote">I marchi indicano parti reali per JZA80 e 2JZ. Il carattere sonoro di ciascuna è una nostra modellazione fisica, non una registrazione del prodotto.</p>
@@ -659,7 +746,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   function shiftTo(g) {
     ensureAudio();
     const before = sim.gear;
+    const grade = game.race && game.race.phase === 'run' && g > before && before > 0 && !sim.shiftSeq ? game.gradeShift() : null;
     const ok = sim.shift(g);
+    if (grade) { if (ok) showGrade(grade); else { game.race.shifts.pop(); sim.fastShift = false; } }
     if (!ok && g !== before && !sim.shiftSeq) {
       if (g === -1 && Math.abs(sim.v) > 1.2) flash('Retromarcia solo da fermo');
       else if (!S.autoClutch) flash('Grattata! Premi la frizione (Spazio) per cambiare');
@@ -699,7 +788,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
     if ([' ', 'w', 's', 'e', 'q'].includes(k) || e.key.startsWith('Arrow')) e.preventDefault();
-    if (e.key === 'Enter') { e.preventDefault(); if (!e.repeat) startOn(); return; }
+    if (e.key === 'Enter') { e.preventDefault(); if (game.result) { closeResult(); return; } if (!e.repeat) startOn(); return; }
     if (e.repeat) return;
     ensureAudio(); hideGate();
     keys.add(k);
@@ -737,6 +826,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     padPrev[3] = y;
   }
 
+  let revT = 0;
   function updateInputs(dt) {
     const k = (c) => keys.has(c);
     const tgt = (p, key) => {
@@ -746,7 +836,12 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       return { v: key ? 1 : 0, direct: false };
     };
     const ramp = (cur, t, up, down) => (t.direct ? t.v : t.v > cur ? Math.min(t.v, cur + up * dt) : Math.max(t.v, cur - down * dt));
-    inp.thr = ramp(inp.thr, tgt('thr', k('w')), 10, 14);
+    const tThr = tgt('thr', k('w'));
+    if (game.race && game.race.phase === 'count' && !tThr.direct) {
+      // semaforo da tastiera: W tenuto fa salire i giri, rilasciato li fa scendere piano (si dosa a colpetti)
+      revT = Math.max(sim.P.idle, Math.min(sim.P.limiter - 200, revT + (k('w') ? 2600 : -1300) * dt));
+      inp.thr = Math.max(0, Math.min(1, 0.08 + (revT - sim.rpm) / 1400));
+    } else { revT = sim.rpm; inp.thr = ramp(inp.thr, tThr, 10, 14); }
     inp.brake = ramp(inp.brake, tgt('brake', k('s')), 8, 10);
     inp.clutch = ramp(inp.clutch, tgt('clutch', k(' ')), 9, 2.3);
     sim.in.thr = inp.thr; sim.in.brake = inp.brake; sim.in.clutch = S.autoClutch ? 0 : inp.clutch;
@@ -1017,7 +1112,14 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       const cost = presetCost(p);
       b.innerHTML = p.name + (cost ? `<small>€ ${fmt(cost)}</small>` : '');
     });
-    const est = sim.estimatePeak();
+    const est = sim.estimatePeak(), et = game.etEstimate(), kgcv = (sim.P.mass + 75) / est.cv;
+    const stat = (n, v, f) => `<div class="st"><b>${n}<span>${v}</span></b><div class="sb"><i style="width:${Math.max(4, Math.min(100, f * 100)).toFixed(0)}%"></i></div></div>`;
+    $('stats').innerHTML = stat('Potenza', fmt(Math.round(est.cv / 5) * 5) + ' CV', est.cv / 900)
+      + stat('Coppia', fmt(Math.round(est.nm / 5) * 5) + ' Nm', est.nm / 1000)
+      + stat('Trazione', fmt(sim.P.mu, 2) + ' μ', (sim.P.mu - 0.9) / 0.75)
+      + stat('Peso/potenza', fmt(kgcv, 2) + ' kg/CV', (6.2 - kgcv) / 4.5)
+      + stat('400 m stimati', fmt(et, 1) + ' s', (15.5 - et) / 6);
+    if (typeof renderLadder === 'function' && $('ladRow')) renderLadder();
     $('tuneSum').textContent = `${fmt(Math.round(est.cv / 5) * 5)} CV a ${fmt(est.rpmCv)} · ${fmt(Math.round(est.nm / 5) * 5)} Nm · ${fmt(TP.sim.turbo.max, 2)} bar · limitatore ${fmt(TP.sim.limiter)}`;
   }
 
@@ -1140,18 +1242,35 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const rd = game.mode === 'career' ? game.radar() : null;
     $('radar').hidden = rd === null || !!game.race;
     if (rd !== null) $('radar').textContent = `POLIZIA ${Math.round(rd / 10) * 10} m${sim.gear === 6 ? ' · ESCI DALLA SESTA' : ''}`;
-    // sfida
-    const R = game.race, rb = $('raceBox');
+    // sfida: semaforo, zona verde dei giri, indicatore di cambiata
+    const R = game.race, rb = $('raceBox'), tree = $('tree'), rv = $('revBar');
+    const lamps = tree.children;
+    tree.hidden = !(R && (R.phase === 'count' || (R.phase === 'run' && R.tt < 1.2)));
     if (R && R.phase === 'count') {
-      rb.hidden = false; const n = Math.ceil(R.t);
-      $('raceBig').textContent = n > 0 ? n : 'VIA'; $('raceBig').classList.toggle('red', n > 0);
-      $('raceSub').textContent = `${R.rv.name} · ${R.rv.car} · posta € ${fmt(R.stake)}`;
-    } else if (R && R.phase === 'run') {
-      rb.hidden = false; $('raceBig').textContent = R.tt < 0.8 ? 'VIA' : ''; $('raceBig').classList.remove('red');
-      const riv = game.ents.find((e) => e.kind === 'rival'), gap = riv ? (s.dist - riv.x) : 0;
-      $('raceSub').textContent = `${fmt(Math.max(0, 402 - (s.dist - R.x0)))} m all'arrivo · ${gap >= 0 ? 'davanti' : 'dietro'} di ${fmt(Math.abs(gap), 1)} m`;
-    } else if (R) { rb.hidden = false; $('raceBig').textContent = ''; $('raceSub').textContent = 'Accosta al semaforo…'; }
-    else rb.hidden = true;
+      lamps[0].classList.toggle('on', R.t < 2.7); lamps[1].classList.toggle('on', R.t < 1.8); lamps[2].classList.toggle('on', R.t < 0.9);
+      lamps[3].classList.remove('on'); lamps[4].classList.remove('on');
+    } else if (R && R.phase === 'run') { for (let i = 0; i < 3; i++) lamps[i].classList.remove('on'); lamps[3].classList.add('on'); }
+    rv.hidden = !R || R.phase === 'stage';
+    if (R && R.phase !== 'stage') {
+      const max = 8000, lim = sim.P.limiter;
+      const z = R.phase === 'count' ? R.zone : { lo: lim - 420, hi: lim - 40 };
+      $('rbZone').style.left = (z.lo / max * 100) + '%'; $('rbZone').style.width = ((z.hi - z.lo) / max * 100) + '%';
+      const inZ = sim.rpm >= z.lo && sim.rpm <= z.hi;
+      $('rbFill').style.width = Math.min(100, sim.rpm / max * 100) + '%'; $('rbFill').classList.toggle('ok', inZ);
+      $('rbLbl').textContent = R.phase === 'count'
+        ? (sim.gear < 1 ? 'Metti la prima (E)' : `Freno + colpetti di gas: tieni ${fmt(z.lo)}–${fmt(z.hi)} giri, molla il freno al verde`)
+        : (sim.gear >= 6 ? 'Sesta: tutto giù fino al traguardo' : inZ ? 'CAMBIA ORA' : `Cambia tra ${fmt(z.lo)} e ${fmt(z.hi)} giri`);
+    }
+    if (R) {
+      rb.hidden = false;
+      $('raceBig').textContent = R.phase === 'run' && R.tt < 0.8 ? 'VIA' : ''; $('raceBig').classList.remove('red');
+      const riv = game.ents.find((e) => e.kind === 'rival'), gap = riv && R.x0 !== undefined ? (s.dist - riv.x) : 0;
+      $('raceSub').textContent = R.phase === 'stage' ? `Accosta al semaforo · ${R.rv.name}, ${R.rv.car}`
+        : R.phase === 'count' ? `${R.rv.name} · ${R.rv.car} · ${R.ladder !== undefined ? 'premio € ' + fmt(R.prize) : 'posta € ' + fmt(R.stake)}`
+        : `${fmt(Math.max(0, 402 - (s.dist - R.x0)))} m all'arrivo · ${gap >= 0 ? 'davanti' : 'dietro'} di ${fmt(Math.abs(gap), 1)} m`;
+    } else rb.hidden = true;
+    if (game.result && $('resultBox').hidden) showResult(game.result);
+    if (garage && garage.raceCam) garage.raceCam(!!R && R.phase !== 'stage');
     // proposta
     const P = game.prompt, pb = $('promptBox');
     if (P !== promptShown) {
@@ -1189,13 +1308,61 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     }
     saveT += dt; if (saveT > 3) { saveT = 0; saveGame(); }
   }
+  // ---------------------------------------------------------------- gara: giudizi e risultato
+  const GRADE_TXT = { perfetta: 'CAMBIATA PERFETTA', buona: 'BUONA', anticipata: 'ANTICIPATA', tardi: 'TARDI' };
+  let gradeT = null;
+  function showGrade(g) {
+    const el = $('grade'); el.textContent = GRADE_TXT[g]; el.className = 'grade show ' + g;
+    clearTimeout(gradeT); gradeT = setTimeout(() => el.classList.remove('show'), 900);
+  }
+  function showResult(r) {
+    const box = $('resultBox'); box.hidden = false; box.classList.toggle('lose', !r.win);
+    $('resWin').textContent = r.win ? (r.zoneDone ? 'QUARTIERE TUO' : 'VITTORIA') : r.why && /falsa/i.test(r.why) ? 'FALSA PARTENZA' : 'SCONFITTA';
+    $('resVs').textContent = `contro ${r.rv.name} · ${r.rv.car}`;
+    $('resYou').textContent = r.you ? fmt(r.you, 3) + ' s' : '—';
+    $('resRvName').textContent = r.rv.name; $('resRv').textContent = fmt(r.et, 3) + ' s';
+    $('resReact').textContent = r.react !== undefined ? fmt(r.react, 3) + ' s' : '—';
+    $('resLaunch').textContent = r.launch ? `${r.launch} a ${fmt(Math.round(r.launchRpm / 50) * 50)} giri` : '—';
+    const c = (g) => r.shifts.filter((x) => x === g).length;
+    $('resShifts').textContent = r.shifts.length ? `${c('perfetta')} perfette su ${r.shifts.length}${c('tardi') ? ` · ${c('tardi')} in ritardo` : ''}${c('anticipata') ? ` · ${c('anticipata')} anticipate` : ''}` : '—';
+    $('resV').textContent = r.vmax ? fmt(r.vmax) + ' km/h' : '—';
+    const gEl = $('resGain');
+    gEl.textContent = game.mode === 'free' ? 'Modalità libera: nessun premio' : r.gain > 0 ? `+ € ${fmt(r.gain)}` : r.gain < 0 ? `− € ${fmt(-r.gain)}` : 'Nessun premio';
+    gEl.classList.toggle('neg', r.gain < 0);
+    renderLadder();
+  }
+  function closeResult() { game.result = null; $('resultBox').hidden = true; saveGame(); }
+  $('resOk').addEventListener('click', closeResult);
+
+  // ---------------------------------------------------------------- scala dei rivali
+  function renderLadder() {
+    let base = 0, zi = 0, idx = game.s.ladder || 0;
+    while (zi < GAME_LADDER.length - 1 && idx >= base + GAME_LADDER[zi].rivals.length) { base += GAME_LADDER[zi].rivals.length; zi++; }
+    const z = GAME_LADDER[zi], all = idx >= GAME_LADDER.reduce((a, q) => a + q.rivals.length, 0);
+    $('ladZone').textContent = all ? 'città conquistata' : `quartiere ${zi + 1} di ${GAME_LADDER.length} · ${z.zone}`;
+    $('ladRow').innerHTML = z.rivals.map((r, i) => {
+      const k = base + i, cls = k < idx ? 'done' : k === idx ? 'cur' : '';
+      return `<div class="rv ${cls} ${r.boss ? 'boss' : ''}"><b>${r.boss ? 'Capo · ' : ''}${r.name}</b><span>${r.car}</span><small>400 m in ${fmt(r.et, 1)} s · premio € ${fmt(r.prize)}</small></div>`;
+    }).join('');
+    const next = game.ladderRival();
+    $('ladGo').disabled = !next || !!game.race;
+    $('ladGo').textContent = next ? `Sfida ${next.name}` : 'Tutti battuti';
+    $('ladHint').textContent = all ? 'Hai battuto tutti i capi. Continua a girare per sfide di strada e consegne.'
+      : `Tu: circa ${fmt(game.etEstimate(), 1)} s stimati sui 400 m. Batti i rivali in ordine: il capo apre il quartiere successivo. Se perdi non paghi niente.`;
+  }
+  $('ladGo').addEventListener('click', () => {
+    ensureAudio(); hideGate();
+    if (!sim.running) { flash('Accendi il motore: I e poi Invio tenuto premuto', 2.5); return; }
+    if (game.startLadder()) renderLadder();
+  });
+
   function renderMode() {
     document.querySelectorAll('#modeSw button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === game.mode)));
     $('career').classList.toggle('free', game.mode === 'free');
     $('shopNote').textContent = game.mode === 'free'
       ? 'Modalità libera: tutte le parti sono gratis e si montano anche in movimento. I marchi indicano parti reali; il suono è una nostra modellazione fisica.'
       : 'Le parti si pagano coi contanti della carriera e si montano solo da fermo. I marchi indicano parti reali; il suono è una nostra modellazione fisica.';
-    renderTuning();
+    renderTuning(); renderLadder();
   }
   $('modeSw').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;

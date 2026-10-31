@@ -39,6 +39,17 @@ class Street3D extends Garage3D {
     this.baseFov = w && h && w / h < 1.3 ? 62 : 40;      // schermi verticali: più campo per vedere l'auto
   }
 
+  // telecamera da gara: bassa, di lato e un po' dietro, inquadra le due auto
+  raceCam(on) {
+    if (on === this.racing) return;
+    this.racing = on;
+    const c = this.controls;
+    if (on) {
+      this.savedCam = { p: this.camera.position.clone(), t: c.target.clone() };
+      this.camera.position.set(-6.8, 1.3, this.lastZ + 3.6); c.target.set(4, 0.7, this.lastZ - 1.9);
+    } else if (this.savedCam) { this.camera.position.copy(this.savedCam.p); c.target.copy(this.savedCam.t); }
+  }
+
   resetCamera() {
     this.camera.position.copy(this.camHome.p); this.controls.target.copy(this.camHome.t);
     this.camera.position.z += this.lastZ - 3.5; this.controls.target.z += this.lastZ - 3.5;

@@ -226,3 +226,58 @@ test('officina: si compra solo con i soldi sufficienti', () => {
   assert.equal(game.s.money, 3000 - 380);
   assert.ok(game.owns('bov', 'ssqv'));
 });
+
+test('gara: la cambiata vicino al limitatore è perfetta e più rapida', () => {
+  const { sim, game } = career();
+  game.startRace({ name: 'T', car: 'T' }, 0, { et: 30 });
+  play(sim, game, 1, () => ({ thr: 0, brake: 1 }));
+  sim.shift(1);
+  play(sim, game, 3.7, () => ({ thr: 0.6, brake: 1 }));
+  assert.equal(game.race.phase, 'run');
+  let fastT = null, slowT = null;
+  // prima → seconda a regime perfetto
+  play(sim, game, 4, (s) => {
+    if (s.gear === 1 && s.rpm > s.P.limiter - 300 && !s.shiftSeq) { assert.equal(game.gradeShift(), 'perfetta'); s.shift(2); fastT = 0; }
+    if (fastT !== null && s.shiftSeq) fastT += 1 / 60;
+    return { thr: 1, brake: 0 };
+  });
+  // seconda → terza troppo presto
+  play(sim, game, 0.2, (s) => {
+    if (s.gear === 2 && !s.shiftSeq && slowT === null) { assert.equal(game.gradeShift(), 'anticipata'); s.shift(3); slowT = 0; }
+    if (slowT !== null && s.shiftSeq) slowT += 1 / 60;
+    return { thr: 1, brake: 0 };
+  });
+  play(sim, game, 0.4, (s) => { if (s.shiftSeq) slowT += 1 / 60; return { thr: 1, brake: 0 }; });
+  assert.ok(fastT < slowT, `perfetta ${fastT.toFixed(2)} s, normale ${slowT.toFixed(2)} s`);
+  assert.deepEqual(game.race.shifts, ['perfetta', 'anticipata']);
+});
+
+test('scala dei rivali: vincere avanza, perdere non costa', () => {
+  const { sim, game } = career();
+  assert.equal(game.ladderRival().name, 'Tommy');
+  const money = game.s.money;
+  game.startLadder();
+  game.race.et = 99;                         // rivale lentissimo: si vince
+  play(sim, game, 1, () => ({ thr: 0, brake: 1 }));
+  sim.shift(1);
+  play(sim, game, 3.7, () => ({ thr: 0, brake: 1 }));
+  play(sim, game, 30, flatOut);
+  assert.ok(game.result && game.result.win);
+  assert.equal(game.s.ladder, 1);
+  assert.equal(game.s.money, money + 300);
+  game.result = null;
+  game.startLadder();
+  game.race.et = 1;                          // rivale imbattibile
+  play(sim, game, 40, (s, t) => (game.race && game.race.phase !== 'run' ? { thr: 0, brake: 1 } : flatOut(s)));
+  assert.equal(game.result.win, false);
+  assert.equal(game.s.ladder, 1);
+  assert.equal(game.s.money, money + 300);
+});
+
+test('gomme da drag: più aderenza e tempo stimato migliore', () => {
+  const { sim, game } = career();
+  const base = game.etEstimate();
+  sim.setTune(tuningParams({ ...TUNING_PRESETS[0].sel, tires: 'etstreet' }).sim);
+  assert.equal(sim.P.mu, 1.55);
+  assert.ok(game.etEstimate() < base);
+});

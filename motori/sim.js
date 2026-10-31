@@ -37,6 +37,7 @@ class SupraSim {
   setTune(t) {
     Object.assign(this.tune, t);
     this.P.limiter = this.tune.limiter; this.P.idle = this.tune.idle; this.P.Ie = this.tune.Ie;
+    if (this.tune.mu) this.P.mu = this.tune.mu;
     this.cfg.valve = this.tune.valve;
   }
   // potenza e coppia massime a regime stabilizzato, per la scheda del tuning
@@ -84,7 +85,8 @@ class SupraSim {
     if (this.gear === -1 && target > 0 && this.v < -1.2) { this.events.push({ type: 'grind' }); return false; }
     if (this.cfg.autoClutch) {
       const down = target > 0 && this.gear > 0 && target < this.gear;
-      this.shiftSeq = { t: 0, target, down, done: false };
+      this.shiftSeq = { t: 0, target, down, done: false, fast: !!this.fastShift && !down };
+      this.fastShift = false;
       return true;
     }
     if (target === 0 || this.in.clutch > 0.65) { this.gear = target; this.lock = false; if (target !== 0) this.events.push({ type: 'clunk' }); return true; }
@@ -139,20 +141,21 @@ class SupraSim {
     if (cfg.autoClutch) {
       if (this.shiftSeq) {
         const s = this.shiftSeq; s.t += h;
-        if (s.t < 0.07) { this.clutch = Math.min(1, this.clutch + h / 0.045); if (!s.down) thrCmd = 0; }
+        const f = s.fast ? 0.55 : 1;                       // cambiata perfetta: frizione aperta per meno tempo
+        if (s.t < 0.07 * f) { this.clutch = Math.min(1, this.clutch + h / (0.045 * f)); if (!s.down) thrCmd = 0; }
         else {
           if (!s.done) { s.done = true; this.gear = s.target; this.lock = false; if (s.target !== 0) this.events.push({ type: 'clunk' }); }
           if (this.gear !== 0) {
             const floor = wheelRpm(this.gear) < 1100 ? 1 - SIM_SS(1050, 2700, rpm) : 0;
-            this.clutch = Math.max(floor, this.clutch - h / 0.2);
+            this.clutch = Math.max(floor, this.clutch - h / (0.2 * f));
           }
-          if (!s.down && s.t < 0.15) thrCmd = 0;
+          if (!s.down && s.t < 0.15 * f) thrCmd = 0;
         }
         if (s.down && cfg.revMatch && s.t < 0.27) {
           const tg = wheelRpm(s.target);
           thrCmd = Math.max(thrCmd, SIM_CLAMP((tg - rpm) / 650, 0, 1));
         }
-        if (s.t > 0.3) {
+        if (s.t > 0.3 * f) {
           this.shiftSeq = null;
           if (this.gear !== 0 && Math.abs(rpm - wheelRpm(this.gear)) < 250 && rpm > 950) this.lock = true;
         }

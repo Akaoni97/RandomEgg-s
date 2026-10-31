@@ -14,6 +14,14 @@ Quadro strumenti in alto, strada 3D a scorrimento sotto, consolle di guida, offi
   (5 stelle, scende col tempo). Un avviso in alto segnala le pattuglie in arrivo.
 - Officina: i pezzi si pagano coi contanti e si montano solo da fermo. Le preparazioni pronte mostrano
   quanto manca per completarle.
+- Gare di accelerazione sui 400 m: semaforo con tre gialli e verde, zona verde dei giri in partenza
+  (freno + colpetti di gas, si molla il freno al verde), tempo di reazione, indicatore di cambiata
+  (perfetta / buona / anticipata / tardi; la perfetta è più rapida), telecamera bassa di lato e
+  schermata del risultato.
+- Scala dei rivali: quattro quartieri con tre rivali e un capo ciascuno, da battere in ordine.
+  Le sfide della scala non costano: se vinci incassi il premio.
+- Officina con barre delle prestazioni (potenza, coppia, trazione, peso/potenza, 400 m stimati) e gomme
+  (Toyo R888R, Mickey Thompson ET Street R) che cambiano l'aderenza.
 - Modalità libera: tutto sbloccato, nessun evento, benzina infinita (il vecchio banco suono).
 - La carriera si salva nel browser. `window.nightRun` espone simulazione e gioco dalla console.
 

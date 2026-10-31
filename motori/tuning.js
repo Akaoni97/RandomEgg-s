@@ -84,6 +84,14 @@ const TUNING = {
       { id: 'link', price: 2100, brand: 'Link', name: 'G4X', note: 'Taglio d’accensione a 7500, launch control, mappa pop & bang.', sim: { lim: 7500, spark: true, launch: true, pops: true } },
     ],
   },
+  tires: {
+    label: 'Gomme posteriori',
+    items: [
+      { id: 'oem', price: 0, brand: 'Bridgestone', name: 'Potenza originali 265/40 R17', note: 'Stradali: con molta coppia pattinano in prima e in seconda.', sim: { mu: 1.1 }, dsp: {} },
+      { id: 'r888r', price: 1100, brand: 'Toyo', name: 'Proxes R888R', note: 'Semi-slick: più presa in partenza, stridio più acuto quando slittano.', sim: { mu: 1.3 }, dsp: {} },
+      { id: 'etstreet', price: 1500, brand: 'Mickey Thompson', name: 'ET Street R', note: 'Radiali da drag: partenze piantate anche con 700 CV.', sim: { mu: 1.55 }, dsp: {} },
+    ],
+  },
   clutch: {
     label: 'Frizione e volano',
     items: [
@@ -94,10 +102,10 @@ const TUNING = {
 };
 
 const TUNING_PRESETS = [
-  { id: 'stock', name: 'Originale', sel: { exhaust: 'oem', cat: 'oem', turbo: 'ct12b', bov: 'oem', wastegate: 'int', intake: 'oem', cams: 'oem', ecu: 'oem', clutch: 'oem' } },
-  { id: 'street', name: 'Street biturbo', sel: { exhaust: 'hks', cat: 'sport', turbo: 'ct12b', bov: 'ssqv', wastegate: 'int', intake: 'pf', cams: 'oem', ecu: 'link', clutch: 'oem' } },
-  { id: 'single', name: 'Big single', sel: { exhaust: 'tomei', cat: 'sport', turbo: 'pte6466', bov: 'raceport', wastegate: 'tial', intake: 'pf', cams: 'hks264', ecu: 'haltech', clutch: 'osgiken' } },
-  { id: 'drag', name: 'Drag anni 90', sel: { exhaust: 'straight', cat: 'decat', turbo: 't51r', bov: 'none', wastegate: 'tial', intake: 'pf', cams: 'hks272', ecu: 'haltech', clutch: 'osgiken' } },
+  { id: 'stock', name: 'Originale', sel: { exhaust: 'oem', cat: 'oem', turbo: 'ct12b', bov: 'oem', wastegate: 'int', intake: 'oem', cams: 'oem', ecu: 'oem', clutch: 'oem', tires: 'oem' } },
+  { id: 'street', name: 'Street biturbo', sel: { exhaust: 'hks', cat: 'sport', turbo: 'ct12b', bov: 'ssqv', wastegate: 'int', intake: 'pf', cams: 'oem', ecu: 'link', clutch: 'oem', tires: 'r888r' } },
+  { id: 'single', name: 'Big single', sel: { exhaust: 'tomei', cat: 'sport', turbo: 'pte6466', bov: 'raceport', wastegate: 'tial', intake: 'pf', cams: 'hks264', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet' } },
+  { id: 'drag', name: 'Drag anni 90', sel: { exhaust: 'straight', cat: 'decat', turbo: 't51r', bov: 'none', wastegate: 'tial', intake: 'pf', cams: 'hks272', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet' } },
 ];
 
 function tuningItem(cat, id) {
@@ -116,6 +124,7 @@ function tuningParams(sel) {
     sim: {
       turbo, pw, limiter: ecu.sim.lim, sparkCut: ecu.sim.spark, ecuLaunch: ecu.sim.launch, ecuPops: ecu.sim.pops,
       idle: cams.sim.idle, camLow: cams.sim.low, camHigh: cams.sim.high, lope: cams.sim.lope, Ie: cl.sim.Ie,
+      mu: g('tires').sim.mu,
       valve: g('bov').dsp.v === 2 ? 'flutter' : g('bov').dsp.v === 1 ? 'bov' : 'recirc',
     },
     dsp: {

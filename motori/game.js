@@ -11,13 +11,36 @@ const GAME_RIVALS = [
 ];
 const GAME_COLORS = [0x2b4c7e, 0x8a8f96, 0x1d1f22, 0xe8e6df, 0x6b1b14, 0x2f5d3a, 0xb38b2d];
 const GAME_LANE_Z = { 0: 6.1, 1: 3.5, 2: 0, 3: -3.5 };
+// scala dei rivali: quattro quartieri, tre rivali e un capo ciascuno (tempi sui 400 m)
+const GAME_LADDER = [
+  { zone: 'Porto', rivals: [
+    { name: 'Tommy', car: 'Honda Civic Type R EK9', et: 15.2, prize: 300 },
+    { name: 'Gina', car: 'Mazda MX-5 turbo', et: 14.6, prize: 400 },
+    { name: 'Bruno', car: 'Nissan 200SX S14', et: 14.0, prize: 550 },
+    { name: 'Lo Scaricatore', car: 'Nissan Skyline GTS-T R33', et: 13.5, prize: 1200, boss: true } ] },
+  { zone: 'Zona industriale', rivals: [
+    { name: 'Ale', car: 'Mitsubishi Lancer Evo VI', et: 13.1, prize: 900 },
+    { name: 'Rina', car: 'Subaru Impreza STI', et: 12.8, prize: 1100 },
+    { name: 'Max', car: 'Mazda RX-7 FD', et: 12.5, prize: 1300 },
+    { name: 'La Gru', car: 'Nissan Skyline GT-R R34', et: 12.1, prize: 2800, boss: true } ] },
+  { zone: 'Centro', rivals: [
+    { name: 'Yuki', car: 'Honda NSX', et: 11.9, prize: 2000 },
+    { name: 'Dario', car: 'Nissan Silvia S15 SR20 big turbo', et: 11.6, prize: 2400 },
+    { name: 'Vera', car: 'Toyota Chaser JZX100', et: 11.3, prize: 2800 },
+    { name: 'Il Notaio', car: 'Nissan Skyline GT-R R32 RB26 800 CV', et: 11.0, prize: 6000, boss: true } ] },
+  { zone: 'Tangenziale', rivals: [
+    { name: 'Ivan', car: 'Mitsubishi 3000GT', et: 10.8, prize: 4000 },
+    { name: 'Sara', car: 'Toyota Supra JZA80 single turbo', et: 10.6, prize: 4800 },
+    { name: 'Leo', car: 'Nissan GT-R R35', et: 10.4, prize: 5600 },
+    { name: 'Il Fantasma', car: 'Toyota Supra JZA80 1000 CV', et: 10.1, prize: 15000, boss: true } ] },
+];
 
 class StreetGame {
   constructor(sim, rnd = Math.random) {
     this.sim = sim;
     this.rnd = rnd;
     this.mode = 'career';                 // 'career' | 'free'
-    this.s = { money: 3000, rep: 0, heat: 0, dist: 0, owned: {}, wins: 0, losses: 0, fines: 0, jobs: 0 };
+    this.s = { money: 3000, rep: 0, heat: 0, dist: 0, owned: {}, wins: 0, losses: 0, fines: 0, jobs: 0, ladder: 0 };
     this.ents = [];
     this.prompt = null;
     this.ap = null;                        // pilota automatico (fermate)
@@ -113,16 +136,35 @@ class StreetGame {
     });
   }
 
-  startRace(rv, stake) {
-    this.ents = this.ents.filter((e) => e.kind === 'station' || e.kind === 'drop' || this.rel(e) < -20);
+  // tempo previsto sui 400 m con la formula di Hale (+ partenza da strada)
+  etEstimate() {
     const cv = this.sim.estimatePeak().cv;
-    // tempo previsto con la formula di Hale, poi un rivale alla pari
-    const etYou = 5.825 * Math.pow((this.sim.P.mass + 75) * 2.2046 / (cv * 0.986), 1 / 3) + 0.45;
-    const et = etYou * (1.0 + this.rnd() * 0.09 - Math.min(0.05, this.s.rep * 0.0005));
-    this.race = { rv, stake, et, phase: 'stage', t: 0 };
+    return 5.825 * Math.pow((this.sim.P.mass + 75) * 2.2046 / (cv * 0.986), 1 / 3) + 0.45 + Math.max(0, 0.35 - (this.sim.P.mu - 1.1));
+  }
+  ladderRival() {
+    let i = this.s.ladder || 0;
+    for (const z of GAME_LADDER) { if (i < z.rivals.length) return { zone: z.zone, ...z.rivals[i] }; i -= z.rivals.length; }
+    return null;
+  }
+  // zona verde dei giri in partenza: più boost da costruire, più alta; più grip, più alta
+  launchZone() {
+    const tc = this.sim.tune.turbo, mid = (tc.twin ? 3600 : 3600 + (tc.a - 2800) * 0.6) + (this.sim.P.mu - 1.1) * 1800;
+    return { lo: Math.round(mid - 450), hi: Math.round(mid + 450) };
+  }
+  startLadder() {
+    const rv = this.ladderRival(); if (!rv || this.race) return false;
+    this.startRace(rv, 0, { et: rv.et, prize: rv.prize, ladder: this.s.ladder });
+    return true;
+  }
+
+  startRace(rv, stake, opt = {}) {
+    this.ents = this.ents.filter((e) => e.kind === 'station' || e.kind === 'drop' || this.rel(e) < -20);
+    this.prompt = null;
+    const et = opt.et || this.etEstimate() * (1.0 + this.rnd() * 0.09 - Math.min(0.05, this.s.rep * 0.0005));
+    this.race = { rv, stake, et, phase: 'stage', t: 0, prize: opt.prize || 0, ladder: opt.ladder, zone: this.launchZone(), shifts: [], hitLim: false };
     this.lane = 1;
     this.stopAt(null, () => {
-      this.race.phase = 'count'; this.race.t = 3.2;
+      this.race.phase = 'count'; this.race.t = 3.6;
       this.race.x0 = this.s.dist;
       this.ap = null;
       this.ents.push({ id: this.id++, kind: 'rival', lane: 2, x: this.s.dist, v: 0, color: GAME_COLORS[Math.floor(this.rnd() * GAME_COLORS.length)] });
@@ -283,9 +325,18 @@ class StreetGame {
     if (R.phase === 'count') {
       R.t -= dt;
       if (d - R.x0 > 1.0) { this.endRace(false, 'Falsa partenza!'); return; }
-      if (R.t <= 0) { R.phase = 'run'; R.tt = 0; this.say('VIA!', 'race'); }
+      if (R.t <= 0) {
+        R.phase = 'run'; R.tt = 0;
+        const rpm = this.sim.rpm, z = R.zone;
+        R.launchRpm = rpm;
+        R.launch = rpm >= z.lo && rpm <= z.hi ? 'perfetta' : rpm >= z.lo - 700 && rpm <= z.hi + 700 ? 'buona' : rpm < z.lo ? 'fiacca' : 'pattinata';
+      }
     } else if (R.phase === 'run') {
       R.tt += dt;
+      const released = this.sim.cfg.autoClutch ? this.sim.in.brake < 0.25 : this.sim.in.clutch < 0.6;
+      if (R.react === undefined && released) R.react = R.tt;
+      if (this.sim.cut === 2 && this.sim.clutch < 0.3 && R.tt > 0.3) R.hitLim = true;   // limitatore a frizione chiusa
+      R.vmax = Math.max(R.vmax || 0, this.kmh);
       if (rival) {
         const k = R.tt / R.et;
         rival.x = R.x0 + (k <= 1 ? 402.3 * Math.pow(k, 1.75) : 402.3 + 402.3 * 1.75 / R.et * (R.tt - R.et));
@@ -294,10 +345,28 @@ class StreetGame {
       else if (R.tt > R.et + 12) this.endRace(false);
     }
   }
+  // valuta una cambiata durante la gara; la perfetta rende il cambio più rapido
+  gradeShift() {
+    const R = this.race; if (!R || R.phase !== 'run') return null;
+    const rpm = this.sim.rpm, lim = this.sim.P.limiter;
+    const g = R.hitLim || rpm > lim - 30 ? 'tardi' : rpm >= lim - 420 ? 'perfetta' : rpm >= lim - 1000 ? 'buona' : 'anticipata';
+    R.shifts.push(g); R.hitLim = false;
+    this.sim.fastShift = g === 'perfetta';
+    return g;
+  }
+
   endRace(win, why) {
     const R = this.race; this.race = null;
-    if (win) { this.s.money += R.stake; this.s.rep += 10; this.s.wins++; this.say(`Vinto contro ${R.rv.name}: ${R.you.toFixed(2)} s contro ${R.et.toFixed(2)}. + € ${R.stake}`, 'money'); }
-    else { this.s.money -= R.stake; this.s.losses++; this.say(`${why || 'Perso'} ${R.rv.name} in ${R.et.toFixed(2)} s${R.you ? `, tu ${R.you.toFixed(2)}` : ''}. − € ${R.stake}`, 'lose'); }
+    const ladder = R.ladder !== undefined;
+    const gain = win ? (ladder ? R.prize : R.stake) : (ladder ? 0 : -R.stake);
+    if (this.mode === 'career') this.s.money += gain;
+    if (win) { this.s.rep += ladder ? 15 : 10; this.s.wins++; } else this.s.losses++;
+    if (win && ladder && R.ladder === this.s.ladder) this.s.ladder++;
+    this.say(win ? `Vinto contro ${R.rv.name}: ${R.you.toFixed(3)} s contro ${R.et.toFixed(3)}` : `${why || 'Perso'} contro ${R.rv.name}`, win ? 'money' : 'lose');
+    this.result = {
+      win, why, rv: R.rv, you: R.you, et: R.et, gain, ladder, react: R.react, launch: R.launch, launchRpm: R.launchRpm,
+      shifts: R.shifts, vmax: R.vmax, boss: !!R.rv.boss, zoneDone: win && ladder && R.rv.boss,
+    };
     this.lastRace = { win, you: R.you, et: R.et, rv: R.rv };
     this.ents.forEach((e) => { if (e.kind === 'rival') e.v = win ? 18 : 40; });
   }
