@@ -316,3 +316,23 @@ test('gomme: si scaldano pattinando, la presa ha un ottimo e si consumano', () =
   assert.ok(sim.tireT > 45, `dopo il burnout ${sim.tireT.toFixed(0)} °C`);
   assert.ok(sim.tireWear > 0.001);
 });
+
+test('bagagliaio: peso sull\'auto, tanica, kit, consegne', () => {
+  const { sim, game } = career();
+  assert.equal(sim.P.mass, 1570 + 30, 'ruota di scorta, kit e tanica pesano 30 kg');
+  const et0 = game.etEstimate();
+  for (let n = 0; n < 4; n++) game.buyItem('zavorra');
+  assert.equal(sim.P.mass, 1570 + 130);
+  assert.ok(game.etEstimate() > et0, 'più peso, tempi peggiori');
+  assert.equal(game.buyItem('zavorra').ok, false, 'oltre 150 kg non entra');
+  sim.fuel = 0.1;
+  const ti = game.s.trunk.findIndex((it) => it.kind === 'tanica');
+  assert.ok(game.useItem(ti).ok); assert.ok(Math.abs(sim.fuel - (0.1 + 10 / 70)) < 1e-9);
+  sim.damage = 0.3;
+  const ki = game.s.trunk.findIndex((it) => it.kind === 'kit');
+  assert.ok(game.useItem(ki).ok); assert.ok(Math.abs(sim.damage - 0.15) < 1e-9);
+  while (game.s.trunk.some((it) => it.kind === 'zavorra')) game.dropItem(game.s.trunk.findIndex((it) => it.kind === 'zavorra'));
+  game.offerJob(); game.answer(0);
+  assert.ok(game.s.trunk.some((it) => it.kind === 'pacco'), 'il pacco va nel bagagliaio');
+  assert.equal(game.dropItem(game.s.trunk.findIndex((it) => it.kind === 'pacco')).ok, false);
+});

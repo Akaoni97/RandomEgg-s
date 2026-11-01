@@ -11,6 +11,16 @@ const GAME_RIVALS = [
 ];
 const GAME_COLORS = [0x2b4c7e, 0x8a8f96, 0x1d1f22, 0xe8e6df, 0x6b1b14, 0x2f5d3a, 0xb38b2d];
 const GAME_LANE_Z = { 0: 6.1, 1: 3.5, 2: 0, 3: -3.5 };
+// bagagliaio: 12 posti, 150 kg; il peso si somma alla massa della Supra
+const TRUNK_SLOTS = 12, TRUNK_KG = 150, CAR_MASS = 1570;
+const INV = {
+  tanica: { name: 'Tanica 10 L', kg: 9, price: 35, note: 'Versa 10 litri nel serbatoio, anche a secco.' },
+  kit: { name: 'Kit attrezzi', kg: 7, price: 120, uses: 3, note: 'Raddrizzi un po\' la carrozzeria per strada: −15 % di danni, tre usi.' },
+  scorta: { name: 'Ruota di scorta', kg: 14, price: 90, note: 'Peso morto finché non serve. Toglierla alleggerisce l\'auto.' },
+  pacco: { name: 'Pacco da consegnare', kg: 10, price: 0, note: 'Va portato a destinazione.' },
+  trofeo: { name: 'Trofeo', kg: 2, price: 0, note: 'Ricordo di un capo battuto.' },
+  zavorra: { name: 'Sacco di sabbia', kg: 25, price: 10, note: 'Peso sul posteriore: più trazione in partenza, ma più massa.' },
+};
 // scala dei rivali: quattro quartieri, tre rivali e un capo ciascuno (tempi sui 400 m)
 const GAME_LADDER = [
   { zone: 'Porto', rivals: [
@@ -40,7 +50,8 @@ class StreetGame {
     this.sim = sim;
     this.rnd = rnd;
     this.mode = 'career';                 // 'career' | 'free'
-    this.s = { money: 3000, rep: 0, heat: 0, dist: 0, owned: {}, wins: 0, losses: 0, fines: 0, jobs: 0, ladder: 0 };
+    this.s = { money: 3000, rep: 0, heat: 0, dist: 0, owned: {}, wins: 0, losses: 0, fines: 0, jobs: 0, ladder: 0,
+      trunk: [{ kind: 'scorta', kg: 14 }, { kind: 'kit', kg: 7, uses: 3 }, { kind: 'tanica', kg: 9 }] };
     this.ents = [];
     this.prompt = null;
     this.ap = null;                        // pilota automatico (fermate)
@@ -53,6 +64,7 @@ class StreetGame {
     this.autoLane = true;      // sorpasso automatico (si può spegnere)
     this.manualT = 0;          // secondi in cui la corsia l'ha scelta il pilota
     this.fx = [];              // eventi grafici per le viste (tamponamenti…)
+    this.applyMass();
   }
 
   // cambio corsia del pilota: dir +1 a sinistra (verso la corsia 3), -1 a destra (verso la 1)
@@ -80,10 +92,55 @@ class StreetGame {
   save() { return JSON.stringify({ mode: this.mode, s: this.s }); }
   load(json) {
     try { const o = JSON.parse(json); if (o && o.s) { Object.assign(this.s, o.s); this.mode = o.mode === 'free' ? 'free' : 'career'; } } catch (e) { /* salvataggio illeggibile */ }
+    if (!Array.isArray(this.s.trunk)) this.s.trunk = [];
+    this.applyMass();
   }
   reset() { const m = this.mode; Object.assign(this, new StreetGame(this.sim, this.rnd)); this.mode = m; }
 
   // ------------------------------------------------------------ officina
+  // ---------------------------------------------------------------- bagagliaio
+  trunkKg() { return (this.s.trunk || []).reduce((a, it) => a + it.kg, 0); }
+  trunkFits(kg) { return (this.s.trunk || []).length < TRUNK_SLOTS && this.trunkKg() + kg <= TRUNK_KG; }
+  applyMass() {
+    // il peso nel bagagliaio pesa sul posteriore: più massa e un filo di carico in più sulle ruote motrici
+    const kg = this.trunkKg(), P = this.sim.P;
+    P.mass = CAR_MASS + kg;
+    P.rearW = (0.47 * CAR_MASS + kg * 0.95) / (CAR_MASS + kg);
+  }
+  addItem(kind, extra = {}) {
+    const it = Object.assign({ kind, kg: INV[kind].kg }, INV[kind].uses ? { uses: INV[kind].uses } : {}, extra);
+    if (!this.trunkFits(it.kg)) return false;
+    this.s.trunk.push(it); this.applyMass(); return true;
+  }
+  itemName(it) { return it.name || INV[it.kind].name; }
+  buyItem(kind) {
+    const p = this.mode === 'career' ? INV[kind].price : 0;
+    if (p > this.s.money) return { ok: false, why: `Costa € ${p}` };
+    if (!this.trunkFits(INV[kind].kg)) return { ok: false, why: 'Il bagagliaio è pieno' };
+    this.s.money -= p; this.addItem(kind); this.say(`${INV[kind].name} nel bagagliaio${p ? `: − € ${p}` : ''}`, 'buy');
+    return { ok: true };
+  }
+  useItem(i) {
+    const it = this.s.trunk[i]; if (!it) return { ok: false, why: 'Posto vuoto' };
+    const sim = this.sim;
+    if (it.kind === 'tanica') {
+      if (sim.fuel > 0.97) return { ok: false, why: 'Il serbatoio è già pieno' };
+      sim.fuel = Math.min(1, sim.fuel + 10 / sim.P.tank); sim.dry = false; this.s.trunk.splice(i, 1);
+      this.say('10 litri dalla tanica', 'fuel');
+    } else if (it.kind === 'kit') {
+      if (Math.abs(sim.v) > 0.5) return { ok: false, why: 'Fermati per usare gli attrezzi' };
+      if (sim.damage < 0.01) return { ok: false, why: 'Non c\'è niente da raddrizzare' };
+      sim.damage = Math.max(0, sim.damage - 0.15); it.uses -= 1; if (it.uses <= 0) this.s.trunk.splice(i, 1);
+      this.say(`Martello e pazienza: danni al ${Math.round(sim.damage * 100)} %`, 'buy');
+    } else return { ok: false, why: it.kind === 'pacco' ? 'Il pacco va consegnato, non aperto' : 'Questo oggetto non si usa: puoi solo toglierlo' };
+    this.applyMass(); return { ok: true };
+  }
+  dropItem(i) {
+    const it = this.s.trunk[i]; if (!it) return { ok: false };
+    if (it.kind === 'pacco' && this.job) return { ok: false, why: 'Se butti il pacco perdi la consegna: portalo a destinazione' };
+    this.s.trunk.splice(i, 1); this.applyMass(); this.say(`${this.itemName(it)} lasciato sul marciapiede`); return { ok: true };
+  }
+
   // servizi d'officina: carrozziere e gomme nuove
   repairCost() { return Math.round(this.sim.damage * 2600 / 10) * 10; }
   tireCost() { return Math.max(380, Math.round(tuningItem('tires', this.tireId || 'oem').price * 0.55 / 10) * 10); }
@@ -158,14 +215,17 @@ class StreetGame {
 
   offerJob() {
     const r = this.rnd, km = 2 + Math.round(r() * 30) / 10, pay = Math.round((90 + km * 45 + r() * 60) / 10) * 10;
-    const what = ['un pacco per un\'officina', 'dei cerchi in lega', 'una centralina riprogrammata', 'dei pezzi di ricambio', 'una cassa di olio motore'][Math.floor(r() * 5)];
+    const goods = [['un pacco per un\'officina', 8], ['dei cerchi in lega', 36], ['una centralina riprogrammata', 3], ['dei pezzi di ricambio', 22], ['una cassa di olio motore', 28]];
+    const [what, kg] = goods[Math.floor(r() * goods.length)];
+    if (!this.trunkFits(kg)) { this.say(`Un lavoretto da ${kg} kg, ma il bagagliaio non ce la fa`, 'job'); return; }
     this.ask({
       kind: 'job', title: 'Lavoretto',
-      text: `Porta ${what} a ${km.toLocaleString('it-IT')} km da qui. Paga € ${pay}, + 30% se arrivi entro ${Math.ceil(km / 0.95)} minuti.`,
+      text: `Porta ${what} (${kg} kg nel bagagliaio) a ${km.toLocaleString('it-IT')} km da qui. Paga € ${pay}, + 30% se arrivi entro ${Math.ceil(km / 0.95)} minuti.`,
       options: [
         { label: 'Lo faccio', act: () => {
           const to = this.s.dist + km * 1000;
           this.job = { to, pay, km, deadline: km / 0.95 * 60, t: 0 };
+          this.addItem('pacco', { kg, name: what.replace(/^(un |una |dei |delle )/, '').replace(/^./, (c) => c.toUpperCase()) });
           this.ents.push({ id: this.id++, kind: 'drop', lane: 1, x: to, v: 0 });
           this.say(`Consegna accettata: ${km.toLocaleString('it-IT')} km`, 'job');
         } },
@@ -317,6 +377,7 @@ class StreetGame {
         this.s.money += j.pay + bonus; this.s.jobs++; this.s.rep += 3;
         this.say(`Consegna fatta: + € ${j.pay}${bonus ? ` e € ${bonus} di bonus puntualità` : ''}`, 'money');
         this.job = null; e.done = true;
+        const pi = this.s.trunk.findIndex((it) => it.kind === 'pacco'); if (pi >= 0) { this.s.trunk.splice(pi, 1); this.applyMass(); }
       }
     }
     if (this.job) this.job.t += dt;
@@ -341,6 +402,10 @@ class StreetGame {
       const rel = e.x - d;
       if (rel > 0.5 && rel < 4.5 && Math.abs(this.laneZ - GAME_LANE_Z[e.lane]) < 1.7 && sim.v > e.v + 1) this.crash(e);
     }
+    // frecce: lampeggiano qualche secondo quando cambia la corsia scelta
+    if (this.prevLane !== undefined && this.lane !== this.prevLane) this.signal = { dir: this.lane > this.prevLane ? 'L' : 'R', t: 2.6 };
+    this.prevLane = this.lane;
+    if (this.signal) { this.signal.t -= dt; if (this.signal.t <= 0) this.signal = null; }
     const zT = GAME_LANE_Z[this.lane];
     this.laneZ += Math.sign(zT - this.laneZ) * Math.min(Math.abs(zT - this.laneZ), dt * (sim.v > 1 ? 1.6 + Math.min(1.2, sim.v * 0.03) : 0.6));
 
@@ -408,6 +473,7 @@ class StreetGame {
     if (this.mode === 'career') this.s.money += gain;
     if (win) { this.s.rep += ladder ? 15 : 10; this.s.wins++; } else this.s.losses++;
     if (win && ladder && R.ladder === this.s.ladder) this.s.ladder++;
+    if (win && R.rv.boss) { if (this.addItem('trofeo', { name: `Trofeo: ${R.rv.name}` })) this.say(`Trofeo di ${R.rv.name} nel bagagliaio`, 'money'); }
     this.say(win ? `Vinto contro ${R.rv.name}: ${R.you.toFixed(3)} s contro ${R.et.toFixed(3)}` : `${why || 'Perso'} contro ${R.rv.name}`, win ? 'money' : 'lose');
     this.result = {
       win, why, rv: R.rv, you: R.you, et: R.et, gain, ladder, react: R.react, launch: R.launch, launchRpm: R.launchRpm,

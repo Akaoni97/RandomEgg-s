@@ -17,8 +17,22 @@ Segni di gomma sull'asfalto, fumo, spruzzi d'acqua sul bagnato e scintille nei t
 
 Dalla barra sotto la strada si passa alla **vista 3D** (`street3d.js`): Supra JZA80 modellata per sezioni con vernice lucida che riflette la città, quattro
 fanali tondi, alettone ad arco, ruote con cerchi, dischi e pinze, anteriori sterzanti; edifici di quattro tipi,
-alberi, panchine, idranti, fermate, semafori che cambiano colore, strisce, frecce, tombini, auto
-parcheggiate, luna e stelle. È l'unica vista che carica modelli .glb.
+alberi, panchine, idranti, fermate, semafori che cambiano colore, strisce, frecce, tombini,
+luna e stelle. È l'unica vista che carica modelli .glb.
+
+**Telecamere e qualità.** Il tasto C (o il pulsante 🎥) passa tra inseguimento, vista laterale, cofano
+e **abitacolo**: guida a destra come le JZA80 giapponesi, volante che gira con lo sterzo, leva del cambio
+che segue la marcia, sedili con cuciture rosse e il quadro strumenti del gioco disegnato sul cruscotto.
+Con qualità *alta* c'è il bloom (fari, insegne, fiammate brillano) con tonemapping ACES e vignettatura;
+*bassa* spegne post-processo e ombre per i computer lenti.
+
+**Comandi in strada.** F abbaglianti (fascio più lungo in 2D e 3D, spia blu nel quadro), H clacson,
+frecce automatiche quando si cambia corsia (spie ◀ ▶ con il ticchettio del relè), B bagagliaio.
+
+**Bagagliaio.** 12 posti e 150 kg al massimo; tutto quello che carichi pesa sulla massa dell'auto e sul
+retrotreno (più trazione, più lenta in accelerazione). Tanica (+10 L), kit di riparazione (3 usi, solo da
+fermo), ruota di scorta, zavorra, i pacchi delle consegne (non si buttano durante il lavoro) e i trofei dei
+capi battuti. Si compra e si butta dal pannello del bagagliaio.
 
 ## La carriera
 

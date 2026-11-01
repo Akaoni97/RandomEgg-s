@@ -183,7 +183,9 @@ class Garage3D {
     };
     this.bodyGeo = this.loftGeo(body, -2.28, 2.3, 96, 44);
     this.bodyPos0 = this.bodyGeo.attributes.position.array.slice();
-    const shell = new T.Mesh(this.bodyGeo, this.paint); shell.castShadow = true; shell.receiveShadow = true; b.add(shell);
+    const shell = new T.Mesh(this.bodyGeo, this.paint); shell.castShadow = true; shell.receiveShadow = true; b.add(shell); this.shell = shell;
+    // per la vista dall'abitacolo: solo il cofano, così la scocca non copre l'interno
+    const hoodOnly = new T.Mesh(this.loftGeo(body, 0.9, 2.3, 48, 44), this.paint); hoodOnly.visible = false; b.add(hoodOnly); this.hoodOnly = hoodOnly;
     // abitacolo: lunotto molto inclinato, tetto corto, parabrezza
     const roofY = (x) => (x < -0.25 ? 0.9 + 0.36 * Math.pow(ss(-1.0, -0.25, x), 0.75) : x < 0.28 ? 1.26 : 1.26 - 0.38 * ss(0.28, 1.0, x));
     const cabin = (x) => ({ hw: 0.75 - 0.05 * ss(0.6, 1.0, x) - 0.05 * ss(-0.7, -1.0, x), top: roofY(x), bot: 0.86, ex: 4.2, tumble: 0.3 });
@@ -251,8 +253,88 @@ class Garage3D {
       const w = this.makeWheel(z > 0 ? 1 : -1); w.position.set(x, WY, z);
       this.root.add(w); this.wheels.push(w);
     }
+    this.buildInterior();
+    // frecce: quattro angoli, lampeggiano prima dei cambi di corsia
+    this.turnLights = [];
+    for (const [x, z] of [[2.12, 0.74], [2.12, -0.74], [-2.18, 0.72], [-2.18, -0.72]]) {
+      if (!this.blinkTex) this.blinkTex = this.carTex(32, 32, (g, w) => { const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, w); });
+      const sp = new T.Sprite(new T.SpriteMaterial({ map: this.blinkTex, color: 0xffa020, transparent: true, blending: T.AdditiveBlending, depthWrite: false }));
+      sp.scale.set(0.45, 0.3, 1); sp.position.set(x, 0.62, z); sp.visible = false; b.add(sp); this.turnLights.push({ sp, left: z < 0 });
+    }
     this.baseParts = [...b.children, ...this.wheels];
     this.damage = 0;
+  }
+
+  // ---------------------------------------------------------------- abitacolo (guida a destra, come le JZA80 giapponesi)
+  buildInterior() {
+    const T = this.T, I = new T.Group(); this.body.add(I); this.interior = I;
+    // l'abitacolo è in ombra: colori smorzati e riflessi d'ambiente quasi spenti (niente cruscotto azzurrino)
+    const mat = (c, o = {}) => { const m = new T.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.8, envMapIntensity: 0.15 }, o)); m.color.multiplyScalar(0.45); return m; };
+    const dash = mat(0x121318), soft = mat(0x1a1717), alu = mat(0x8a9099, { metalness: 0.9, roughness: 0.3 }), skin = mat(0xc98a62, { roughness: 0.6 });
+    const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0, parent = I) => { const o = new T.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); parent.add(o); return o; };
+    const twoSided = (c) => mat(c, { side: T.DoubleSide });
+    add(new T.PlaneGeometry(2.0, 1.5), twoSided(0x0c0c0f), -0.1, 0.34, 0, -Math.PI / 2);                      // pavimento
+    add(new T.PlaneGeometry(1.25, 1.06), twoSided(0x1b1b20), -0.08, 1.215, 0, Math.PI / 2);                   // cielo dell'abitacolo
+    for (const z of [0.83, -0.83]) {
+      const door = add(new T.PlaneGeometry(1.9, 0.56), twoSided(0x17161a), -0.05, 0.62, z, 0, z > 0 ? Math.PI : 0);
+      add(new T.BoxGeometry(1.1, 0.05, 0.08), soft, -0.1, 0.8, z * 0.97);                                     // bracciolo
+      add(new T.BoxGeometry(0.06, 0.03, 0.02), alu, 0.35, 0.78, z * 0.95);                                     // maniglia interna
+      void door;
+    }
+    // plancia: imbottitura, palpebra del quadro, consolle centrale con radio e bocchette
+    add(new T.BoxGeometry(0.45, 0.22, 1.56), dash, 0.66, 0.84, 0);
+    add(new T.BoxGeometry(0.55, 0.05, 1.56), soft, 0.6, 0.96, 0, 0, 0, -0.18);
+    const hood = new T.CylinderGeometry(0.2, 0.2, 0.5, 20, 1, true, 0, Math.PI); hood.rotateX(Math.PI / 2);
+    add(hood, dash, 0.52, 0.98, 0.37, 0, 0, 0).material.side = T.DoubleSide;
+    this.clusterMat = new T.MeshBasicMaterial({ color: 0xffffff });
+    this.clusterScreen = add(new T.PlaneGeometry(0.42, 0.16), this.clusterMat, 0.47, 1.0, 0.37, 0, -Math.PI / 2, 0);
+    this.clusterScreen.rotation.order = 'YXZ'; this.clusterScreen.rotation.x = -0.25;
+    add(new T.BoxGeometry(0.28, 0.36, 0.34), dash, 0.52, 0.66, 0);
+    const radio = add(new T.PlaneGeometry(0.2, 0.05), new T.MeshBasicMaterial({ color: 0x2ee6ff }), 0.375, 0.76, 0, 0, -Math.PI / 2, 0);
+    void radio;
+    for (const z of [-0.08, 0.08, -0.55, 0.62]) add(new T.BoxGeometry(0.02, 0.05, 0.1), alu, 0.43, 0.88, z);
+    add(new T.BoxGeometry(0.95, 0.16, 0.24), dash, 0.02, 0.5, 0);
+    // paratia e vano piedi: chiudono la vista sotto la plancia
+    add(new T.BoxGeometry(0.42, 0.44, 1.6), dash, 0.68, 0.53, 0);
+    add(new T.BoxGeometry(0.3, 0.2, 0.5), soft, 0.38, 0.66, 0.4, 0, 0, -0.5);
+    // gambe del pilota
+    const jeans = mat(0x1d2433, { roughness: 0.95 });
+    for (const dz of [0.1, -0.1]) {
+      add(new T.BoxGeometry(0.46, 0.13, 0.13), jeans, -0.1, 0.58, 0.37 + dz, 0, 0, 0.12);
+      add(new T.BoxGeometry(0.12, 0.38, 0.12), jeans, 0.18, 0.46, 0.37 + dz, 0, 0, 0.55);
+    }
+    // leva del cambio (si sposta con la marcia)
+    const sh = new T.Group(); sh.position.set(0.12, 0.58, 0); I.add(sh); this.shifter = sh;
+    add(new T.CylinderGeometry(0.012, 0.014, 0.22, 8), alu, 0, 0.11, 0, 0, 0, 0, sh);
+    add(new T.SphereGeometry(0.038, 14, 10), mat(0x0e0e10, { roughness: 0.35 }), 0, 0.23, 0, 0, 0, 0, sh);
+    add(new T.CylinderGeometry(0.06, 0.08, 0.05, 12), soft, 0, 0.0, 0, 0, 0, 0, sh);
+    // volante con mani
+    const tilt = new T.Group(); tilt.position.set(0.3, 0.93, 0.37); tilt.rotation.z = 0.5; I.add(tilt);
+    const wheel = new T.Group(); tilt.add(wheel); this.steerWheel = wheel;
+    const rim = new T.TorusGeometry(0.18, 0.022, 10, 40); rim.rotateY(Math.PI / 2);
+    add(rim, mat(0x111114, { roughness: 0.5 }), 0, 0, 0, 0, 0, 0, wheel);
+    for (const a of [0, 2.2, -2.2]) { const sp = add(new T.BoxGeometry(0.02, 0.16, 0.035), alu, -0.01, 0, 0, 0, 0, 0, wheel); sp.position.set(-0.01, Math.cos(a) * -0.08, Math.sin(a) * 0.08); sp.rotation.x = a; }
+    const hubG = new T.CylinderGeometry(0.06, 0.06, 0.05, 16); hubG.rotateZ(Math.PI / 2);
+    add(hubG, mat(0x16161a), -0.02, 0, 0, 0, 0, 0, wheel);
+    for (const z of [0.17, -0.17]) add(new T.SphereGeometry(0.04, 12, 8), skin, -0.03, 0.01, z, 0, 0, 0, wheel);
+    add(new T.CylinderGeometry(0.03, 0.035, 0.3, 10), dash, 0.45, 1.04, 0.37, 0, 0, Math.PI / 2 + 0.38);   // piantone
+    // sedili
+    for (const z of [0.37, -0.37]) {
+      add(new T.BoxGeometry(0.5, 0.12, 0.48), soft, -0.28, 0.46, z);
+      add(new T.BoxGeometry(0.12, 0.62, 0.48), soft, -0.56, 0.78, z, 0, 0, -0.22);
+      add(new T.BoxGeometry(0.1, 0.18, 0.28), soft, -0.66, 1.14, z, 0, 0, -0.22);
+      add(new T.BoxGeometry(0.09, 0.5, 0.06), mat(0xc42a1a), -0.55, 0.8, z + 0.14, 0, 0, -0.22);            // cucitura rossa
+    }
+    // specchietto retrovisore
+    add(new T.BoxGeometry(0.04, 0.07, 0.26), dash, 0.6, 1.17, 0);
+    add(new T.PlaneGeometry(0.24, 0.06), new T.MeshPhysicalMaterial({ color: 0x8090a0, metalness: 1, roughness: 0.05 }), 0.578, 1.17, 0, 0, -Math.PI / 2, 0);
+  }
+
+  // il quadro strumenti del gioco disegnato sul cruscotto
+  setCluster(canvas) {
+    const T = this.T;
+    this.clusterTex = new T.CanvasTexture(canvas); this.clusterTex.encoding = T.sRGBEncoding;
+    this.clusterMat.map = this.clusterTex; this.clusterMat.needsUpdate = true;
   }
 
   carTex(w, h, draw) {
@@ -391,6 +473,7 @@ class Garage3D {
     (this.customWheels || []).forEach((w) => this.root.remove(w.pivot));
     this.customWheels = []; this.customPaint = [];
     this.baseParts.forEach((p) => { p.visible = true; });
+    if (this.hoodOnly) { this.shell.visible = !this.cockpitOn; this.hoodOnly.visible = !!this.cockpitOn; }
     this.setTips(this.dual ? 2 : 1);
   }
 
@@ -453,7 +536,19 @@ class Garage3D {
       this.flameMat.opacity = Math.min(1, st.flame);
       this.flameMat.color.setHSL(0.07 + Math.random() * 0.03, 1, 0.55);
     });
-    this.controls.update();
+    // abitacolo: volante, leva del cambio, quadro aggiornato
+    if (this.steerWheel) this.steerWheel.rotation.x = -(s.steer || 0) * 3.2;
+    if (this.shifter) {
+      const pos = { '-1': [-0.06, 0.07], 0: [0, 0], 1: [0.06, 0.07], 2: [-0.06, 0.07], 3: [0.06, 0], 4: [-0.06, 0], 5: [0.06, -0.07], 6: [-0.06, -0.07] }[s.gear ?? 0] || [0, 0];
+      this.shifter.position.x += (0.12 + pos[0] - this.shifter.position.x) * Math.min(1, dt * 18);
+      this.shifter.position.z += (pos[1] - this.shifter.position.z) * Math.min(1, dt * 18);
+    }
+    if (this.clusterTex && this.cockpitOn && (this.cf = (this.cf || 0) + 1) % 2 === 0) this.clusterTex.needsUpdate = true;
+    // frecce
+    const bl = s.signal && Math.floor(st.t * 3) % 2 === 0;
+    (this.turnLights || []).forEach((b) => { b.sp.visible = !!(bl && (s.signal === 'L') === b.left); });
+    if (this.beforeRender) this.beforeRender(dt, s);
+    if (this.controls.enabled) this.controls.update();
     if (this.visible) this.draw();
   }
 }

@@ -320,6 +320,22 @@ kbd { font: 400 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
 .svc span { font-size: 15px; grid-column: 1; }
 .svc .bar { grid-column: 1; height: 4px; background: #121b29; overflow: hidden; } .svc .bar i { display: block; height: 100%; width: 0; background: var(--amber); }
 .svc .kbtn { grid-column: 2; grid-row: 1 / span 3; font-size: 13px; padding: 9px 14px; }
+.trunk { gap: 12px; }
+.trunk-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.slot { background: #060a11; border: 1px dashed #22324a; min-height: 86px; padding: 8px; display: grid; gap: 4px; align-content: start; justify-items: center; text-align: center; min-width: 0; color: var(--fg); }
+.slot.full { border-style: solid; border-color: var(--line); cursor: pointer; }
+.slot.full:hover { border-color: #2c4566; }
+.slot.sel { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber), 0 0 14px rgba(46,230,255,.2); }
+.slot canvas { width: 48px; height: 32px; image-rendering: pixelated; }
+.slot b { font: 600 13px/1.15 var(--f-body); overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.slot small { font: 400 11.5px/1 var(--f-data); color: var(--muted); }
+.trunk-act { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.trunk-act .hint { flex: 1 1 260px; }
+.shop { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.shop > span { font: 400 11px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.shop .kbtn { font-size: 12.5px; padding: 8px 14px; }
+.qsel { display: flex; gap: 6px; align-items: center; }
+.qsel select { background: #0f1828; border: 1px solid #23344d; color: var(--fg); font: 500 12px/1 var(--f-body); padding: 3px 4px; }
 .tgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .part { background: #060a11; border: 1px solid var(--line); padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
 .part > span { font: 400 11px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -374,11 +390,13 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lad-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .trunk-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .extras { grid-template-columns: 1fr 1fr; }
   .extras .samples { grid-column: 1 / -1; }
 }
 @media (max-width: 700px) {
   .deck, .extras, .tgrid, .services { grid-template-columns: 1fr; }
+  .trunk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .tele { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .toggles { grid-template-columns: 1fr; }
   .cluster { padding: 10px 8px; }
@@ -433,6 +451,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <span class="lamp grn" data-l="t2">TURBO 2</span>
       <span class="lamp blu" data-l="launch">LAUNCH</span>
       <span class="lamp amb" data-l="cut">LIMITATORE</span>
+      <span class="lamp grn" data-l="sigL">◀</span>
+      <span class="lamp blu" data-l="high">ABBAGLIANTI</span>
+      <span class="lamp grn" data-l="sigR">▶</span>
     </div>
     <div class="pods">
       <div class="pod"><b>Olio</b><span id="pOilT">—</span><div class="bar"><i id="bOilT"></i></div></div>
@@ -493,6 +514,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="seg look" id="lookSeg" role="group" aria-label="Stile grafico">
         <button type="button" data-l="2d">2D cartoon</button>
         <button type="button" data-l="smooth">3D</button>
+        <button type="button" data-l="cockpit">Abitacolo</button>
       </div>
       <div class="swatches" id="swatches" role="group" aria-label="Colore carrozzeria"></div>
       <label class="kbtn file only3d">Carica modello .glb<input type="file" id="glbIn" accept=".glb,.gltf,model/gltf-binary"></label>
@@ -500,6 +522,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <button class="kbtn only3d" type="button" id="glbUp">Raddrizza</button>
       <button class="kbtn only3d" type="button" id="glbReset">Modello di base</button>
       <button class="kbtn only3d" type="button" id="camReset">Inquadratura</button>
+      <button class="kbtn only3d" type="button" id="camNext">Telecamera<small>C</small></button>
+      <label class="kbtn only3d qsel">Qualità <select id="q3d" aria-label="Qualità grafica 3D"><option value="alta">alta · bloom</option><option value="media">media</option><option value="bassa">bassa</option></select></label>
       <p class="hint"><span id="g3dName">modello di base</span> · trascina per girare la visuale</p>
     </div>
   </section>
@@ -582,6 +606,17 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     <p class="hint" id="shopNote">I marchi indicano parti reali per JZA80 e 2JZ. Il carattere sonoro di ciascuna è una nostra modellazione fisica, non una registrazione del prodotto.</p>
   </section>
 
+  <section class="panel trunk cutbox" id="trunkPanel" aria-labelledby="trunkTitle">
+    <h2 id="trunkTitle">Bagagliaio <em id="trunkSum">—</em></h2>
+    <div class="trunk-grid" id="trunkGrid"></div>
+    <div class="trunk-act">
+      <p class="hint" id="trunkInfo">Tocca un oggetto per vederlo. Il peso conta: più carico, più lenta in accelerazione.</p>
+      <button class="kbtn" type="button" id="itemUse" disabled>Usa</button>
+      <button class="kbtn" type="button" id="itemDrop" disabled>Togli</button>
+    </div>
+    <div class="shop" id="shop"><span>Negozio</span></div>
+  </section>
+
   <section class="tele" aria-label="Telemetria">
     <div class="t"><b>Coppia</b><span id="tTq">0<small>Nm</small></span><p id="tTqMax">picco —</p></div>
     <div class="t"><b>Potenza</b><span id="tPw">0<small>CV</small></span><p id="tPwMax">picco —</p></div>
@@ -623,6 +658,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         <div><kbd>E</kbd><kbd>→</kbd> <kbd>Q</kbd><kbd>←</kbd></div><div>Sali · scala marcia</div>
         <div><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></div><div>Rispondi alle proposte (altrimenti: marcia diretta)</div>
         <div><kbd>A</kbd> <kbd>D</kbd></div><div>Corsia a sinistra · a destra</div>
+        <div><kbd>C</kbd> <kbd>F</kbd> <kbd>H</kbd> <kbd>B</kbd></div><div>Telecamera (anche abitacolo) · abbaglianti · clacson · bagagliaio</div>
         <div><kbd>N</kbd> <kbd>R</kbd> <kbd>Spazio</kbd></div><div>Folle · retro · frizione (manuale)</div>
         <div><kbd>V</kbd> <kbd>L</kbd> <kbd>M</kbd></div><div>Ascolto · launch control · muto</div>
         <div><kbd>Pad</kbd></div><div>RT gas, LT freno, A/X marce, B frizione, Y avviamento</div>
@@ -644,6 +680,14 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/Pass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/MaskPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script src="dsp.js"></script>
 <script src="sim.js"></script>
 <script src="tuning.js"></script>
@@ -831,6 +875,10 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'i') ignToggle();
     else if (k === 'o') engineOff();
     else if (k === 'v') { S.view = (S.view + 1) % 3; applySettings(); flash('Ascolto: ' + ['abitacolo', 'esterno', 'vano motore'][S.view], 1.2); }
+    else if (k === 'c') nextCam();
+    else if (k === 'f') { S.high = !S.high; flash(S.high ? 'Abbaglianti' : 'Anabbaglianti', 1); }
+    else if (k === 'h') hornOn();
+    else if (k === 'b') openTrunk();
     else if (k === 'a') steer(1);
     else if (k === 'd') steer(-1);
     else if (k === 'l') { S.launch = !S.launch; applySettings(); flash(S.launch ? 'Launch control inserito' : 'Launch control disinserito', 1.2); }
@@ -840,11 +888,25 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
     keys.delete(k);
     if (e.key === 'Enter') startOff();
+    if (k === 'h') hornOff();
   });
   window.addEventListener('blur', () => { keys.clear(); startOff(); });
 
   // gamepad
   const padPrev = [];
+  const horn = { g: null, o: [] };
+  function hornOn() {
+    ensureAudio(); if (!audio.ctx || horn.g) return;
+    const ctx = audio.ctx, g = ctx.createGain(), lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 2200; g.gain.value = 0; g.connect(ctx.destination); lp.connect(g);
+    horn.o = [415, 523].map((f) => { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f; o.connect(lp); o.start(); return o; });
+    g.gain.setTargetAtTime(S.muted ? 0 : 0.07 * S.vol / 100, ctx.currentTime, 0.01); horn.g = g;
+  }
+  function hornOff() {
+    if (!horn.g) return; const ctx = audio.ctx, g = horn.g, os = horn.o;
+    g.gain.setTargetAtTime(0, ctx.currentTime, 0.03); setTimeout(() => { os.forEach((o) => o.stop()); g.disconnect(); }, 200);
+    horn.g = null; horn.o = [];
+  }
   function steer(dir) { ensureAudio(); if (!game.steer(dir) && game.race) flash('In gara si resta nella propria corsia', 1.4); }
   function readPad() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -1039,6 +1101,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
 
   // ---------------------------------------------------------------- spie, strumenti, telemetria
+  let lastBlink = false;
   const leds = [];
   const sl = $('shiftlights');
   for (let i = 0; i < 10; i++) { const el = document.createElement('i'); el.className = i < 4 ? 'lg' : i < 7 ? 'ly' : 'lr'; sl.appendChild(el); leds.push(el); }
@@ -1063,6 +1126,12 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     lamp.launch.classList.toggle('on', lit && sim.launchArmed);
     lamp.cut.classList.toggle('on', lit && (sim.cut === 2 || sim.cut === 3));
     lamp.fuel.classList.toggle('on', lit && sim.fuel < 0.12);
+    const sigBlink = !!(game.signal && Math.floor(performance.now() / 333) % 2 === 0);
+    lamp.sigL.classList.toggle('on', lit && sigBlink && game.signal.dir === 'L');
+    lamp.sigR.classList.toggle('on', lit && sigBlink && game.signal.dir === 'R');
+    lamp.high.classList.toggle('on', lit && !!S.high);
+    if (audio.ready && sigBlink !== lastBlink) audio.send({ ev: [{ type: 'click' }] });   // relè delle frecce
+    lastBlink = sigBlink;
     $('cluster').classList.toggle('off', !lit);
     for (const p of ['clutch', 'brake', 'thr']) {
       const v = p === 'clutch' ? (S.autoClutch ? sim.clutch : inp.clutch) : sim.in[p];
@@ -1172,6 +1241,60 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
   $('btnRepair').addEventListener('click', () => { if (!game.canMount()) { flash('Dal carrozziere si va da fermi', 2); return; } const r = game.repair(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
   $('btnTires').addEventListener('click', () => { if (!game.canMount()) { flash('Le gomme si cambiano da fermi', 2); return; } game.tireId = S.tune.tires; const r = game.newTires(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
+  // ---------------------------------------------------------------- bagagliaio
+  const ICON_CACHE = {};
+  function itemIcon(kind) {
+    if (ICON_CACHE[kind]) return ICON_CACHE[kind];
+    const c = document.createElement('canvas'); c.width = 24; c.height = 16; const g = c.getContext('2d');
+    const p = (col, x, y, w = 1, h = 1) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+    const ink = '#0a0d18';
+    if (kind === 'tanica') { p(ink, 6, 2, 12, 13); p('#c42a1a', 7, 3, 10, 11); p('#ff5a45', 7, 3, 2, 11); p(ink, 14, 0, 4, 3); p('#e8e4d6', 15, 1, 2, 1); p('#8a1a10', 9, 6, 6, 1); p('#8a1a10', 9, 9, 6, 1); }
+    else if (kind === 'kit') { p(ink, 3, 5, 18, 10); p('#ffb000', 4, 6, 16, 8); p('#c88400', 4, 11, 16, 3); p(ink, 9, 2, 6, 4); p('#ffb000', 10, 3, 4, 2); p(ink, 11, 8, 2, 2); }
+    else if (kind === 'scorta') { for (let y = -7; y <= 7; y++) for (let x = -7; x <= 7; x++) { const q = x * x + y * y; if (q > 56) continue; p(q > 42 ? ink : q > 26 ? '#1b1d26' : q > 9 ? '#a3adbd' : '#545c6e', 12 + x, 8 + y); } }
+    else if (kind === 'pacco') { p(ink, 4, 3, 16, 12); p('#b07a3a', 5, 4, 14, 10); p('#8a5a26', 5, 4, 14, 2); p('#e8d8a8', 11, 4, 2, 10); p('#e8d8a8', 5, 8, 14, 1); }
+    else if (kind === 'trofeo') { p(ink, 6, 1, 12, 9); p('#ffd23f', 7, 2, 10, 7); p('#fff2a0', 8, 2, 2, 5); p(ink, 4, 3, 3, 4); p(ink, 17, 3, 3, 4); p(ink, 10, 10, 4, 3); p('#ffd23f', 11, 10, 2, 2); p(ink, 7, 13, 10, 3); p('#8a6a20', 8, 13, 8, 2); }
+    else { p(ink, 5, 3, 14, 12); p('#c9b58a', 6, 4, 12, 10); p('#a8946a', 6, 10, 12, 4); p(ink, 10, 2, 4, 2); }
+    return (ICON_CACHE[kind] = c);
+  }
+  let selItem = -1;
+  function renderTrunk() {
+    const items = game.s.trunk || [], grid = $('trunkGrid');
+    $('trunkSum').textContent = `${fmt(game.trunkKg())} / ${TRUNK_KG} kg · ${items.length} / ${TRUNK_SLOTS} posti · auto ${fmt(sim.P.mass)} kg`;
+    grid.innerHTML = '';
+    for (let i = 0; i < TRUNK_SLOTS; i++) {
+      const it = items[i], d = document.createElement(it ? 'button' : 'div');
+      d.className = 'slot' + (it ? ' full' : '') + (i === selItem && it ? ' sel' : '');
+      if (it) {
+        d.type = 'button';
+        const cv = document.createElement('canvas'); cv.width = 24; cv.height = 16; cv.getContext('2d').drawImage(itemIcon(it.kind), 0, 0);
+        d.append(cv);
+        const nm = document.createElement('b'); nm.textContent = game.itemName(it); d.append(nm);
+        const kg = document.createElement('small'); kg.textContent = `${fmt(it.kg)} kg${it.uses ? ` · ${it.uses} usi` : ''}`; d.append(kg);
+        d.addEventListener('click', () => { selItem = i; renderTrunk(); });
+      }
+      grid.append(d);
+    }
+    const it = items[selItem];
+    $('itemUse').disabled = !it; $('itemDrop').disabled = !it;
+    $('trunkInfo').textContent = it ? `${game.itemName(it)}: ${INV[it.kind].note}` : 'Tocca un oggetto per vederlo. Il peso conta: più carico, più lenta in accelerazione.';
+    const shop = $('shop');
+    if (!shop.dataset.ready) {
+      shop.dataset.ready = '1';
+      for (const k of ['tanica', 'kit', 'scorta', 'zavorra']) {
+        const b = document.createElement('button'); b.className = 'kbtn'; b.type = 'button'; b.dataset.k = k;
+        b.addEventListener('click', () => { if (!game.canMount()) { flash('Al negozio si va da fermi', 2); return; } const r = game.buyItem(k); if (!r.ok) flash(r.why, 2); renderTrunk(); saveGame(); });
+        shop.append(b);
+      }
+    }
+    shop.querySelectorAll('button').forEach((b) => { const I = INV[b.dataset.k]; b.innerHTML = `${I.name}<small>${game.mode === 'career' ? '€ ' + fmt(I.price) + ' · ' : ''}${I.kg} kg</small>`; });
+  }
+  $('itemUse').addEventListener('click', () => { const r = game.useItem(selItem); if (!r.ok) flash(r.why, 2.4); selItem = -1; renderTrunk(); saveGame(); });
+  $('itemDrop').addEventListener('click', () => { if (Math.abs(sim.v) > 0.5) { flash('Per svuotare il bagagliaio fermati', 2); return; } const r = game.dropItem(selItem); if (!r.ok && r.why) flash(r.why, 2.4); selItem = -1; renderTrunk(); saveGame(); });
+  function openTrunk() {
+    document.getElementById('trunkPanel').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    flash(Math.abs(sim.v) > 0.5 ? 'Bagagliaio: per usare gli oggetti fermati' : 'Bagagliaio aperto', 1.4);
+  }
+  let trunkSig = '';
   function presetCost(p) { return Object.entries(p.sel).reduce((a, [k, id]) => a + game.price(k, id), 0); }
   function mountPart(k, id, selEl) {
     const revert = () => { if (selEl) selEl.value = S.tune[k]; };
@@ -1201,20 +1324,33 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (street3d) return street3d;
     try {
       street3d = new Street3D($('g3d'));
+      street3d.setQuality(S.q || 'alta');
+      street3d.setCluster($('gauges'));
       $('camReset').addEventListener('click', () => street3d.resetCamera());
     } catch (e) {
       const m = $('g3dMsg'); m.hidden = false; m.textContent = 'La vista 3D non è disponibile: three.js non si è caricato o il browser non supporta WebGL.';
     }
     return street3d;
   }
-  if (!['2d', 'smooth'].includes(S.look)) S.look = '2d';
+  if (!['2d', 'smooth', 'cockpit'].includes(S.look)) S.look = '2d';
+  const CAMS = ['chase', 'side', 'hood', 'cockpit'], CAM_NAMES = { chase: 'inseguimento', side: 'di lato', hood: 'sul cofano', cockpit: 'abitacolo' };
+  function nextCam() {
+    const cur = S.look === '2d' ? null : S.look === 'cockpit' ? 'cockpit' : (S.cam || 'chase');
+    const nx = cur === null ? 'chase' : CAMS[(CAMS.indexOf(cur) + 1) % CAMS.length];
+    S.cam = nx; S.look = nx === 'cockpit' ? 'cockpit' : 'smooth';
+    applyLook(); flash('Telecamera: ' + CAM_NAMES[nx], 1.2);
+    try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ }
+  }
   function applyLook() {
     document.querySelectorAll('#lookSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.l === S.look)));
     const is2d = S.look === '2d';
     $('g2d').hidden = !is2d; $('g3d').hidden = is2d;
     document.querySelectorAll('.only3d').forEach((el) => { el.hidden = is2d; });
     if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); }
-    else garage = make3D();
+    else {
+      garage = make3D();
+      if (garage) garage.setView(S.look === 'cockpit' ? 'cockpit' : (S.cam && S.cam !== 'cockpit' ? S.cam : 'chase'));
+    }
     if (garage) { garage.visible = garageOn; garage.resize(); garage.setPaint(S.paint); garage.setTips(TP.dsp.ex.tips); }
     $('g3dName').textContent = is2d ? '2D cartoon' : (street3d && street3d.custom ? $('g3dName').dataset.model || 'modello caricato' : 'modello di base');
   }
@@ -1224,6 +1360,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ }
   });
   applyLook();
+  $('camNext').addEventListener('click', nextCam);
+  $('q3d').value = S.q || 'alta';
+  $('q3d').addEventListener('change', (e) => { S.q = e.target.value; if (street3d) street3d.setQuality(S.q); try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } });
   const sw = $('swatches');
   PAINTS.push(['model', 'Colore del modello']);
   PAINTS.forEach(([hex, name]) => {
@@ -1377,7 +1516,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       if (on) siren.osc.frequency.setTargetAtTime(Math.floor(sirenT * 1.6) % 2 ? 660 : 494, audio.ctx.currentTime, 0.01);
     }
     saveT += dt; if (saveT > 3) { saveT = 0; saveGame(); }
-    svcT += dt; if (svcT > 0.5) { svcT = 0; game.tireId = S.tune.tires; renderServices(); }
+    svcT += dt; if (svcT > 0.5) { svcT = 0; game.tireId = S.tune.tires; renderServices();
+      const sig = JSON.stringify(game.s.trunk) + game.mode + Math.floor(game.s.money); if (sig !== trunkSig) { trunkSig = sig; renderTrunk(); } }
   }
   // ---------------------------------------------------------------- gara: giudizi e risultato
   const GRADE_TXT = { perfetta: 'CAMBIATA PERFETTA', buona: 'BUONA', anticipata: 'ANTICIPATA', tardi: 'TARDI' };
@@ -1490,7 +1630,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       flameT = (sim.cut === 2 || sim.cut === 3) && TP.sim.sparkCut ? 1 : sim.cut === 1 && sim.cfg.pops && sim.ovr < 3 ? 0.35 : 0;
       garage.update(dt, { v: sim.v, ww: sim.ww, acc: sim.acc, rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
         ign: sim.ign, brake: sim.in.brake, flame: flameT, spin: Math.min(1, Math.max(0, (Math.abs(sim.ww * sim.P.r - sim.v) - 1.5) / 5)),
-        thr: sim.thr, events: ev, skid: sim.skid, damage: sim.damage, tireT: sim.tireT }, game);
+        thr: sim.thr, events: ev, skid: sim.skid, damage: sim.damage, tireT: sim.tireT, gear: sim.gear, signal: game.signal ? game.signal.dir : null, high: !!S.high }, game);
     }
     game.fx.length = 0;
     if (msgT > 0) { msgT -= dt; if (msgT <= 0) $('msg').classList.remove('show'); }

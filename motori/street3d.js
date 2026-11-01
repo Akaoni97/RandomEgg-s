@@ -40,8 +40,9 @@ class Street3D extends Garage3D {
 
   resize() {
     super.resize();
+    if (this.composer) { const w = this.canvas.clientWidth, h = this.canvas.clientHeight; if (w && h) { this.composer.setPixelRatio(this.renderer.getPixelRatio()); this.composer.setSize(w, h); } }
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
-    this.baseFov = w && h && w / h < 1.3 ? 62 : 40;      // schermi verticali: più campo per vedere l'auto
+    if (!this.view || this.view === 'chase') this.baseFov = w && h && w / h < 1.3 ? 62 : 40;      // schermi verticali: più campo per vedere l'auto
   }
 
   // telecamera da gara: bassa, di lato e un po' dietro, inquadra le due auto
@@ -53,6 +54,67 @@ class Street3D extends Garage3D {
       this.savedCam = { p: this.camera.position.clone(), t: c.target.clone() };
       this.camera.position.set(-6.8, 1.3, this.lastZ + 3.6); c.target.set(4, 0.7, this.lastZ - 1.9);
     } else if (this.savedCam) { this.camera.position.copy(this.savedCam.p); c.target.copy(this.savedCam.t); }
+  }
+
+  // ---------------------------------------------------------------- telecamere: libera, lato, cofano, abitacolo
+  setView(mode) {
+    if (mode === this.view) return;
+    const c = this.controls;
+    if (this.view === 'chase' || !this.view) this.chaseCam = { p: this.camera.position.clone(), t: c.target.clone() };
+    this.view = mode;
+    c.enabled = mode === 'chase';
+    this.cockpitOn = mode === 'cockpit';
+    if (this.shell) { this.shell.visible = !this.cockpitOn; this.hoodOnly.visible = this.cockpitOn; }
+    if (mode === 'chase' && this.chaseCam) { this.camera.position.copy(this.chaseCam.p); c.target.copy(this.chaseCam.t); }
+    this.baseFov = mode === 'cockpit' ? 70 : mode === 'hood' ? 58 : mode === 'side' ? 30 : (this.canvas.clientWidth / this.canvas.clientHeight < 1.3 ? 62 : 40);
+  }
+  beforeRender(dt, s) {
+    const v = this.view || 'chase';
+    if (v === 'chase') return;
+    const T = this.T, st = this.state;
+    this.body.updateMatrixWorld(true); this.root.updateMatrixWorld(true);
+    // testa che va indietro in accelerazione e avanti in frenata, vibrazione a velocità
+    this.headX = (this.headX || 0) + ((-Math.max(-8, Math.min(8, s.acc || 0)) * 0.012) - (this.headX || 0)) * Math.min(1, dt * 6);
+    const vib = (Math.random() - 0.5) * Math.min(0.006, Math.abs(s.v) * 0.0001) + (st.heaveV || 0) * 0.002;
+    let eye, at, ref = this.body;
+    if (v === 'cockpit') { eye = [-0.28 + this.headX, 1.12 + vib, 0.37]; at = [12, 1.0, 0.28 + (s.steer || 0) * 3]; }
+    else if (v === 'hood') { eye = [0.95, 1.02 + vib, 0]; at = [14, 0.8, (s.steer || 0) * 4]; }
+    else { ref = this.root; eye = [0.6, 1.05, 6.8]; at = [0.6, 0.7, 0]; }
+    this.camera.position.copy(ref.localToWorld(new T.Vector3(...eye)));
+    this.camera.lookAt(ref.localToWorld(new T.Vector3(...at)));
+  }
+
+  // ---------------------------------------------------------------- qualità: bloom (luci che si irradiano), ombre, risoluzione
+  setQuality(q) {
+    const T = this.T, r = this.renderer;
+    this.quality = q;
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, q === 'alta' ? 1.5 : q === 'media' ? 1.25 : 1));
+    r.shadowMap.enabled = q !== 'bassa'; this.key.castShadow = q !== 'bassa';
+    this.scene.traverse((o) => { if (o.material && o.material.needsUpdate !== undefined && o.isMesh) o.material.needsUpdate = true; });
+    if (q === 'alta' && !this.composer && T.EffectComposer && T.UnrealBloomPass) {
+      const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
+      const rt = new T.WebGLRenderTarget(w, h, { type: T.HalfFloatType });
+      const comp = new T.EffectComposer(r, rt);
+      comp.addPass(new T.RenderPass(this.scene, this.camera));
+      this.bloom = new T.UnrealBloomPass(new T.Vector2(w, h), 0.85, 0.55, 0.92);
+      comp.addPass(this.bloom);
+      const fin = new T.ShaderPass({
+        uniforms: { tDiffuse: { value: null }, expo: { value: r.toneMappingExposure } },
+        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader: `uniform sampler2D tDiffuse; uniform float expo; varying vec2 vUv;
+          vec3 aces(vec3 x){ return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
+          void main(){ vec3 c = aces(texture2D(tDiffuse, vUv).rgb * expo); c = pow(c, vec3(1.0 / 2.2));
+            float v = smoothstep(0.92, 0.3, length((vUv - 0.5) * vec2(1.25, 1.0))); c *= mix(0.68, 1.0, v);
+            gl_FragColor = vec4(c, 1.0); }`,
+      });
+      fin.renderToScreen = true; comp.addPass(fin);
+      this.composer = comp;
+    }
+    this.resize();
+  }
+  draw() {
+    if (this.composer && this.quality === 'alta') this.composer.render();
+    else this.renderer.render(this.scene, this.camera);
   }
 
   resetCamera() {
@@ -535,9 +597,10 @@ class Street3D extends Garage3D {
     // un po' di "velocità": campo visivo che si allarga
     const fov = (this.baseFov || 40) + Math.min(16, Math.max(0, s.v) * 0.2);
     if (Math.abs(fov - this.camera.fov) > 0.05) { this.camera.fov += (fov - this.camera.fov) * Math.min(1, dt * 3); this.camera.updateProjectionMatrix(); }
-    this.headlight.intensity = s.ign ? 2.6 : 0;
+    this.headlight.intensity = s.ign ? (s.high ? 4.6 : 2.6) : 0;
+    this.headlight.distance = s.high ? 130 : 70; this.headlight.angle = s.high ? 0.33 : 0.42;
     this.brakeGlow.forEach((b) => { b.material.opacity = s.ign ? 0.25 + (s.brake || 0) * 0.75 : 0; });
-    this.headGlow.forEach((b) => { b.material.opacity = s.ign ? 0.55 : 0; });
+    this.headGlow.forEach((b) => { b.material.opacity = s.ign ? (s.high ? 0.95 : 0.55) : 0; b.scale.set(s.high ? 1.7 : 1.1, s.high ? 1.1 : 0.8, 1); });
     if (game) for (const f of game.fx) if (f.k === 'crash') this.shakeT = 0.5;
     if (this.shakeT > 0) {
       this.shakeT -= dt;

@@ -655,7 +655,7 @@ class Street2D {
     // ---- la Supra
     const y0 = Math.round(this.laneY(myZ)), k = kq(y0), sc = k;
     const spr = this.carSprite(k), SW = spr.width, left = Math.round(carX - SW / 2);
-    if (s.ign) this.light(g, left + SW + 60 * k, y0 - 2, 80, 7, '#fff2c4', 0.08, 4);                 // pozza dei fari
+    if (s.ign) this.light(g, left + SW + (s.high ? 110 : 60) * k, y0 - 2, s.high ? 150 : 80, s.high ? 9 : 7, '#fff2c4', s.high ? 0.1 : 0.08, 4);   // pozza dei fari (più lunga con gli abbaglianti)
     if (s.brake > 0.05) this.light(g, left - 30 * k, y0 - 1, 40, 5, '#ff2a2a', 0.1, 3);             // pozza degli stop
     this.shadow(g, carX, y0, SW * 0.46, 5);
     const heave = Math.round(-st.heave + idleShake * 0.6);
@@ -676,6 +676,8 @@ class Street2D {
     P('#2a1f4f', hx - 1, 22, 9, 2);
     for (let n = 0; n < 6; n++) P('rgba(111,216,255,.55)', 121 + n, 14 + n, 1, 1);
     if (s.brake > 0.05) { P('#ff2a2a', 1, 31, 5, 7); P('#ffd0c8', 2, 32, 2, 2); }
+    const blinkOn = s.signal && Math.floor(st.t * 3) % 2 === 0;
+    if (blinkOn) { P('#ffa020', 176, 37, 7, 3); P('#ffe0a0', 178, 37, 3, 1); P('#ffa020', 2, 39, 4, 3); }
     // danni: muso ammaccato, graffi chiari, vernice saltata
     const dmg = s.damage || 0;
     if (dmg > 0.01) {
@@ -691,7 +693,8 @@ class Street2D {
     }
     g.restore();
     if (s.brake > 0.05) this.light(g, left + 2, top + 34 * k, 12, 9, '#ff2a2a', 0.2, 3);
-    if (s.ign) this.light(g, left + SW - 6, top + 33 * k, 12, 6, '#fff2c4', 0.2, 3);
+    if (s.ign) this.light(g, left + SW - 6, top + 33 * k, s.high ? 20 : 12, s.high ? 9 : 6, '#fff2c4', s.high ? 0.3 : 0.2, 3);
+    if (s.signal && Math.floor(st.t * 3) % 2 === 0) { this.light(g, left + 178 * k, top + 38 * k, 10, 6, '#ffa020', 0.25, 3); this.light(g, left + 4, top + 40 * k, 8, 6, '#ffa020', 0.25, 3); }
     const wr = Math.max(6, Math.round(15 * k));
     this.wheel(g, left + 1 + 48 * k, y0 - wr - Math.max(0, bR * 0.4), wr, -st.spin, Math.abs(s.ww * 0.322));
     this.wheel(g, left + 1 + 158 * k, y0 - wr - Math.max(0, bF * 0.4), wr, -st.front, Math.abs(s.v));
