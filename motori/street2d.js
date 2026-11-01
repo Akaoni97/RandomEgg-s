@@ -138,10 +138,14 @@ class Street2D {
     return (this.spr[key] = c);
   }
   // ruota dell'illustrazione che gira; la pinza rossa resta ferma sopra
-  supraWheel(g, cx, cy, k, ang) {
+  supraWheel(g, cx, cy, k, ang, speed = 0) {
     const s = 32 * k;
-    g.save(); g.imageSmoothingEnabled = false; g.translate(Math.round(cx), Math.round(cy)); g.rotate(Math.round(ang / (Math.PI / 20)) * (Math.PI / 20));
-    g.drawImage(this.wImg, -s / 2, -s / 2, s, s); g.restore();
+    g.save(); g.imageSmoothingEnabled = false; g.translate(Math.round(cx), Math.round(cy));
+    if (speed > 9) {                      // in velocità i raggi si sfocano in un disco (niente effetto ruota che gira all'indietro)
+      const n = 4, a0 = ang;
+      for (let i = 0; i < n; i++) { g.save(); g.globalAlpha = i ? 0.35 : 1; g.rotate(a0 + i * Math.PI / 10); g.drawImage(this.wImg, -s / 2, -s / 2, s, s); g.restore(); }
+    } else { g.rotate(Math.round(ang / (Math.PI / 20)) * (Math.PI / 20)); g.drawImage(this.wImg, -s / 2, -s / 2, s, s); }
+    g.restore();
     g.fillStyle = '#b3141c'; g.fillRect(Math.round(cx - 7 * k), Math.round(cy - 6 * k), Math.max(2, Math.round(3 * k)), Math.max(3, Math.round(6 * k)));
   }
   otherSprite(kind, color, k) {
@@ -532,7 +536,11 @@ class Street2D {
     const st = this.st, g = this.g, W = this.LW, C = this.C;
     st.t += dt;
     const dist = game ? game.s.dist : (this.dist || 0) + s.v * dt; this.dist = dist;
-    const PPM = 30, carX = Math.round(W * 0.36), K0 = 0.78;
+    // telecamera viva: in velocità l'auto scivola indietro sullo schermo (si vede più strada davanti),
+    // in accelerazione resta un attimo indietro, in frenata va avanti
+    const camT = 0.38 - Math.min(0.08, Math.abs(s.v) * 0.0017) - Math.max(-8, Math.min(8, s.acc || 0)) * 0.005;
+    st.cam = (st.cam ?? camT) + (camT - (st.cam ?? camT)) * Math.min(1, dt * 1.6);
+    const PPM = 30, carX = Math.round(W * st.cam), K0 = 0.78;
     const kq = (y) => Math.round(K0 * this.laneS(y) / 0.04) * 0.04;   // scala quantizzata: pochi sprite in cache
     const wx = (m) => Math.round(carX + (m - dist) * PPM);
     const visFrom = dist - carX / PPM - 10, visTo = dist + (W - carX) / PPM + 10;
@@ -709,6 +717,12 @@ class Street2D {
     if (s.ign) this.light(g, left + SW + (s.high ? 110 : 60) * k, y0 - 2, s.high ? 150 : 80, s.high ? 9 : 7, '#fff2c4', s.high ? 0.1 : 0.08, 4);   // pozza dei fari (più lunga con gli abbaglianti)
     if (s.brake > 0.05) this.light(g, left - 30 * k, y0 - 1, 40, 5, '#ff2a2a', 0.1, 3);             // pozza degli stop
     this.shadow(g, carX, y0, SW * 0.46, 5);
+    // asfalto bagnato: la Supra si specchia sulla strada, sbiadita
+    if (this.rainOn && spr.img) {
+      const hgt = spr.height;
+      g.save(); g.globalAlpha = 0.2; g.imageSmoothingEnabled = false;
+      g.setTransform(1, 0, 0, -0.55, left, y0 + hgt * 0.55 + 2); g.drawImage(spr, 0, 0); g.restore();
+    }
     const heave = Math.round(-st.heave + idleShake * 0.6);
     const skew = -st.pitch * 0.8;
     const squash = Math.max(-0.06, Math.min(0.08, -st.pitch * 0.35));
@@ -749,8 +763,8 @@ class Street2D {
     if (s.signal && Math.floor(st.t * 3) % 2 === 0) { this.light(g, left + 178 * k, top + 38 * k, 10, 6, '#ffa020', 0.25, 3); this.light(g, left + 4, top + 40 * k, 8, 6, '#ffa020', 0.25, 3); }
     const wr = Math.max(6, Math.round(15 * k));
     if (spr.img) {
-      this.supraWheel(g, left + 48 * k, y0 - wr - Math.max(0, bR * 0.4), k, st.spin);
-      this.supraWheel(g, left + 158 * k, y0 - wr - Math.max(0, bF * 0.4), k, st.front);
+      this.supraWheel(g, left + 48 * k, y0 - wr - Math.max(0, bR * 0.4), k, st.spin, Math.abs(s.ww * 0.322));
+      this.supraWheel(g, left + 158 * k, y0 - wr - Math.max(0, bF * 0.4), k, st.front, Math.abs(s.v));
     } else {
       this.wheel(g, left + 1 + 48 * k, y0 - wr - Math.max(0, bR * 0.4), wr, -st.spin, Math.abs(s.ww * 0.322));
       this.wheel(g, left + 1 + 158 * k, y0 - wr - Math.max(0, bF * 0.4), wr, -st.front, Math.abs(s.v));
@@ -840,6 +854,16 @@ class Street2D {
       this.prop(g, kind, x, 358, st.t);
     }
 
+    // ---- linee di velocità sopra i 90 km/h circa
+    if (Math.abs(s.v) > 25) {
+      const k2 = Math.min(1, (Math.abs(s.v) - 25) / 25);
+      g.fillStyle = `rgba(230,236,255,${0.18 * k2})`;
+      for (let i = 0; i < 22; i++) {
+        const y = 230 + Street2D.rnd(i * 5 + 1) * 125, len = 18 + Street2D.rnd(i * 5 + 2) * 60 * k2;
+        const x = ((Street2D.rnd(i * 5 + 3) * W * 2 - st.t * (600 + i * 25)) % (W + len) + W + len) % (W + len) - len;
+        g.fillRect(Math.round(x), Math.round(y), Math.round(len), 1);
+      }
+    }
     // ---- luce del giorno su tutta la scena (le insegne restano accese ma perdono forza)
     if (dd > 0.01 || ss > 0.01) {
       g.save(); g.globalCompositeOperation = 'screen';

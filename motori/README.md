@@ -183,6 +183,16 @@ plancia completa, acceleratore, freno, frizione, cambio a 6 marce. Funziona nel 
 Apri `motori/index.html` (doppio clic va bene; la vista 3D scarica three.js da jsDelivr) e premi **Accendi l'audio**. Poi `I` per il quadro e
 `Invio` tenuto premuto per l'avviamento. Meglio con le cuffie.
 
+**Motore meno meccanico.** Ogni scoppio è un po' diverso dal precedente (forza, durata e un leggero anticipo o
+ritardo), con un "respiro" lento della combustione più evidente al minimo; il ticchettio delle valvole è più basso
+e irregolare, la distorsione dello scarico in tirata è morbida e un brontolio di mezzo ordine dà corpo ai bassi
+giri. La variazione dell'energia fra un ciclo motore e l'altro passa circa dall'1% al 3% al minimo e ai medi, e dal
+3,7% al 5% in tirata, a parità di volume.
+
+**2D più vivo.** La telecamera segue la guida (in velocità la Supra scivola indietro sullo schermo e si vede più
+strada davanti, in accelerazione resta indietro, in frenata va avanti); oltre i 90 km/h compaiono linee di
+velocità; le ruote si sfocano in un disco quando girano forte; sotto la pioggia la Supra si specchia sull'asfalto.
+
 ## Da dove viene il suono
 
 Nessuna registrazione. Su GitHub i progetti con campioni di motori (per esempio `markeasting/engine-audio`)

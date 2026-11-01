@@ -199,14 +199,17 @@ class EngineDSP {
     if (fire) {
       const ch = Math.max(S.charge, 0.04);
       const low = Math.max(0, 1 - S.rpm / 1600), lope = this.tn.lope * Math.max(0, 1 - S.rpm / 2600);
-      let jitter = 1 + this.g() * (0.03 + 0.07 * low + 0.12 * lope);
+      // variazione da ciclo a ciclo (un motore vero non fa mai due scoppi uguali) più un "respiro" lento comune
+      this.breath = (this.breath || 0) * 0.985 + this.g() * 0.01;
+      let jitter = (1 + this.g() * (0.045 + 0.3 * low + 0.12 * lope)) * (1 + this.breath * (1 + 2 * low));
       // camme lunghe: incrocio delle valvole, qualche ciclo debole e "sporco"
       if (lope > 0 && Math.abs(this.r()) < 0.09 * lope) jitter *= 0.35 + 0.3 * Math.abs(this.r());
       comb = Math.pow(ch, 0.9) * jitter;
       // ogni scoppio dà una piccola spinta all'albero: la velocità oscilla dentro il ciclo
       this.flu += (0.03 + 0.05 * lope) * comb * Math.min(1, 1100 / Math.max(S.rpm, 300));
       if (S.rattle > 0.01) this.rattle += S.rattle * (0.6 + 0.4 * Math.abs(this.r()));
-      c.tp = 11 + 15 * Math.max(0, 1 - Math.min(ch, 1));
+      c.tp = (11 + 15 * Math.max(0, 1 - Math.min(ch, 1))) * (1 + this.g() * 0.035);
+      c.j = this.g() * (0.5 + 2.8 * low);                                   // scoppio un po' in anticipo o in ritardo
       c.nz = 0.22 + 0.32 * Math.min(ch, 1.6);
       this.knock += comb * 0.5;
     } else {
@@ -286,10 +289,11 @@ class EngineDSP {
         if (a < c.prevA) this.cycle(c);
         c.prevA = a;
         let p = 0;
-        if (a < 300) {
-          const x = a / c.tp;
+        const aj = a - (c.j || 0);
+        if (aj > 0 && aj < 300) {
+          const x = aj / c.tp;
           p = c.amp * x * x * Math.exp(2 - 2 * x) * (1 + c.nz * nz);
-          if (a < 240) p += c.disp * Math.sin(a * 0.01308997);
+          if (aj < 240) p += c.disp * Math.sin(aj * 0.01308997);
         }
         // collettore: guida d'onda con riflessione all'unione
         const b = c.buf, m = 2047;
@@ -309,7 +313,10 @@ class EngineDSP {
       this.catS += this.catA * (x - this.catS);
       x = this.catS * this.catG;
       // onda d'urto: a pieno carico gli impulsi si irripidiscono (più armoniche, più "rasp")
-      if (this.rasp > 0) x += this.rasp * 0.55 * x * Math.abs(x);
+      if (this.rasp > 0) { const q = x * 3; x += this.rasp * 0.18 * (q / (1 + Math.abs(q))) * Math.abs(x) * 3; }
+
+      // brontolio di fondo: mezzo ordine (un giro di camme) ai bassi giri, dà corpo e "peso" al motore
+      x += Math.sin(th * 0.0087266) * 0.012 * Math.max(0, 1 - rn * 1.6) * (0.4 + S.charge) * (S.running > 0.5 ? 1 : 0);
 
       // ---- afterfire -------------------------------------------------------------
       for (let q = this.pops.length - 1; q >= 0; q--) {
@@ -389,8 +396,8 @@ class EngineDSP {
 
       // ---- meccanica: punterie, combustione nel basamento, cinghia ----------------
       const tk = Math.floor(th / 30);
-      if (tk !== this.lastTick) { this.lastTick = tk; if (S.rpm > 30) this.tickEnv = 0.4 + 0.6 * Math.abs(nz2); }
-      let mech = this.tickHP.p(nz) * this.tickEnv * (0.12 + 0.5 * rn) * 0.15;
+      if (tk !== this.lastTick) { this.lastTick = tk; if (S.rpm > 30) this.tickEnv = Math.random() < 0.25 ? 0.15 : 0.3 + 0.7 * Math.abs(nz2); }
+      let mech = this.tickHP.p(nz) * this.tickEnv * (0.12 + 0.5 * rn) * 0.06;
       this.tickEnv *= this.tickDec;
       mech += this.knockBP.p(nz3) * this.knock * 0.05;
       this.knock *= this.knockDec;
