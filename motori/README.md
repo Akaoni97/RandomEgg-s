@@ -43,6 +43,11 @@ dall'abitacolo il quadro si legge sopra la corona del volante, le alette parasol
 cielo, la plancia ha una grana goffrata, una bocchetta del disappannamento alla base del parabrezza e le
 cuciture sulla palpebra. I montanti anteriori sono neri come la serra della JZA80.
 
+**Stile garage.** Quadro e interfaccia hanno il look di un'officina clandestina: strumenti neri vissuti con
+ghiera bruna, viti a vista, graffi sul vetro e luce ambra da dietro, numeri e titoli a stencil, lancette
+arancio luminose e zona rossa arancio-rossa; pannelli in nero caldo con bordi bruni e accenti ambra. Lo stesso
+quadro compare sul cruscotto dell'abitacolo.
+
 **Telecamere e qualità.** Il tasto C (o il pulsante 🎥) passa tra inseguimento, vista laterale, cofano
 e **abitacolo**: guida a destra come le JZA80 giapponesi, volante che gira con lo sterzo, leva del cambio
 che segue la marcia, sedili con cuciture rosse e il quadro strumenti del gioco disegnato sul cruscotto.
