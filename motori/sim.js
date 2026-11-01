@@ -303,7 +303,7 @@ class SupraSim {
       if (Math.abs(Ft) <= Fs) this.v = 0;
       else this.v += h * (Ft - Math.sign(Ft) * Fs) / P.mass;
     } else {
-      let nv = this.v + h * (Ft - drag - Math.sign(this.v) * (Froll + Fb)) / P.mass;
+      let nv = this.v + h * (Ft - drag - Math.sign(this.v) * (Froll + Fb) - P.mass * 9.81 * (this.grade || 0)) / P.mass;
       if (Math.sign(nv) !== Math.sign(this.v) && Math.abs(Ft) < Fb + Froll) nv = 0;
       this.v = nv;
     }

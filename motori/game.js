@@ -17,6 +17,9 @@ const GAME_LANE_Z = { 0: 6.1, 1: 3.5, 2: 0, 3: -3.5 };
 const MOUNTAIN = {
   half: 4.6,
   theta: (s) => 0.55 * Math.sin(s / 140) + 0.35 * Math.sin(s / 61 + 1.3) + 0.2 * Math.sin(s / 29 + 0.4),
+  // quota della strada (m) e pendenza: salite e discese
+  height: (s) => 9 * Math.sin(s / 170) + 4 * Math.sin(s / 53 + 0.7),
+  slope: (s) => 9 / 170 * Math.cos(s / 170) + 4 / 53 * Math.cos(s / 53 + 0.7),
   kappa: (s) => 0.55 / 140 * Math.cos(s / 140) + 0.35 / 61 * Math.cos(s / 61 + 1.3) + 0.2 / 29 * Math.cos(s / 29 + 0.4),
 };
 // bagagliaio: 12 posti, 150 kg; il peso si somma alla massa della Supra
@@ -424,16 +427,29 @@ class StreetGame {
     // strada di montagna: niente corsie fisse, in curva la Supra viene spinta verso l'esterno (v²·κ):
     // va tenuta in strada con lo sterzo; contro il guardrail rallenta, struscia e si ammacca
     if (this.track === 'mountain') {
-      const k = Math.min(1, dt * 10), want = Math.abs(this.steerIn) > 0.05;
-      const vmax = 1.8 + Math.min(4.2, sim.v * 0.14), st2 = Math.sign(this.steerIn) * Math.pow(Math.abs(this.steerIn), 1.3);
-      this.latV += ((want ? -st2 * vmax : 0) - this.latV) * k;
-      const drift = MOUNTAIN.kappa(d) * sim.v * sim.v * 0.16 * (1 + 0.35 * (sim.wet || 0));
-      this.laneZ += (this.latV + drift) * dt;
+      // guida libera: l'auto ha una sua direzione (relYaw rispetto alla strada). Lo sterzo dà un angolo alle ruote,
+      // l'angolo dà una rotazione (v·tanδ/passo) limitata dall'aderenza: se si esagera l'auto allarga (sottosterzo).
+      // Se la strada curva e non si sterza, si va dritti verso il bordo. Nessun aiuto automatico.
+      const v = Math.max(0, sim.v), grip = (sim.P.mu || 1.1) * sim.tireGrip() * 9.81;
+      const dMax = 0.55 / (1 + v * 0.06);                                   // sterzo pieno: meno angolo in velocità
+      this.steerAngle = (this.steerAngle || 0) + (this.steerIn * dMax - (this.steerAngle || 0)) * Math.min(1, dt * 9);
+      let yawRate = v * Math.tan(this.steerAngle) / 2.55;
+      const aMax = grip * 0.95; this.slide = 0;
+      if (v > 1 && Math.abs(yawRate * v) > aMax) { this.slide = Math.min(1, (Math.abs(yawRate * v) - aMax) / aMax); yawRate = Math.sign(yawRate) * aMax / v; }
+      // sovrasterzo di potenza: con le ruote che pattinano la coda gira di più
+      const wheelSlip = Math.max(0, sim.ww * sim.P.r - sim.v) / Math.max(4, sim.v);
+      if (wheelSlip > 0.12 && Math.abs(this.steerAngle) > 0.02) yawRate += Math.sign(this.steerAngle) * Math.min(0.9, wheelSlip * 1.6);
+      this.relYaw = (this.relYaw || 0) + (yawRate - MOUNTAIN.kappa(d) * v) * dt;
+      this.relYaw = Math.max(-1.2, Math.min(1.2, this.relYaw));
+      this.laneZ -= v * Math.sin(this.relYaw) * dt;
+      sim.grade = MOUNTAIN.slope(d);
       const lim = MOUNTAIN.half - 1.0;
       this.rail = 0;
       if (Math.abs(this.laneZ) > lim) {
         this.rail = Math.sign(this.laneZ); this.laneZ = this.rail * lim;
-        if (sim.v > 3) { sim.v *= 1 - Math.min(0.5, dt * 0.9); sim.damage = Math.min(1, sim.damage + dt * 0.01 * sim.v / 20); if (Math.random() < dt * 8) this.fx.push({ k: 'scrape', side: this.rail }); }
+        // il guardrail raddrizza l'auto lungo la strada e la rallenta
+        if (Math.sign(-this.relYaw) === this.rail) this.relYaw *= 0.3;
+        if (v > 3) { sim.v *= 1 - Math.min(0.5, dt * 1.2); sim.damage = Math.min(1, sim.damage + dt * 0.012 * v / 20); if (Math.random() < dt * 10) this.fx.push({ k: 'scrape', side: this.rail }); }
       }
       this.free = true; this.lane = 1; this.prevLane = 1; this.signal = null;
       this.updateRace(dt, d0);

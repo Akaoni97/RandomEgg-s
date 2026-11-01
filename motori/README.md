@@ -60,10 +60,13 @@ a caso. Nella barra sotto la strada si sceglie Ora (dinamica, giorno, tramonto, 
 pioggia; tasto K); l'orologio è sulla strada.
 
 **Strada di montagna.** Il pulsante "Montagna" (accanto a Carriera e Libera) apre la modalità libera su una strada
-di montagna a due corsie, solo in 3D: curve a raggio variabile fino a circa 60 m, mezzeria gialla, guardrail con
-catarifrangenti, parete di roccia, pini e cime innevate all'orizzonte. In curva la Supra viene spinta verso
-l'esterno in proporzione a velocità² × curvatura (di più sul bagnato): si tiene in strada con lo sterzo, e se si
-entra troppo forte si struscia il guardrail, con scintille, rallentamento e ammaccature.
+di montagna a due corsie, solo in 3D: curve fino a circa 60 m di raggio, salite e discese, mezzeria gialla,
+guardrail con catarifrangenti, cartelli di curva pericolosa sul lato esterno delle curve strette, parete di roccia
+a destra e vallata con pini a sinistra, cime innevate all'orizzonte. La guida è libera, senza aiuti: la Supra ha
+una sua direzione e lo sterzo dà un angolo alle ruote (meno angolo in velocità), da cui una rotazione limitata
+dall'aderenza: se entri troppo forte allarga (sottosterzo), se fai pattinare le gomme la coda gira (sovrasterzo di
+potenza). Se non sterzi va dritta e la strada curva sotto di lei. Le salite rallentano, le discese spingono. Contro
+il guardrail l'auto si raddrizza, rallenta, fa scintille e si ammacca.
 
 **Pioggia.** Arriva col meteo dinamico o si sceglie dal menu Meteo. In 3D
 cadono migliaia di gocce che si inclinano con la velocità; l'asfalto si fa lucido e riflette di più neon e

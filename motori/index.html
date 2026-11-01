@@ -1795,7 +1795,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     // "Montagna" è la modalità libera sulla strada di montagna (solo vista 3D: in 2D le curve non si vedono)
     const mtn = b.dataset.m === 'mountain';
     game.mode = mtn ? 'free' : b.dataset.m; game.track = mtn ? 'mountain' : 'city'; game.prompt = null; game.ap = null; game.race = null; game.ents = [];
-    game.laneZ = mtn ? 0 : GAME_LANE_Z[1]; game.lane = 1; game.free = false;
+    game.laneZ = mtn ? 0 : GAME_LANE_Z[1]; game.lane = 1; game.free = false; game.relYaw = 0; game.steerAngle = 0; sim.grade = 0;
     if (mtn && S.look === '2d') { S.look = 'smooth'; applyLook(); }
     if (mtn) flash('Strada di montagna: tieni la Supra in strada con A/D, in curva ti spinge verso l\'esterno', 3.5);
     if (game.mode === 'career') {   // in carriera si torna ai pezzi che si possiedono

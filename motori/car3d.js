@@ -965,9 +965,9 @@ class Garage3D {
     st.front = (st.front || 0) + s.v / 0.322 * dt;
     this.wheels.forEach((w, i) => { w.userData.spin.rotation.z = -(i < 2 ? st.front : st.spin) * w.userData.dir; });
     const steer = Math.max(-0.35, Math.min(0.35, (s.steer || 0)));
-    this.wheels[0].rotation.y = steer; this.wheels[1].rotation.y = Math.PI + steer;      // ruote anteriori che sterzano
+    this.wheels[0].rotation.y = -steer; this.wheels[1].rotation.y = Math.PI - steer;      // ruote anteriori: steer < 0 = sinistra, come il volante
     if (s.damage !== undefined) this.setDamage(s.damage);
-    (this.customWheels || []).forEach((w) => { w.pivot.rotation.order = 'YXZ'; w.pivot.rotation.z = -(w.front ? st.front : st.spin); w.pivot.rotation.y = w.front ? steer : 0; });
+    (this.customWheels || []).forEach((w) => { w.pivot.rotation.order = 'YXZ'; w.pivot.rotation.z = -(w.front ? st.front : st.spin); w.pivot.rotation.y = w.front ? -steer : 0; });
     // ---- sospensioni: quattro ruote seguono l'asfalto, la scocca le segue su molle smorzate (~2 Hz)
     const d = s.dist || 0, wb = 1.28, H = Garage3D.roadH;
     const hFL = H(d + wb, 1), hFR = H(d + wb, -1), hRL = H(d - wb, 1), hRR = H(d - wb, -1);
