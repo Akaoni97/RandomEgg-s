@@ -43,7 +43,7 @@ Con qualità *alta* c'è il bloom (fari, insegne, fiammate brillano) con tonemap
 **Abitacolo, come nei simulatori.** La testa del pilota è una molla smorzata: va indietro in spinta, avanti
 in frenata, di lato nei cambi corsia e guarda verso dove sterzi in proporzione alla velocità (look to apex),
 con lo sguardo stabilizzato lontano davanti al cofano, come fanno le telecamere di Assetto Corsa, rFactor 2
-e BeamNG. Mani con dorso, palmo, quattro dita a tre falangi avvolte sulla corona a ore 9 e 3, pollice a due falangi
+e BeamNG. Mani con dorso, palmo, quattro dita a tre falangi avvolte sulla corona alle 10 e 10 (sguardo appena verso il basso: poco cielo, mani in vista), pollice a due falangi
 sul lato interno, unghie e orologio al polso sinistro; le braccia seguono con un gomito
 calcolato a due segmenti; oltre 35° di sterzo le mani scivolano sulla corona invece di incrociarsi; quando
 cambi marcia la mano sinistra va sulla leva con un arco naturale e torna; la strada fa vibrare le mani. Specchietto retrovisore vero (una seconda telecamera

@@ -422,7 +422,8 @@ class Garage3D {
     };
     // le mani seguono il volante fino a ±45°, oltre scivolano sulla corona (come si fa davvero)
     const gripRot = new T.Group(); tilt.add(gripRot); this.gripRot = gripRot;
-    const grip = (z, parent, rx = 0) => { const o = new T.Object3D(); o.position.set(0, 0, z); o.rotation.x = rx; parent.add(o); return o; };
+    // presa alle 10 e 10: le mani stanno 30° sopra l'orizzontale, più alte nell'inquadratura
+    const grip = (z, parent, up = 0.52) => { const o = new T.Object3D(); const th = z > 0 ? -up : up; o.rotation.x = th; o.position.set(0, -z * Math.sin(th), z * Math.cos(th)); parent.add(o); return o; };
     this.hands = [
       { h: makeHand(false), rim: grip(0.172, gripRot), shoulder: new T.Vector3(-0.55, 0.9, 0.6) },          // destra (lato porta)
       { h: makeHand(true), rim: grip(-0.172, gripRot), shoulder: new T.Vector3(-0.55, 0.9, 0.14) },          // sinistra: cambia marcia
