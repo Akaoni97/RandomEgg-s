@@ -29,9 +29,10 @@ Con qualità *alta* c'è il bloom (fari, insegne, fiammate brillano) con tonemap
 **Abitacolo, come nei simulatori.** La testa del pilota è una molla smorzata: va indietro in spinta, avanti
 in frenata, di lato nei cambi corsia e guarda verso dove sterzi in proporzione alla velocità (look to apex),
 con lo sguardo stabilizzato lontano davanti al cofano, come fanno le telecamere di Assetto Corsa, rFactor 2
-e BeamNG. Mani in guanti con le dita avvolte sulla corona a ore 9 e 3; le braccia seguono con un gomito
+e BeamNG. Mani con dorso, palmo, quattro dita a tre falangi avvolte sulla corona a ore 9 e 3, pollice a due falangi
+sul lato interno, unghie e orologio al polso sinistro; le braccia seguono con un gomito
 calcolato a due segmenti; oltre 35° di sterzo le mani scivolano sulla corona invece di incrociarsi; quando
-cambi marcia la mano sinistra va sulla leva e torna. Specchietto retrovisore vero (una seconda telecamera
+cambi marcia la mano sinistra va sulla leva con un arco naturale e torna; la strada fa vibrare le mani. Specchietto retrovisore vero (una seconda telecamera
 disegna su una texture), tre strumenti supplementari a lancetta sulla consolle rivolta verso il pilota,
 manopole del clima, pedaliera, alette parasole, altoparlanti nelle porte e la luce arancio del quadro
 che illumina mani e volante.
@@ -56,7 +57,9 @@ capi battuti. Si compra e si butta dal pannello del bagagliaio.
 - Lungo la strada arrivano proposte a tempo (pulsanti o tasti 1-2-3; senza risposta vale l'ultima):
   distributore (pieno, € 20 o tiri dritto), sfide da semaforo sui 400 m con posta, lavoretti di consegna
   con bonus di puntualità.
-- Corsie: tre corsie, si cambia con A e D (o i pulsanti ◀ ▶ sulla strada). Con il sorpasso automatico
+- Sterzo libero: tieni premuto A o D (o i pulsanti ◀ ▶, o la levetta del pad) e la Supra va dove vuoi sulla
+  carreggiata, anche fra le corsie, fino al cordolo; mollato lo sterzo resta lì. Il volante gira con le mani
+  del pilota anche da fermo (antiorario a sinistra). Con il sorpasso automatico
   la Supra si sposta da sola dietro al traffico lento; senza, chi tampona paga il carrozziere.
 - Polizia: se le passi accanto in sesta ti ferma, multa in base alla velocità e al livello di ricercato
   (5 stelle, scende col tempo). Un avviso in alto segnala le pattuglie in arrivo.

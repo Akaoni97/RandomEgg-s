@@ -302,6 +302,23 @@ test('corsie a mano: si cambia corsia e tamponare costa', () => {
   void v0;
 });
 
+test('sterzo libero: si va dove si vuole, si resta lì, cordolo come limite', () => {
+  const { sim, game } = career();
+  game.autoLane = false;
+  sim.shift(1);
+  play(sim, game, 6, flatOut);
+  const z0 = game.laneZ;
+  game.steerHold(1); play(sim, game, 0.6, flatOut); game.steerHold(0);
+  const z1 = game.laneZ;
+  assert.ok(z1 < z0 - 0.3, `a sinistra: ${z0.toFixed(2)} -> ${z1.toFixed(2)}`);
+  play(sim, game, 2, flatOut);
+  assert.ok(Math.abs(game.laneZ - z1) < 0.6, 'mollato lo sterzo la Supra non torna in corsia da sola');
+  assert.ok(Math.abs(game.laneZ - GAME_LANE_Z[1]) > 0.3 && Math.abs(game.laneZ - GAME_LANE_Z[2]) > 0.3, 'sta fra le corsie');
+  game.steerHold(-1); play(sim, game, 8, flatOut); game.steerHold(0);
+  assert.ok(game.laneZ <= GAME_LANE_Z[1] + 1.4 + 1e-9, 'il cordolo ferma la Supra');
+  assert.equal(game.lane, 1);
+});
+
 test('gomme: si scaldano pattinando, la presa ha un ottimo e si consumano', () => {
   const { sim } = career();
   const cold = sim.tireGrip();

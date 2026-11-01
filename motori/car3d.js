@@ -270,7 +270,7 @@ class Garage3D {
     const T = this.T, I = new T.Group(); I.visible = false; this.body.add(I); this.interior = I;
     // l'abitacolo è in ombra: colori smorzati e riflessi d'ambiente quasi spenti (niente cruscotto azzurrino)
     const mat = (c, o = {}) => { const m = new T.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.8, envMapIntensity: 0.15 }, o)); m.color.multiplyScalar(0.45); return m; };
-    const dash = mat(0x121318), soft = mat(0x1a1717), alu = mat(0x8a9099, { metalness: 0.9, roughness: 0.3 }), skin = mat(0xc98a62, { roughness: 0.6 });
+    const dash = mat(0x121318), soft = mat(0x1a1717), alu = mat(0x8a9099, { metalness: 0.9, roughness: 0.3 });
     const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0, parent = I) => { const o = new T.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); parent.add(o); return o; };
     const twoSided = (c) => mat(c, { side: T.DoubleSide });
     add(new T.PlaneGeometry(2.0, 1.5), twoSided(0x0c0c0f), -0.1, 0.34, 0, -Math.PI / 2);                      // pavimento
@@ -330,30 +330,56 @@ class Garage3D {
     // leve dietro al volante (frecce e tergicristalli)
     for (const dz of [0.1, -0.1]) add(new T.BoxGeometry(0.02, 0.016, 0.12), dash, 0.36, 0.84, 0.37 + dz * 1.4, 0, 0, 0);
 
-    // mani: guanti da guida con dita avvolte sulla corona, pollice sulla razza, polsino rosso
-    const glove = mat(0x161412, { roughness: 0.55 }), knuck = mat(0x24201d, { roughness: 0.5 }), cuff = mat(0xb3261c, { roughness: 0.7 });
+    // mani umane: dorso arrotondato, quattro dita a tre falangi che si avvolgono sulla corona,
+    // pollice a due falangi sul lato interno, nocche, polso; orologio al polso sinistro
+    const skin = mat(0x6e4230, { roughness: 0.6, envMapIntensity: 0.02, emissive: 0x1c0a05 }), nail = mat(0x9a6e60, { roughness: 0.35 });
+    const cap = (A, B, r, m, parent) => {
+      const v = B.clone().sub(A), len = v.length();
+      const g = new T.CapsuleGeometry(r, Math.max(0.001, len), 4, 10);
+      const o = new T.Mesh(g, m); o.position.copy(A).add(B).multiplyScalar(0.5);
+      o.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), v.normalize()); parent.add(o); return o;
+    };
+    const V = (x, y, z) => new T.Vector3(x, y, z);
     const makeHand = (mirror) => {
       const h = new T.Group();
-      const palm = add(new T.SphereGeometry(1, 14, 10), glove, -0.04, 0, 0.024, 0, 0.5, 0, h);
-      palm.scale.set(0.024, 0.05, 0.04);
+      // dorso e palmo: ellissoide schiacciato dietro e fuori dalla corona
+      // metacarpo fra nocche e polso: dorso (verso fuori) e palmo (verso la corona)
+      const back = add(new T.SphereGeometry(1, 20, 14), skin, -0.079, -0.004, 0.041, 0, -0.25, 0, h);
+      back.scale.set(0.038, 0.041, 0.014);
+      const palm = add(new T.SphereGeometry(1, 16, 12), skin, -0.072, -0.006, 0.024, 0, -0.25, 0, h);
+      palm.scale.set(0.034, 0.038, 0.014);
+      const pad = add(new T.SphereGeometry(1, 12, 10), skin, -0.07, 0.022, 0.012, 0, 0, 0, h);   // eminenza del pollice
+      pad.scale.set(0.024, 0.016, 0.014);
+      // dita: articolazioni su un arco attorno al tubo della corona (raggio 0,024)
+      const lens = [0.95, 1, 0.97, 0.8], rads = [0.0088, 0.0092, 0.009, 0.0078];
+      h.userData.fingers = [];
       for (let i = 0; i < 4; i++) {
-        const len = [3.5, 3.9, 3.8, 3.3][i], r = 0.036 - (i === 3 ? 0.003 : 0);
-        const f = new T.TorusGeometry(r, i === 3 ? 0.0085 : 0.0098, 7, 12, len);
-        f.rotateX(Math.PI / 2); f.rotateY(-2.5);
-        add(f, glove, 0, 0.033 - i * 0.021, 0, 0, 0, 0, h);
-        add(new T.SphereGeometry(0.012, 8, 6), knuck, -0.026, 0.033 - i * 0.021, 0.027, 0, 0, 0, h);   // nocche
+        const y = 0.031 - i * 0.0205, rr = 0.024 + rads[i] + 0.001, k = lens[i];
+        const ph = [2.3, 1.35, 0.55 - 0.2 * (1 - k), -0.15 * k];
+        const pts = ph.map((a, j) => V(Math.cos(a) * (rr + (j === 0 ? 0.008 : 0)), y - j * 0.0015, Math.sin(a) * (rr + (j === 0 ? 0.008 : 0))));
+        pts[0].x -= 0.012;
+        const f = new T.Group(); h.add(f); h.userData.fingers.push(f);
+        for (let j = 0; j < 3; j++) cap(pts[j], pts[j + 1], rads[i] * (1 - j * 0.1), skin, f);
+        const kn = add(new T.SphereGeometry(rads[i] * 1.15, 10, 8), skin, pts[0].x, pts[0].y, pts[0].z, 0, 0, 0, f);
+        void kn;
+        add(new T.SphereGeometry(rads[i] * 0.75, 8, 6), nail, pts[3].x, pts[3].y, pts[3].z, 0, 0, 0, f);
       }
-      const th = add(new T.CapsuleGeometry(0.011, 0.045, 4, 8), glove, -0.03, 0.035, -0.03, 0, 0, 0, h);
-      th.rotation.set(0.9, 0, 0.5);
-      const wr = add(new T.CylinderGeometry(0.03, 0.033, 0.07, 12), glove, -0.085, -0.012, 0.035, 0, 0, 0, h);
-      wr.rotation.set(0, 0, Math.PI / 2 + 0.25); wr.rotation.y = 0.45;
-      const cf = add(new T.CylinderGeometry(0.036, 0.036, 0.022, 12), cuff, -0.118, -0.02, 0.05, 0, 0, 0, h);
-      cf.rotation.copy(wr.rotation);
-      const wrist = new T.Object3D(); wrist.position.set(-0.13, -0.022, 0.055); h.add(wrist); h.userData.wrist = wrist;
+      // pollice: dalla base del palmo gira sul lato interno della corona
+      const t0 = V(-0.062, 0.028, 0.006), t1 = V(-0.038, 0.04, -0.022), t2 = V(-0.012, 0.042, -0.026);
+      cap(t0, t1, 0.0098, skin, h); cap(t1, t2, 0.0088, skin, h);
+      add(new T.SphereGeometry(0.0075, 8, 6), nail, t2.x, t2.y, t2.z, 0, 0, 0, h);
+      // polso, polsino della giacca
+      cap(V(-0.06, -0.004, 0.03), V(-0.115, -0.018, 0.05), 0.022, skin, h);
+      const cf = cap(V(-0.112, -0.017, 0.05), V(-0.135, -0.022, 0.058), 0.033, mat(0x22252c, { roughness: 0.95 }), h);
+      void cf;
+      if (mirror) {   // orologio sulla sinistra
+        cap(V(-0.098, -0.014, 0.046), V(-0.1, -0.014, 0.047), 0.025, mat(0x0b0b0c, { roughness: 0.6 }), h);
+        add(new T.CylinderGeometry(0.014, 0.014, 0.006, 16), mat(0xc8ccd2, { metalness: 0.9, roughness: 0.25 }), -0.1, -0.014, 0.072, Math.PI / 2, 0, 0, h);
+      }
+      const wrist = new T.Object3D(); wrist.position.set(-0.13, -0.021, 0.056); h.add(wrist); h.userData.wrist = wrist;
       if (mirror) h.scale.z = -1;
       I.add(h); return h;
     };
-    // punti di presa a ore 9 e ore 3 (seguono il volante) e sulla leva del cambio
     // le mani seguono il volante fino a ±45°, oltre scivolano sulla corona (come si fa davvero)
     const gripRot = new T.Group(); tilt.add(gripRot); this.gripRot = gripRot;
     const grip = (z, parent, rx = 0) => { const o = new T.Object3D(); o.position.set(0, 0, z); o.rotation.x = rx; parent.add(o); return o; };
@@ -450,7 +476,7 @@ class Garage3D {
     const T = this.T, I = this.interior;
     if (this.lastGear !== null && s.gear !== this.lastGear && this.shiftT >= 1) this.shiftT = 0;
     this.lastGear = s.gear;
-    this.shiftT = Math.min(1, this.shiftT + dt / 0.6);
+    this.shiftT = Math.min(1, this.shiftT + dt / 0.75);
     const e = (x) => x * x * (3 - 2 * x), t = this.shiftT;
     this.shiftK = t >= 1 ? 0 : t < 0.35 ? e(t / 0.35) : t < 0.6 ? 1 : e((1 - t) / 0.4);
     I.updateMatrixWorld(true);
@@ -460,7 +486,13 @@ class Garage3D {
     this.hands.forEach((hd, i) => {
       const [pr, qr] = local(hd.rim);
       let pos = pr, rot = qr;
-      if (hd.knob && this.shiftK > 0) { const [pk, qk] = local(hd.knob); pos = pr.clone().lerp(pk, this.shiftK); rot = qr.clone().slerp(qk, this.shiftK); }
+      if (hd.knob && this.shiftK > 0) {
+        const [pk, qk] = local(hd.knob), k = this.shiftK;
+        pos = pr.clone().lerp(pk, k); rot = qr.clone().slerp(qk, k);
+        pos.y += Math.sin(Math.PI * k) * 0.05; pos.x -= Math.sin(Math.PI * k) * 0.04;   // arco: la mano si alza e arretra a metà strada
+      }
+      // vibrazione della strada che arriva al volante
+      pos.y += Math.sin((this.state.t || 0) * 37 + i * 2) * Math.min(0.0012, Math.abs(s.v || 0) * 0.00003);
       hd.h.position.copy(pos); hd.h.quaternion.copy(rot);
       hd.h.updateMatrixWorld(true);
       const [w] = local(hd.h.userData.wrist), S = hd.shoulder;
@@ -702,7 +734,7 @@ class Garage3D {
     });
     // abitacolo: volante, leva del cambio, quadro aggiornato
     if (this.steerWheel) {
-      const wr = Math.max(-1.6, Math.min(1.6, -(s.steer || 0) * 3.2));
+      const wr = Math.max(-2.4, Math.min(2.4, (s.steer || 0) * 3.2));   // sterzo a sinistra = volante in senso antiorario per chi guida
       this.steerWheel.rotation.x = wr; if (this.gripRot) this.gripRot.rotation.x = Math.max(-0.6, Math.min(0.6, wr));
     }
     if (this.shifter) {

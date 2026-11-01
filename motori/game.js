@@ -63,6 +63,9 @@ class StreetGame {
     this.siren = 0;
     this.autoLane = true;      // sorpasso automatico (si può spegnere)
     this.manualT = 0;          // secondi in cui la corsia l'ha scelta il pilota
+    this.steerIn = 0;          // sterzo libero tenuto dal pilota: +1 sinistra, -1 destra
+    this.latV = 0;             // velocità laterale (m/s)
+    this.free = false;         // posizione libera sulla carreggiata, fuori dalle corsie
     this.fx = [];              // eventi grafici per le viste (tamponamenti…)
     this.applyMass();
   }
@@ -75,6 +78,9 @@ class StreetGame {
     this.lane = nl; this.manualT = this.autoLane ? 5 : 1e9;
     return true;
   }
+
+  // sterzo libero: finché il pilota tiene premuto, l'auto si sposta dove vuole sulla carreggiata
+  steerHold(x) { this.steerIn = Math.max(-1, Math.min(1, x || 0)); }
 
   // tamponamento: la Supra rallenta di colpo, l'altra auto viene spinta avanti, si pagano i danni
   crash(e) {
@@ -406,8 +412,24 @@ class StreetGame {
     if (this.prevLane !== undefined && this.lane !== this.prevLane) this.signal = { dir: this.lane > this.prevLane ? 'L' : 'R', t: 2.6 };
     this.prevLane = this.lane;
     if (this.signal) { this.signal.t -= dt; if (this.signal.t <= 0) this.signal = null; }
-    const zT = GAME_LANE_Z[this.lane];
-    this.laneZ += Math.sign(zT - this.laneZ) * Math.min(Math.abs(zT - this.laneZ), dt * (sim.v > 1 ? 1.6 + Math.min(1.2, sim.v * 0.03) : 0.6));
+    // sterzo libero: velocità laterale che cresce con la velocità, nessuno scatto tra le corsie
+    const freeOK = !this.race && !this.ap && sim.v > 0.3;
+    if (freeOK && Math.abs(this.steerIn) > 0.05) {
+      this.free = true; this.manualT = this.autoLane ? 5 : 1e9;
+      const vmax = 0.8 + Math.min(3.4, sim.v * 0.13);
+      this.latV += (-this.steerIn * vmax - this.latV) * Math.min(1, dt * 4);
+    } else this.latV += (0 - this.latV) * Math.min(1, dt * 8);
+    if (!freeOK || (this.manualT === 0 && Math.abs(this.steerIn) <= 0.05)) this.free = false;
+    if (this.free) {
+      this.laneZ = Math.max(GAME_LANE_Z[3] - 1.4, Math.min(GAME_LANE_Z[1] + 1.4, this.laneZ + this.latV * dt));
+      if (this.laneZ === GAME_LANE_Z[3] - 1.4 || this.laneZ === GAME_LANE_Z[1] + 1.4) this.latV = 0;   // cordolo
+      let best = 1; for (const l of [2, 3]) if (Math.abs(GAME_LANE_Z[l] - this.laneZ) < Math.abs(GAME_LANE_Z[best] - this.laneZ)) best = l;
+      this.lane = best; this.prevLane = best;
+    } else {
+      this.latV = 0;
+      const zT = GAME_LANE_Z[this.lane];
+      this.laneZ += Math.sign(zT - this.laneZ) * Math.min(Math.abs(zT - this.laneZ), dt * (sim.v > 1 ? 1.6 + Math.min(1.2, sim.v * 0.03) : 0.6));
+    }
 
     this.updateRace(dt, d0);
   }

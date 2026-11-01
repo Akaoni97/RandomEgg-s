@@ -601,7 +601,11 @@ class Street3D extends Garage3D {
     }
     if (game) this.sync(game.ents, dist);
     if (game) for (const e of game.ents) { const m = this.meshes.get(e.id); if (m && m.userData.wheels) m.userData.wheels.forEach((w) => { w.userData.spin.rotation.z = -(e.x / 0.33) * w.userData.dir; }); }
-    s.steer = Math.atan2(this.lzV || 0, Math.max(3, Math.abs(s.v))) * 2.2;
+    // volante: segue le mani del pilota quando sterza (anche da fermo), altrimenti la traiettoria
+    const auto = Math.atan2(this.lzV || 0, Math.max(3, Math.abs(s.v))) * 2.2, held = game ? game.steerIn || 0 : 0;
+    const tgt = Math.abs(held) > 0.05 ? -held * (0.42 - Math.min(0.22, Math.abs(s.v) * 0.006)) : auto;
+    this.steerVis = (this.steerVis || 0) + (tgt - (this.steerVis || 0)) * Math.min(1, dt * 7);
+    s.steer = this.steerVis;
     if (game) for (const f of game.fx) if (f.k === 'crash') this.sparkT = 0.35;
     this.updateFx(dt, s, dist);
     // un po' di "velocità": campo visivo che si allarga
