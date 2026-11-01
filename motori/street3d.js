@@ -66,18 +66,28 @@ class Street3D extends Garage3D {
     this.cockpitOn = mode === 'cockpit';
     if (this.shell) { this.shell.visible = !this.cockpitOn; this.hoodOnly.visible = this.cockpitOn; }
     if (mode === 'chase' && this.chaseCam) { this.camera.position.copy(this.chaseCam.p); c.target.copy(this.chaseCam.t); }
-    this.baseFov = mode === 'cockpit' ? 70 : mode === 'hood' ? 58 : mode === 'side' ? 30 : (this.canvas.clientWidth / this.canvas.clientHeight < 1.3 ? 62 : 40);
+    this.baseFov = mode === 'cockpit' ? 64 : mode === 'hood' ? 58 : mode === 'side' ? 30 : (this.canvas.clientWidth / this.canvas.clientHeight < 1.3 ? 62 : 40);
   }
   beforeRender(dt, s) {
     const v = this.view || 'chase';
     if (v === 'chase') return;
     const T = this.T, st = this.state;
     this.body.updateMatrixWorld(true); this.root.updateMatrixWorld(true);
-    // testa che va indietro in accelerazione e avanti in frenata, vibrazione a velocità
-    this.headX = (this.headX || 0) + ((-Math.max(-8, Math.min(8, s.acc || 0)) * 0.012) - (this.headX || 0)) * Math.min(1, dt * 6);
-    const vib = (Math.random() - 0.5) * Math.min(0.006, Math.abs(s.v) * 0.0001) + (st.heaveV || 0) * 0.002;
+    // testa del pilota come nei simulatori: molla smorzata sulle accelerazioni (indietro in spinta,
+    // avanti in frenata, di lato nei cambi corsia), sguardo verso la curva in proporzione alla velocità,
+    // vibrazione della strada; lo sguardo resta stabilizzato lontano davanti al cofano
+    const H = this.head || (this.head = { x: 0, vx: 0, z: 0, vz: 0, yaw: 0, prevSteer: 0 });
+    const k = Math.min(dt, 0.05), sp = Math.abs(s.v || 0), steer = s.steer || 0;
+    const lat = (steer - H.prevSteer) / Math.max(k, 1e-3) * Math.min(1, sp / 15); H.prevSteer = steer;
+    const tx = -Math.max(-8, Math.min(8, s.acc || 0)) * 0.009, tz = Math.max(-0.05, Math.min(0.05, -lat * 0.05));
+    H.vx += ((tx - H.x) * 90 - H.vx * 11) * k; H.x += H.vx * k;
+    H.vz += ((tz - H.z) * 60 - H.vz * 9) * k; H.z += H.vz * k;
+    H.yaw += (steer * Math.min(1, sp / 20) * 3.5 - H.yaw) * Math.min(1, k * 3);
+    this.headX = H.x;
+    const bump = Math.sin((st.t || 0) * 11) * Math.min(0.0025, sp * 0.00006);
+    const vib = (Math.random() - 0.5) * Math.min(0.005, sp * 0.0001) + (st.heaveV || 0) * 0.002 + bump;
     let eye, at, ref = this.body;
-    if (v === 'cockpit') { eye = [-0.28 + this.headX, 1.12 + vib, 0.37]; at = [12, 1.0, 0.28 + (s.steer || 0) * 3]; }
+    if (v === 'cockpit') { eye = [-0.3 + H.x, 1.09 + vib - Math.max(0, H.x) * 0.3, 0.37 + H.z]; at = [14, 1.0 + H.x * 2, 0.33 + H.yaw]; }
     else if (v === 'hood') { eye = [0.95, 1.02 + vib, 0]; at = [14, 0.8, (s.steer || 0) * 4]; }
     else { ref = this.root; eye = [0.6, 1.05, 6.8]; at = [0.6, 0.7, 0]; }
     this.camera.position.copy(ref.localToWorld(new T.Vector3(...eye)));
@@ -595,7 +605,7 @@ class Street3D extends Garage3D {
     if (game) for (const f of game.fx) if (f.k === 'crash') this.sparkT = 0.35;
     this.updateFx(dt, s, dist);
     // un po' di "velocità": campo visivo che si allarga
-    const fov = (this.baseFov || 40) + Math.min(16, Math.max(0, s.v) * 0.2);
+    const fov = (this.baseFov || 40) + Math.min(this.cockpitOn ? 6 : 16, Math.max(0, s.v) * (this.cockpitOn ? 0.08 : 0.2));
     if (Math.abs(fov - this.camera.fov) > 0.05) { this.camera.fov += (fov - this.camera.fov) * Math.min(1, dt * 3); this.camera.updateProjectionMatrix(); }
     this.headlight.intensity = s.ign ? (s.high ? 4.6 : 2.6) : 0;
     this.headlight.distance = s.high ? 130 : 70; this.headlight.angle = s.high ? 0.33 : 0.42;

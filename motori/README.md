@@ -26,6 +26,16 @@ che segue la marcia, sedili con cuciture rosse e il quadro strumenti del gioco d
 Con qualità *alta* c'è il bloom (fari, insegne, fiammate brillano) con tonemapping ACES e vignettatura;
 *bassa* spegne post-processo e ombre per i computer lenti.
 
+**Abitacolo, come nei simulatori.** La testa del pilota è una molla smorzata: va indietro in spinta, avanti
+in frenata, di lato nei cambi corsia e guarda verso dove sterzi in proporzione alla velocità (look to apex),
+con lo sguardo stabilizzato lontano davanti al cofano, come fanno le telecamere di Assetto Corsa, rFactor 2
+e BeamNG. Mani in guanti con le dita avvolte sulla corona a ore 9 e 3; le braccia seguono con un gomito
+calcolato a due segmenti; oltre 35° di sterzo le mani scivolano sulla corona invece di incrociarsi; quando
+cambi marcia la mano sinistra va sulla leva e torna. Specchietto retrovisore vero (una seconda telecamera
+disegna su una texture), tre strumenti supplementari a lancetta sulla consolle rivolta verso il pilota,
+manopole del clima, pedaliera, alette parasole, altoparlanti nelle porte e la luce arancio del quadro
+che illumina mani e volante.
+
 **Comandi in strada.** F abbaglianti (fascio più lungo in 2D e 3D, spia blu nel quadro), H clacson,
 frecce automatiche quando si cambia corsia (spie ◀ ▶ con il ticchettio del relè), B bagagliaio.
 

@@ -308,28 +308,172 @@ class Garage3D {
     add(new T.CylinderGeometry(0.012, 0.014, 0.22, 8), alu, 0, 0.11, 0, 0, 0, 0, sh);
     add(new T.SphereGeometry(0.038, 14, 10), mat(0x0e0e10, { roughness: 0.35 }), 0, 0.23, 0, 0, 0, 0, sh);
     add(new T.CylinderGeometry(0.06, 0.08, 0.05, 12), soft, 0, 0.0, 0, 0, 0, 0, sh);
-    // volante con mani
-    const tilt = new T.Group(); tilt.position.set(0.3, 0.93, 0.37); tilt.rotation.z = 0.5; I.add(tilt);
+    // volante sportivo a tre razze: corona in pelle spessa, razze forate, fascia rossa a ore 12
+    const tilt = new T.Group(); tilt.position.set(0.3, 0.93, 0.37); tilt.rotation.z = 0.5; I.add(tilt); this.wheelTilt = tilt;
     const wheel = new T.Group(); tilt.add(wheel); this.steerWheel = wheel;
-    const rim = new T.TorusGeometry(0.18, 0.022, 10, 40); rim.rotateY(Math.PI / 2);
-    add(rim, mat(0x111114, { roughness: 0.5 }), 0, 0, 0, 0, 0, 0, wheel);
-    for (const a of [0, 2.2, -2.2]) { const sp = add(new T.BoxGeometry(0.02, 0.16, 0.035), alu, -0.01, 0, 0, 0, 0, 0, wheel); sp.position.set(-0.01, Math.cos(a) * -0.08, Math.sin(a) * 0.08); sp.rotation.x = a; }
-    const hubG = new T.CylinderGeometry(0.06, 0.06, 0.05, 16); hubG.rotateZ(Math.PI / 2);
-    add(hubG, mat(0x16161a), -0.02, 0, 0, 0, 0, 0, wheel);
-    for (const z of [0.17, -0.17]) add(new T.SphereGeometry(0.04, 12, 8), skin, -0.03, 0.01, z, 0, 0, 0, wheel);
-    add(new T.CylinderGeometry(0.03, 0.035, 0.3, 10), dash, 0.45, 1.04, 0.37, 0, 0, Math.PI / 2 + 0.38);   // piantone
-    // sedili
+    const leather = mat(0x1a1716, { roughness: 0.62 });
+    const rim = new T.TorusGeometry(0.18, 0.024, 12, 56); rim.rotateY(Math.PI / 2);
+    add(rim, leather, 0, 0, 0, 0, 0, 0, wheel);
+    const stripe = new T.TorusGeometry(0.18, 0.0245, 12, 6, 0.16); stripe.rotateZ(Math.PI / 2 - 0.08); stripe.rotateY(Math.PI / 2);
+    add(stripe, mat(0xd8261a, { roughness: 0.5 }), 0, 0, 0, 0, 0, 0, wheel);
+    for (const a of [Math.PI, Math.PI / 2, -Math.PI / 2]) {
+      const sp = add(new T.BoxGeometry(0.012, 0.15, 0.04), alu, -0.012, 0, 0, 0, 0, 0, wheel);
+      sp.position.set(-0.012, Math.cos(a) * 0.09, Math.sin(a) * 0.09); sp.rotation.x = -a;
+      for (const r of [0.06, 0.1]) add(new T.CylinderGeometry(0.007, 0.007, 0.014, 8), mat(0x050506), -0.012, Math.cos(a) * r, Math.sin(a) * r, 0, 0, Math.PI / 2, wheel);
+    }
+    const hubG = new T.CylinderGeometry(0.055, 0.06, 0.05, 20); hubG.rotateZ(Math.PI / 2);
+    add(hubG, mat(0x141417, { roughness: 0.4 }), -0.025, 0, 0, 0, 0, 0, wheel);
+    const horn = new T.CircleGeometry(0.036, 20); horn.rotateY(-Math.PI / 2);
+    add(horn, mat(0x2a2a30, { metalness: 0.6, roughness: 0.3 }), -0.051, 0, 0, 0, 0, 0, wheel);
+    const hornRing = new T.RingGeometry(0.036, 0.042, 24); hornRing.rotateY(-Math.PI / 2);
+    add(hornRing, mat(0xd8261a), -0.051, 0, 0, 0, 0, 0, wheel);
+    add(new T.CylinderGeometry(0.03, 0.035, 0.3, 10), dash, 0.45, 1.04, 0.37, 0, 0, Math.PI / 2 + 0.5);   // piantone
+    // leve dietro al volante (frecce e tergicristalli)
+    for (const dz of [0.1, -0.1]) add(new T.BoxGeometry(0.02, 0.016, 0.12), dash, 0.36, 0.93, 0.37 + dz * 1.4, 0, 0, 0);
+
+    // mani: guanti da guida con dita avvolte sulla corona, pollice sulla razza, polsino rosso
+    const glove = mat(0x161412, { roughness: 0.55 }), knuck = mat(0x24201d, { roughness: 0.5 }), cuff = mat(0xb3261c, { roughness: 0.7 });
+    const makeHand = (mirror) => {
+      const h = new T.Group();
+      const palm = add(new T.SphereGeometry(1, 14, 10), glove, -0.04, 0, 0.024, 0, 0.5, 0, h);
+      palm.scale.set(0.024, 0.05, 0.04);
+      for (let i = 0; i < 4; i++) {
+        const len = [3.5, 3.9, 3.8, 3.3][i], r = 0.036 - (i === 3 ? 0.003 : 0);
+        const f = new T.TorusGeometry(r, i === 3 ? 0.0085 : 0.0098, 7, 12, len);
+        f.rotateX(Math.PI / 2); f.rotateY(-2.5);
+        add(f, glove, 0, 0.033 - i * 0.021, 0, 0, 0, 0, h);
+        add(new T.SphereGeometry(0.012, 8, 6), knuck, -0.026, 0.033 - i * 0.021, 0.027, 0, 0, 0, h);   // nocche
+      }
+      const th = add(new T.CapsuleGeometry(0.011, 0.045, 4, 8), glove, -0.03, 0.035, -0.03, 0, 0, 0, h);
+      th.rotation.set(0.9, 0, 0.5);
+      const wr = add(new T.CylinderGeometry(0.03, 0.033, 0.07, 12), glove, -0.085, -0.012, 0.035, 0, 0, 0, h);
+      wr.rotation.set(0, 0, Math.PI / 2 + 0.25); wr.rotation.y = 0.45;
+      const cf = add(new T.CylinderGeometry(0.036, 0.036, 0.022, 12), cuff, -0.118, -0.02, 0.05, 0, 0, 0, h);
+      cf.rotation.copy(wr.rotation);
+      const wrist = new T.Object3D(); wrist.position.set(-0.13, -0.022, 0.055); h.add(wrist); h.userData.wrist = wrist;
+      if (mirror) h.scale.z = -1;
+      I.add(h); return h;
+    };
+    // punti di presa a ore 9 e ore 3 (seguono il volante) e sulla leva del cambio
+    // le mani seguono il volante fino a ±45°, oltre scivolano sulla corona (come si fa davvero)
+    const gripRot = new T.Group(); tilt.add(gripRot); this.gripRot = gripRot;
+    const grip = (z, parent, rx = 0) => { const o = new T.Object3D(); o.position.set(0, 0, z); o.rotation.x = rx; parent.add(o); return o; };
+    this.hands = [
+      { h: makeHand(false), rim: grip(0.18, gripRot), shoulder: new T.Vector3(-0.55, 0.9, 0.6) },          // destra (lato porta)
+      { h: makeHand(true), rim: grip(-0.18, gripRot), shoulder: new T.Vector3(-0.55, 0.9, 0.14) },          // sinistra: cambia marcia
+    ];
+    const knobGrip = new T.Object3D(); knobGrip.position.set(-0.02, 0.27, 0.035); knobGrip.rotation.set(Math.PI / 2, 0.2, -1.2); sh.add(knobGrip);
+    this.hands[1].knob = knobGrip;
+    const sleeve = mat(0x22252c, { roughness: 0.95 });
+    for (const hd of this.hands) {
+      const cyl = (r0, r1) => { const g = new T.CylinderGeometry(r1, r0, 1, 12, 1, true); g.translate(0, 0.5, 0); const m = new T.Mesh(g, sleeve); m.material.side = T.DoubleSide; I.add(m); return m; };
+      hd.upper = cyl(0.046, 0.042); hd.fore = cyl(0.041, 0.034);
+      hd.elbow = add(new T.SphereGeometry(0.043, 12, 8), sleeve, 0, 0, 0);
+    }
+    this.shiftK = 0; this.shiftT = 1; this.lastGear = null;
+
+    // sedili a guscio con fianchetti, poggiatesta e cuciture rosse
     for (const z of [0.37, -0.37]) {
       add(new T.BoxGeometry(0.5, 0.12, 0.48), soft, -0.28, 0.46, z);
       add(new T.BoxGeometry(0.12, 0.62, 0.48), soft, -0.56, 0.78, z, 0, 0, -0.22);
+      for (const s of [1, -1]) add(new T.BoxGeometry(0.16, 0.5, 0.06), soft, -0.52, 0.76, z + s * 0.22, 0, 0, -0.22);   // fianchetti
       add(new T.BoxGeometry(0.1, 0.18, 0.28), soft, -0.66, 1.14, z, 0, 0, -0.22);
       add(new T.BoxGeometry(0.09, 0.5, 0.06), mat(0xc42a1a), -0.55, 0.8, z + 0.14, 0, 0, -0.22);            // cucitura rossa
     }
-    // specchietto retrovisore
-    add(new T.BoxGeometry(0.04, 0.07, 0.26), dash, 0.6, 1.17, 0);
-    add(new T.PlaneGeometry(0.24, 0.06), new T.MeshPhysicalMaterial({ color: 0x8090a0, metalness: 1, roughness: 0.05 }), 0.578, 1.17, 0, 0, -Math.PI / 2, 0);
+    // consolle centrale rivolta verso il pilota (cockpit avvolgente della JZA80): tre strumenti supplementari
+    const stack = add(new T.BoxGeometry(0.06, 0.2, 0.34), dash, 0.42, 0.79, 0.03, 0, -0.18, 0);
+    void stack;
+    this.auxCanvas = document.createElement('canvas'); this.auxCanvas.width = 288; this.auxCanvas.height = 96;
+    this.auxTex = new T.CanvasTexture(this.auxCanvas); this.auxTex.encoding = T.sRGBEncoding;
+    const aux = add(new T.PlaneGeometry(0.27, 0.09), new T.MeshBasicMaterial({ map: this.auxTex, toneMapped: false }), 0.388, 0.84, 0.035, 0, -Math.PI / 2 - 0.18, 0);
+    void aux;
+    // clima: tre manopole, display e pulsante d'emergenza
+    for (const dz of [-0.09, 0, 0.09]) {
+      const k = new T.CylinderGeometry(0.02, 0.022, 0.025, 16); k.rotateZ(Math.PI / 2);
+      add(k, alu, 0.385, 0.735, 0.03 + dz, 0, -0.18, 0);
+    }
+    add(new T.BoxGeometry(0.01, 0.022, 0.03), new T.MeshBasicMaterial({ color: 0xff3a22 }), 0.388, 0.775, 0.03, 0, -0.18, 0);
+    this.auxGlow = add(new T.PlaneGeometry(0.1, 0.02), new T.MeshBasicMaterial({ color: 0xffa24a, toneMapped: false }), 0.387, 0.70, 0.03, 0, -Math.PI / 2 - 0.18, 0);
+    // pedaliera, alette parasole, maniglie, altoparlanti e pulsantiere nelle porte
+    for (const [dz, w] of [[0.48, 0.07], [0.37, 0.09], [0.26, 0.05]]) add(new T.BoxGeometry(0.02, 0.1, w), alu, 0.5, 0.45, dz, 0, 0, -0.4);
+    for (const z of [0.36, -0.36]) add(new T.BoxGeometry(0.2, 0.012, 0.36), mat(0x3a3836, { roughness: 1 }), 0.32, 1.185, z, 0, 0, 0.12);
+    for (const z of [0.81, -0.81]) {
+      const sp = new T.CircleGeometry(0.06, 20); add(sp, mat(0x070708, { roughness: 0.9 }), 0.25, 0.48, z, 0, z > 0 ? Math.PI : 0, 0);
+      add(new T.BoxGeometry(0.12, 0.02, 0.05), dash, 0.05, 0.82, z * 0.95);
+      add(new T.BoxGeometry(0.04, 0.01, 0.02), mat(0x8899aa), 0.04, 0.835, z * 0.94);
+    }
+    add(new T.PlaneGeometry(1.25, 1.06), twoSided(0x34323a), -0.08, 1.205, 0, Math.PI / 2);                   // cielo in tessuto
+    // luce del quadro: i quadranti arancio illuminano mani e volante di notte
+    this.dashLight = new T.PointLight(0xff8a3a, 0.5, 0.6, 2); this.dashLight.position.set(0.4, 0.98, 0.37); I.add(this.dashLight);
+
+    // specchietto retrovisore vero: un'altra telecamera guarda indietro e disegna su una texture
+    add(new T.BoxGeometry(0.04, 0.075, 0.27), dash, 0.6, 1.15, 0);
+    this.mirrorRT = new T.WebGLRenderTarget(320, 96);
+    const mg = new T.PlaneGeometry(0.25, 0.064); const uv = mg.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i));                                            // immagine speculare
+    this.mirror = add(mg, new T.MeshBasicMaterial({ map: this.mirrorRT.texture, toneMapped: false }), 0.578, 1.15, 0, 0, -Math.PI / 2, 0);
+    this.mirrorCam = new T.PerspectiveCamera(22, 320 / 96, 0.3, 300);
+    this.mirrorCam.position.set(0.55, 1.15, 0); this.mirrorCam.lookAt(-10, 1.0, 0); I.add(this.mirrorCam);
+    add(new T.CylinderGeometry(0.008, 0.008, 0.08, 6), dash, 0.62, 1.2, 0);
   }
 
+  // strumenti supplementari (pressione e temperatura olio, voltmetro) disegnati a lancette
+  drawAux(s) {
+    const c = this.auxCanvas.getContext('2d'), W = 96;
+    c.fillStyle = '#050506'; c.fillRect(0, 0, 288, 96);
+    const rpm = s.rpm || 0, vals = [s.running ? Math.min(1, 0.25 + rpm / 9000) : 0, s.running ? 0.55 + Math.min(0.15, rpm / 60000) : 0.1, s.running ? 0.72 : s.ign ? 0.6 : 0];
+    ['OIL', 'TEMP', 'VOLT'].forEach((lab, i) => {
+      const cx = W * i + 48, cy = 50;
+      c.fillStyle = '#0c0c0f'; c.beginPath(); c.arc(cx, cy, 42, 0, 7); c.fill();
+      c.strokeStyle = '#8b8f98'; c.lineWidth = 3; c.beginPath(); c.arc(cx, cy, 42, 0, 7); c.stroke();
+      c.strokeStyle = '#ff9a3a'; c.lineWidth = 2;
+      for (let k = 0; k <= 8; k++) { const a = Math.PI * (0.8 + k * 0.175); c.beginPath(); c.moveTo(cx + Math.cos(a) * 30, cy + Math.sin(a) * 30); c.lineTo(cx + Math.cos(a) * 37, cy + Math.sin(a) * 37); c.stroke(); }
+      c.fillStyle = '#ffb36a'; c.font = 'bold 13px monospace'; c.textAlign = 'center'; c.fillText(lab, cx, cy + 26);
+      const a = Math.PI * (0.8 + vals[i] * 1.4);
+      c.strokeStyle = '#ff3a22'; c.lineWidth = 3; c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * 34, cy + Math.sin(a) * 34); c.stroke();
+      c.fillStyle = '#222'; c.beginPath(); c.arc(cx, cy, 5, 0, 7); c.fill();
+    });
+    this.auxTex.needsUpdate = true;
+  }
+
+  // braccia: cinematica inversa a due segmenti (spalla, gomito, polso), gomito verso il basso e in fuori
+  updateHands(dt, s) {
+    if (!this.hands) return;
+    const T = this.T, I = this.interior;
+    if (this.lastGear !== null && s.gear !== this.lastGear && this.shiftT >= 1) this.shiftT = 0;
+    this.lastGear = s.gear;
+    this.shiftT = Math.min(1, this.shiftT + dt / 0.6);
+    const e = (x) => x * x * (3 - 2 * x), t = this.shiftT;
+    this.shiftK = t >= 1 ? 0 : t < 0.35 ? e(t / 0.35) : t < 0.6 ? 1 : e((1 - t) / 0.4);
+    I.updateMatrixWorld(true);
+    const inv = new T.Matrix4().copy(I.matrixWorld).invert(), m = new T.Matrix4(), p = new T.Vector3(), q = new T.Quaternion(), sc = new T.Vector3();
+    const local = (o) => { m.multiplyMatrices(inv, o.matrixWorld); m.decompose(p, q, sc); return [p.clone(), q.clone()]; };
+    const up = new T.Vector3(0, 1, 0), L1 = 0.31, L2 = 0.3;
+    this.hands.forEach((hd, i) => {
+      const [pr, qr] = local(hd.rim);
+      let pos = pr, rot = qr;
+      if (hd.knob && this.shiftK > 0) { const [pk, qk] = local(hd.knob); pos = pr.clone().lerp(pk, this.shiftK); rot = qr.clone().slerp(qk, this.shiftK); }
+      hd.h.position.copy(pos); hd.h.quaternion.copy(rot);
+      hd.h.updateMatrixWorld(true);
+      const [w] = local(hd.h.userData.wrist), S = hd.shoulder;
+      const dir = w.clone().sub(S); let d = dir.length(); dir.normalize(); d = Math.min(d, L1 + L2 - 0.001);
+      const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d), hgt = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+      const pole = new T.Vector3(-0.2, -1, i === 0 ? 0.55 : -0.35);
+      pole.sub(dir.clone().multiplyScalar(pole.dot(dir))).normalize();
+      const el = S.clone().add(dir.clone().multiplyScalar(a)).add(pole.multiplyScalar(hgt));
+      const seg = (mesh, A, B) => { const v = B.clone().sub(A); mesh.position.copy(A); mesh.quaternion.setFromUnitVectors(up, v.clone().normalize()); mesh.scale.set(1, v.length(), 1); };
+      seg(hd.upper, S, el); seg(hd.fore, el, w); hd.elbow.position.copy(el);
+    });
+  }
+
+  // lo specchietto si ridisegna solo dall'abitacolo, un fotogramma su due
+  renderMirror() {
+    if (!this.mirrorRT || !this.cockpitOn || (this.mf = (this.mf || 0) + 1) % 2) return;
+    const r = this.renderer, prev = r.getRenderTarget();
+    this.mirror.visible = false; this.interior.visible = false;
+    r.setRenderTarget(this.mirrorRT); r.render(this.scene, this.mirrorCam); r.setRenderTarget(prev);
+    this.mirror.visible = true; this.interior.visible = true;
+  }
   // il quadro strumenti del gioco disegnato sul cruscotto
   setCluster(canvas) {
     const T = this.T;
@@ -537,18 +681,26 @@ class Garage3D {
       this.flameMat.color.setHSL(0.07 + Math.random() * 0.03, 1, 0.55);
     });
     // abitacolo: volante, leva del cambio, quadro aggiornato
-    if (this.steerWheel) this.steerWheel.rotation.x = -(s.steer || 0) * 3.2;
+    if (this.steerWheel) {
+      const wr = Math.max(-1.6, Math.min(1.6, -(s.steer || 0) * 3.2));
+      this.steerWheel.rotation.x = wr; if (this.gripRot) this.gripRot.rotation.x = Math.max(-0.6, Math.min(0.6, wr));
+    }
     if (this.shifter) {
       const pos = { '-1': [-0.06, 0.07], 0: [0, 0], 1: [0.06, 0.07], 2: [-0.06, 0.07], 3: [0.06, 0], 4: [-0.06, 0], 5: [0.06, -0.07], 6: [-0.06, -0.07] }[s.gear ?? 0] || [0, 0];
       this.shifter.position.x += (0.12 + pos[0] - this.shifter.position.x) * Math.min(1, dt * 18);
       this.shifter.position.z += (pos[1] - this.shifter.position.z) * Math.min(1, dt * 18);
     }
     if (this.clusterTex && this.cockpitOn && (this.cf = (this.cf || 0) + 1) % 2 === 0) this.clusterTex.needsUpdate = true;
+    this.updateHands(dt, s);
+    if (this.cockpitOn) {
+      if (this.cf % 6 === 0) this.drawAux(s);
+      this.dashLight.intensity = s.ign ? 0.5 : 0.05;
+    }
     // frecce
     const bl = s.signal && Math.floor(st.t * 3) % 2 === 0;
     (this.turnLights || []).forEach((b) => { b.sp.visible = !!(bl && (s.signal === 'L') === b.left); });
     if (this.beforeRender) this.beforeRender(dt, s);
     if (this.controls.enabled) this.controls.update();
-    if (this.visible) this.draw();
+    if (this.visible) { this.renderMirror(); this.draw(); }
   }
 }
