@@ -370,6 +370,43 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 .smp-list button { border: 1px solid var(--line); background: transparent; height: 26px; color: var(--muted); }
 .samples .vol small { color: var(--muted); font-size: 12px; }
 
+/* ---- intro: scena pixel art a tempo di musica, titolo, menu ---- */
+.gate.intro { background: #000; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: hidden; --e: 0; }
+.intro .intro-cv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; opacity: .55; transition: opacity 1.6s ease; }
+.intro.playing .intro-cv { opacity: 1; }
+.intro-vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.75)); }
+.intro-clock { position: absolute; top: 9%; left: 50%; transform: translateX(-50%); font: 400 clamp(20px, 3.4vw, 34px)/1 "Share Tech Mono", monospace; letter-spacing: .14em; color: #ff4d6a; text-shadow: 0 0 12px rgba(255,60,90,.8); opacity: 0; transition: opacity .6s; }
+.intro.playing .intro-clock { opacity: 1; }
+.intro-clock.mid { color: #fff; text-shadow: 0 0 18px #ff2e88, 0 0 40px #ff2e88; animation: blinkMid 1s steps(2) 3; }
+.intro.title .intro-clock, .intro-clock.gone { opacity: 0; transition: opacity 1.2s; }
+@keyframes blinkMid { 50% { opacity: .2; } }
+.intro-title { position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%) scale(1.6); display: grid; justify-items: center; gap: 4px; opacity: 0; pointer-events: none; text-transform: uppercase; width: max-content; max-width: 100vw; text-align: center; white-space: nowrap; }
+.intro.title .intro-title { opacity: 1; transform: translate(-50%, -50%) scale(calc(1 + var(--e) * .04)); transition: opacity .25s, transform .5s cubic-bezier(.2,1.6,.4,1); }
+.intro-title .t1 { position: relative; font: 400 clamp(76px, 15vw, 190px)/.9 var(--f-display); font-style: italic; color: #fff; letter-spacing: .02em;
+  text-shadow: calc(var(--e) * 6px) 0 0 rgba(255,46,136,.85), calc(var(--e) * -6px) 0 0 rgba(46,230,255,.85), 0 0 30px rgba(255,46,136,.6), 0 0 80px rgba(46,230,255,.35); }
+.intro-title .t2 { font: 400 clamp(26px, 5vw, 62px)/1 var(--f-display); font-style: italic; letter-spacing: .32em; padding-left: .32em; color: var(--amber); text-shadow: 0 0 16px rgba(46,230,255,.8); }
+.intro-title .t3 { font: 600 clamp(13px, 1.6vw, 18px)/1 var(--f-body); letter-spacing: .5em; padding-left: .5em; color: #ff8fb8; margin-top: 6px; }
+.intro-press { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); display: grid; gap: 6px; justify-items: center; border: 0; background: transparent; color: #fff;
+  font: 400 clamp(18px, 2.6vw, 28px)/1 var(--f-display); letter-spacing: .2em; text-transform: uppercase; text-shadow: 0 0 14px rgba(46,230,255,.9); animation: pressPulse 1.4s ease-in-out infinite; cursor: pointer; }
+.intro-press small { font: 400 12px/1 "Share Tech Mono", monospace; letter-spacing: .2em; color: #8fb3d0; text-shadow: none; }
+@keyframes pressPulse { 50% { opacity: .35; } }
+.intro.playing .intro-press { display: none; }
+.intro .intro-menu { position: absolute; left: 50%; bottom: 6%; transform: translate(-50%, 24px); width: min(520px, calc(100% - 32px)); opacity: 0; pointer-events: none; transition: opacity .7s, transform .7s; background: linear-gradient(180deg, rgba(15,24,40,.88), rgba(7,11,19,.92)); }
+.intro.menu .intro-menu { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.intro-ui { position: absolute; top: 14px; right: 16px; display: flex; gap: 8px; }
+.intro-ui button { border: 1px solid rgba(143,179,208,.35); background: rgba(4,8,14,.6); color: #cfe0ee; padding: 7px 11px; font: 400 13px/1 "Share Tech Mono", monospace; letter-spacing: .08em; display: flex; gap: 6px; align-items: center; }
+.intro-ui small { color: #7f97ad; }
+.intro-ui .off, .intro.muted .intro-ui .on { display: none; }
+.intro.muted .intro-ui .off { display: inline; }
+.intro.menu #introSkip { display: none; }
+.intro-credit { position: absolute; left: 16px; bottom: 12px; font: 400 12px/1 "Share Tech Mono", monospace; letter-spacing: .12em; color: #8fb3d0; opacity: 0; transition: opacity 1s; }
+.intro.playing .intro-credit { opacity: .85; }
+.gate.intro.out { opacity: 0; transition: opacity .9s ease; }
+@media (min-width: 900px) { .intro .intro-menu { left: auto; right: 2.5%; bottom: 7%; width: 360px; transform: translate(0, 24px); } .intro.menu .intro-menu { transform: none; } }
+@media (max-height: 560px) { .intro-title { top: 26%; } .intro .intro-menu { bottom: 3%; } .intro .intro-menu p:first-child { display: none; } }
+@media (max-width: 600px) { .intro-title .t2 { letter-spacing: .14em; padding-left: .14em; } .intro-title .t3 { letter-spacing: .25em; padding-left: .25em; } }
+@media (prefers-reduced-motion: reduce) { .intro-press, .intro-clock.mid { animation: none; } }
+
 /* ---- schermata iniziale ---- */
 .gate {
   position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
@@ -667,14 +704,27 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   </section>
 </div>
 
-<div class="gate" id="gate">
-  <div class="card">
-    <h2>Stanotte si corre</h2>
+<div class="gate intro" id="gate">
+  <canvas class="intro-cv" aria-hidden="true"></canvas>
+  <div class="intro-vig" aria-hidden="true"></div>
+  <div class="intro-clock" aria-hidden="true">23:59:55</div>
+  <div class="intro-title" aria-hidden="true">
+    <span class="t1" data-t="2JZ">2JZ</span>
+    <span class="t2">Night Run</span>
+    <span class="t3">Stanotte si corre</span>
+  </div>
+  <button class="intro-press" id="introPress" type="button">Premi per iniziare<small>Invio · Spazio · tocca</small></button>
+  <div class="card intro-menu" id="introMenu">
     <p>Hai una Supra di serie, € 3.000 in tasca e il serbatoio a tre quarti. Fai soldi con sfide e consegne, monta pezzi in officina e stai lontano dalla polizia in sesta.</p>
-    <p><kbd>I</kbd> quadro, <kbd>Invio</kbd> tenuto premuto per avviare, <kbd>E</kbd> prima marcia, <kbd>W</kbd> gas. Meglio con le cuffie.</p>
+    <p><kbd>I</kbd> quadro, <kbd>Invio</kbd> tenuto premuto per avviare, <kbd>E</kbd> prima marcia, <kbd>W</kbd> gas, <kbd>A</kbd> <kbd>D</kbd> sterzo, <kbd>C</kbd> telecamere. Meglio con le cuffie.</p>
     <button class="go" id="goBtn" type="button">Accendi e parti</button>
     <small>La carriera si salva in questo browser. In modalità libera è tutto sbloccato e non ci sono eventi.</small>
   </div>
+  <div class="intro-ui">
+    <button type="button" id="introMute" aria-label="Musica sì o no (M)"><span class="on">♪ Musica</span><span class="off">♪ Muta</span></button>
+    <button type="button" id="introSkip">Salta ▸<small>Esc</small></button>
+  </div>
+  <div class="intro-credit">♪ Redline at Midnight</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
@@ -695,6 +745,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 <script src="car3d.js"></script>
 <script src="street3d.js"></script>
 <script src="street2d.js"></script>
+<script src="intro.js"></script>
 <script src="game.js"></script>
 <script>
 (() => {
@@ -861,6 +912,14 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   window.addEventListener('keydown', (e) => {
     if (e.target.closest && e.target.closest('input, textarea')) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (intro && intro.active && intro.state !== 'done') {          // durante l'intro i tasti la guidano
+      if (e.repeat) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); intro.advance(); }
+      else if (e.key === 'Escape') intro.skip();
+      else if (e.key.toLowerCase() === 'm') intro.mute();
+      else if (intro.state === 'wait') intro.start();
+      return;
+    }
     let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
     if ([' ', 'w', 's', 'e', 'q'].includes(k) || e.key.startsWith('Arrow')) e.preventDefault();
     if (e.key === 'Enter') { e.preventDefault(); if (game.result) { closeResult(); return; } if (!e.repeat) startOn(); return; }
@@ -1642,8 +1701,17 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
 
   // ---------------------------------------------------------------- avvio
-  function hideGate() { $('gate').hidden = true; }
+  // intro con la canzone: parte al primo tocco (i browser vogliono un gesto per l'audio)
+  const intro = window.NightIntro ? new window.NightIntro($('gate'), { src: 'audio/redline_at_midnight.mp3', onGo: () => $('goBtn').click() }) : null;
+  window.__intro = intro;
+  function hideGate() { if (intro) intro.finish(); else $('gate').hidden = true; }
   $('goBtn').addEventListener('click', () => { ensureAudio(); hideGate(); setTimeout(() => $('btnIgn').focus(), 50); });
+  if (intro) {
+    $('introPress').addEventListener('click', () => intro.start());
+    $('gate').addEventListener('click', (e) => { if (intro.state === 'wait' && !e.target.closest('.intro-ui')) intro.start(); });
+    $('introSkip').addEventListener('click', () => intro.skip());
+    $('introMute').addEventListener('click', () => intro.mute());
+  }
   window.addEventListener('resize', layout);
   if (window.ResizeObserver) new ResizeObserver(() => { if (Math.abs(cv.clientWidth - W) > 1) layout(); }).observe(cv);
   if (game.mode === 'career') for (const k of Object.keys(S.tune)) if (!game.owns(k, S.tune[k])) S.tune[k] = TUNING[k].items[0].id;

@@ -50,6 +50,14 @@ retrotreno (più trazione, più lenta in accelerazione). Tanica (+10 L), kit di 
 fermo), ruota di scorta, zavorra, i pacchi delle consegne (non si buttano durante il lavoro) e i trofei dei
 capi battuti. Si compra e si butta dal pannello del bagagliaio.
 
+**Intro.** All'apertura parte una sigla in pixel art sulla canzone *Redline at Midnight*
+(`audio/redline_at_midnight.mp3`, `intro.js`), legata ai momenti del brano: città di notte e orologio che
+scatta a mezzanotte, alla cassa parte la corsa e arriva la Supra da dietro (quattro fanali tondi, alettone
+ad arco), nel crescendo linee di velocità e contagiri verso la zona rossa, al picco il titolo 2JZ Night Run,
+poi il menu. Fanali, fiammate, lampi e titolo pulsano sui bassi grazie a un inviluppo calcolato in anticipo
+(funziona anche aprendo il file in locale). Invio o tocco per iniziare, Esc per saltare, M per la musica;
+entrando in gioco la canzone sfuma.
+
 ## La carriera
 
 - Si parte con € 3.000, una Supra di serie e 50 litri di benzina (serbatoio da 70, consumo reale).
