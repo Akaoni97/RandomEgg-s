@@ -443,6 +443,31 @@ class StreetGame {
       this.relYaw = Math.max(-1.2, Math.min(1.2, this.relYaw));
       this.laneZ -= v * Math.sin(this.relYaw) * dt;
       sim.grade = MOUNTAIN.slope(d);
+      // traffico: corsia di destra (o = +2) nel nostro senso, corsia di sinistra (o = -2) in senso opposto;
+      // rallentano nelle curve strette. Urtarli ammacca e frena di colpo (frontale molto peggio)
+      if (!this.mtnCars) {
+        const cols = [0x2b4c7e, 0xd8d8d0, 0x1c1c22, 0x8a1c1c, 0x3f6f4a, 0xb9a46a, 0x5a5f68];
+        this.mtnCars = [];
+        for (let k = 0; k < 4; k++) this.mtnCars.push({ s: d + 90 + k * 110, o: 2, dir: 1, v: 0, base: 13 + Math.random() * 6, color: cols[k % cols.length] });
+        for (let k = 0; k < 4; k++) this.mtnCars.push({ s: d + 140 + k * 150, o: -2, dir: -1, v: 0, base: 14 + Math.random() * 7, color: cols[(k + 3) % cols.length] });
+      }
+      for (const c of this.mtnCars) {
+        const tgt = Math.min(c.base, Math.sqrt(3.2 / Math.max(0.002, Math.abs(MOUNTAIN.kappa(c.s)))));
+        c.v += (tgt - c.v) * Math.min(1, dt * 0.8);
+        c.s += c.dir * c.v * dt;
+        const rel = c.s - d;
+        if (c.dir > 0 && (rel < -70 || rel > 520)) { c.s = d + 260 + Math.random() * 200; c.v = c.base * 0.8; }
+        if (c.dir < 0 && rel < -70) { c.s = d + 300 + Math.random() * 220; c.v = c.base; }
+        if (Math.abs(rel) < 4.3 && Math.abs(c.o - this.laneZ) < 1.75) {
+          if (!c.hit) {
+            c.hit = true; const head = c.dir < 0;
+            sim.v *= head ? 0.15 : 0.55; sim.damage = Math.min(1, sim.damage + (head ? 0.3 : 0.12));
+            this.laneZ -= Math.sign(c.o - this.laneZ || 1) * 0.6; this.relYaw = (this.relYaw || 0) * 0.3;
+            this.s.crashes = (this.s.crashes || 0) + 1; this.fx.push({ k: 'crash' });
+            this.say(head ? 'Frontale! Resta nella tua corsia' : 'Tamponamento', 'bad');
+          }
+        } else if (Math.abs(rel) > 7) c.hit = false;
+      }
       const lim = MOUNTAIN.half - 1.0;
       this.rail = 0;
       if (Math.abs(this.laneZ) > lim) {

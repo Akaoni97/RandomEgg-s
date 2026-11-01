@@ -178,14 +178,38 @@ class Street3D extends Garage3D {
     }
     // montagne lontane: coni grigio-blu con neve, ruotano solo con la direzione della strada
     const far = this.mFar = new T.Group(); M.add(far);
-    const mm = new T.MeshStandardMaterial({ color: 0x2c3646, roughness: 1, fog: false }), snow = new T.MeshStandardMaterial({ color: 0xdfe6f0, roughness: 0.9, fog: false });
+    const mm = new T.MeshLambertMaterial({ color: 0x2a3a4e }), snow = new T.MeshLambertMaterial({ color: 0xe8eef6 });
     for (let k = 0; k < 26; k++) {
-      const a = k / 26 * Math.PI * 2 + Math.random() * 0.2, r = 330 + Math.random() * 120, h = 80 + Math.random() * 120, w = 90 + Math.random() * 90;
-      const m = new T.Mesh(new T.ConeGeometry(w, h, 7), mm); m.position.set(Math.cos(a) * r, h / 2 - 8, Math.sin(a) * r); far.add(m);
-      const cap = new T.Mesh(new T.ConeGeometry(w * 0.3, h * 0.3, 7), snow); cap.position.set(m.position.x, h - 8 - h * 0.15 + 0.5, m.position.z); far.add(cap);
+      const a = k / 26 * Math.PI * 2 + Math.random() * 0.2, r = 520 + Math.random() * 260, h = 70 + Math.random() * 110, w = 110 + Math.random() * 110;
+      const m = new T.Mesh(new T.ConeGeometry(w, h, 7), mm); m.position.set(Math.cos(a) * r, h / 2 - 40, Math.sin(a) * r); far.add(m);
+      const cap = new T.Mesh(new T.ConeGeometry(w * 0.3, h * 0.3, 7), snow); cap.position.set(m.position.x, h - 40 - h * 0.15 + 0.5, m.position.z); far.add(cap);
     }
+    // cupola del cielo: gradiente verticale (zenit, orizzonte), segue la telecamera; colori dati dall'ora
+    this.skyU = { top: { value: new T.Color(0x04060b) }, hor: { value: new T.Color(0x0a0e18) }, sun: { value: new T.Color(0x000000) } };
+    const dome = new T.Mesh(new T.SphereGeometry(1000, 32, 16), new T.ShaderMaterial({
+      uniforms: this.skyU, side: T.BackSide, depthWrite: false, fog: false,
+      vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: `uniform vec3 top, hor, sun; varying vec3 vP;
+        void main(){ float h = clamp(vP.y, -0.2, 1.0); vec3 c = mix(hor, top, pow(max(h, 0.0), 0.55));
+          float sd = max(0.0, dot(vP, normalize(vec3(0.6, 0.25, 0.4)))); c += sun * pow(sd, 6.0) * 0.6;
+          gl_FragColor = vec4(c, 1.0); }`,
+    }));
+    dome.renderOrder = -10; M.add(dome); this.dome = dome;
     const ground = new T.Mesh(new T.PlaneGeometry(1400, 1400), new T.MeshStandardMaterial({ color: 0x18200f, roughness: 1 }));
     ground.rotation.x = -Math.PI / 2; ground.position.y = -72; M.add(ground);
+  }
+  // traffico di montagna: auto nella propria corsia o in senso opposto, posizionate lungo la curva
+  mountainTraffic(d, game) {
+    const cars = (game && game.mtnCars) || [];
+    this.mCars = this.mCars || [];
+    cars.forEach((c, i) => {
+      let m = this.mCars[i];
+      if (!m || m.userData.col !== c.color) { if (m) this.mtn.remove(m); m = this.makeCar('traffic', c.color); m.userData.col = c.color; this.mtn.add(m); this.mCars[i] = m; }
+      const [x, z, a, hy] = this.toCar(c.s, c.o, d);
+      m.visible = c.s - d > -80 && c.s - d < 330;
+      m.position.set(x, hy, z); m.rotation.y = a + (c.dir < 0 ? Math.PI : 0);
+      if (m.userData.wheels) m.userData.wheels.forEach((w) => { w.userData.spin.rotation.z = -(c.s / 0.33) * w.userData.dir * c.dir; });
+    });
   }
   setTrack(mode) {
     if (mode === this.track) return;
@@ -193,6 +217,7 @@ class Street3D extends Garage3D {
     if (mode === 'mountain' && !this.mtn) this.buildMountain();
     const mtn = mode === 'mountain';
     if (this.mtn) this.mtn.visible = mtn;
+    this.camera.far = mtn ? 1300 : 400; this.camera.updateProjectionMatrix();
     for (const o of this.cityObjs || []) o.visible = !mtn;
     if (this.stars) this.stars.visible = this.moon.visible;
   }
@@ -200,7 +225,9 @@ class Street3D extends Garage3D {
     const V = this.valley; for (let i = 1; i < V.length; i++) if (o >= V[i][0]) { const [o0, y0] = V[i - 1], [o1, y1] = V[i]; return y0 + (y1 - y0) * (o - o0) / (o1 - o0); }
     return V[V.length - 1][1];
   }
-  updateMountain(d) {
+  updateMountain(d, game) {
+    if (this.dome) this.dome.position.copy(this.camera.position);
+    this.mountainTraffic(d, game);
     const N = this.mN, STEP = this.mStep, BACK = this.mBack;
     const fill = (mesh) => {
       const p = mesh.geometry.attributes.position.array, uv = mesh.geometry.attributes.uv.array, w = mesh.userData.w, wall = mesh.userData.wall;
@@ -242,7 +269,14 @@ class Street3D extends Garage3D {
       const sun = this.sun = new T.Sprite(this.glowMat('#fff2d0', 1)); sun.material.fog = false; sun.scale.set(70, 70, 1); sun.position.set(260, 120, 160); this.scene.add(sun);
     }
     const sky = C(0x04060b).lerp(C(this.track === 'mountain' ? 0x5f8fc4 : 0x7aa2c8), d).lerp(C(0xd98a58), ss * 0.55).lerp(C(d > 0.4 ? 0x6c7684 : 0x0a0d14), wet * 0.7);
-    this.scene.background = sky; this.scene.fog.color.copy(sky); if (this.track === 'mountain') { this.scene.fog.near = this.rainOn ? 30 : 110; this.scene.fog.far = this.rainOn ? 220 : 650; } else if (!this.rainOn) { this.scene.fog.near = 45 + d * 40; this.scene.fog.far = 175 + d * 140; }
+    this.scene.background = sky; this.scene.fog.color.copy(sky);
+    if (this.skyU) {
+      const top = C(0x04060b).lerp(C(0x1f5fae), d).lerp(C(0x3a4a78), ss * 0.5).lerp(C(0x4a5260), wet * 0.75);
+      const hor = C(0x0b1020).lerp(C(0x9cc4e8), d).lerp(C(0xf0a060), ss * 0.7).lerp(C(0x8a929c), wet * 0.75);
+      this.skyU.top.value.copy(top).convertSRGBToLinear(); this.skyU.hor.value.copy(hor).convertSRGBToLinear();
+      this.skyU.sun.value.copy(C(0xfff0c8).lerp(C(0xff9050), ss)).multiplyScalar(wet > 0.5 ? 0 : Math.max(d, ss)).convertSRGBToLinear();
+      if (this.track === 'mountain') { this.scene.fog.color.copy(hor); this.scene.background = hor; }
+    } if (this.track === 'mountain') { this.scene.fog.near = this.rainOn ? 30 : 140; this.scene.fog.far = this.rainOn ? 260 : 1100; } else if (!this.rainOn) { this.scene.fog.near = 45 + d * 40; this.scene.fog.far = 175 + d * 140; }
     this.hemi.intensity = this.dl.hemi + d * 0.42 - wet * d * 0.15; this.hemi.color.copy(C(0x5d7cff).lerp(C(0xb8c8e0), d)); this.hemi.groundColor.copy(C(0x120a06).lerp(C(0x3a3020), d));
     this.key.intensity = this.dl.key + d * 1.05 * (1 - wet * 0.6); this.key.color.copy(C(0x9fb6ff).lerp(C(0xfff1dc), d).lerp(C(0xffb070), ss * 0.6));
     this.rim.intensity = this.dl.rim * (1 - d * 0.7);
@@ -907,7 +941,7 @@ class Street3D extends Garage3D {
     this.updateFx(dt, s, dist);
     this.updateRain(dt, s);
     if (game && game.track !== this.track) this.setTrack(game.track);
-    if (this.track === 'mountain') this.updateMountain(dist);
+    if (this.track === 'mountain') this.updateMountain(dist, game);
     // un po' di "velocità": campo visivo che si allarga
     if (this.finPass) {
       const U = this.finPass.uniforms, sp = Math.max(0, Math.min(1, (Math.abs(s.v) - 12) / 45));
