@@ -638,7 +638,9 @@ class Street3D extends Garage3D {
     // cambio corsia morbido: la scocca sterza verso la nuova corsia e si inclina in fuori
     const zT = game ? game.laneZ : 3.5;
     this.lz = this.lz ?? zT; this.lzV = this.lzV || 0;
-    const acc = (zT - this.lz) * 9 - this.lzV * 6;       // inseguitore critico, ~0,7 s
+    // inseguitore critico: ~0,7 s nei cambi di corsia automatici, molto più stretto quando sterza il pilota
+    const kk = game && game.free ? 120 : 9, cc = game && game.free ? 22 : 6;
+    const acc = (zT - this.lz) * kk - this.lzV * cc;
     this.lzV += acc * dt; this.lz += this.lzV * dt;
     const z = this.lz;
     this.root.position.z = z;
@@ -672,7 +674,7 @@ class Street3D extends Garage3D {
     // volante: segue le mani del pilota quando sterza (anche da fermo), altrimenti la traiettoria
     const auto = Math.atan2(this.lzV || 0, Math.max(3, Math.abs(s.v))) * 2.2, held = game ? game.steerIn || 0 : 0;
     const tgt = Math.abs(held) > 0.05 ? -held * (0.42 - Math.min(0.22, Math.abs(s.v) * 0.006)) : auto;
-    this.steerVis = (this.steerVis || 0) + (tgt - (this.steerVis || 0)) * Math.min(1, dt * 7);
+    this.steerVis = (this.steerVis || 0) + (tgt - (this.steerVis || 0)) * Math.min(1, dt * 14);
     s.steer = this.steerVis;
     if (game) for (const f of game.fx) if (f.k === 'crash') this.sparkT = 0.35;
     this.updateFx(dt, s, dist);

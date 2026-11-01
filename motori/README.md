@@ -49,6 +49,13 @@ che segue la marcia, sedili con cuciture rosse e il quadro strumenti del gioco d
 Con qualità *alta* c'è il bloom (fari, insegne, fiammate brillano) con tonemapping ACES e vignettatura;
 *bassa* spegne post-processo e ombre per i computer lenti.
 
+**Sterzo reattivo.** Tenendo premuto A/D la Supra risponde subito (velocità laterale che arriva in un
+decimo di secondo e cresce con l'andatura) e la vista 3D la segue senza ritardo; il volante gira con le mani
+quasi istantaneamente. Le mani sono superfici continue: palmo che si allarga dal polso alle nocche, dita
+affusolate a tre falangi con le articolazioni, pollice carnoso, unghie, orologio con vetro. Nell'abitacolo
+anche plafoniera, maniglia sul montante, tweeter, cinture, battitacco, logo sul volante e schema delle marce
+sul pomello.
+
 **Abitacolo, come nei simulatori.** La testa del pilota è una molla smorzata: va indietro in spinta, avanti
 in frenata, di lato nei cambi corsia e guarda verso dove sterzi in proporzione alla velocità (look to apex),
 con lo sguardo stabilizzato lontano davanti al cofano, come fanno le telecamere di Assetto Corsa, rFactor 2

@@ -308,7 +308,7 @@ test('sterzo libero: si va dove si vuole, si resta lì, cordolo come limite', ()
   sim.shift(1);
   play(sim, game, 6, flatOut);
   const z0 = game.laneZ;
-  game.steerHold(1); play(sim, game, 0.6, flatOut); game.steerHold(0);
+  game.steerHold(1); play(sim, game, 0.3, flatOut); game.steerHold(0);
   const z1 = game.laneZ;
   assert.ok(z1 < z0 - 0.3, `a sinistra: ${z0.toFixed(2)} -> ${z1.toFixed(2)}`);
   play(sim, game, 2, flatOut);

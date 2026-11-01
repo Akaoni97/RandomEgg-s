@@ -408,7 +408,7 @@ class Garage3D {
 
     // mani umane: dorso arrotondato, quattro dita a tre falangi che si avvolgono sulla corona,
     // pollice a due falangi sul lato interno, nocche, polso; orologio al polso sinistro
-    const skin = mat(0x6e4230, { roughness: 0.6, envMapIntensity: 0.02, emissive: 0x1c0a05 }), nail = mat(0x9a6e60, { roughness: 0.35 });
+    const skin = mat(0x6e4230, { roughness: 0.52, envMapIntensity: 0.04, emissive: 0x1c0a05, side: T.DoubleSide }), nail = mat(0xb08878, { roughness: 0.25 });
     const cap = (A, B, r, m, parent) => {
       const v = B.clone().sub(A), len = v.length();
       const g = new T.CapsuleGeometry(r, Math.max(0.001, len), 4, 10);
@@ -416,41 +416,59 @@ class Garage3D {
       o.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), v.normalize()); parent.add(o); return o;
     };
     const V = (x, y, z) => new T.Vector3(x, y, z);
+    // superfici continue: un tubo a sezione ellittica lungo una curva, con raggio variabile e punte arrotondate
+    const sweep = (pts, prof, wAxis, parent, m = skin, n = 22, seg = 14) => {
+      const curve = new T.CatmullRomCurve3(pts), pos = [], idx = [];
+      for (let i = 0; i <= n; i++) {
+        const t = i / n, p = curve.getPoint(t), tg = curve.getTangent(t);
+        const w = wAxis.clone().sub(tg.clone().multiplyScalar(wAxis.dot(tg))).normalize(), bn = tg.clone().cross(w).normalize();
+        const [ra, rb] = prof(t);
+        for (let k = 0; k < seg; k++) { const a = k / seg * Math.PI * 2; pos.push(p.x + w.x * Math.cos(a) * ra + bn.x * Math.sin(a) * rb, p.y + w.y * Math.cos(a) * ra + bn.y * Math.sin(a) * rb, p.z + w.z * Math.cos(a) * ra + bn.z * Math.sin(a) * rb); }
+      }
+      for (let i = 0; i < n; i++) for (let k = 0; k < seg; k++) { const a = i * seg + k, b2 = i * seg + (k + 1) % seg, c = a + seg, d = b2 + seg; idx.push(a, c, b2, b2, c, d); }
+      for (const [ring, flip] of [[0, true], [n, false]]) {
+        const ctr = curve.getPoint(ring / n); const ci = pos.length / 3; pos.push(ctr.x, ctr.y, ctr.z);
+        for (let k = 0; k < seg; k++) { const a = ring * seg + k, b2 = ring * seg + (k + 1) % seg; if (flip) idx.push(ci, a, b2); else idx.push(ci, b2, a); }
+      }
+      const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+      const o = new T.Mesh(g, m); parent.add(o); return o;
+    };
+    const round = (t, e = 0.14) => (t > 1 - e ? Math.sqrt(Math.max(0, 1 - ((t - 1 + e) / e) ** 2)) : 1);
+    const bump = (t, c, w = 0.07) => Math.exp(-(((t - c) / w) ** 2));
     const makeHand = (mirror) => {
       const h = new T.Group();
-      // dorso e palmo: ellissoide schiacciato dietro e fuori dalla corona
-      // metacarpo fra nocche e polso: dorso (verso fuori) e palmo (verso la corona)
-      const back = add(new T.SphereGeometry(1, 20, 14), skin, -0.079, -0.004, 0.041, 0, -0.25, 0, h);
-      back.scale.set(0.038, 0.041, 0.014);
-      const palm = add(new T.SphereGeometry(1, 16, 12), skin, -0.072, -0.006, 0.024, 0, -0.25, 0, h);
-      palm.scale.set(0.034, 0.038, 0.014);
-      const pad = add(new T.SphereGeometry(1, 12, 10), skin, -0.07, 0.022, 0.012, 0, 0, 0, h);   // eminenza del pollice
-      pad.scale.set(0.024, 0.016, 0.014);
-      // dita: articolazioni su un arco attorno al tubo della corona (raggio 0,024)
-      const lens = [0.95, 1, 0.97, 0.8], rads = [0.0088, 0.0092, 0.009, 0.0078];
+      // dorso e palmo in un pezzo: si allarga dal polso alle nocche e si appiattisce
+      sweep([V(-0.122, -0.017, 0.052), V(-0.098, -0.008, 0.045), V(-0.07, -0.002, 0.037), V(-0.047, 0.0, 0.031)],
+        (t) => [0.021 + 0.022 * Math.min(1, t * 1.4), (0.015 + 0.004 * Math.sin(t * Math.PI)) * Math.max(0.6, round(t, 0.12))], V(0, 1, 0), h, skin, 20, 18);
+      const pad = add(new T.SphereGeometry(1, 16, 12), skin, -0.074, 0.02, 0.018, 0, 0, 0, h);   // eminenza del pollice
+      pad.scale.set(0.022, 0.017, 0.013);
+      // dita: tre falangi in un'unica superficie, nocche e articolazioni appena gonfie, punta arrotondata, unghia
+      const lens = [0.95, 1, 0.97, 0.8], rads = [0.0086, 0.0091, 0.0088, 0.0075];
       h.userData.fingers = [];
       for (let i = 0; i < 4; i++) {
-        const y = 0.031 - i * 0.0205, rr = 0.024 + rads[i] + 0.001, k = lens[i];
+        const y = 0.031 - i * 0.0205, r0 = rads[i], rr = 0.024 + r0 + 0.001, k = lens[i];
         const ph = [2.3, 1.35, 0.55 - 0.2 * (1 - k), -0.15 * k];
         const pts = ph.map((a, j) => V(Math.cos(a) * (rr + (j === 0 ? 0.008 : 0)), y - j * 0.0015, Math.sin(a) * (rr + (j === 0 ? 0.008 : 0))));
         pts[0].x -= 0.012;
         const f = new T.Group(); h.add(f); h.userData.fingers.push(f);
-        for (let j = 0; j < 3; j++) cap(pts[j], pts[j + 1], rads[i] * (1 - j * 0.1), skin, f);
-        const kn = add(new T.SphereGeometry(rads[i] * 1.15, 10, 8), skin, pts[0].x, pts[0].y, pts[0].z, 0, 0, 0, f);
-        void kn;
-        add(new T.SphereGeometry(rads[i] * 0.75, 8, 6), nail, pts[3].x, pts[3].y, pts[3].z, 0, 0, 0, f);
+        const root = V(-0.058, y * 0.8, 0.034);
+        sweep([root, ...pts], (t) => { const r = r0 * (1.12 - 0.3 * t + 0.09 * bump(t, 0.3) + 0.06 * bump(t, 0.58) + 0.05 * bump(t, 0.8)) * round(t, 0.1); return [r * 1.08, r * 0.92]; }, V(0, 1, 0), f, skin, 26, 12);
+        const tip = pts[3], out = V(Math.cos(ph[3]), 0, Math.sin(ph[3]));
+        const nl = add(new T.SphereGeometry(1, 10, 8), nail, tip.x + out.x * r0 * 0.5, tip.y, tip.z + out.z * r0 * 0.5, 0, -ph[3], 0, f);
+        nl.scale.set(r0 * 0.25, r0 * 0.75, r0 * 0.85);
+        nl.position.add(V(Math.sin(ph[3]), 0, -Math.cos(ph[3])).multiplyScalar(-r0 * 0.6));
       }
-      // pollice: dalla base del palmo gira sul lato interno della corona
-      const t0 = V(-0.062, 0.028, 0.006), t1 = V(-0.038, 0.04, -0.022), t2 = V(-0.012, 0.042, -0.026);
-      cap(t0, t1, 0.0098, skin, h); cap(t1, t2, 0.0088, skin, h);
-      add(new T.SphereGeometry(0.0075, 8, 6), nail, t2.x, t2.y, t2.z, 0, 0, 0, h);
-      // polso, polsino della giacca
-      cap(V(-0.06, -0.004, 0.03), V(-0.115, -0.018, 0.05), 0.022, skin, h);
-      const cf = cap(V(-0.112, -0.017, 0.05), V(-0.135, -0.022, 0.058), 0.033, mat(0x22252c, { roughness: 0.95 }), h);
-      void cf;
-      if (mirror) {   // orologio sulla sinistra
-        cap(V(-0.098, -0.014, 0.046), V(-0.1, -0.014, 0.047), 0.025, mat(0x0b0b0c, { roughness: 0.6 }), h);
-        add(new T.CylinderGeometry(0.014, 0.014, 0.006, 16), mat(0xc8ccd2, { metalness: 0.9, roughness: 0.25 }), -0.1, -0.014, 0.072, Math.PI / 2, 0, 0, h);
+      // pollice: base carnosa che esce dal palmo e gira sul lato interno della corona
+      const t0 = V(-0.084, 0.012, 0.024), t1 = V(-0.06, 0.03, 0.004), t2 = V(-0.036, 0.04, -0.021), t3 = V(-0.013, 0.042, -0.026);
+      sweep([t0, t1, t2, t3], (t) => { const r = (0.0135 - 0.0045 * t + 0.0008 * bump(t, 0.62)) * round(t, 0.12); return [r, r * 0.88]; }, V(0, 0, 1), h, skin, 24, 12);
+      const tn = add(new T.SphereGeometry(1, 10, 8), nail, t3.x - 0.002, t3.y + 0.006, t3.z, 0, 0, 0, h); tn.scale.set(0.007, 0.0025, 0.006);
+      // polso che continua nell'avambraccio, polsino della giacca
+      sweep([V(-0.112, -0.016, 0.05), V(-0.13, -0.02, 0.055), V(-0.15, -0.025, 0.06)], () => [0.022, 0.019], V(0, 1, 0), h, skin, 6, 16);
+      cap(V(-0.128, -0.02, 0.055), V(-0.15, -0.025, 0.06), 0.031, mat(0x22252c, { roughness: 0.95 }), h);
+      if (mirror) {   // orologio sulla sinistra: cinturino e cassa con vetro
+        sweep([V(-0.104, -0.015, 0.049), V(-0.106, -0.015, 0.0495)], () => [0.0245, 0.0215], V(0, 1, 0), h, mat(0x0b0b0c, { roughness: 0.6 }), 1, 20);
+        add(new T.CylinderGeometry(0.013, 0.013, 0.007, 20), mat(0xc8ccd2, { metalness: 0.9, roughness: 0.25 }), -0.105, -0.015, 0.071, Math.PI / 2, 0, 0, h);
+        add(new T.CircleGeometry(0.011, 20), mat(0x101820, { roughness: 0.05, metalness: 0.4 }), -0.105, -0.015, 0.0748, 0, 0, 0, h);
       }
       const wrist = new T.Object3D(); wrist.position.set(-0.13, -0.021, 0.056); h.add(wrist); h.userData.wrist = wrist;
       if (mirror) h.scale.z = -1;
@@ -543,6 +561,21 @@ class Garage3D {
     // luce del quadro: i quadranti arancio illuminano mani e volante di notte
     this.dashLight = new T.PointLight(0xff8a3a, 0.5, 0.6, 2); this.dashLight.position.set(0.4, 0.92, 0.37); I.add(this.dashLight);
 
+    // plafoniera, maniglia sul montante, tweeter, cinture, battitacco, logo e schema del cambio
+    add(new T.BoxGeometry(0.1, 0.012, 0.16), mat(0x2a2830), 0.0, 1.238, 0);
+    add(new T.PlaneGeometry(0.07, 0.11), new T.MeshBasicMaterial({ color: 0x3a3428 }), 0.0, 1.231, 0, Math.PI / 2, 0, 0);
+    const grabP = new T.TorusGeometry(0.06, 0.01, 8, 18, Math.PI); add(grabP, soft, -0.15, 1.17, 0.68, Math.PI / 2 - 0.4, 0, 0);
+    for (const z of [0.62, -0.62]) { const tw = add(new T.CylinderGeometry(0.022, 0.026, 0.012, 16), mat(0x0c0c0e), 0.86, 0.95, z, 0, 0, Math.PI / 2 - 0.6); void tw; }
+    const belt = mat(0x14151a, { roughness: 0.9 });
+    for (const [z, k] of [[0.37, 1], [-0.37, -1]]) {
+      const bl = this.rod([-0.6, 1.14, z + k * 0.27], [-0.42, 0.62, z - k * 0.16], 0.004, belt); bl.scale.set(5, 1, 1); I.add(bl);
+      add(new T.BoxGeometry(0.03, 0.05, 0.04), mat(0x8a9099, { metalness: 0.9, roughness: 0.3 }), -0.42, 0.63, z - k * 0.17);
+    }
+    for (const z of [0.79, -0.79]) add(new T.BoxGeometry(0.9, 0.012, 0.06), mat(0x8a9099, { metalness: 0.85, roughness: 0.35 }), 0.0, 0.36, z);
+    const badge = this.carTex(64, 64, (g, w) => { g.fillStyle = '#1a1a1e'; g.beginPath(); g.arc(32, 32, 30, 0, 7); g.fill(); g.strokeStyle = '#c8ccd2'; g.lineWidth = 3; g.beginPath(); g.ellipse(32, 32, 20, 13, 0, 0, 7); g.stroke(); g.beginPath(); g.ellipse(32, 28, 8, 12, 0, 0, 7); g.stroke(); g.beginPath(); g.ellipse(32, 24, 17, 6, 0, 0, 7); g.stroke(); });
+    const bg = new T.CircleGeometry(0.03, 24); bg.rotateY(-Math.PI / 2); add(bg, new T.MeshBasicMaterial({ map: badge, color: 0x9a9a9a }), -0.0525, 0, 0, 0, 0, 0, this.steerWheel);
+    const pat = this.carTex(64, 64, (g) => { g.fillStyle = '#0e0e10'; g.fillRect(0, 0, 64, 64); g.strokeStyle = '#d8dbe0'; g.lineWidth = 2; g.beginPath(); for (const x of [14, 32, 50]) { g.moveTo(x, 16); g.lineTo(x, 48); } g.moveTo(14, 32); g.lineTo(50, 32); g.stroke(); g.fillStyle = '#d8dbe0'; g.font = 'bold 9px sans-serif'; g.textAlign = 'center'; [['1', 14, 12], ['3', 32, 12], ['5', 50, 12], ['2', 14, 58], ['4', 32, 58], ['6', 50, 58]].forEach(([t, x, y]) => g.fillText(t, x, y)); });
+    const knobTop = new T.CircleGeometry(0.03, 20); knobTop.rotateX(-Math.PI / 2); add(knobTop, new T.MeshBasicMaterial({ map: pat, color: 0x8a8a8a }), 0, 0.262, 0, 0, 0, 0, this.shifter);
     // specchietto retrovisore vero: un'altra telecamera guarda indietro e disegna su una texture
     add(new T.BoxGeometry(0.04, 0.075, 0.27), dash, 0.38, 1.17, 0);
     this.mirrorRT = new T.WebGLRenderTarget(320, 96);
@@ -728,6 +761,7 @@ class Garage3D {
         this.custom = this.fitModel(m);
         this.body.add(this.custom);
         this.refloor();
+        if (this.cockpitOn) { this.custom.visible = false; this.custom.userData.cabinHid = true; }
         if (this.paintHex && this.paintHex !== 'model') this.setPaint(this.paintHex);
         this.baseParts.forEach((p) => { p.visible = p === this.tips[0]?.fl || p === this.tips[1]?.fl; });
         this.wheels.forEach((w) => { w.visible = false; });
