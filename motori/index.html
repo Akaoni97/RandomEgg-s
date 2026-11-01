@@ -7,7 +7,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,600&family=Share+Tech+Mono&family=Saira+Stencil+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,600&family=Share+Tech+Mono&family=Saira+Stencil+One&family=Bangers&family=Permanent+Marker&family=Black+Ops+One&display=swap">
 <style>
 /* Layout: quadro in alto, strada 3D notturna con HUD sotto, poi consolle, officina, telemetria ed extra.
    Look unico e deliberato: notte metropolitana, neon ciano e lime su blu asfalto, pannelli a spigoli tagliati. */
@@ -259,7 +259,7 @@ h1 span { color: var(--amber); }
 
 /* ---- consolle ---- */
 .deck { display: grid; grid-template-columns: 1.15fr 1fr 1.1fr; gap: 16px; align-items: start; }
-.panel { background: linear-gradient(180deg, rgba(28,25,20,.95), rgba(20,18,15,.95)); padding: 16px; min-width: 0; display: grid; gap: 14px; box-shadow: inset 0 0 0 1px var(--line), inset 0 1px 0 rgba(255,179,71,.22); }
+.panel { background: var(--panel-bg, linear-gradient(180deg, rgba(28,25,20,.95), rgba(20,18,15,.95))); padding: 16px; min-width: 0; display: grid; gap: 14px; box-shadow: inset 0 0 0 1px var(--line), inset 0 1px 0 rgba(255,179,71,.22); }
 .panel h2 { margin: 0; font: 400 16px/1 var(--f-display); letter-spacing: .08em; text-transform: uppercase; font-style: italic; color: var(--fg); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .panel h2 em { font: 400 13px/1 var(--f-data); letter-spacing: .06em; font-style: normal; color: var(--amber); text-transform: none; }
 .keyrow { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; }
@@ -469,6 +469,24 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---- personalizzazione dell'interfaccia ---- */
+.uithemes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.uithemes h3 { grid-column: 1 / -1; margin: 4px 0 -2px; font: 600 12px/1 var(--f-body); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.uith { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; text-align: left; padding: 10px 12px; cursor: pointer;
+  background: var(--panel-2); color: var(--fg); border: 1px solid var(--line); min-width: 0; }
+.uith .sw { grid-row: span 2; width: 46px; height: 46px; border-radius: 50%; position: relative; box-shadow: inset 0 0 0 3px var(--b); background: var(--f); }
+.uith .sw::after { content: ""; position: absolute; left: 50%; top: 50%; width: 19px; height: 3px; background: var(--n); transform-origin: 0 50%; transform: rotate(-35deg); border-radius: 2px; }
+.uith b { font: 400 18px/1.05 var(--tf); }
+.uith small { color: var(--muted); font-size: 13px; line-height: 1.25; }
+.uith[aria-pressed="true"] { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+.uith:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.ui-sticker .panel { box-shadow: inset 0 0 0 3px #111, 6px 6px 0 #000; }
+.ui-sticker .panel h2 { font-style: normal; letter-spacing: .05em; font-size: 20px; color: var(--amber); text-shadow: 2px 2px 0 #000; }
+.ui-sticker .kbtn, .ui-sticker .uith { box-shadow: 3px 3px 0 #000; border: 2px solid #111; }
+.ui-spray .panel h2 { font-style: normal; color: var(--amber); }
+.ui-fumetto .panel { box-shadow: inset 0 0 0 1px var(--line), 0 0 16px rgba(46,230,255,.22); }
+.ui-fumetto .panel h2 { font-style: normal; color: #fff; text-shadow: 0 0 10px rgba(255,46,136,.8); }
 </style>
 </head>
 <body>
@@ -652,6 +670,12 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       </div>
       <p class="hint" id="ecuHint"></p>
     </div>
+  </section>
+
+  <section class="panel uiprefs cutbox" aria-labelledby="uiTitle">
+    <h2 id="uiTitle">Interfaccia <em id="uiName">garage</em></h2>
+    <div class="uithemes" id="uiThemes" role="group" aria-label="Stile del quadro e dei pannelli"></div>
+    <p class="hint">Cambia il quadro strumenti (anche quello sul cruscotto dell'abitacolo), i colori e i caratteri dei pannelli. La scelta resta salvata in questo browser.</p>
   </section>
 
   <section class="panel tuning cutbox" aria-labelledby="tuneTitle">
@@ -1054,7 +1078,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   const css = getComputedStyle(document.documentElement);
   const C = (n) => css.getPropertyValue(n).trim();
   const COL = { dial: C('--dial'), needle: C('--needle'), crit: C('--crit'), amber: C('--amber'), muted: C('--muted'), info: C('--info'), ok: C('--ok') };
-  const FD = C('--f-display'), FM = C('--f-data');
+  let FD = C('--f-display'); const FM = C('--f-data');
 
   function gaugeDefs(compact) {
     const tach = { id: 'tach', min: 0, max: 9, major: 1, minor: 0.25, red: 7, label: (v) => v, title: 'x1000 r/min' };
@@ -1080,35 +1104,70 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   const A0 = Math.PI * 0.75, SWEEP = Math.PI * 1.5;   // da 135° (in basso a sinistra) per 270°
   const ang = (g, v) => A0 + SWEEP * (clamp(v, g.min, g.max) - g.min) / (g.max - g.min);
 
+  // ---------------------------------------------------------------- stili dell'interfaccia (quadro + pannelli)
+  // ogni stile: colori della pagina (variabili CSS) e materiali del quadro
+  const UI_THEMES = {
+    garage: { name: 'Garage', note: 'nero vissuto, luce ambra, stencil',
+      vars: { '--bg': '#0b0a08', '--bg-2': '#12110e', '--panel': '#161411', '--panel-2': '#201d18', '--line': '#3a342a', '--fg': '#f0e6d2', '--muted': '#a8936a', '--dial': '#f0e2c4', '--amber': '#ffb347', '--lime': '#c9dd5a', '--needle': '#ff7a2a', '--ok': '#c9dd5a', '--crit': '#ff5a3a', '--pink': '#e8643a', '--f-display': '"Saira Stencil One", "Russo One", Impact, sans-serif', '--panel-bg': 'linear-gradient(180deg, rgba(28,25,20,.95), rgba(20,18,15,.95))' },
+      g: { bez: ['#3a342a', '#1c1a16', '#2e2a23'], face: ['#1a1814', '#0b0a08'], ring: 'rgba(255,179,71,.35)', glow: 'rgba(255,170,70,.16)', tickGlow: 'rgba(255,170,70,.45)', screws: true, scratches: true, redTick: '#ff9a7a', redNum: '#ff7a5a', needleGlow: 'rgba(255,122,42,.85)', hub: ['#5c564b', '#1c1a16'], lcd: ['#100f0c', '#3a342a'], gearGlow: true } },
+    bianco: { name: 'Fondo bianco', note: 'strumenti da preparatore anni \'90',
+      vars: { '--bg': '#0c0d10', '--bg-2': '#121418', '--panel': '#16181c', '--panel-2': '#1e2126', '--line': '#33373f', '--fg': '#eef0f3', '--muted': '#959ba6', '--dial': '#16171b', '--amber': '#ff9a3a', '--lime': '#9fd86a', '--needle': '#e8402a', '--ok': '#9fd86a', '--crit': '#d7301e', '--pink': '#e8402a', '--f-display': '"Russo One", "Arial Black", sans-serif', '--panel-bg': 'linear-gradient(180deg, #1a1c21, #141619)' },
+      g: { bez: ['#f3f5f8', '#7d838d', '#4b5058'], face: ['#ffffff', '#d8d8d4'], ring: 'rgba(255,140,40,.6)', glow: null, tickGlow: null, redTick: '#d7301e', redNum: '#d7301e', redFill: 'rgba(232,64,42,.85)', needleGlow: null, hub: ['#3a3d44', '#0c0d10'], lcd: ['#0c0d10', '#3a3e46'], lcdText: '#f2f2f2', gearGlow: true, unlit: '#9a9ea6', title: '#5a5d66' } },
+    carbonio: { name: 'Carbonio e neon', note: 'fibra di carbonio, ciano, LED',
+      vars: { '--bg': '#03050a', '--bg-2': '#070b13', '--panel': '#0a0f18', '--panel-2': '#111a29', '--line': '#1c2a3c', '--fg': '#e6f2ff', '--muted': '#7e90a7', '--dial': '#eaf7ff', '--amber': '#2ee6ff', '--lime': '#b8ff3a', '--needle': '#ff2e63', '--ok': '#b8ff3a', '--crit': '#ff2e4d', '--pink': '#ff2e88', '--f-display': '"Russo One", "Arial Black", sans-serif', '--panel-bg': 'linear-gradient(180deg, rgba(15,24,40,.95), rgba(7,11,19,.95))' },
+      g: { bez: ['#5a6069', '#1a1d22', '#3d424a'], face: ['#14171c', '#06070a'], carbon: true, ring: 'rgba(46,230,255,.75)', glow: null, tickGlow: 'rgba(46,230,255,.6)', redTick: '#ffd7d2', redNum: '#ff6aa8', needleGlow: 'rgba(255,46,99,.8)', hub: ['#4b5059', '#0c0d10'], lcd: ['#020303', '#23272d'], gearGlow: true } },
+    sticker: { name: 'Sticker Bomb', note: 'cartoon: adesivi, contorni spessi', cartoon: true,
+      vars: { '--bg': '#141022', '--bg-2': '#1b1530', '--panel': '#211a3a', '--panel-2': '#2b2248', '--line': '#111111', '--fg': '#fff7e0', '--muted': '#c9b8ff', '--dial': '#111111', '--amber': '#ffe14d', '--lime': '#7dff5a', '--needle': '#ff2e88', '--ok': '#7dff5a', '--crit': '#e8192c', '--pink': '#ff5fa8', '--f-display': '"Bangers", Impact, sans-serif', '--panel-bg': '#211a3a' },
+      g: { bez: ['#111', '#111', '#111'], face: ['#fffbe6', '#fff0c2'], outline: true, ring: null, glow: null, tickGlow: null, stripes: true, redTick: '#e8192c', redNum: '#e8192c', needleGlow: null, needleOutline: true, hub: ['#111', '#111'], lcd: ['#ffe14d', '#111'], lcdInk: '#111', unlit: '#888', title: '#5a4a7a' } },
+    spray: { name: 'Nastro e spray', note: 'cartoon: stencil, nastro, vernice', cartoon: true,
+      vars: { '--bg': '#101114', '--bg-2': '#15161a', '--panel': '#1b1c20', '--panel-2': '#24252b', '--line': '#3a3b42', '--fg': '#e8e4d8', '--muted': '#a9a596', '--dial': '#e8e4d8', '--amber': '#ff7a1a', '--lime': '#b8ff3a', '--needle': '#e8e4d8', '--ok': '#b8ff3a', '--crit': '#ff7a1a', '--pink': '#ff7a1a', '--f-display': '"Black Ops One", Impact, sans-serif', '--panel-bg': 'repeating-linear-gradient(115deg, #1b1c20 0 14px, #18191d 14px 28px)' },
+      g: { bez: ['#2a2b30', '#2a2b30', '#2a2b30'], face: ['#1d1e22', '#17181c'], spray: true, screws: true, ring: null, glow: null, tickGlow: null, redTick: '#ff7a1a', redNum: '#ff7a1a', needleGlow: null, needleTip: '#ff7a1a', hub: ['#6a6c72', '#2a2b30'], lcd: ['#c9c3b4', '#8a8577'], lcdInk: '#1a1a1a' } },
+    fumetto: { name: 'Fumetto neon', note: 'cartoon: retino, pennarello, neon', cartoon: true,
+      vars: { '--bg': '#07060f', '--bg-2': '#0d0b18', '--panel': '#110e20', '--panel-2': '#191430', '--line': '#2ee6ff', '--fg': '#ffffff', '--muted': '#9fe8ff', '--dial': '#e9f9ff', '--amber': '#2ee6ff', '--lime': '#b8ff3a', '--needle': '#ffe14d', '--ok': '#b8ff3a', '--crit': '#ff2e88', '--pink': '#ff2e88', '--f-display': '"Permanent Marker", "Comic Sans MS", cursive', '--panel-bg': 'radial-gradient(rgba(255,46,136,.16) 1.2px, transparent 1.4px) 0 0 / 9px 9px, #0d0b18' },
+      g: { bez: ['#0d0b18', '#0d0b18', '#0d0b18'], face: ['#120f22', '#0a0814'], halftone: true, ring: '#2ee6ff', ringStrong: true, glow: null, tickGlow: 'rgba(46,230,255,.8)', redTick: '#ff2e88', redNum: '#ff2e88', needleGlow: 'rgba(255,225,77,.9)', hub: ['#ffe14d', '#b89a10'], lcd: ['#0d0b18', '#ff2e88'], gearGlow: true } },
+  };
+  let TH = UI_THEMES[S.ui] || UI_THEMES.garage;
+
   function drawFace(g, lit) {
-    const key = g.id + lit + Math.round(g.R);
+    const key = TH.name + g.id + lit + Math.round(g.R);
     if (faceCache.has(key)) return faceCache.get(key);
-    const R = g.R, pad = R * 0.12, size = Math.ceil((R + pad) * 2 * DPR);
+    const T = TH.g, R = g.R, pad = R * 0.12, size = Math.ceil((R + pad) * 2 * DPR);
     const oc = document.createElement('canvas'); oc.width = oc.height = size;
     const c = oc.getContext('2d'); c.scale(DPR, DPR); c.translate(R + pad, R + pad);
-    // ghiera
+    // ombra piena da adesivo (stili cartoon)
+    if (T.outline) { c.fillStyle = '#000'; c.beginPath(); c.arc(R * 0.06, R * 0.06, R * 1.06, 0, Math.PI * 2); c.fill(); }
     const bz = c.createLinearGradient(0, -R * 1.08, 0, R * 1.08);
-    bz.addColorStop(0, '#3a342a'); bz.addColorStop(0.45, '#1c1a16'); bz.addColorStop(1, '#2e2a23');
+    bz.addColorStop(0, T.bez[0]); bz.addColorStop(0.45, T.bez[1]); bz.addColorStop(1, T.bez[2]);
     c.beginPath(); c.arc(0, 0, R * 1.06, 0, Math.PI * 2); c.fillStyle = bz; c.fill();
-    c.beginPath(); c.arc(0, 0, R * 1.0, 0, Math.PI * 2); c.fillStyle = '#050607'; c.fill();
     const face = c.createRadialGradient(0, -R * 0.25, R * 0.1, 0, 0, R);
-    face.addColorStop(0, '#1a1814'); face.addColorStop(1, '#0b0a08');
-    c.beginPath(); c.arc(0, 0, R * 0.97, 0, Math.PI * 2); c.fillStyle = face; c.fill();
-    const fg = lit ? COL.dial : '#4a4f57';
+    face.addColorStop(0, lit || T.outline ? T.face[0] : '#1b1e23'); face.addColorStop(1, lit || T.outline ? T.face[1] : '#07080a');
+    c.beginPath(); c.arc(0, 0, R * 0.98, 0, Math.PI * 2); c.fillStyle = face; c.fill();
+    c.save(); c.beginPath(); c.arc(0, 0, R * 0.98, 0, Math.PI * 2); c.clip();
+    if (T.carbon) {   // trama di carbonio
+      const s2 = Math.max(4, R * 0.05);
+      for (let y = -R; y < R; y += s2) for (let x = -R; x < R; x += s2) { const odd = (Math.round(x / s2) + Math.round(y / s2)) % 2; c.fillStyle = odd ? 'rgba(255,255,255,.035)' : 'rgba(0,0,0,.25)'; c.fillRect(x, y, s2 * (odd ? 1 : 0.5), s2 * (odd ? 0.5 : 1)); }
+    }
+    if (T.halftone) { c.fillStyle = 'rgba(255,46,136,.16)'; const s2 = Math.max(5, R * 0.05); for (let y = -R; y < R; y += s2) for (let x = -R; x < R; x += s2) { c.beginPath(); c.arc(x, y, s2 * 0.14, 0, 7); c.fill(); } }
+    if (T.spray && lit) { for (let k = 0; k < 160; k++) { const a = ang(g, g.min + Math.random() * (g.max - g.min)), r = R * (0.88 + (Math.random() - 0.5) * 0.12); c.fillStyle = g.red !== undefined && a > ang(g, g.red) ? 'rgba(255,122,26,.35)' : 'rgba(184,255,58,.25)'; c.fillRect(Math.cos(a) * r, Math.sin(a) * r, 2, 2); } }
+    if (lit && T.glow) { const gl = c.createRadialGradient(0, R * 0.45, R * 0.05, 0, R * 0.45, R); gl.addColorStop(0, T.glow); gl.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gl; c.fillRect(-R, -R, R * 2, R * 2); }
+    c.restore();
+    if (T.outline) { c.lineWidth = R * 0.05; c.strokeStyle = '#111'; c.beginPath(); c.arc(0, 0, R * 1.0, 0, Math.PI * 2); c.stroke(); }
+    const fg = lit || T.outline ? COL.dial : (T.unlit || '#4a4f57');
     // zona rossa
     if (g.red !== undefined) {
-      c.beginPath(); c.arc(0, 0, R * 0.885, ang(g, g.red), ang(g, g.max)); c.lineWidth = R * 0.07;
-      c.strokeStyle = lit ? COL.crit : '#4a1612'; c.globalAlpha = lit ? 0.9 : 1; c.stroke(); c.globalAlpha = 1;
+      if (T.stripes) {
+        c.save(); c.beginPath(); c.arc(0, 0, R * 0.93, ang(g, g.red), ang(g, g.max)); c.arc(0, 0, R * 0.82, ang(g, g.max), ang(g, g.red), true); c.closePath(); c.clip();
+        for (let k = -R; k < R; k += R * 0.07) { c.fillStyle = Math.round(k / (R * 0.07)) % 2 ? COL.crit : '#111'; c.fillRect(k, -R, R * 0.035, R * 2); } c.restore();
+      } else {
+        c.beginPath(); c.arc(0, 0, R * 0.885, ang(g, g.red), ang(g, g.max)); c.lineWidth = R * 0.07;
+        c.strokeStyle = lit ? (T.redFill || COL.crit) : '#4a1612'; c.globalAlpha = lit ? 0.9 : 1; c.stroke(); c.globalAlpha = 1;
+      }
     }
-    // tacche
-    if (lit) {
-      c.save(); c.beginPath(); c.arc(0, 0, R * 0.985, 0, Math.PI * 2); c.lineWidth = R * 0.012;
-      c.strokeStyle = 'rgba(255,179,71,.35)'; c.shadowColor = '#ffb347'; c.shadowBlur = R * 0.05; c.stroke(); c.restore();
-      // luce ambra dal basso, come una lampadina dietro il quadrante
-      const gl = c.createRadialGradient(0, R * 0.45, R * 0.05, 0, R * 0.45, R); gl.addColorStop(0, 'rgba(255,170,70,.16)'); gl.addColorStop(1, 'rgba(255,170,70,0)');
-      c.fillStyle = gl; c.beginPath(); c.arc(0, 0, R * 0.97, 0, Math.PI * 2); c.fill();
-      c.shadowColor = 'rgba(255,170,70,.45)'; c.shadowBlur = R * 0.03;
+    if (lit && T.ring) {
+      c.save(); c.beginPath(); c.arc(0, 0, R * 0.985, 0, Math.PI * 2); c.lineWidth = R * (T.ringStrong ? 0.03 : 0.012);
+      c.strokeStyle = T.ring; c.shadowColor = T.ring; c.shadowBlur = R * (T.ringStrong ? 0.12 : 0.05); c.stroke(); c.restore();
     }
+    if (lit && T.tickGlow) { c.shadowColor = T.tickGlow; c.shadowBlur = R * 0.035; }
     const n = Math.round((g.max - g.min) / g.minor);
     for (let i = 0; i <= n; i++) {
       const v = g.min + i * g.minor, a = ang(g, v);
@@ -1116,54 +1175,70 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       const half = !isMaj && Math.abs((v - g.min) / (g.major / 2) - Math.round((v - g.min) / (g.major / 2))) < 1e-6;
       const r1 = R * 0.93, r0 = R * (isMaj ? 0.79 : half ? 0.85 : 0.88);
       c.beginPath(); c.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); c.lineTo(Math.cos(a) * r1, Math.sin(a) * r1);
-      c.lineWidth = isMaj ? R * 0.022 : R * 0.009;
-      c.strokeStyle = g.red !== undefined && v >= g.red ? (lit ? '#ff9a7a' : '#5a2a26') : fg;
+      c.lineWidth = isMaj ? R * (T.outline ? 0.03 : 0.022) : R * 0.009; c.lineCap = T.outline ? 'round' : 'butt';
+      c.strokeStyle = g.red !== undefined && v >= g.red ? (lit ? T.redTick : '#5a2a26') : fg;
       c.stroke();
     }
-    // numeri
     c.fillStyle = fg; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = `400 ${Math.round(R * (g.id === 'tach' ? 0.17 : 0.135))}px ${FD}`;
-    const every = g.labelEvery || g.major;
-    const m = Math.round((g.max - g.min) / every);
+    c.font = `400 ${Math.round(R * (g.id === 'tach' ? 0.18 : 0.14))}px ${FD}`;
+    const every = g.labelEvery || g.major, m = Math.round((g.max - g.min) / every);
     for (let i = 0; i <= m; i++) {
       const v = +(g.min + i * every).toFixed(3), a = ang(g, v), rr = R * (g.id === 'tach' ? 0.64 : 0.63);
       if (g.id === 'boost' && Math.abs(v % 0.5) > 0.01) continue;
-      c.fillStyle = g.red !== undefined && v >= g.red ? (lit ? '#ff7a5a' : '#5a2a26') : fg;
+      c.fillStyle = g.red !== undefined && v >= g.red ? (lit ? T.redNum : '#5a2a26') : fg;
       c.fillText(g.label(v), Math.cos(a) * rr, Math.sin(a) * rr);
     }
     c.shadowBlur = 0;
-    c.fillStyle = lit ? COL.muted : '#3a3f46';
+    c.fillStyle = lit ? (T.title || COL.muted) : '#3a3f46';
     c.font = `600 ${Math.round(R * 0.075)}px ${FM}`;
     c.fillText(g.title.toUpperCase(), 0, -R * 0.3);
     if (g.id === 'tach') { c.font = `400 ${Math.round(R * 0.07)}px ${FD}`; c.fillText('TOYOTA 2JZ-GTE · 24V DOHC', 0, R * 0.2); }
-    // viti della ghiera e graffi sul vetro
-    c.shadowBlur = 0;
-    for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4, x = Math.cos(a) * R * 1.03, y = Math.sin(a) * R * 1.03;
+    if (T.screws) for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4, x = Math.cos(a) * R * 1.03, y = Math.sin(a) * R * 1.03;
       c.fillStyle = '#5c564b'; c.beginPath(); c.arc(x, y, R * 0.028, 0, Math.PI * 2); c.fill();
       c.strokeStyle = '#1c1a16'; c.lineWidth = R * 0.008; c.beginPath(); c.moveTo(x - R * 0.018, y - R * 0.006); c.lineTo(x + R * 0.018, y + R * 0.006); c.stroke(); }
-    c.strokeStyle = 'rgba(240,226,196,.06)'; c.lineWidth = 1;
-    for (let k = 0; k < 9; k++) { const x = (Math.sin(k * 7.3) * 0.7) * R, y = (Math.cos(k * 3.1) * 0.7) * R; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.sin(k) * R * 0.25, y + Math.cos(k * 2) * R * 0.05); c.stroke(); }
+    if (T.scratches) { c.strokeStyle = 'rgba(240,226,196,.06)'; c.lineWidth = 1;
+      for (let k = 0; k < 9; k++) { const x = (Math.sin(k * 7.3) * 0.7) * R, y = (Math.cos(k * 3.1) * 0.7) * R; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.sin(k) * R * 0.25, y + Math.cos(k * 2) * R * 0.05); c.stroke(); } }
     faceCache.set(key, oc);
     return oc;
   }
 
   function drawNeedle(g, v, lit) {
-    const a = ang(g, v), R = g.R;
+    const T = TH.g, a = ang(g, v), R = g.R;
     ctx.save(); ctx.translate(g.x, g.y); ctx.rotate(a);
-    ctx.shadowColor = lit ? 'rgba(255,122,42,.85)' : 'transparent'; ctx.shadowBlur = R * 0.07;
+    ctx.shadowColor = lit && T.needleGlow ? T.needleGlow : 'transparent'; ctx.shadowBlur = R * 0.07;
+    const w = T.needleOutline ? 1.8 : 1;
     ctx.beginPath();
-    ctx.moveTo(-R * 0.16, -R * 0.022); ctx.lineTo(R * 0.86, -R * 0.007); ctx.lineTo(R * 0.9, 0); ctx.lineTo(R * 0.86, R * 0.007); ctx.lineTo(-R * 0.16, R * 0.022);
+    ctx.moveTo(-R * 0.16, -R * 0.022 * w); ctx.lineTo(R * 0.86, -R * 0.007 * w); ctx.lineTo(R * 0.9, 0); ctx.lineTo(R * 0.86, R * 0.007 * w); ctx.lineTo(-R * 0.16, R * 0.022 * w);
     ctx.closePath(); ctx.fillStyle = lit ? COL.needle : '#8a3a1e'; ctx.fill();
+    if (T.needleOutline) { ctx.shadowBlur = 0; ctx.lineWidth = R * 0.014; ctx.strokeStyle = '#111'; ctx.stroke(); }
+    if (T.needleTip && lit) { ctx.shadowBlur = 0; ctx.fillStyle = T.needleTip; ctx.fillRect(R * 0.62, -R * 0.012, R * 0.2, R * 0.024); }
     ctx.restore();
     ctx.beginPath(); ctx.arc(g.x, g.y, R * 0.075, 0, Math.PI * 2);
     const hub = ctx.createRadialGradient(g.x - R * 0.02, g.y - R * 0.02, 1, g.x, g.y, R * 0.075);
-    hub.addColorStop(0, '#5c564b'); hub.addColorStop(1, '#1c1a16'); ctx.fillStyle = hub; ctx.fill();
+    hub.addColorStop(0, T.hub[0]); hub.addColorStop(1, T.hub[1]); ctx.fillStyle = hub; ctx.fill();
   }
 
+  const lcdTxt = () => TH.g.lcdText || TH.g.lcdInk || COL.dial;
   function lcd(x, y, w, h, R) {
-    ctx.fillStyle = '#100f0c'; ctx.strokeStyle = '#3a342a'; ctx.lineWidth = Math.max(1, R * 0.012);
+    const T = TH.g;
+    if (T.outline) { ctx.fillStyle = '#000'; ctx.fillRect(x - w / 2 + R * 0.03, y - h / 2 + R * 0.03, w, h); }
+    ctx.fillStyle = T.lcd[0]; ctx.strokeStyle = T.lcd[1]; ctx.lineWidth = Math.max(1, R * (T.outline ? 0.03 : 0.012));
     ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y - h / 2, w, h, R * 0.03) : ctx.rect(x - w / 2, y - h / 2, w, h);
     ctx.fill(); ctx.stroke();
+  }
+
+  // applica uno stile: variabili CSS, classe sul body, colori del quadro, quadro dell'abitacolo
+  function applyTheme(id) {
+    TH = UI_THEMES[id] || UI_THEMES.garage; S.ui = UI_THEMES[id] ? id : 'garage';
+    const root = document.documentElement;
+    for (const [k, v] of Object.entries(TH.vars)) root.style.setProperty(k, v);
+    document.body.className = document.body.className.replace(/\bui-\S+/g, '').trim() + ' ui-' + S.ui;
+    const css2 = getComputedStyle(root), C2 = (n) => css2.getPropertyValue(n).trim();
+    Object.assign(COL, { dial: C2('--dial'), needle: C2('--needle'), crit: C2('--crit'), amber: C2('--amber'), muted: C2('--muted'), ok: C2('--ok') });
+    FD = C2('--f-display');
+    faceCache.clear();
+    document.querySelectorAll('#uiThemes button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ui === S.ui)));
+    try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (e) { /* ignora */ }
   }
 
   const disp = { rpm: 0, kmh: 0, boost: -1 };
@@ -1183,9 +1258,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       if (g.id === 'tach') {
         const gearTxt = sim.gear === -1 ? 'R' : sim.gear === 0 ? 'N' : String(sim.gear);
         lcd(g.x, g.y + R * 0.58, R * 0.42, R * 0.36, R);
-        ctx.fillStyle = lit ? (sim.gear === -1 ? COL.crit : COL.amber) : '#2b2f35';
+        ctx.fillStyle = lit ? (sim.gear === -1 ? COL.crit : TH.g.lcdInk || COL.amber) : '#2b2f35';
         ctx.font = `700 ${Math.round(R * 0.32)}px ${FD}`;
-        ctx.save(); if (lit) { ctx.shadowColor = '#ffb347'; ctx.shadowBlur = R * 0.08; }
+        ctx.save(); if (lit && TH.g.gearGlow) { ctx.shadowColor = COL.amber; ctx.shadowBlur = R * 0.08; }
         ctx.fillText(sim.shiftSeq ? '–' : gearTxt, g.x, g.y + R * 0.6); ctx.restore();
         ctx.fillStyle = lit ? COL.dial : '#2b2f35';
         ctx.font = `600 ${Math.round(R * 0.085)}px ${FM}`;
@@ -1193,7 +1268,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         drawNeedle(g, disp.rpm / 1000, lit);
       } else if (g.id === 'speed') {
         lcd(g.x, g.y + R * 0.58, R * 0.62, R * 0.3, R);
-        ctx.fillStyle = lit ? COL.dial : '#2b2f35';
+        ctx.fillStyle = lit ? lcdTxt() : '#2b2f35';
         ctx.font = `700 ${Math.round(R * 0.22)}px ${FD}`;
         ctx.fillText(lit ? fmt(Math.round(disp.kmh)) : '', g.x, g.y + R * 0.59);
         ctx.fillStyle = lit ? COL.muted : '#2b2f35';
@@ -1202,7 +1277,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         drawNeedle(g, disp.kmh, lit);
       } else {
         lcd(g.x, g.y + R * 0.58, R * 0.62, R * 0.3, R);
-        ctx.fillStyle = lit ? (disp.boost > 0.05 ? COL.amber : COL.dial) : '#2b2f35';
+        ctx.fillStyle = lit ? (disp.boost > 0.05 && !TH.g.lcdInk ? COL.amber : lcdTxt()) : '#2b2f35';
         ctx.font = `700 ${Math.round(R * 0.2)}px ${FD}`;
         ctx.fillText(lit ? (disp.boost >= 0 ? '+' : '') + fmt(disp.boost, 2) : '', g.x, g.y + R * 0.59);
         ctx.fillStyle = lit ? COL.muted : '#2b2f35';
@@ -1728,7 +1803,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 
   // ---------------------------------------------------------------- ciclo principale
   const joints = {};
-  let last = performance.now(), wasRunning = false, smpLoad = 0, flameT = 0;
+  let last = performance.now(), wasRunning = false, smpLoad = 0, flameT = 0, keyAxis = 0;
   function frame(now) {
     const dt = clamp((now - last) / 1000, 0, 0.1); last = now;
     if (intro && intro.directing()) {         // durante la sigla il gioco è fermo e si sente la Supra della sigla
@@ -1745,7 +1820,12 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (game.blocked) { sim.in.thr = Math.min(sim.in.thr, 0.12); sim.in.brake = Math.max(sim.in.brake, 0.18); }
     if (game.mode === 'free') sim.fuel = Math.max(sim.fuel, 0.5);
     sim.update(dt);
-    game.steerHold((keys.has('a') ? 1 : 0) - (keys.has('d') ? 1 : 0) + btnSteer.L - btnSteer.R + (inp.pad.steer || 0));
+    // sterzo da tasti progressivo: un tocco corregge appena, tenendo premuto la sterzata cresce fino al massimo;
+    // al rilascio torna dritto in fretta. La levetta del pad resta analogica e diretta.
+    const keyT = (keys.has('a') ? 1 : 0) - (keys.has('d') ? 1 : 0) + btnSteer.L - btnSteer.R;
+    keyAxis += (keyT - keyAxis) * Math.min(1, dt * (keyT === 0 ? 16 : Math.sign(keyT) !== Math.sign(keyAxis) ? 12 : 4.5));
+    if (Math.abs(keyAxis) < 0.01 && keyT === 0) keyAxis = 0;
+    game.steerHold(clamp(keyAxis + (inp.pad.steer || 0), -1, 1));
     game.update(dt);
     renderGame(dt);
     const ev = sim.events.splice(0);
@@ -1801,6 +1881,23 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   window.addEventListener('resize', layout);
   if (window.ResizeObserver) new ResizeObserver(() => { if (Math.abs(cv.clientWidth - W) > 1) layout(); }).observe(cv);
   if (game.mode === 'career') for (const k of Object.keys(S.tune)) if (!game.owns(k, S.tune[k])) S.tune[k] = TUNING[k].items[0].id;
+  // pannello stili dell'interfaccia
+  (function buildThemes() {
+    const box = $('uiThemes'); if (!box) return;
+    const groups = [['Realistici', ['garage', 'bianco', 'carbonio']], ['Cartoon', ['sticker', 'spray', 'fumetto']]];
+    for (const [label, ids] of groups) {
+      const h = document.createElement('h3'); h.textContent = label; box.appendChild(h);
+      for (const id of ids) {
+        const t = UI_THEMES[id], b = document.createElement('button');
+        b.type = 'button'; b.className = 'uith'; b.dataset.ui = id;
+        b.style.setProperty('--f', t.g.face[0]); b.style.setProperty('--b', t.g.bez[1] === t.g.face[0] ? '#111' : t.g.bez[0]); b.style.setProperty('--n', t.vars['--needle']); b.style.setProperty('--tf', t.vars['--f-display']);
+        b.innerHTML = `<span class="sw" aria-hidden="true"></span><b>${t.name}</b><small>${t.note}</small>`;
+        b.addEventListener('click', () => { applyTheme(id); $('uiName').textContent = t.name.toLowerCase(); flash('Interfaccia: ' + t.name, 1.4); });
+        box.appendChild(b);
+      }
+    }
+  })();
+  applyTheme(S.ui || 'garage'); $('uiName').textContent = TH.name.toLowerCase();
   applySettings();
   renderMode();
   renderRadio(false);

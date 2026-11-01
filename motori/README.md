@@ -43,7 +43,15 @@ dall'abitacolo il quadro si legge sopra la corona del volante, le alette parasol
 cielo, la plancia ha una grana goffrata, una bocchetta del disappannamento alla base del parabrezza e le
 cuciture sulla palpebra. I montanti anteriori sono neri come la serra della JZA80.
 
-**Stile garage.** Quadro e interfaccia hanno il look di un'officina clandestina: strumenti neri vissuti con
+**Stili dell'interfaccia.** Nel pannello "Interfaccia" si sceglie fra sei stili per quadro e pannelli (vale anche per
+il quadro sul cruscotto dell'abitacolo): realistici *Garage*, *Fondo bianco* e *Carbonio e neon*; cartoon *Sticker
+Bomb*, *Nastro e spray* e *Fumetto neon*. La scelta resta salvata nel browser.
+
+**Sterzo progressivo.** Con A/D un tocco corregge appena e tenendo premuto la sterzata cresce fino al massimo; al
+rilascio torna dritta in fretta. La risposta è non lineare (correzioni piccole morbide, sterzata piena decisa);
+la levetta del pad resta analogica.
+
+**Stile garage** (predefinito). Quadro e interfaccia hanno il look di un'officina clandestina: strumenti neri vissuti con
 ghiera bruna, viti a vista, graffi sul vetro e luce ambra da dietro, numeri e titoli a stencil, lancette
 arancio luminose e zona rossa arancio-rossa; pannelli in nero caldo con bordi bruni e accenti ambra. Lo stesso
 quadro compare sul cruscotto dell'abitacolo.

@@ -418,7 +418,9 @@ class StreetGame {
       this.free = true; this.manualT = this.autoLane ? 5 : 1e9;
       // più reattivo: la velocità laterale arriva quasi subito e cresce con la velocità dell'auto
       const vmax = 1.6 + Math.min(4.6, sim.v * 0.17);
-      this.latV += (-this.steerIn * vmax - this.latV) * Math.min(1, dt * 11);
+      // risposta un po' non lineare: piccole correzioni morbide, sterzata piena decisa
+      const k = Math.sign(this.steerIn) * Math.pow(Math.abs(this.steerIn), 1.4);
+      this.latV += (-k * vmax - this.latV) * Math.min(1, dt * 11);
     } else this.latV += (0 - this.latV) * Math.min(1, dt * 12);
     if (!freeOK || (this.manualT === 0 && Math.abs(this.steerIn) <= 0.05)) this.free = false;
     if (this.free) {
