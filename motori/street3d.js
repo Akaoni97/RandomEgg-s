@@ -154,21 +154,68 @@ class Street3D extends Garage3D {
       }
       const pm = h / 10.5, px = w / 24;
       const lineZ = (z) => (5.25 - z) * pm;
+      // rattoppi più scuri, tracce delle gomme nelle corsie, crepe, macchie d'olio, tombino
+      for (let i = 0; i < 5; i++) { g.fillStyle = `rgba(8,9,12,${0.35 + Math.random() * 0.3})`; g.fillRect(Math.random() * w, Math.random() * h, 60 + Math.random() * 160, 30 + Math.random() * 70); }
+      for (const z of [3.5, 0, -3.5]) for (const o of [-0.8, 0.8]) { g.fillStyle = 'rgba(6,7,10,.28)'; g.fillRect(0, lineZ(z + o) - 0.25 * pm, w, 0.5 * pm); }
+      g.strokeStyle = 'rgba(4,5,7,.75)'; g.lineWidth = 1.4;
+      for (let i = 0; i < 14; i++) { let x = Math.random() * w, y = Math.random() * h; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 7; k++) { x += (Math.random() - 0.3) * 28; y += (Math.random() - 0.5) * 22; g.lineTo(x, y); } g.stroke(); }
+      for (let i = 0; i < 6; i++) { const x = Math.random() * w, y = Math.random() * h, r = 8 + Math.random() * 20; const gr = g.createRadialGradient(x, y, 1, x, y, r); gr.addColorStop(0, 'rgba(10,8,14,.7)'); gr.addColorStop(1, 'rgba(10,8,14,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+      const mx = w * 0.7, my = lineZ(-1.6); g.fillStyle = '#1e2024'; g.beginPath(); g.arc(mx, my, 0.32 * pm, 0, 7); g.fill();
+      g.strokeStyle = '#2e3138'; g.lineWidth = 2; for (let k = -2; k <= 2; k++) { g.beginPath(); g.moveTo(mx - 0.28 * pm, my + k * 6); g.lineTo(mx + 0.28 * pm, my + k * 6); g.stroke(); }
       g.fillStyle = '#d9d6cc';
       for (const z of [5.0, -5.0]) g.fillRect(0, lineZ(z) - 0.07 * pm, w, 0.14 * pm);
       for (const z of [1.75, -1.75]) for (const x0 of [0, 12]) g.fillRect(x0 * px, lineZ(z) - 0.06 * pm, 4.5 * px, 0.12 * pm);
     });
     map.wrapS = T.RepeatWrapping; map.repeat.set(480 / 24, 1);
     this.roadMap = map;
-    const road = new T.Mesh(new T.PlaneGeometry(480, 10.5), new T.MeshStandardMaterial({ map, roughness: 0.38, metalness: 0.25, color: 0xb0b4bc }));
+    // asfalto bagnato: pozzanghere lisce (quasi specchi) e zone ruvide, scorrono con la strada
+    const rough = this.tex(512, 256, (g, w, h) => {
+      g.fillStyle = 'rgb(150,150,150)'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 4000; i++) { const v = 110 + Math.random() * 90; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+      for (let i = 0; i < 9; i++) {
+        const x = Math.random() * w, y = Math.random() * h, rx = 20 + Math.random() * 70, ry = 6 + Math.random() * 18;
+        const gr = g.createRadialGradient(x, y, 1, x, y, rx); gr.addColorStop(0, 'rgb(8,8,8)'); gr.addColorStop(0.7, 'rgba(20,20,20,.9)'); gr.addColorStop(1, 'rgba(150,150,150,0)');
+        g.save(); g.translate(x, y); g.scale(1, ry / rx); g.translate(-x, -y); g.fillStyle = gr; g.beginPath(); g.arc(x, y, rx, 0, 7); g.fill(); g.restore();
+      }
+    });
+    rough.wrapS = T.RepeatWrapping; rough.repeat.set(480 / 24, 1); this.roadRough = rough;
+    const road = new T.Mesh(new T.PlaneGeometry(480, 10.5), new T.MeshStandardMaterial({ map, roughnessMap: rough, roughness: 0.7, metalness: 0.3, color: 0xb0b4bc, envMapIntensity: 1.3 }));
     road.rotation.x = -Math.PI / 2; road.position.set(100, 0, 0); road.receiveShadow = true;
     this.scene.add(road);
     const ground = new T.Mesh(new T.PlaneGeometry(480, 140), new T.MeshStandardMaterial({ color: 0x07080b, roughness: 0.95 }));
     ground.rotation.x = -Math.PI / 2; ground.position.set(100, -0.02, 0); this.scene.add(ground);
-    const curbMat = new T.MeshStandardMaterial({ color: 0x101217, roughness: 0.92 });
+    // marciapiede a lastre con cordolo in pietra chiara (scorrono con la strada)
+    const tiles = this.tex(256, 128, (g, w, h) => {
+      g.fillStyle = '#23252b'; g.fillRect(0, 0, w, h);
+      for (let y = 0; y < h; y += 32) for (let x = (y / 32) % 2 ? 16 : 0; x < w; x += 32) { const v = 30 + Math.random() * 14; g.fillStyle = `rgb(${v},${v + 1},${v + 5})`; g.fillRect(x + 1, y + 1, 30, 30); }
+      for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * 0.2})`; g.fillRect(Math.random() * w, Math.random() * h, 1, 1); }
+    });
+    tiles.wrapS = tiles.wrapT = T.RepeatWrapping; tiles.repeat.set(480 / 4, 1); this.walkMap = tiles;
+    const walkMat = new T.MeshStandardMaterial({ map: tiles, roughness: 0.85, color: 0x9aa0aa });
+    const curbMat = new T.MeshStandardMaterial({ color: 0x5a5e66, roughness: 0.8 });
     for (const z of [6.0, -6.0]) {
-      const walk = new T.Mesh(new T.BoxGeometry(480, 0.16, 2.2), curbMat);
+      const walk = new T.Mesh(new T.BoxGeometry(480, 0.16, 2.2), [curbMat, curbMat, walkMat, curbMat, curbMat, curbMat]);
       walk.position.set(100, 0.08, z + Math.sign(z) * 0.85); walk.receiveShadow = true; this.scene.add(walk);
+      const curb = new T.Mesh(new T.BoxGeometry(480, 0.17, 0.18), curbMat); curb.position.set(100, 0.085, z - Math.sign(z) * 0.16); curb.receiveShadow = true; this.scene.add(curb);
+      // cavi elettrici lungo la strada
+      for (const [hh, dz] of [[8.6, 0.6], [8.9, 1.0], [9.3, 1.4]]) { const c = new T.Mesh(new T.CylinderGeometry(0.012, 0.012, 480, 4), new T.MeshBasicMaterial({ color: 0x05060a })); c.rotation.z = Math.PI / 2; c.position.set(100, hh, z + Math.sign(z) * dz); this.scene.add(c); }
+    }
+    // skyline lontano: due fondali di grattacieli illuminati, fermi (parallasse infinita)
+    const sky = this.tex(2048, 256, (g, w, h) => {
+      g.clearRect(0, 0, w, h);
+      let x = 0;
+      while (x < w) {
+        const bw = 18 + Math.random() * 60, bh = 60 + Math.random() * 190;
+        g.fillStyle = `rgb(${8 + Math.random() * 6},${10 + Math.random() * 6},${20 + Math.random() * 10})`; g.fillRect(x, h - bh, bw, bh);
+        for (let yy = h - bh + 6; yy < h - 4; yy += 6) for (let xx = x + 3; xx < x + bw - 3; xx += 5) if (Math.random() < 0.3) { g.fillStyle = Math.random() < 0.8 ? `rgba(255,${190 + Math.random() * 50},120,${0.4 + Math.random() * 0.5})` : 'rgba(140,200,255,.7)'; g.fillRect(xx, yy, 2, 2); }
+        if (Math.random() < 0.25) { g.fillStyle = Math.random() < 0.5 ? '#ff2e88' : '#2ee6ff'; g.fillRect(x + 3, h - bh + 10 + Math.random() * 30, bw - 6, 3); }
+        if (Math.random() < 0.3) { g.fillStyle = '#ff2020'; g.fillRect(x + bw / 2, h - bh - 6, 2, 2); }
+        x += bw + Math.random() * 6;
+      }
+    });
+    for (const z of [-95, 95]) {
+      const bd = new T.Mesh(new T.PlaneGeometry(700, 85), new T.MeshBasicMaterial({ map: sky, transparent: true, fog: false, color: 0x9aa6c8 }));
+      bd.position.set(100, 40, z); if (z > 0) bd.rotation.y = Math.PI; this.scene.add(bd);
     }
   }
 
@@ -301,6 +348,17 @@ class Street3D extends Garage3D {
         const aw = new T.Mesh(new T.BoxGeometry(w * 0.9, 0.12, 1.4), new T.MeshStandardMaterial({ map: stripes, roughness: 0.7, emissive: 0x222222 }));
         aw.position.set(0, 3, -side * (d / 2 + 0.7)); aw.rotation.x = side * 0.25; g.add(aw);
         const sg = signMesh(w, side); sg.scale.setScalar(0.7); sg.position.set(0, h - 0.8, faceZ(d, side) - side * 0.02); g.add(sg);
+        // distributori automatici illuminati davanti al negozio
+        const vmTex = this.vendTex || (this.vendTex = this.tex(64, 128, (c, cw, ch) => {
+          c.fillStyle = '#e8f2ff'; c.fillRect(0, 0, cw, ch); c.fillStyle = '#1f6fd8'; c.fillRect(0, 0, cw, 14);
+          for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) { c.fillStyle = `hsl(${Math.random() * 360},70%,50%)`; c.fillRect(5 + k * 14, 20 + r * 18, 8, 13); }
+          c.fillStyle = '#20242c'; c.fillRect(6, 98, cw - 12, 22); c.fillStyle = '#ff3a3a'; c.fillRect(cw - 16, 92, 8, 3);
+        }));
+        for (let n = 0; n < (Math.random() < 0.5 ? 2 : 1); n++) {
+          const vm = new T.Mesh(new T.BoxGeometry(0.9, 1.8, 0.7), [dark(0x1a1d24), dark(0x1a1d24), dark(0x1a1d24), dark(0x1a1d24), new T.MeshBasicMaterial({ map: vmTex }), new T.MeshBasicMaterial({ map: vmTex })]);
+          vm.position.set(w * 0.42 - n * 1.0, 0.9 + 0.16, faceZ(d, side) - side * 0.45); g.add(vm);
+          const gl = new T.Sprite(this.glowMat('#cfe4ff', 0.35)); gl.scale.set(3, 3, 1); gl.position.set(vm.position.x, 1.2, vm.position.z - side * 0.6); g.add(gl);
+        }
         roofStuff(g, w, h, d);
       } else {                                                              // casa con tetto spiovente
         w = 8 + Math.random() * 5; d = 8; h = 4 + Math.random() * 2.5;
@@ -590,6 +648,8 @@ class Street3D extends Garage3D {
     const dz = z - this.lastZ; this.lastZ = z;
     this.camera.position.z += dz; this.controls.target.z += dz;
     this.roadMap.offset.x = (dist / 24) % 1;
+    if (this.roadRough) this.roadRough.offset.x = (dist / 24) % 1;
+    if (this.walkMap) this.walkMap.offset.x = (dist / 4) % 1;
     const span = 16 * 24;
     for (const l of this.lamps) l.g.position.x = ((l.x0 - dist) % span + span) % span - 80;
     for (const b of this.blocks) b.g.position.x = ((b.x0 - dist) % this.citySpan + this.citySpan) % this.citySpan - 150;

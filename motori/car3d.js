@@ -162,7 +162,7 @@ class Garage3D {
   buildCar() {
     const T = this.T, b = this.body, ss = Garage3D.ss;
     this.paint = new T.MeshPhysicalMaterial({ color: 0xc81d11, metalness: 0.55, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.2 });
-    const glass = new T.MeshPhysicalMaterial({ color: 0x05080e, metalness: 0.3, roughness: 0.04, clearcoat: 1, transparent: true, opacity: 0.88, envMapIntensity: 1.6 });
+    const glass = new T.MeshPhysicalMaterial({ color: 0x060a12, metalness: 0.5, roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.02, transparent: true, opacity: 0.93, envMapIntensity: 2.2, reflectivity: 0.9 });
     const black = new T.MeshStandardMaterial({ color: 0x0b0c0f, roughness: 0.65, metalness: 0.2 });
     const trimM = new T.MeshStandardMaterial({ color: 0x15171c, roughness: 0.4, metalness: 0.5 });
     const chrome = new T.MeshPhysicalMaterial({ color: 0xdfe4ea, metalness: 1, roughness: 0.12, clearcoat: 1 });
@@ -196,12 +196,17 @@ class Garage3D {
       b.add(this.rod([0.98, 0.89, z * 0.69], [0.36, 1.25, z * 0.54], 0.035, this.paint));          // montante A
       b.add(this.rod([-0.98, 0.91, z * 0.7], [-0.44, 1.25, z * 0.55], 0.045, this.paint));         // montante C
       b.add(this.rod([-0.05, 0.92, z * 0.71], [-0.05, 1.24, z * 0.55], 0.025, black));             // montante B
-      b.add(this.rod([0.95, 0.905, z * 0.74], [-0.95, 0.925, z * 0.74], 0.012, chrome));          // filetto del finestrino
+      b.add(this.rod([0.95, 0.9, z * 0.745], [-0.95, 0.92, z * 0.745], 0.016, black));           // guarnizione del finestrino
+      b.add(this.rod([0.9, 0.915, z * 0.75], [-0.9, 0.935, z * 0.75], 0.005, chrome));          // filetto cromato sottile
+      const handle = new T.Mesh(new T.BoxGeometry(0.16, 0.025, 0.02), chrome); handle.position.set(-0.2, 0.8, z * 0.9); b.add(handle);   // maniglia
+      const hcup = new T.Mesh(new T.BoxGeometry(0.2, 0.05, 0.01), black); hcup.position.set(-0.2, 0.8, z * 0.895); b.add(hcup);
       for (const sx of [0.42, -0.62]) b.add(this.rod([sx, 0.33, z * 0.905], [sx, 0.88, z * 0.875], 0.005, black)); // fughe della portiera
-      const intake = new T.Mesh(new T.BoxGeometry(0.42, 0.09, 0.02), black); intake.position.set(-0.78, 0.56, z * 0.915); intake.rotation.z = 0.12; b.add(intake);
+      // presa d'aria laterale incassata davanti al passaruota posteriore, con alette
+      const intake = new T.Mesh(new T.BoxGeometry(0.34, 0.07, 0.006), black); intake.position.set(-0.74, 0.58, z * 0.9); intake.rotation.z = 0.1; b.add(intake);
+      for (let k = 0; k < 3; k++) { const fin = new T.Mesh(new T.BoxGeometry(0.008, 0.06, 0.006), trimM); fin.position.set(-0.84 + k * 0.1, 0.585 + k * 0.01, z * 0.903); fin.rotation.z = 0.1; b.add(fin); }
       const mir = new T.Mesh(new T.SphereGeometry(0.1, 16, 10), this.paint); mir.scale.set(1.1, 0.6, 0.55); mir.position.set(0.74, 0.98, z * 0.98); mir.castShadow = true; b.add(mir);
       b.add(this.rod([0.78, 0.93, z * 0.8], [0.76, 0.97, z * 0.92], 0.015, black));
-      const skirt = new T.Mesh(new T.BoxGeometry(1.7, 0.06, 0.04), black); skirt.position.set(0, 0.28, z * 0.9); b.add(skirt);
+      const skirt = new T.Mesh(new T.BoxGeometry(1.62, 0.05, 0.03), trimM); skirt.position.set(0, 0.27, z * 0.89); b.add(skirt);
       const marker = new T.Mesh(new T.BoxGeometry(0.1, 0.035, 0.01), new T.MeshBasicMaterial({ color: 0xff9a20 })); marker.position.set(1.95, 0.52, z * 0.74); b.add(marker);
     }
     // alettone ad arco della JZA80
@@ -220,15 +225,32 @@ class Garage3D {
     const plateTex = this.carTex(256, 64, (g, w, h) => { g.fillStyle = '#f4f2ea'; g.fillRect(0, 0, w, h); g.strokeStyle = '#1b1d24'; g.lineWidth = 4; g.strokeRect(3, 3, w - 6, h - 6); g.fillStyle = '#1a1c24'; g.font = '700 40px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('2JZ·GTE', w / 2, h / 2 + 2); });
     const plate = new T.Mesh(new T.PlaneGeometry(0.5, 0.12), new T.MeshStandardMaterial({ map: plateTex, roughness: 0.6 })); plate.rotation.y = -Math.PI / 2; plate.position.set(-2.262, 0.47, 0); b.add(plate);
     const diff = new T.Mesh(new T.BoxGeometry(0.25, 0.08, 1.4), black); diff.position.set(-2.12, 0.29, 0); b.add(diff);
+    for (let k = -3; k <= 3; k++) { const fin = new T.Mesh(new T.BoxGeometry(0.3, 0.1, 0.012), trimM); fin.position.set(-2.15, 0.27, k * 0.17); b.add(fin); }
+    // terzo stop sull'alettone
+    const third = new T.Mesh(new T.BoxGeometry(0.02, 0.018, 0.5), this.lightR); third.position.set(-2.1, 1.215, 0); third.rotation.z = 0.12; b.add(third);
     // fari, prese del paraurti, fendinebbia, labbro
     this.lightF = new T.MeshStandardMaterial({ color: 0x222222, emissive: 0xfff3dd, emissiveIntensity: 0.2 });
     const lensF = new T.MeshPhysicalMaterial({ color: 0xcfe6ff, metalness: 0, roughness: 0.02, transparent: true, opacity: 0.35, clearcoat: 1 });
+    // fari a tre proiettori tondi per lato (il segno della JZA80) sotto una copertura trasparente inclinata
+    const cupG = new T.CylinderGeometry(0.042, 0.032, 0.05, 20, 1, true); cupG.rotateZ(Math.PI / 2);
+    const coreG = new T.SphereGeometry(0.026, 14, 10), housing = new T.MeshStandardMaterial({ color: 0x0c0d10, roughness: 0.4, metalness: 0.6 });
     for (const z of [0.6, -0.6]) {
-      const bulb = new T.Mesh(new T.SphereGeometry(0.06, 16, 10), this.lightF); bulb.position.set(1.98, 0.66, z); b.add(bulb);
+      void housing;
+      [0.14, 0.0, -0.14].forEach((dz, k) => {
+        const x = 1.94 + k * 0.045 * (z > 0 ? 1 : 1), zz = z + Math.sign(z) * dz * -1;
+        const cup = new T.Mesh(cupG, chrome); cup.position.set(x + 0.04, 0.68 - k * 0.012, zz); cup.rotation.z = -0.32; b.add(cup);
+        const core = new T.Mesh(coreG, this.lightF); core.position.set(x + 0.05, 0.68 - k * 0.012, zz); b.add(core);
+      });
+      const amber = new T.Mesh(new T.BoxGeometry(0.06, 0.03, 0.12), new T.MeshStandardMaterial({ color: 0x4a2a00, emissive: 0xff8a00, emissiveIntensity: 0.25 })); amber.position.set(2.16, 0.58, z * 1.1); b.add(amber);
       const cover = new T.Mesh(new T.SphereGeometry(0.13, 20, 12), lensF); cover.scale.set(1.6, 0.42, 1.05); cover.position.set(1.96, 0.67, z * 0.98); b.add(cover);
       const fog = new T.Mesh(new T.CylinderGeometry(0.04, 0.04, 0.02, 16), this.lightF); fog.rotation.z = Math.PI / 2; fog.position.set(2.24, 0.4, z * 0.95); b.add(fog);
     }
-    const mouth = new T.Mesh(new T.BoxGeometry(0.06, 0.13, 0.85), black); mouth.position.set(2.28, 0.4, 0); b.add(mouth);
+    const mesh = this.carTex(128, 32, (g, w, h) => { g.fillStyle = '#050506'; g.fillRect(0, 0, w, h); g.strokeStyle = '#2a2c32'; g.lineWidth = 1.2; for (let y = 0; y < h + 6; y += 6) for (let x = (y / 6) % 2 ? 3 : 0; x < w + 6; x += 6) { g.beginPath(); for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; g.lineTo(x + Math.cos(a) * 3, y + Math.sin(a) * 3); } g.closePath(); g.stroke(); } });
+    mesh.wrapS = mesh.wrapT = T.RepeatWrapping; mesh.repeat.set(3, 1);
+    const mouth = new T.Mesh(new T.BoxGeometry(0.06, 0.13, 0.85), new T.MeshStandardMaterial({ map: mesh, roughness: 0.7, metalness: 0.3 })); mouth.position.set(2.28, 0.4, 0); b.add(mouth);
+    for (const z of [0.62, -0.62]) { const duct = new T.Mesh(new T.BoxGeometry(0.05, 0.09, 0.2), new T.MeshStandardMaterial({ map: mesh, roughness: 0.7 })); duct.position.set(2.24, 0.36, z); b.add(duct); }
+    // sportello del carburante
+    const fuel = new T.Mesh(new T.CircleGeometry(0.075, 24), new T.MeshBasicMaterial({ color: 0x0a0405, transparent: true, opacity: 0.35 })); fuel.position.set(-1.62, 0.72, -0.915); fuel.rotation.y = Math.PI; b.add(fuel);
     const lipF = new T.Mesh(new T.BoxGeometry(0.22, 0.03, 1.5), black); lipF.position.set(2.18, 0.29, 0); b.add(lipF);
     // terminali di scarico e fiammate
     this.tips = [];
@@ -254,6 +276,22 @@ class Garage3D {
       this.root.add(w); this.wheels.push(w);
     }
     this.buildInterior();
+    // abitacolo visto da fuori (dietro i vetri): vasca scura, sedili, plancia, volante e pilota con cappellino
+    const co = this.cabinOut = new T.Group(); b.add(co);
+    const om = (c, r = 0.8) => new T.MeshStandardMaterial({ color: c, roughness: r });
+    const ob = (w, h, d, m, x, y, z, rz = 0) => { const o = new T.Mesh(new T.BoxGeometry(w, h, d), m); o.position.set(x, y, z); o.rotation.z = rz; co.add(o); return o; };
+    const tub = om(0x0a0a0d), seatM = om(0x1c1a1d), skinM = om(0x8a5a40, 0.6), jacket = om(0x1b2230, 0.9), capM = om(0x101015, 0.7);
+    ob(1.9, 0.08, 1.4, tub, -0.05, 0.5, 0);
+    ob(0.5, 0.18, 1.4, tub, 0.68, 0.84, 0);                                           // plancia
+    for (const z of [0.37, -0.37]) {
+      ob(0.12, 0.55, 0.46, seatM, -0.56, 0.8, z, -0.22); ob(0.1, 0.16, 0.26, seatM, -0.66, 1.13, z, -0.22);
+    }
+    const sw = new T.Mesh(new T.TorusGeometry(0.17, 0.02, 8, 28), om(0x111114, 0.5)); sw.rotation.y = Math.PI / 2; sw.rotation.x = 0; sw.position.set(0.32, 0.86, 0.37); sw.rotation.z = 0.45; co.add(sw);
+    ob(0.26, 0.42, 0.4, jacket, -0.42, 0.86, 0.37, -0.25);                              // busto del pilota
+    const head = new T.Mesh(new T.SphereGeometry(0.095, 16, 12), skinM); head.position.set(-0.36, 1.13, 0.37); co.add(head);
+    const cap = new T.Mesh(new T.SphereGeometry(0.1, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), capM); cap.position.set(-0.37, 1.15, 0.37); co.add(cap);
+    const visor = new T.Mesh(new T.BoxGeometry(0.1, 0.012, 0.15), capM); visor.position.set(-0.26, 1.16, 0.37); co.add(visor);
+    for (const dz of [0.17, -0.17]) { const arm = this.rod([-0.38, 0.98, 0.37 + dz * 1.2], [0.28, 0.86, 0.37 + dz], 0.035, jacket); co.add(arm); }
     // frecce: quattro angoli, lampeggiano prima dei cambi di corsia
     this.turnLights = [];
     for (const [x, z] of [[2.12, 0.74], [2.12, -0.74], [-2.18, 0.72], [-2.18, -0.72]]) {
@@ -419,6 +457,29 @@ class Garage3D {
     }
     add(new T.BoxGeometry(0.01, 0.022, 0.03), new T.MeshBasicMaterial({ color: 0xff3a22 }), 0.388, 0.775, 0.03, 0, -0.18, 0);
     this.auxGlow = add(new T.PlaneGeometry(0.1, 0.02), new T.MeshBasicMaterial({ color: 0xffa24a, toneMapped: false }), 0.387, 0.70, 0.03, 0, -Math.PI / 2 - 0.18, 0);
+    // tessuto dei sedili: trama a coste con cuciture rosse; moquette; cuffia del cambio, freno a mano, bracciolo
+    const fab = this.carTex(128, 128, (g, w, h) => {
+      g.fillStyle = '#2a272b'; g.fillRect(0, 0, w, h);
+      for (let y = 0; y < h; y += 8) { g.fillStyle = y % 16 ? '#232125' : '#2f2c31'; g.fillRect(0, y, w, 6); }
+      for (let i = 0; i < 1600; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * 0.05})`; g.fillRect(Math.random() * w, Math.random() * h, 1, 1); }
+      g.strokeStyle = '#a3241b'; g.setLineDash([3, 2]); g.lineWidth = 1.5; for (const x of [18, w - 18]) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+    });
+    fab.wrapS = fab.wrapT = T.RepeatWrapping;
+    const fabM = mat(0xffffff, { map: fab, roughness: 0.95 });
+    for (const z of [0.37, -0.37]) {
+      add(new T.BoxGeometry(0.46, 0.02, 0.36), fabM, -0.28, 0.525, z);                                          // seduta
+      add(new T.BoxGeometry(0.02, 0.5, 0.36), fabM, -0.495, 0.79, z, 0, 0, -0.22);                               // schienale
+    }
+    const carpet = this.carTex(64, 64, (g, w, h) => { g.fillStyle = '#121214'; g.fillRect(0, 0, w, h); for (let i = 0; i < 900; i++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.08})`; g.fillRect(Math.random() * w, Math.random() * h, 1, 1); } });
+    carpet.wrapS = carpet.wrapT = T.RepeatWrapping; carpet.repeat.set(6, 4);
+    add(new T.PlaneGeometry(1.9, 1.4), mat(0xffffff, { map: carpet, roughness: 1 }), -0.1, 0.345, 0, -Math.PI / 2);
+    add(new T.ConeGeometry(0.07, 0.12, 12, 1, true), mat(0x141214, { roughness: 0.55, side: T.DoubleSide }), 0.12, 0.64, 0);   // cuffia del cambio
+    const hb = new T.Group(); hb.position.set(-0.15, 0.6, 0); hb.rotation.z = 0.35; I.add(hb);                // freno a mano
+    add(new T.BoxGeometry(0.28, 0.03, 0.04), mat(0x18181b, { roughness: 0.5 }), 0.1, 0, 0, 0, 0, 0, hb);
+    add(new T.BoxGeometry(0.08, 0.035, 0.045), mat(0x8a9099, { metalness: 0.9, roughness: 0.3 }), 0.24, 0.002, 0, 0, 0, 0, hb);
+    add(new T.BoxGeometry(0.34, 0.08, 0.18), fabM, -0.42, 0.68, 0);                                            // bracciolo centrale
+    // bocchette della plancia con alette
+    for (const z of [-0.08, 0.08, -0.55, 0.62]) for (let k = 0; k < 4; k++) add(new T.BoxGeometry(0.004, 0.006, 0.09), mat(0x050506), 0.42, 0.835 + k * 0.011, z);
     // pedaliera, alette parasole, maniglie, altoparlanti e pulsantiere nelle porte
     for (const [dz, w] of [[0.48, 0.07], [0.37, 0.09], [0.26, 0.05]]) add(new T.BoxGeometry(0.02, 0.1, w), alu, 0.5, 0.45, dz, 0, 0, -0.4);
     for (const z of [0.36, -0.36]) add(new T.BoxGeometry(0.2, 0.012, 0.36), mat(0x3a3836, { roughness: 1 }), 0.12, 1.225, z, 0, 0, 0);

@@ -20,6 +20,15 @@ fanali tondi, alettone ad arco, ruote con cerchi, dischi e pinze, anteriori ster
 alberi, panchine, idranti, fermate, semafori che cambiano colore, strisce, frecce, tombini,
 luna e stelle. È l'unica vista che carica modelli .glb.
 
+**Dettagli della Supra e della città.** Fari a tre proiettori tondi per lato sotto la copertura trasparente,
+vetri fumé con riflessi, abitacolo visibile da fuori con sedili, plancia, volante e pilota col cappellino,
+maniglie, guarnizioni dei finestrini con filetto cromato, presa laterale incassata con alette, griglie a nido
+d'ape, diffusore a pinne e terzo stop sull'alettone. Dentro: tessuto dei sedili a coste con cuciture rosse,
+moquette, cuffia del cambio, freno a mano, bracciolo e bocchette con alette. Strada con rattoppi, crepe,
+tracce delle gomme, macchie d'olio, tombini e pozzanghere lucide che riflettono neon e lampioni; marciapiedi
+a lastre con cordolo chiaro, cavi elettrici lungo la via, distributori automatici illuminati davanti ai negozi
+e uno skyline lontano pieno di finestre accese.
+
 **Telecamere e qualità.** Il tasto C (o il pulsante 🎥) passa tra inseguimento, vista laterale, cofano
 e **abitacolo**: guida a destra come le JZA80 giapponesi, volante che gira con lo sterzo, leva del cambio
 che segue la marcia, sedili con cuciture rosse e il quadro strumenti del gioco disegnato sul cruscotto.
