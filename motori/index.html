@@ -575,6 +575,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <label class="kbtn file only3d">Carica modello .glb<input type="file" id="glbIn" accept=".glb,.gltf,model/gltf-binary"></label>
       <button class="kbtn only3d" type="button" id="glbRot">Ruota 90°</button>
       <button class="kbtn only3d" type="button" id="glbUp">Raddrizza</button>
+      <button class="kbtn only3d" type="button" id="glbSupra">Supra MK4</button>
       <button class="kbtn only3d" type="button" id="glbReset">Modello di base</button>
       <button class="kbtn only3d" type="button" id="camReset">Inquadratura</button>
       <button class="kbtn only3d" type="button" id="camNext">Telecamera<small>C</small></button>
@@ -746,7 +747,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     <button type="button" id="introMute" aria-label="Musica sì o no (M)"><span class="on">♪ Musica</span><span class="off">♪ Muta</span></button>
     <button type="button" id="introSkip">Salta ▸<small>Esc</small></button>
   </div>
-  <div class="intro-credit">♪ Redline at Midnight</div>
+  <div class="intro-credit">♪ Redline at Midnight · Supra MK4: Mike Farrant, CC BY 4.0</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
@@ -1421,12 +1422,18 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   const io = window.IntersectionObserver ? new IntersectionObserver((es) => { es.forEach((e) => { garageOn = e.isIntersecting; if (garage) garage.visible = garageOn; }); }) : null;
   if (io) io.observe($('roadStage'));
   if (window.ResizeObserver) new ResizeObserver(() => garage && garage.resize()).observe($('roadStage'));
+  const SUPRA_MODEL = { url: 'models/supra_mk4.glb', name: 'Toyota Supra MK4 · modello di Mike Farrant (CC BY 4.0)' };
   function make3D() {
     if (street3d) return street3d;
     try {
       street3d = new Street3D($('g3d'));
       street3d.setQuality(S.q || 'alta');
       street3d.setCluster($('gauges'));
+      // auto principale: la Supra MK4 di Mike Farrant (CC BY 4.0); se il file non si carica resta il modello di base
+      street3d.loadModelURL(SUPRA_MODEL.url, 'supra_mk4.glb').then(() => {
+        if (street3d.custom && !$('g3dName').dataset.model) { $('g3dName').dataset.model = SUPRA_MODEL.name; $('g3dName').textContent = SUPRA_MODEL.name; }
+        street3d.setPaint(S.paint);
+      }).catch(() => { /* resta la Supra procedurale */ });
       if (radio) { const st = radio.station; street3d.setRadio(st.id === 'off' ? '' : st.freq, st.name); }
       $('camReset').addEventListener('click', () => street3d.resetCamera());
     } catch (e) {
@@ -1473,6 +1480,10 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     b.addEventListener('click', () => { S.paint = hex; applySettings(); sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); });
     b.setAttribute('aria-pressed', String(hex === S.paint));
     sw.appendChild(b);
+  });
+  $('glbSupra').addEventListener('click', () => {
+    const v = make3D(); if (!v) return;
+    v.loadModelURL(SUPRA_MODEL.url, 'supra_mk4.glb').then(() => { $('g3dName').dataset.model = SUPRA_MODEL.name; $('g3dName').textContent = SUPRA_MODEL.name; v.setPaint(S.paint); flash('Supra MK4 caricata', 1.4); }).catch(() => flash('Modello non disponibile: apri il gioco da un server o dall\'artifact', 3));
   });
   $('glbIn').addEventListener('change', async (e) => {
     const f = e.target.files[0]; e.target.value = '';
@@ -1760,7 +1771,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   // tutta sua: si sentono motore, turbine e valvola sotto la canzone
   const intro = window.NightIntro ? new window.NightIntro($('gate'), {
     src: 'audio/redline_at_midnight.mp3', onGo: () => $('goBtn').click(), onStart: () => ensureAudio(),
-    setup: (v, sm) => { v.setPaint(S.paint === 'model' ? '#c81d11' : S.paint); v.setTips(TP.dsp.ex.tips); sm.setTune(TP.sim); sm.P.mass = sim.P.mass; sm.P.rearW = sim.P.rearW; },
+    setup: (v, sm) => { v.loadModelURL('models/supra_mk4.glb', 'supra_mk4.glb').then(() => v.setPaint(S.paint === 'model' ? '#c81d11' : S.paint)).catch(() => {}); v.setPaint(S.paint === 'model' ? '#c81d11' : S.paint); v.setTips(TP.dsp.ex.tips); sm.setTune(TP.sim); sm.P.mass = sim.P.mass; sm.P.rearW = sim.P.rearW; },
   }) : null;
   window.__intro = intro;
   function hideGate() { if (intro) intro.finish(); else $('gate').hidden = true; }

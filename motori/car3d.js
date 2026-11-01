@@ -54,6 +54,16 @@ class Garage3D {
 
   setPaint(hex) {
     this.paintHex = hex;
+    if (this.atlas && this.custom) {
+      const A = this.atlas, out = A.g.createImageData(A.w, A.h), src = A.orig.data, dst = out.data;
+      const c = new this.T.Color(hex === 'model' ? '#a00000' : hex), R = c.r * 255, G = c.g * 255, B = c.b * 255;
+      for (let i = 0, p = 0; i < A.mask.length; i++, p += 4) {
+        if (A.mask[i] && hex !== 'model') { const k = src[p] / 160; dst[p] = Math.min(255, R * k); dst[p + 1] = Math.min(255, G * k); dst[p + 2] = Math.min(255, B * k); }
+        else { dst[p] = src[p]; dst[p + 1] = src[p + 1]; dst[p + 2] = src[p + 2]; }
+        dst[p + 3] = src[p + 3];
+      }
+      A.g.putImageData(out, 0, 0); A.tex.needsUpdate = true;
+    }
     if (hex !== 'model') this.paint.color.set(hex);
     (this.customPaint || []).forEach((m) => m.color.set(hex === 'model' ? m.userData.orig : hex));
   }
@@ -673,11 +683,41 @@ class Garage3D {
   setTips(n) { if (this.tips[1]) this.tips[1].tip.visible = n > 1; this.dual = n > 1; }
 
   // modello dell'utente (.glb / .gltf incorporato)
-  loadModel(file) {
+  loadModel(file) { return file.arrayBuffer().then((buf) => this.loadModelBuffer(buf, file.name)); }
+
+  // modello predefinito (la Supra MK4 di Mike Farrant): stessa strada dei modelli caricati, più la vernice
+  // ricolorata sull'atlante delle texture e il pilota dietro i vetri
+  loadModelURL(url, name) {
+    return fetch(url).then((r) => { if (!r.ok) throw new Error('modello non trovato'); return r.arrayBuffer(); })
+      .then((buf) => this.loadModelBuffer(buf, name))
+      .then((res) => { this.initAtlasPaint(); return res; });
+  }
+
+  // vernice su un atlante unico: i pixel rosso carrozzeria si ricolorano mantenendo la luminosità
+  initAtlasPaint() {
+    const T = this.T; let mat = null;
+    this.custom.traverse((o) => { if (!mat && o.isMesh && o.material && o.material.map) mat = o.material; });
+    if (!mat) return;
+    const img = mat.map.image, w = img.width, h = img.height;
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d'); g.drawImage(img, 0, 0);
+    const orig = g.getImageData(0, 0, w, h), mask = new Uint8Array(w * h);
+    for (let i = 0, p = 0; i < mask.length; i++, p += 4) { const r = orig.data[p], gg = orig.data[p + 1], b = orig.data[p + 2]; if (r >= 110 && r <= 200 && gg <= 40 && b <= 40) mask[i] = 1; }
+    const tex = new T.CanvasTexture(cv); tex.flipY = mat.map.flipY; tex.encoding = mat.map.encoding; tex.wrapS = mat.map.wrapS; tex.wrapT = mat.map.wrapT; tex.anisotropy = 4;
+    // un solo materiale per tutta l'auto: opaco, altrimenti le ruote lontane si vedono attraverso la scocca
+    mat.color.set(0xffffff); mat.transparent = false; mat.depthWrite = true; mat.alphaTest = 0; mat.side = T.FrontSide;
+    mat.map = tex; mat.envMapIntensity = 1.15; mat.needsUpdate = true;
+    this.atlas = { g, orig, mask, tex, w, h };
+    this.customPaint = [];
+    if (this.paintHex) this.setPaint(this.paintHex);
+  }
+
+  loadModelBuffer(buf, fileName) {
     const T = this.T;
-    return file.arrayBuffer().then((buf) => new Promise((res, rej) => {
+    return Promise.resolve(buf).then(() => new Promise((res, rej) => {
       new T.GLTFLoader().parse(buf, '', (gltf) => {
         if (this.custom) { this.body.remove(this.custom); (this.customWheels || []).forEach((w) => this.root.remove(w.pivot)); }
+        this.atlas = null;
         const m = gltf.scene;
         m.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
         this.custom = this.fitModel(m);
@@ -686,7 +726,7 @@ class Garage3D {
         if (this.paintHex && this.paintHex !== 'model') this.setPaint(this.paintHex);
         this.baseParts.forEach((p) => { p.visible = p === this.tips[0]?.fl || p === this.tips[1]?.fl; });
         this.wheels.forEach((w) => { w.visible = false; });
-        res({ name: file.name, wheels: this.customWheels.length, upFixed: this.upFixed, paint: this.customPaint.length > 0 });
+        res({ name: fileName, wheels: this.customWheels.length, upFixed: this.upFixed, paint: this.customPaint.length > 0 });
       }, rej);
     }));
   }
@@ -783,7 +823,7 @@ class Garage3D {
   resetModel() {
     if (this.custom) { this.body.remove(this.custom); this.custom = null; }
     (this.customWheels || []).forEach((w) => this.root.remove(w.pivot));
-    this.customWheels = []; this.customPaint = [];
+    this.customWheels = []; this.customPaint = []; this.atlas = null;
     this.baseParts.forEach((p) => { p.visible = true; });
     if (this.hoodOnly) { this.hoodOnly.visible = false; if (this.cockpitOn) this.setCabinView(true); }
     this.setTips(this.dual ? 2 : 1);
@@ -807,7 +847,7 @@ class Garage3D {
     const steer = Math.max(-0.35, Math.min(0.35, (s.steer || 0)));
     this.wheels[0].rotation.y = steer; this.wheels[1].rotation.y = Math.PI + steer;      // ruote anteriori che sterzano
     if (s.damage !== undefined) this.setDamage(s.damage);
-    (this.customWheels || []).forEach((w) => { w.pivot.rotation.z = -(w.front ? st.front : st.spin); });
+    (this.customWheels || []).forEach((w) => { w.pivot.rotation.order = 'YXZ'; w.pivot.rotation.z = -(w.front ? st.front : st.spin); w.pivot.rotation.y = w.front ? steer : 0; });
     // ---- sospensioni: quattro ruote seguono l'asfalto, la scocca le segue su molle smorzate (~2 Hz)
     const d = s.dist || 0, wb = 1.28, H = Garage3D.roadH;
     const hFL = H(d + wb, 1), hFR = H(d + wb, -1), hRL = H(d - wb, 1), hRR = H(d - wb, -1);
@@ -819,7 +859,7 @@ class Garage3D {
       w.pivot.position.y = w.y0 + (front ? (left ? wh[0] : wh[1]) : (left ? wh[2] : wh[3]));
     });
     const tgtHeave = (wh[0] + wh[1] + wh[2] + wh[3]) / 4;
-    const tgtPitch = ((wh[0] + wh[1]) - (wh[2] + wh[3])) / 2 / (2 * wb) + Math.max(-0.05, Math.min(0.05, s.acc * 0.0042));
+    const tgtPitch = ((wh[0] + wh[1]) - (wh[2] + wh[3])) / 2 / (2 * wb) + Math.max(-0.03, Math.min(0.03, s.acc * 0.003));
     const tgtRoll = -((wh[0] + wh[2]) - (wh[1] + wh[3])) / 2 / 1.58 - Math.max(-0.05, Math.min(0.05, (s.latAcc || 0) * 0.006))
       + Math.max(-0.02, Math.min(0.02, s.torque * 0.00003));
     const K = 160, C = 11;                                // ω ≈ 12,6 rad/s, smorzamento ~0,45

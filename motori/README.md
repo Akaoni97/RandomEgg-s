@@ -20,6 +20,15 @@ fanali tondi, alettone ad arco, ruote con cerchi, dischi e pinze, anteriori ster
 alberi, panchine, idranti, fermate, semafori che cambiano colore, strisce, frecce, tombini,
 luna e stelle. È l'unica vista che carica modelli .glb.
 
+**Modello 3D della Supra.** L'auto principale (in strada e nella sigla) è
+[*Toyota Supra MK4 (LowPoly)*](https://sketchfab.com/3d-models/toyota-supra-mk4-lowpoly-36e53ad2f8f04e819baf5519dcb1bf7a)
+di [Mike Farrant](https://sketchfab.com/MikeFarrant), licenza [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
+Il file `models/supra_mk4.glb` è una versione ricavata dall'originale: orientato e scalato in metri, ruote
+separate in quattro pezzi (girano e sterzano), texture ridotte da 4096 a 1024 px (da 26 a 2,4 MB), materiale
+reso opaco. La vernice dell'officina ricolora i pixel rosso carrozzeria dell'atlante delle texture, quindi
+loghi, fari e cerchi restano com'erano. Il pulsante "Supra MK4" la ricarica, "Modello di base" torna alla
+Supra procedurale (usata anche se il file non si carica, per esempio aprendo la pagina con doppio clic).
+
 **Dettagli della Supra e della città.** Fari a tre proiettori tondi per lato sotto la copertura trasparente,
 vetri fumé con riflessi, abitacolo visibile da fuori con sedili, plancia, volante e pilota col cappellino,
 maniglie, guarnizioni dei finestrini con filetto cromato, presa laterale incassata con alette, griglie a nido
