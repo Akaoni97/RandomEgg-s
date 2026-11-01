@@ -314,23 +314,56 @@ class Garage3D {
     const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0, parent = I) => { const o = new T.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); parent.add(o); return o; };
     const twoSided = (c) => mat(c, { side: T.DoubleSide });
     add(new T.PlaneGeometry(2.0, 1.5), twoSided(0x0c0c0f), -0.1, 0.34, 0, -Math.PI / 2);                      // pavimento
+    // pannelli porta: pelle con cuciture, tasca, altoparlante a rete; bracciolo imbottito, maniglia ad arco,
+    // pulsantiera dei finestrini sul lato del pilota
+    const doorTex = this.carTex(512, 160, (g, w, h) => {
+      g.fillStyle = '#2a282c'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#353238'; g.fillRect(0, 18, w, 54);                                       // fascia imbottita
+      g.strokeStyle = '#141316'; g.lineWidth = 2; for (const y of [18, 72]) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+      g.strokeStyle = '#7a2a22'; g.setLineDash([4, 3]); g.lineWidth = 1.2; for (const y of [22, 68]) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+      g.setLineDash([]); g.fillStyle = '#18171a'; g.fillRect(40, 112, 240, 34);                    // tasca
+      const cx = 400, cy = 118; g.fillStyle = '#121114'; g.beginPath(); g.arc(cx, cy, 34, 0, 7); g.fill();
+      g.fillStyle = '#26242a'; for (let yy = -30; yy <= 30; yy += 5) for (let xx = -30; xx <= 30; xx += 5) if (xx * xx + yy * yy < 900) g.fillRect(cx + xx, cy + yy, 2, 2);
+      for (let i = 0; i < 3000; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * 0.03})`; g.fillRect(Math.random() * w, Math.random() * h, 1, 1); }
+    });
     for (const z of [0.83, -0.83]) {
-      const door = add(new T.PlaneGeometry(1.9, 0.56), twoSided(0x17161a), -0.05, 0.62, z, 0, z > 0 ? Math.PI : 0);
-      add(new T.BoxGeometry(1.1, 0.05, 0.08), soft, -0.1, 0.8, z * 0.97);                                     // bracciolo
-      add(new T.BoxGeometry(0.06, 0.03, 0.02), alu, 0.35, 0.78, z * 0.95);                                     // maniglia interna
-      void door;
+      add(new T.PlaneGeometry(1.9, 0.56), mat(0xffffff, { map: doorTex, side: T.DoubleSide, roughness: 0.75 }), -0.05, 0.62, z, 0, z > 0 ? Math.PI : 0);
+      const arm = new T.CapsuleGeometry(0.03, 0.9, 4, 10); arm.rotateZ(Math.PI / 2);
+      add(arm, soft, -0.2, 0.74, z * 0.965);                                                          // bracciolo
+      add(new T.BoxGeometry(0.14, 0.014, 0.02), mat(0x8a9099, { metalness: 0.9, roughness: 0.3 }), -0.02, 0.765, z * 0.945);   // maniglia di chiusura
+      add(new T.BoxGeometry(0.06, 0.03, 0.02), alu, 0.35, 0.86, z * 0.95);                              // apriporta
+      add(new T.CylinderGeometry(0.006, 0.006, 0.03, 8), alu, 0.45, 0.93, z * 0.93);                    // pomello della sicura
+      if (z > 0) for (const dx of [-0.05, 0.0]) add(new T.BoxGeometry(0.035, 0.012, 0.02), mat(0x0c0c0e, { roughness: 0.4 }), -0.25 + dx, 0.825, z * 0.93);   // alzacristalli
     }
-    // plancia: imbottitura, palpebra del quadro, consolle centrale con radio e bocchette
-    add(new T.BoxGeometry(0.45, 0.22, 1.56), dash, 0.66, 0.8, 0);
-    add(new T.BoxGeometry(0.4, 0.05, 1.56), soft, 0.7, 0.905, 0, 0, 0, -0.1);
+    // plancia: profilo curvo estruso (parabrezza → piano → bordo arrotondato → faccia inclinata verso le gambe)
+    const prof = new T.Shape();
+    prof.moveTo(0.98, 0.5); prof.lineTo(0.98, 0.885); prof.quadraticCurveTo(0.75, 0.925, 0.52, 0.918);
+    prof.quadraticCurveTo(0.4, 0.915, 0.405, 0.86); prof.quadraticCurveTo(0.41, 0.76, 0.46, 0.62); prof.lineTo(0.62, 0.5); prof.lineTo(0.98, 0.5);
+    const dg = new T.ExtrudeGeometry(prof, { depth: 1.5, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.012, bevelSegments: 3, curveSegments: 14 });
+    dg.translate(0, 0, -0.75);
+    add(dg, dash, 0, 0, 0);
+    // lato passeggero: cassetto portaoggetti, maniglia d'appiglio, bocchetta
+    const gb = add(new T.PlaneGeometry(0.42, 0.13), mat(0x0a0a0c), 0.425, 0.74, -0.4, 0, -Math.PI / 2, 0); gb.rotation.order = 'YXZ'; gb.rotation.x = -0.25;
+    const gb2 = add(new T.PlaneGeometry(0.4, 0.11), dash, 0.423, 0.74, -0.4, 0, -Math.PI / 2, 0); gb2.rotation.order = 'YXZ'; gb2.rotation.x = -0.25;
+    add(new T.BoxGeometry(0.01, 0.012, 0.06), alu, 0.418, 0.79, -0.4);
+    const grab = new T.TorusGeometry(0.07, 0.012, 8, 16, Math.PI); add(grab, soft, 0.41, 0.85, -0.55, 0, -Math.PI / 2, Math.PI);
     const hood = new T.CylinderGeometry(0.095, 0.095, 0.4, 20, 1, true, 0, Math.PI); hood.rotateX(Math.PI / 2);
     add(hood, dash, 0.47, 0.93, 0.37, 0, 0, 0).material.side = T.DoubleSide;
     this.clusterMat = new T.MeshBasicMaterial({ color: 0xffffff });
     this.clusterScreen = add(new T.PlaneGeometry(0.3, 0.11), this.clusterMat, 0.425, 0.935, 0.37, 0, -Math.PI / 2, 0);
     this.clusterScreen.rotation.order = 'YXZ'; this.clusterScreen.rotation.x = -0.25;
     add(new T.BoxGeometry(0.28, 0.36, 0.34), dash, 0.52, 0.66, 0);
-    const radio = add(new T.PlaneGeometry(0.2, 0.05), new T.MeshBasicMaterial({ color: 0x0c5a68 }), 0.375, 0.76, 0, 0, -Math.PI / 2, 0);
-    void radio;
+    // autoradio: frontalino nero con display ciano e tasti
+    const radioTex = this.carTex(256, 72, (g, w, h) => {
+      g.fillStyle = '#0b0b0d'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#04161a'; g.fillRect(56, 10, 144, 30);
+      g.fillStyle = '#3ff0ff'; g.font = '700 18px monospace'; g.textAlign = 'left'; g.fillText('FM 89.7', 64, 31);
+      g.font = '12px monospace'; g.fillStyle = '#ff4fa0'; g.fillText('00:00', 152, 31);
+      g.fillStyle = '#1e1f24'; for (let k = 0; k < 6; k++) g.fillRect(56 + k * 24, 48, 20, 12);
+      g.fillStyle = '#9aa2ad'; g.font = '9px monospace'; for (let k = 0; k < 6; k++) g.fillText(String(k + 1), 63 + k * 24, 57);
+      for (const x of [26, 230]) { g.fillStyle = '#26272c'; g.beginPath(); g.arc(x, 36, 18, 0, 7); g.fill(); g.fillStyle = '#4a4c54'; g.beginPath(); g.arc(x, 36, 12, 0, 7); g.fill(); }
+    });
+    add(new T.PlaneGeometry(0.22, 0.062), new T.MeshBasicMaterial({ map: radioTex, toneMapped: false, color: 0xb8b8b8 }), 0.362, 0.62, 0.02, 0, -Math.PI / 2 - 0.18, 0);
     for (const z of [-0.08, 0.08, -0.55, 0.62]) add(new T.BoxGeometry(0.02, 0.05, 0.1), alu, 0.43, 0.85, z);
     add(new T.BoxGeometry(0.95, 0.16, 0.24), dash, 0.02, 0.5, 0);
     // paratia e vano piedi: chiudono la vista sotto la plancia
@@ -447,19 +480,19 @@ class Garage3D {
       add(new T.BoxGeometry(0.09, 0.5, 0.06), mat(0xc42a1a), -0.55, 0.8, z + 0.14, 0, 0, -0.22);            // cucitura rossa
     }
     // consolle centrale rivolta verso il pilota (cockpit avvolgente della JZA80): tre strumenti supplementari
-    const stack = add(new T.BoxGeometry(0.06, 0.2, 0.34), dash, 0.42, 0.79, 0.03, 0, -0.18, 0);
+    const stack = add(new T.BoxGeometry(0.06, 0.3, 0.36), dash, 0.395, 0.74, 0.03, 0, -0.18, 0);
     void stack;
     this.auxCanvas = document.createElement('canvas'); this.auxCanvas.width = 288; this.auxCanvas.height = 96;
     this.auxTex = new T.CanvasTexture(this.auxCanvas); this.auxTex.encoding = T.sRGBEncoding;
-    const aux = add(new T.PlaneGeometry(0.27, 0.09), new T.MeshBasicMaterial({ map: this.auxTex, toneMapped: false }), 0.388, 0.84, 0.035, 0, -Math.PI / 2 - 0.18, 0);
+    const aux = add(new T.PlaneGeometry(0.27, 0.09), new T.MeshBasicMaterial({ map: this.auxTex, toneMapped: false }), 0.36, 0.84, 0.035, 0, -Math.PI / 2 - 0.18, 0);
     void aux;
     // clima: tre manopole, display e pulsante d'emergenza
     for (const dz of [-0.09, 0, 0.09]) {
       const k = new T.CylinderGeometry(0.02, 0.022, 0.025, 16); k.rotateZ(Math.PI / 2);
-      add(k, alu, 0.385, 0.735, 0.03 + dz, 0, -0.18, 0);
+      add(k, alu, 0.358, 0.735, 0.03 + dz, 0, -0.18, 0);
     }
-    add(new T.BoxGeometry(0.01, 0.022, 0.03), new T.MeshBasicMaterial({ color: 0xff3a22 }), 0.388, 0.775, 0.03, 0, -0.18, 0);
-    this.auxGlow = add(new T.PlaneGeometry(0.1, 0.02), new T.MeshBasicMaterial({ color: 0xffa24a, toneMapped: false }), 0.387, 0.70, 0.03, 0, -Math.PI / 2 - 0.18, 0);
+    add(new T.BoxGeometry(0.01, 0.022, 0.03), new T.MeshBasicMaterial({ color: 0xff3a22 }), 0.362, 0.775, 0.03, 0, -0.18, 0);
+    this.auxGlow = add(new T.PlaneGeometry(0.1, 0.02), new T.MeshBasicMaterial({ color: 0xffa24a, toneMapped: false }), 0.362, 0.70, 0.03, 0, -Math.PI / 2 - 0.18, 0);
     // tessuto dei sedili: trama a coste con cuciture rosse; moquette; cuffia del cambio, freno a mano, bracciolo
     const fab = this.carTex(128, 128, (g, w, h) => {
       g.fillStyle = '#2a272b'; g.fillRect(0, 0, w, h);
@@ -492,6 +525,11 @@ class Garage3D {
       add(new T.BoxGeometry(0.04, 0.01, 0.02), mat(0x8899aa), 0.04, 0.835, z * 0.94);
     }
     add(new T.PlaneGeometry(1.14, 1.5), twoSided(0x34323a), -0.33, 1.245, 0, Math.PI / 2);                    // cielo in tessuto: finisce dove inizia il parabrezza
+    // parabrezza visto da dentro: vetro appena riflettente con fascia scura antiriflesso in alto
+    const tint = this.carTex(16, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(10,30,60,.75)'); gr.addColorStop(0.22, 'rgba(10,30,60,.35)'); gr.addColorStop(0.3, 'rgba(10,30,60,0)'); gr.addColorStop(1, 'rgba(10,30,60,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+    const wsLen = Math.hypot(0.98 - 0.26, 1.24 - 0.89), ws = new T.PlaneGeometry(1.42, wsLen);
+    const wsM = new T.MeshPhysicalMaterial({ map: tint, transparent: true, opacity: 1, roughness: 0.02, metalness: 0, envMapIntensity: 0.35, depthWrite: false, side: T.DoubleSide, color: 0xffffff });
+    const wsMesh = add(ws, wsM, (0.98 + 0.26) / 2, (0.89 + 1.24) / 2, 0, 0, -Math.PI / 2, 0); wsMesh.rotation.order = 'YXZ'; wsMesh.rotation.x = Math.atan2(0.98 - 0.26, 1.24 - 0.89);
     // bocchetta del disappannamento alla base del parabrezza
     for (let k = -6; k <= 6; k++) add(new T.BoxGeometry(0.05, 0.004, 0.06), mat(0x040405), 0.86, 0.918, k * 0.1);
     // cuciture sulla palpebra del quadro

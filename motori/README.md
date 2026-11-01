@@ -23,7 +23,7 @@ luna e stelle. È l'unica vista che carica modelli .glb.
 **Dettagli della Supra e della città.** Fari a tre proiettori tondi per lato sotto la copertura trasparente,
 vetri fumé con riflessi, abitacolo visibile da fuori con sedili, plancia, volante e pilota col cappellino,
 maniglie, guarnizioni dei finestrini con filetto cromato, presa laterale incassata con alette, griglie a nido
-d'ape, diffusore a pinne e terzo stop sull'alettone. Dentro: tessuto dei sedili a coste con cuciture rosse,
+d'ape, diffusore a pinne e terzo stop sull'alettone. Dentro: plancia a profilo curvo estruso con bordo arrotondato, cassetto e maniglia d'appiglio dal lato passeggero, autoradio con display, pannelli porta in pelle con cuciture, tasca e altoparlante, bracciolo imbottito, alzacristalli, parabrezza con fascia scura antiriflesso in alto; tessuto dei sedili a coste con cuciture rosse,
 moquette, cuffia del cambio, freno a mano, bracciolo e bocchette con alette. Strada con rattoppi, crepe,
 tracce delle gomme, macchie d'olio, tombini e pozzanghere lucide che riflettono neon e lampioni; marciapiedi
 a lastre con cordolo chiaro, cavi elettrici lungo la via, distributori automatici illuminati davanti ai negozi
