@@ -32,6 +32,9 @@ class Street3D extends Garage3D {
     this.buildCity();
     this.buildProps();
     this.root.position.z = 3.5; this.lastZ = 3.5;
+    this.brakeGlow = [0.55, -0.55].map((z) => { const sp = new T.Sprite(this.glowMat('#ff2a1a', 0)); sp.scale.set(1.6, 1.0, 1); sp.position.set(-2.45, 0.74, z); this.root.add(sp); return sp; });
+    this.headGlow = [0.58, -0.58].map((z) => { const sp = new T.Sprite(this.glowMat('#fff3dd', 0.5)); sp.scale.set(1.1, 0.8, 1); sp.position.set(2.3, 0.6, z); this.root.add(sp); return sp; });
+    this.shakeT = 0;
   }
 
   resize() {
@@ -96,8 +99,17 @@ class Street3D extends Garage3D {
     }
   }
 
+  // alone morbido per luci (sprite additivo) e riflesso allungato sull'asfalto bagnato
+  glowMat(hex, op) {
+    const T = this.T;
+    const tex = this.tex(64, 64, (g, w) => { const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, w); });
+    return new T.SpriteMaterial({ map: tex, color: hex, transparent: true, opacity: op, blending: T.AdditiveBlending, depthWrite: false });
+  }
+
   buildLamps() {
     const T = this.T;
+    const rtex = this.tex(32, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,180,90,0)'); gr.addColorStop(0.4, 'rgba(255,180,90,.55)'); gr.addColorStop(0.55, 'rgba(255,200,120,.8)'); gr.addColorStop(1, 'rgba(255,180,90,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); const gx = g.createLinearGradient(0, 0, w, 0); gx.addColorStop(0, 'rgba(0,0,0,1)'); gx.addColorStop(0.5, 'rgba(0,0,0,0)'); gx.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = gx; g.fillRect(0, 0, w, h); });
+    this.reflMat = new T.MeshBasicMaterial({ map: rtex, transparent: true, opacity: 0.5, blending: T.AdditiveBlending, depthWrite: false });
     const pool = this.tex(128, 128, (g, w) => {
       const gr = g.createRadialGradient(w / 2, w / 2, 1, w / 2, w / 2, w / 2);
       gr.addColorStop(0, 'rgba(255,170,80,.9)'); gr.addColorStop(0.45, 'rgba(255,140,50,.28)'); gr.addColorStop(1, 'rgba(255,120,40,0)');
@@ -114,6 +126,8 @@ class Street3D extends Garage3D {
       const arm = new T.Mesh(new T.BoxGeometry(0.12, 0.12, 2.4), poleMat); arm.position.set(0, 7.9, -side * 1.1); g.add(arm);
       const bulb = new T.Mesh(new T.BoxGeometry(0.7, 0.12, 0.35), bulbMat); bulb.position.set(0, 7.8, -side * 2.2); g.add(bulb);
       const p = new T.Mesh(new T.PlaneGeometry(15, 15), poolMat); p.rotation.x = -Math.PI / 2; p.position.set(0, 0.03, -side * 3.2); g.add(p);
+      const halo = new T.Sprite(this.glowMat('#ffb35c', 0.55)); halo.scale.set(3.2, 3.2, 1); halo.position.set(0, 7.75, -side * 2.2); g.add(halo);
+      const refl = new T.Mesh(new T.PlaneGeometry(1.2, 9), this.reflMat); refl.rotation.x = -Math.PI / 2; refl.position.set(0, 0.035, -side * 2.2 + side * 0.5 - side * 3.2); g.add(refl);
       g.position.z = side * 7.3;
       this.scene.add(g); this.lamps.push({ g, x0: i * 24 });
     }
@@ -239,7 +253,7 @@ class Street3D extends Garage3D {
     const T = this.T, add = (o, x0, z) => { o.position.z = z; this.scene.add(o); this.props.push({ o, x0 }); return o; };
     const mat = (c, o = {}) => new T.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.7 }, o));
     this.props = []; this.signals = [];
-    const trunkM = mat(0x2a1d14), leafM = new T.MeshLambertMaterial({ color: 0x05140b, flatShading: true }), leafM2 = new T.MeshLambertMaterial({ color: 0x08190d, flatShading: true }), planterM = new T.MeshLambertMaterial({ color: 0x0c0e13 });
+    const trunkM = mat(0x2a1d14), leafM = new T.MeshBasicMaterial({ color: 0x0c2a18 }), leafM2 = new T.MeshBasicMaterial({ color: 0x103320 }), planterM = new T.MeshBasicMaterial({ color: 0x0b0d12 });
     const redM = mat(0xb3261a, { metalness: 0.3 }), greenM = mat(0x1f5a3c), woodM = mat(0x5a3b22), poleM = mat(0x22262e, { metalness: 0.6 });
     const white = new T.MeshBasicMaterial({ color: 0xd8d4c8 }), manM = mat(0x0e1015, { metalness: 0.7, roughness: 0.4 });
     for (let k = 0; k < 22; k++) {                                          // alberi in aiuola
@@ -302,12 +316,6 @@ class Street3D extends Garage3D {
     for (let k = 0; k < 5; k++) for (const z of [3.5, 0]) {                 // frecce dipinte
       const a = new T.Mesh(new T.ShapeGeometry(arrowShape), white); a.rotation.x = -Math.PI / 2; a.position.y = 0.026; add(a, 45 + k * 97, z);
     }
-    const colors = [0x2b4c7e, 0x8a8f96, 0x1d1f22, 0xe8e6df, 0x6b1b14, 0x2f5d3a, 0xb38b2d, 0x4b2a6b];
-    for (let k = 0; k < 10; k++) {                                          // auto parcheggiate in terza corsia
-      const car = this.makeCar('traffic', colors[k % colors.length]);
-      car.rotation.y = k % 4 === 0 ? Math.PI : 0;
-      add(car, 8 + k * 47 + Math.random() * 10, -4.3);
-    }
     // cielo: luna e stelle (non toccate dalla nebbia)
     const moon = new T.Mesh(new T.SphereGeometry(9, 24, 16), new T.MeshBasicMaterial({ color: 0xfff1c9, fog: false }));
     moon.position.set(220, 95, -170); this.scene.add(moon); this.moon = moon;
@@ -337,6 +345,7 @@ class Street3D extends Garage3D {
       g.userData.flash = { a: red, b: blue, pl };
     }
     const tl = new T.Mesh(new T.BoxGeometry(0.05, 0.12, 1.5), new T.MeshBasicMaterial({ color: 0xff2414 })); tl.position.set(-2.22, 0.72, 0); g.add(tl);
+    for (const z of [0.6, -0.6]) { const gl = new T.Sprite(this.glowMat('#ff2414', 0.45)); gl.scale.set(1.0, 0.6, 1); gl.position.set(-2.35, 0.72, z); g.add(gl); }
     const hl = new T.Mesh(new T.BoxGeometry(0.05, 0.1, 1.4), new T.MeshBasicMaterial({ color: 0xfff6e0 })); hl.position.set(2.22, 0.66, 0); g.add(hl);
     const tire = new T.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 0.9 });
     for (const [x, z] of [[1.3, 0.8], [1.3, -0.8], [-1.3, 0.8], [-1.3, -0.8]]) {
@@ -440,6 +449,14 @@ class Street3D extends Garage3D {
     const fov = (this.baseFov || 40) + Math.min(16, Math.max(0, s.v) * 0.2);
     if (Math.abs(fov - this.camera.fov) > 0.05) { this.camera.fov += (fov - this.camera.fov) * Math.min(1, dt * 3); this.camera.updateProjectionMatrix(); }
     this.headlight.intensity = s.ign ? 2.6 : 0;
+    this.brakeGlow.forEach((b) => { b.material.opacity = s.ign ? 0.25 + (s.brake || 0) * 0.75 : 0; });
+    this.headGlow.forEach((b) => { b.material.opacity = s.ign ? 0.55 : 0; });
+    if (game) for (const f of game.fx) if (f.k === 'crash') this.shakeT = 0.5;
+    if (this.shakeT > 0) {
+      this.shakeT -= dt;
+      const a = this.shakeT * 0.6;
+      this.camera.position.x += (Math.random() - 0.5) * a; this.camera.position.y += (Math.random() - 0.5) * a;
+    }
     super.update(dt, s);
   }
 }

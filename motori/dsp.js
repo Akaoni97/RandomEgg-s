@@ -178,6 +178,7 @@ class EngineDSP {
     } else if (e.type === 'grind') this.grind = 1;
     else if (e.type === 'clunk') this.clunk = 1;
     else if (e.type === 'click') this.click = 1;
+    else if (e.type === 'crash') { this.crashE = Math.min(1.6, 0.6 + (e.I || 0.6)); this.crashPh = 0; }
     else if (e.type === 'bump') { this.bump = Math.min(1.5, (this.bump || 0) + (e.I || 0.6)); this.bumpPh = 0; }
     void T;
   }
@@ -438,6 +439,13 @@ class EngineDSP {
         this.bumpPh += 47 / sr;
         road += (Math.sin(TAU * this.bumpPh) * 0.5 + this.roadLP.p(nz) * 2.5) * this.bump * 0.35;
         this.bump *= Math.exp(-1 / (sr * 0.045));
+      }
+      // tamponamento: botta sorda + lamiera che vibra
+      if (this.crashE > 1e-3) {
+        this.crashPh += 1 / sr;
+        const ring = Math.sin(TAU * 520 * this.crashPh) * 0.5 + Math.sin(TAU * 1370 * this.crashPh) * 0.3 + Math.sin(TAU * 61 * this.crashPh) * 1.2;
+        gear += (this.roadLP.p(nz3) * 4 + ring) * this.crashE * 0.5;
+        this.crashE *= Math.exp(-1 / (sr * 0.12));
       }
       if (this.click > 1e-3) { gear += this.tickHP.p(nz3) * this.click * 0.25; this.click *= Math.exp(-1 / (sr * 0.004)); }
 

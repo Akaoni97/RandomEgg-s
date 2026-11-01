@@ -6,7 +6,8 @@ Quadro strumenti in alto, strada a scorrimento sotto, consolle di guida, officin
 La strada è disegnata in **pixel art cartoonesca vista di lato** (`street2d.js`), a 360 px di
 altezza: auto con contorni e proporzioni da cartone, schiacciamento in partenza, tuffo in frenata,
 sobbalzi sui giunti, pilota che si muove, fumo, fiammate; città su tre piani con insegne a pixel,
-balconi, cisterne, negozi, pedoni e un gatto. Le luci si sommano all'immagine a bande morbide:
+balconi, cisterne, negozi, pedoni e un gatto. La Supra ha la silhouette della JZA80 (muso basso,
+lunotto inclinato, alettone ad arco) e le cose si scrivono in grande: VROOOM, PSSSH, BANG, SCREEECH, CRASH. Le luci si sommano all'immagine a bande morbide:
 pozze sull'asfalto sotto i lampioni, davanti ai fari e dietro agli stop, riflessi sul bagnato.
 
 Dalla barra sotto la strada si passa alla **vista 3D** (`street3d.js`): edifici di quattro tipi,
@@ -20,6 +21,8 @@ parcheggiate, luna e stelle. È l'unica vista che carica modelli .glb.
 - Lungo la strada arrivano proposte a tempo (pulsanti o tasti 1-2-3; senza risposta vale l'ultima):
   distributore (pieno, € 20 o tiri dritto), sfide da semaforo sui 400 m con posta, lavoretti di consegna
   con bonus di puntualità.
+- Corsie: tre corsie, si cambia con A e D (o i pulsanti ◀ ▶ sulla strada). Con il sorpasso automatico
+  la Supra si sposta da sola dietro al traffico lento; senza, chi tampona paga il carrozziere.
 - Polizia: se le passi accanto in sesta ti ferma, multa in base alla velocità e al livello di ricercato
   (5 stelle, scende col tempo). Un avviso in alto segnala le pattuglie in arrivo.
 - Officina: i pezzi si pagano coi contanti e si montano solo da fermo. Le preparazioni pronte mostrano

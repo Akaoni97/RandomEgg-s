@@ -5,8 +5,8 @@ import { readFileSync } from 'node:fs';
 
 const dir = new URL('../motori/', import.meta.url);
 const src = ['dsp.js', 'sim.js', 'tuning.js', 'samples.js', 'game.js'].map((f) => readFileSync(new URL(f, dir), 'utf8')).join('\n');
-const { EngineDSP, SupraSim, TUNING, TUNING_PRESETS, tuningParams, SamplePlayer, StreetGame } =
-  new Function(src + ';return { EngineDSP, SupraSim, TUNING, TUNING_PRESETS, tuningParams, SamplePlayer, StreetGame };')();
+const { EngineDSP, SupraSim, TUNING, TUNING_PRESETS, tuningParams, SamplePlayer, StreetGame, GAME_LANE_Z } =
+  new Function(src + ';return { EngineDSP, SupraSim, TUNING, TUNING_PRESETS, tuningParams, SamplePlayer, StreetGame, GAME_LANE_Z };')();
 
 function drive(sim, seconds, each) {
   for (let t = 0; t < seconds; t += 1 / 60) { each?.(sim, t); sim.update(1 / 60); sim.events.length = 0; }
@@ -280,4 +280,23 @@ test('gomme da drag: più aderenza e tempo stimato migliore', () => {
   sim.setTune(tuningParams({ ...TUNING_PRESETS[0].sel, tires: 'etstreet' }).sim);
   assert.equal(sim.P.mu, 1.55);
   assert.ok(game.etEstimate() < base);
+});
+
+test('corsie a mano: si cambia corsia e tamponare costa', () => {
+  const { sim, game } = career();
+  game.autoLane = false;
+  sim.shift(1);
+  play(sim, game, 6, flatOut);
+  assert.equal(game.steer(1), true);
+  assert.equal(game.lane, 2);
+  play(sim, game, 1.5, flatOut);
+  assert.ok(Math.abs(game.laneZ - GAME_LANE_Z[2]) < 0.2, 'la Supra si sposta in seconda corsia');
+  const money = game.s.money, v0 = sim.v;
+  game.ents.push({ id: 77, kind: 'traffic', lane: 2, x: game.s.dist + 25, v: 8, color: 0x2b4c7e });
+  play(sim, game, 3, flatOut);
+  assert.ok(game.s.money < money, 'il carrozziere si paga');
+  assert.ok(game.s.crashes >= 1);
+  assert.equal(game.steer(1), true); assert.equal(game.lane, 3);
+  assert.equal(game.steer(1), false, 'non si va oltre la terza corsia');
+  void v0;
 });
