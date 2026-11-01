@@ -242,7 +242,7 @@ h1 span { color: var(--amber); }
 .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .st { display: grid; gap: 5px; min-width: 0; }
 .st b { font: 400 11px/1 var(--f-data); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
-.st b span { color: var(--fg); font-size: 13px; letter-spacing: 0; }
+.st b span { color: var(--fg); font-size: 13px; letter-spacing: 0; text-transform: none; }
 .st .sb { height: 8px; background: #121b29; transform: skewX(-20deg); overflow: hidden; }
 .st .sb i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--amber), var(--lime)); transition: width .4s; }
 
@@ -314,6 +314,12 @@ kbd { font: 400 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
 .presets button small { font: 400 12px/1 var(--f-data); color: var(--lime); margin-left: 6px; letter-spacing: 0; text-transform: none; }
 .presets button[aria-pressed="true"] { background: var(--amber); color: #021016; }
 .presets button[aria-pressed="true"] small { color: #021016; }
+.services { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.svc { background: #060a11; border: 1px solid var(--line); padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; min-width: 0; }
+.svc b { font: 400 11px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); grid-column: 1; }
+.svc span { font-size: 15px; grid-column: 1; }
+.svc .bar { grid-column: 1; height: 4px; background: #121b29; overflow: hidden; } .svc .bar i { display: block; height: 100%; width: 0; background: var(--amber); }
+.svc .kbtn { grid-column: 2; grid-row: 1 / span 3; font-size: 13px; padding: 9px 14px; }
 .tgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .part { background: #060a11; border: 1px solid var(--line); padding: 10px 12px; display: grid; gap: 6px; min-width: 0; }
 .part > span { font: 400 11px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -372,7 +378,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   .extras .samples { grid-column: 1 / -1; }
 }
 @media (max-width: 700px) {
-  .deck, .extras, .tgrid { grid-template-columns: 1fr; }
+  .deck, .extras, .tgrid, .services { grid-template-columns: 1fr; }
   .tele { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .toggles { grid-template-columns: 1fr; }
   .cluster { padding: 10px 8px; }
@@ -433,7 +439,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="pod"><b>Acqua</b><span id="pWat">—</span><div class="bar"><i id="bWat"></i></div></div>
       <div class="pod"><b>Press. olio</b><span id="pOilP">—</span><div class="bar"><i id="bOilP"></i></div></div>
       <div class="pod"><b>AFR</b><span id="pAfr">—</span><div class="bar"><i id="bAfr"></i></div></div>
-      <div class="pod"><b>Batteria</b><span id="pVolt">—</span><div class="bar"><i id="bVolt"></i></div></div>
+      <div class="pod"><b>Gomme</b><span id="pTire">—</span><div class="bar"><i id="bTire"></i></div></div>
       <div class="pod"><b>Benzina</b><span id="pFuel">—</span><div class="bar"><i id="bFuel"></i></div></div>
     </div>
   </section>
@@ -567,6 +573,10 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   <section class="panel tuning cutbox" aria-labelledby="tuneTitle">
     <h2 id="tuneTitle">Officina <em id="tuneSum">—</em></h2>
     <div class="stats" id="stats"></div>
+    <div class="services">
+      <div class="svc"><b>Carrozzeria</b><span id="svcBody">nessun danno</span><div class="bar"><i id="svcBodyBar"></i></div><button class="kbtn" type="button" id="btnRepair">Carrozziere</button></div>
+      <div class="svc"><b>Gomme posteriori</b><span id="svcTire">—</span><div class="bar"><i id="svcTireBar"></i></div><button class="kbtn" type="button" id="btnTires">Gomme nuove</button></div>
+    </div>
     <div class="presets" id="presets"></div>
     <div class="tgrid" id="tgrid"></div>
     <p class="hint" id="shopNote">I marchi indicano parti reali per JZA80 e 2JZ. Il carattere sonoro di ciascuna è una nostra modellazione fisica, non una registrazione del prodotto.</p>
@@ -652,8 +662,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 
   const sim = new SupraSim();
   const game = new StreetGame(sim);
-  try { const g = localStorage.getItem('nightrun'); if (g) { game.load(g); if (typeof game.s.fuel === 'number') sim.fuel = game.s.fuel; } } catch (e) { /* storage non disponibile */ }
-  const saveGame = () => { game.s.fuel = sim.fuel; try { localStorage.setItem('nightrun', game.save()); } catch (e) { /* ignora */ } };
+  try { const g = localStorage.getItem('nightrun'); if (g) { game.load(g); if (typeof game.s.fuel === 'number') sim.fuel = game.s.fuel; if (game.s.car) { sim.damage = game.s.car.damage || 0; sim.tireWear = game.s.car.tireWear || 0; } } } catch (e) { /* storage non disponibile */ }
+  const saveGame = () => { game.s.fuel = sim.fuel; game.s.car = { damage: sim.damage, tireWear: sim.tireWear }; try { localStorage.setItem('nightrun', game.save()); } catch (e) { /* ignora */ } };
   const S = { tune: Object.assign({}, TUNING_PRESETS[0].sel), pops: false, launch: false, autoClutch: true, revMatch: true, view: 0, vol: 80, muted: false, mix: 70, paint: '#c81d11', look: '2d' };
   try {
     const saved = JSON.parse(localStorage.getItem('banco2jz') || '{}');
@@ -1083,9 +1093,10 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         afr = sim.cut ? 'magro' : fmt(a + (Math.random() - 0.5) * 0.12, 1); afrF = (a - 10) / 12;
       }
       setPod('pAfr', 'bAfr', afr, afrF, sim.cut ? 'var(--info)' : '');
-      setPod('pVolt', 'bVolt', fmt(sim.volt, 1) + '<small>V</small>', (sim.volt - 9) / 6, sim.volt < 11 ? 'var(--warn)' : '');
+      const tg = sim.tireGrip();
+      setPod('pTire', 'bTire', fmt(sim.tireT) + '<small>°C · ' + fmt(Math.round((1 - sim.tireWear) * 100)) + '%</small>', (tg - 0.7) / 0.33, sim.tireT < 50 ? 'var(--info)' : sim.tireT > 115 ? 'var(--crit)' : '');
       setPod('pFuel', 'bFuel', fmt(sim.fuel * 100) + '<small>%</small>', sim.fuel);
-    } else ['pOilT', 'pWat', 'pOilP', 'pAfr', 'pVolt', 'pFuel'].forEach((id, i) => setPod(id, ['bOilT', 'bWat', 'bOilP', 'bAfr', 'bVolt', 'bFuel'][i], '—', 0));
+    } else ['pOilT', 'pWat', 'pOilP', 'pAfr', 'pTire', 'pFuel'].forEach((id, i) => setPod(id, ['bOilT', 'bWat', 'bOilP', 'bAfr', 'bTire', 'bFuel'][i], '—', 0));
     const tq = sim.running ? Math.max(0, sim.Tnet) : 0, pw = tq * rpm / 7023;
     peakTq = Math.max(peakTq, tq); peakPw = Math.max(peakPw, pw);
     $('tTq').innerHTML = fmt(tq) + '<small>Nm</small>'; $('tTqMax').textContent = 'picco ' + fmt(peakTq) + ' Nm';
@@ -1149,6 +1160,18 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     $('tuneSum').textContent = `${fmt(Math.round(est.cv / 5) * 5)} CV a ${fmt(est.rpmCv)} · ${fmt(Math.round(est.nm / 5) * 5)} Nm · ${fmt(TP.sim.turbo.max, 2)} bar · limitatore ${fmt(TP.sim.limiter)}`;
   }
 
+  function renderServices() {
+    const d = sim.damage, w = sim.tireWear;
+    $('svcBody').textContent = d > 0.005 ? `danni al ${Math.round(d * 100)} %: muso ammaccato, più resistenza all'aria` : 'nessun danno';
+    $('svcBodyBar').style.width = (d * 100) + '%'; $('svcBodyBar').style.background = d > 0.3 ? 'var(--crit)' : d > 0 ? 'var(--warn)' : '';
+    $('btnRepair').innerHTML = 'Carrozziere' + (d > 0.005 && game.mode === 'career' ? `<small>€ ${fmt(game.repairCost())}</small>` : '');
+    $('btnRepair').disabled = d <= 0.005;
+    $('svcTire').textContent = `${fmt(sim.tireT)} °C · battistrada ${fmt(Math.round((1 - w) * 100))} % · presa ${fmt(Math.round(sim.tireGrip() * 100))} %`;
+    $('svcTireBar').style.width = ((1 - w) * 100) + '%';
+    $('btnTires').innerHTML = 'Gomme nuove' + (game.mode === 'career' ? `<small>€ ${fmt(game.tireCost())}</small>` : '');
+  }
+  $('btnRepair').addEventListener('click', () => { if (!game.canMount()) { flash('Dal carrozziere si va da fermi', 2); return; } const r = game.repair(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
+  $('btnTires').addEventListener('click', () => { if (!game.canMount()) { flash('Le gomme si cambiano da fermi', 2); return; } game.tireId = S.tune.tires; const r = game.newTires(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
   function presetCost(p) { return Object.entries(p.sel).reduce((a, [k, id]) => a + game.price(k, id), 0); }
   function mountPart(k, id, selEl) {
     const revert = () => { if (selEl) selEl.value = S.tune[k]; };
@@ -1271,7 +1294,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 
   // ---------------------------------------------------------------- carriera: HUD, proposte, avvisi
   const heatPips = Array.from(document.querySelectorAll('#hudHeat i'));
-  let promptShown = null, saveT = 0, sirenT = 0;
+  let promptShown = null, saveT = 0, sirenT = 0, svcT = 0;
   const siren = { osc: null, g: null };
   function renderGame(dt) {
     const s = game.s;
@@ -1354,6 +1377,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       if (on) siren.osc.frequency.setTargetAtTime(Math.floor(sirenT * 1.6) % 2 ? 660 : 494, audio.ctx.currentTime, 0.01);
     }
     saveT += dt; if (saveT > 3) { saveT = 0; saveGame(); }
+    svcT += dt; if (svcT > 0.5) { svcT = 0; game.tireId = S.tune.tires; renderServices(); }
   }
   // ---------------------------------------------------------------- gara: giudizi e risultato
   const GRADE_TXT = { perfetta: 'CAMBIATA PERFETTA', buona: 'BUONA', anticipata: 'ANTICIPATA', tardi: 'TARDI' };
@@ -1466,7 +1490,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       flameT = (sim.cut === 2 || sim.cut === 3) && TP.sim.sparkCut ? 1 : sim.cut === 1 && sim.cfg.pops && sim.ovr < 3 ? 0.35 : 0;
       garage.update(dt, { v: sim.v, ww: sim.ww, acc: sim.acc, rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
         ign: sim.ign, brake: sim.in.brake, flame: flameT, spin: Math.min(1, Math.max(0, (Math.abs(sim.ww * sim.P.r - sim.v) - 1.5) / 5)),
-        thr: sim.thr, events: ev }, game);
+        thr: sim.thr, events: ev, skid: sim.skid, damage: sim.damage, tireT: sim.tireT }, game);
     }
     game.fx.length = 0;
     if (msgT > 0) { msgT -= dt; if (msgT <= 0) $('msg').classList.remove('show'); }

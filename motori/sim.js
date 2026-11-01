@@ -30,6 +30,7 @@ class SupraSim {
       clutch: 0, lock: false, shiftSeq: null, events: [], runT: 0, pumpT: 0, bovLatch: false, launchArmed: false,
       Tc: 0, Tnet: 0, charge: 0, stalled: false,
       fuel: 0.72, waterT: 74, oilT: 69, oilP: 0, volt: 12.5, odo: 48213.4, trip: 0,
+      tireT: 24, tireWear: 0, damage: 0, slipPow: 0, skid: 0,
       run0: null, best100: null, best400: null, last100: null, last400: null,
     });
   }
@@ -54,6 +55,12 @@ class SupraSim {
       if (T > best.nm) { best.nm = T; best.rpmNm = rpm; }
     }
     return best;
+  }
+  // aderenza da temperatura (ottimo verso 90 °C) e usura (fino a −30 %)
+  tireGrip() {
+    const d = (this.tireT - 90) / 65;
+    const cooked = this.tireT > 110 ? (this.tireT - 110) * 0.004 : 0;
+    return SIM_CLAMP(1.03 - 0.08 * d * d - cooked, 0.7, 1.03) * (1 - 0.3 * this.tireWear);
   }
   get rpm() { return Math.max(0, this.we) * 9.5493; }
   get kmh() { return Math.abs(this.v) * 3.6; }
@@ -105,6 +112,12 @@ class SupraSim {
     this.oilT += ((this.running ? 90 + 14 * load : 60) - this.oilT) * dt * 0.006;
     const oilTarget = this.running ? (this.oilT > 85 ? 0.9 : 1.4) + 4.0 * Math.min(1, this.rpm / 5500) : (this.starter ? 0.35 : 0);
     this.oilP += (oilTarget - this.oilP) * Math.min(1, dt * 4);
+    // temperatura delle gomme: scaldano con lo slittamento e con la frenata, raffreddano con l'aria
+    const heatIn = this.slipPow * 0.00028 + (this.in.brake || 0) * Math.abs(this.v) * 0.12 + Math.abs(this.v) * 0.035;
+    this.tireT += (heatIn - (this.tireT - 22) * (0.035 + Math.abs(this.v) * 0.0012)) * dt;
+    this.tireT = SIM_CLAMP(this.tireT, 15, 160);
+    this.tireWear = Math.min(1, this.tireWear + this.slipPow * dt * 4e-8 + Math.abs(this.v) * dt * 1.5e-7);
+    this.skid = SIM_CLAMP(this.slipPow / 60000, 0, 1);
     const voltT = !this.ign ? 12.5 : this.starter && !this.running ? 10.3 : this.running ? 14.1 : 12.2;
     this.volt += (voltT - this.volt) * Math.min(1, dt * 6);
     // consumo: ~300 g/kWh di potenza effettiva + minimo; serbatoio da 70 litri
@@ -251,9 +264,11 @@ class SupraSim {
     // ---- gomme posteriori ------------------------------------------------------------------
     const vw = this.ww * P.r;
     const slip = (vw - this.v) / Math.max(Math.abs(this.v), 2.5);
-    const Nr = P.mass * 9.81 * P.rearW + P.mass * this.acc * P.cgH / P.wb;
-    const Fmax = P.mu * SIM_CLAMP(Nr, 2500, 12000);
+    // gomme: carico (con trasferimento in accelerazione), sensibilità al carico, temperatura e usura
+    const Nr = SIM_CLAMP(P.mass * 9.81 * P.rearW + P.mass * this.acc * P.cgH / P.wb, 2500, 12000);
+    const Fmax = P.mu * Nr * (1 - 0.08 * (Nr / 7260 - 1)) * this.tireGrip();
     const Ft = Fmax * Math.sin(1.3 * Math.atan(18 * slip));
+    this.slipPow = Math.abs(Ft * (vw - this.v));                          // potenza dissipata nello slittamento (W)
     const Tloss = (6 + 0.35 * Math.abs(this.ww)) * Math.tanh(this.ww * 4);
     const Tload = Ft * P.r + Tloss;
 
@@ -279,9 +294,9 @@ class SupraSim {
 
     // ---- vettura ---------------------------------------------------------------------------------
     const v0 = this.v;
-    const drag = 0.5 * 1.2 * P.cd * P.A * this.v * Math.abs(this.v);
+    const drag = 0.5 * 1.2 * P.cd * (1 + this.damage * 0.25) * P.A * this.v * Math.abs(this.v);
     const Fb = I.brake * P.mass * 9.81 * 1.05;
-    const Froll = P.crr * P.mass * 9.81;
+    const Froll = P.crr * (1 + Math.abs(this.v) / 120) * P.mass * 9.81;
     if (Math.abs(this.v) < 0.03) {
       const Fs = Fb + Froll;
       if (Math.abs(Ft) <= Fs) this.v = 0;

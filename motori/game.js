@@ -66,14 +66,14 @@ class StreetGame {
 
   // tamponamento: la Supra rallenta di colpo, l'altra auto viene spinta avanti, si pagano i danni
   crash(e) {
-    const sim = this.sim, dv = sim.v - e.v, cost = Math.round((180 + dv * 3.6 * 6) / 10) * 10;
+    const sim = this.sim, dv = sim.v - e.v, dmg = Math.min(0.45, 0.05 + dv * 0.025);
     sim.v = Math.max(0, e.v * 0.85); sim.ww = sim.v / sim.P.r; sim.wo = sim.ww; sim.phi = 0;
     if (sim.gear > 0 && sim.lock) sim.we = Math.max(sim.we * 0.6, sim.wo * sim.ratio(sim.gear));
     e.v += Math.min(6, dv * 0.4); e.x = this.s.dist + 5.2;
-    if (this.mode === 'career') { this.s.money -= cost; this.s.crashes = (this.s.crashes || 0) + 1; }
+    sim.damage = Math.min(1, sim.damage + dmg); this.s.crashes = (this.s.crashes || 0) + 1;
     sim.events.push({ type: 'crash', I: Math.min(1.5, dv / 10) });
     this.fx.push({ k: 'crash', I: Math.min(1.5, dv / 10) });
-    this.say(`Tamponamento a ${Math.round(dv * 3.6)} km/h di differenza${this.mode === 'career' ? `: carrozziere − € ${cost}` : ''}`, 'police');
+    this.say(`Tamponamento a ${Math.round(dv * 3.6)} km/h di differenza: carrozzeria al ${Math.round(sim.damage * 100)} % di danni`, 'police');
   }
 
   // ------------------------------------------------------------ salvataggio
@@ -84,6 +84,20 @@ class StreetGame {
   reset() { const m = this.mode; Object.assign(this, new StreetGame(this.sim, this.rnd)); this.mode = m; }
 
   // ------------------------------------------------------------ officina
+  // servizi d'officina: carrozziere e gomme nuove
+  repairCost() { return Math.round(this.sim.damage * 2600 / 10) * 10; }
+  tireCost() { return Math.max(380, Math.round(tuningItem('tires', this.tireId || 'oem').price * 0.55 / 10) * 10); }
+  repair() {
+    const c = this.mode === 'career' ? this.repairCost() : 0;
+    if (!this.sim.damage) return { ok: false, why: 'La carrozzeria è già a posto' };
+    if (c > this.s.money) return { ok: false, why: `Il carrozziere vuole € ${c}` };
+    this.s.money -= c; this.sim.damage = 0; this.say(`Carrozzeria riparata${c ? `: − € ${c}` : ''}`, 'buy'); return { ok: true };
+  }
+  newTires() {
+    const c = this.mode === 'career' ? this.tireCost() : 0;
+    if (c > this.s.money) return { ok: false, why: `Un treno di gomme costa € ${c}` };
+    this.s.money -= c; this.sim.tireWear = 0; this.sim.tireT = 24; this.say(`Gomme nuove montate${c ? `: − € ${c}` : ''}`, 'buy'); return { ok: true };
+  }
   owns(cat, id) { return this.mode === 'free' || TUNING[cat].items[0].id === id || !!this.s.owned[cat + ':' + id]; }
   price(cat, id) { return this.owns(cat, id) ? 0 : tuningItem(cat, id).price; }
   canMount() { return this.mode === 'free' || (Math.abs(this.sim.v) < 0.5 && !this.race); }
@@ -328,7 +342,7 @@ class StreetGame {
       if (rel > 0.5 && rel < 4.5 && Math.abs(this.laneZ - GAME_LANE_Z[e.lane]) < 1.7 && sim.v > e.v + 1) this.crash(e);
     }
     const zT = GAME_LANE_Z[this.lane];
-    this.laneZ += Math.sign(zT - this.laneZ) * Math.min(Math.abs(zT - this.laneZ), dt * (1.2 + sim.v * 0.08));
+    this.laneZ += Math.sign(zT - this.laneZ) * Math.min(Math.abs(zT - this.laneZ), dt * (sim.v > 1 ? 1.6 + Math.min(1.2, sim.v * 0.03) : 0.6));
 
     this.updateRace(dt, d0);
   }

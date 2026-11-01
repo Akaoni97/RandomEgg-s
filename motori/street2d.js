@@ -26,7 +26,7 @@ class Street2D {
     this.paintHex = '#c81d11'; this.dual = false;
     this.st = { heave: 0, hv: 0, pitch: 0, pv: 0, spin: 0, front: 0, t: 0, flame: 0, lz: 3.5, head: 0, hdv: 0 };
     this.parts = [];
-    this.comics = []; this.cool = {};
+    this.comics = []; this.cool = {}; this.marks = []; this.sparkT = 0;
     this.spr = {};
     this.tiles = new Map();
     this.visible = true;
@@ -561,6 +561,13 @@ class Street2D {
       g.fillStyle = '#7a86c0'; g.fillRect(x - rx + 5, y - 1, 3, 1);
     }
 
+    // ---- segni di gomma sull'asfalto (restano dove sono stati lasciati)
+    for (const mk of this.marks) {
+      const x = wx(mk.m); if (x < -40 || x > W + 40) continue;
+      g.fillStyle = `rgba(6,6,10,${mk.a})`; g.fillRect(x, mk.y, Math.max(1, Math.round(mk.len * PPM) + 1), 2);
+    }
+    this.marks = this.marks.filter((mk) => wx(mk.m) > -60).slice(-400);
+
     // ---- lampioni: alone piccolo, pozza a terra, riflesso sul bagnato (niente fasci)
     const lampX = [];
     for (let lm = Math.floor(visFrom / 24) * 24; lm < visTo + 24; lm += 24) {
@@ -669,6 +676,19 @@ class Street2D {
     P('#2a1f4f', hx - 1, 22, 9, 2);
     for (let n = 0; n < 6; n++) P('rgba(111,216,255,.55)', 121 + n, 14 + n, 1, 1);
     if (s.brake > 0.05) { P('#ff2a2a', 1, 31, 5, 7); P('#ffd0c8', 2, 32, 2, 2); }
+    // danni: muso ammaccato, graffi chiari, vernice saltata
+    const dmg = s.damage || 0;
+    if (dmg > 0.01) {
+      const n = Math.round(dmg * 80);
+      for (let q = 0; q < n; q++) {
+        const r1 = Street2D.rnd(q * 3.3), r2 = Street2D.rnd(q * 7.1 + 1);
+        if (q % 3 === 0) P('rgba(8,10,16,.75)', 170 + r1 * 26, 30 + r2 * 18, 3, 2);                       // ammaccature sul muso
+        else if (q % 3 === 1) { const len = 6 + r1 * 12; P('rgba(220,226,234,.8)', 120 + r2 * 60, 30 + r1 * 14, len, 1); }   // graffi
+        else P('#6a6f7a', 150 + r1 * 44, 36 + r2 * 12, 2, 2);                                               // vernice saltata
+      }
+      if (dmg > 0.35) { P(C.ink, 182, 31, 11, 3); P('#5a5e66', 184, 32, 5, 1); }                          // faro rotto
+      if (dmg > 0.5) P(C.ink, 188, 46, 10, 6);                                                            // paraurti sfondato
+    }
     g.restore();
     if (s.brake > 0.05) this.light(g, left + 2, top + 34 * k, 12, 9, '#ff2a2a', 0.2, 3);
     if (s.ign) this.light(g, left + SW - 6, top + 33 * k, 12, 6, '#fff2c4', 0.2, 3);
@@ -678,6 +698,19 @@ class Street2D {
 
     // ---- effetti
     const rx = left, exY = y0 - 9 * k;
+    if (((s.skid || 0) > 0.18 && Math.abs(s.v) > 0.3) || (s.brake > 0.9 && Math.abs(s.v) > 8)) {
+      const mRear = dist + (left + 1 + 48 * k - carX) / PPM, len = Math.max(0.15, Math.abs(s.v) * dt * 1.05 + 0.05), a = Math.min(0.7, 0.25 + (s.skid || 0.5));
+      this.marks.push({ m: mRear - len, y: y0 - 1, len, a }, { m: mRear - len, y: y0 - 4, len, a: a * 0.6 });
+    }
+    if (Math.abs(s.v) > 12) for (let q = 0; q < 3; q++) if (Math.random() < Math.min(1, (Math.abs(s.v) - 12) / 20)) {
+      const wxm = Math.random() < 0.5 ? 48 : 158;
+      this.parts.push({ k: 'spray', m: dist + (left + 1 + wxm * k - 14 * k - carX) / PPM, y: y0 - 2 - Math.random() * 4, vy: -14 - Math.random() * 18, dx: s.v * 0.6 - 4 - Math.random() * 6, r: 1, life: 1 });
+    }
+    if (game) for (const f of game.fx) if (f.k === 'crash') this.sparkT = 0.35;
+    if (this.sparkT > 0) {
+      this.sparkT -= dt;
+      for (let q = 0; q < 5; q++) this.parts.push({ k: 'spark', m: dist + (left + SW - carX) / PPM, y: y0 - 10 - Math.random() * 20, vy: -40 - Math.random() * 60, dx: 6 + Math.random() * 10, r: 1, life: 1 });
+    }
     if (s.spin > 0.25 && Math.random() < s.spin * 0.9) this.parts.push({ k: 'smoke', m: dist + (left + 48 * k - carX) / PPM, y: y0 - 8, vy: -12 - Math.random() * 16, r: 4, life: 1, dx: -20 });
     st.flame = Math.max(0, st.flame - dt * 9);
     if (s.flame && Math.random() < s.flame * dt * 18) st.flame = 0.7 + Math.random() * 0.5;
@@ -691,6 +724,13 @@ class Street2D {
     }
     if (s.running && Math.random() < dt * (s.rpm < 1500 ? 2.5 : 0.6)) this.parts.push({ k: 'puff', m: dist + (rx - carX) / PPM, y: exY, vy: -6, r: 2, life: 1, dx: -8 });
     for (const p of this.parts) {
+      if (p.k === 'spray' || p.k === 'spark') {
+        p.life -= dt * (p.k === 'spray' ? 2.6 : 1.8); p.m += p.dx / PPM * dt; p.y += p.vy * dt; p.vy += (p.k === 'spark' ? 160 : 90) * dt;
+        const X = wx(p.m), Y = Math.round(p.y);
+        if (p.k === 'spark') { g.fillStyle = p.life > 0.5 ? '#fff2a0' : '#ff8a20'; g.fillRect(X, Y, 2, 1); g.fillStyle = 'rgba(255,140,40,.5)'; g.fillRect(X - 2, Y, 2, 1); }
+        else { g.fillStyle = `rgba(190,215,255,${0.55 * p.life})`; g.fillRect(X, Y, 2, 2); g.fillStyle = `rgba(255,255,255,${0.4 * p.life})`; g.fillRect(X, Y, 1, 1); }
+        continue;
+      }
       p.life -= dt * (p.k === 'smoke' ? 0.8 : p.k === 'steam' ? 0.6 : 1.5);
       p.m += p.dx / PPM * dt; p.y += p.vy * dt; p.r += dt * (p.k === 'smoke' ? 18 : 6);
       const r = Math.round(p.r), cx = wx(p.m), a = Math.max(0, p.life) * (p.k === 'steam' ? 0.35 : p.k === 'smoke' ? 0.7 : 0.5);

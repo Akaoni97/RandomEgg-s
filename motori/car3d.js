@@ -44,6 +44,7 @@ class Garage3D {
     this.wheels = [];
     this.custom = null;
     this.paint = new T.MeshStandardMaterial({ color: 0xc81d11, roughness: 0.28, metalness: 0.55 });
+    this.makeEnv();
     this.buildCar();
 
     this.state = { pitch: 0, pitchV: 0, roll: 0, spin: 0, flame: 0, t: 0 };
@@ -66,70 +67,213 @@ class Garage3D {
     return h;
   }
 
-  // carrozzeria coupé anni 90 generica, costruita con estrusioni del profilo laterale
-  buildCar() {
-    const T = this.T, b = this.body;
-    const dark = new T.MeshStandardMaterial({ color: 0x0c0d0f, roughness: 0.6, metalness: 0.2 });
-    const glass = new T.MeshStandardMaterial({ color: 0x0a0f14, roughness: 0.08, metalness: 0.9, transparent: true, opacity: 0.88 });
-    const chrome = new T.MeshStandardMaterial({ color: 0xb9bec6, roughness: 0.22, metalness: 1 });
-    const extrude = (pts, depth, bevel, mat) => {
-      const s = new T.Shape(); s.moveTo(pts[0][0], pts[0][1]);
-      for (let i = 1; i < pts.length; i++) {
-        const p = pts[i];
-        if (p.length === 4) s.absarc(p[0], p[1], p[2], Math.PI, 0, true); else s.lineTo(p[0], p[1]);
+  // ---------------------------------------------------------------- strumenti di modellazione
+  // superficie da sezioni: fx(x) → { hw (semilarghezza), top, bot, ex (esponente superellisse), tumble }
+  loftGeo(fx, x0, x1, n = 64, m = 40, caps = true) {
+    const T = this.T, pos = [], idx = [];
+    for (let i = 0; i <= n; i++) {
+      const x = x0 + (x1 - x0) * i / n, p = fx(x);
+      for (let j = 0; j <= m; j++) {
+        const a = j / m * Math.PI * 2, c = Math.cos(a), s = Math.sin(a), e = 2 / (p.ex || 3.2);
+        const cz = Math.sign(c) * Math.pow(Math.abs(c), e), cy = Math.sign(s) * Math.pow(Math.abs(s), e);
+        pos.push(x, p.bot + (cy + 1) / 2 * (p.top - p.bot), cz * p.hw * (1 - (p.tumble || 0) * Math.max(0, cy)));
       }
-      const g = new T.ExtrudeGeometry(s, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 5, curveSegments: 24 });
-      g.translate(0, 0, -depth / 2);
-      const m = new T.Mesh(g, mat); m.castShadow = true; m.receiveShadow = true;
-      return m;
+    }
+    for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) {
+      const a = i * (m + 1) + j, b = a + m + 1;
+      idx.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+    if (caps) for (const [i, flip] of [[0, true], [n, false]]) {
+      const p = fx(x0 + (x1 - x0) * i / n), c = pos.length / 3;
+      pos.push(x0 + (x1 - x0) * i / n, (p.top + p.bot) / 2, 0);
+      for (let j = 0; j < m; j++) { const a = i * (m + 1) + j; if (flip) idx.push(c, a + 1, a); else idx.push(c, a, a + 1); }
+    }
+    const g = new T.BufferGeometry();
+    g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    return g;
+  }
+  rod(a, b, r, mat) {
+    const T = this.T, A = new T.Vector3(...a), B = new T.Vector3(...b), len = A.distanceTo(B);
+    const m = new T.Mesh(new T.CylinderGeometry(r, r, len, 8), mat);
+    m.position.copy(A).add(B).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), B.clone().sub(A).normalize());
+    m.castShadow = true;
+    return m;
+  }
+  static ss(a, b, x) { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+
+  // ambiente per i riflessi: cielo notturno, strisce calde dei lampioni, neon ciano e rosa
+  makeEnv() {
+    const T = this.T, es = new T.Scene();
+    es.add(new T.Mesh(new T.BoxGeometry(60, 30, 60), new T.MeshBasicMaterial({ color: 0x070a16, side: T.BackSide })));
+    const panel = (col, w, h, x, y, z, ry = 0) => { const m = new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ color: col, side: T.DoubleSide })); m.position.set(x, y, z); m.rotation.y = ry; es.add(m); };
+    for (let k = -3; k <= 3; k++) { panel(0xffc58a, 1.2, 0.4, k * 7, 12, 8, 0); panel(0xffc58a, 1.2, 0.4, k * 7, 12, -8, 0); }
+    panel(0x2ee6ff, 10, 2.5, 0, 6, -29); panel(0xff2e88, 8, 2, 14, 7, 29); panel(0x9ab0ff, 30, 6, 0, 14.9, 0);
+    panel(0x3a4a80, 60, 8, 0, -6, 29.9); panel(0x3a4a80, 60, 8, 0, -6, -29.9);
+    const top = new T.Mesh(new T.PlaneGeometry(40, 40), new T.MeshBasicMaterial({ color: 0x141a34 })); top.rotation.x = Math.PI / 2; top.position.y = 14.8; es.add(top);
+    const pm = new T.PMREMGenerator(this.renderer);
+    this.scene.environment = pm.fromScene(es, 0.03).texture;
+    pm.dispose();
+  }
+
+  // ---------------------------------------------------------------- ruota completa (gruppo fisso + parte che gira)
+  makeWheel(side, rimMat) {
+    const T = this.T, w = new T.Group(), spin = new T.Group();
+    if (!this.wGeo) {
+      const prof = [[0.215, -0.125], [0.29, -0.126], [0.316, -0.118], [0.329, -0.095], [0.333, -0.06], [0.333, 0.06], [0.329, 0.095], [0.316, 0.118], [0.29, 0.126], [0.215, 0.125]];
+      const tire = new T.LatheGeometry(prof.map(([r, y]) => new T.Vector2(r, y)), 40); tire.rotateX(Math.PI / 2);
+      const barrel = new T.CylinderGeometry(0.212, 0.212, 0.2, 32, 1, true); barrel.rotateX(Math.PI / 2);
+      const lip = new T.TorusGeometry(0.212, 0.014, 8, 40);
+      const spoke = new T.BoxGeometry(0.05, 0.19, 0.035);
+      const disc = new T.CylinderGeometry(0.17, 0.17, 0.022, 32); disc.rotateX(Math.PI / 2);
+      const hub = new T.CylinderGeometry(0.06, 0.07, 0.06, 20); hub.rotateX(Math.PI / 2);
+      const nut = new T.CylinderGeometry(0.011, 0.011, 0.02, 6); nut.rotateX(Math.PI / 2);
+      const cal = new T.BoxGeometry(0.1, 0.17, 0.07);
+      this.wGeo = { tire, barrel, lip, spoke, disc, hub, nut, cal };
+      this.wMat = {
+        tire: new T.MeshStandardMaterial({ color: 0x0f1012, roughness: 0.92 }),
+        disc: new T.MeshStandardMaterial({ color: 0x5a5e66, roughness: 0.35, metalness: 0.9 }),
+        cal: new T.MeshStandardMaterial({ color: 0xc8261a, roughness: 0.35, metalness: 0.3 }),
+        dark: new T.MeshStandardMaterial({ color: 0x15161a, roughness: 0.5, metalness: 0.6 }),
+      };
+    }
+    const G = this.wGeo, M = this.wMat, rim = rimMat || new T.MeshPhysicalMaterial({ color: 0xb8bec8, metalness: 1, roughness: 0.22, clearcoat: 0.5 });
+    const add = (geo, mat, parent = spin) => { const m = new T.Mesh(geo, mat); m.castShadow = true; parent.add(m); return m; };
+    add(G.tire, M.tire); add(G.barrel, M.dark);
+    const lip = add(G.lip, rim); lip.position.z = 0.1;
+    for (let k = 0; k < 5; k++) {
+      const a = k * Math.PI * 2 / 5;
+      for (const off of [-0.09, 0.09]) {
+        const sp = add(G.spoke, rim); sp.position.set(Math.cos(a + off) * 0.11, Math.sin(a + off) * 0.11, 0.075); sp.rotation.z = a + off - Math.PI / 2;
+      }
+      const n = add(G.nut, rim); n.position.set(Math.cos(a + 0.6) * 0.045, Math.sin(a + 0.6) * 0.045, 0.1);
+    }
+    const hub = add(G.hub, rim); hub.position.z = 0.075;
+    add(G.disc, M.disc).position.z = -0.02;
+    w.add(spin);
+    const cal = add(G.cal, M.cal, w); cal.position.set(-0.12, 0.09, -0.01); cal.rotation.z = 0.6;
+    if (side < 0) w.rotation.y = Math.PI;                 // la faccia del cerchio guarda sempre fuori
+    w.userData = { spin, dir: side < 0 ? -1 : 1 };
+    return w;
+  }
+
+  // ---------------------------------------------------------------- Toyota Supra JZA80
+  buildCar() {
+    const T = this.T, b = this.body, ss = Garage3D.ss;
+    this.paint = new T.MeshPhysicalMaterial({ color: 0xc81d11, metalness: 0.55, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 1.2 });
+    const glass = new T.MeshPhysicalMaterial({ color: 0x05080e, metalness: 0.3, roughness: 0.04, clearcoat: 1, transparent: true, opacity: 0.88, envMapIntensity: 1.6 });
+    const black = new T.MeshStandardMaterial({ color: 0x0b0c0f, roughness: 0.65, metalness: 0.2 });
+    const trimM = new T.MeshStandardMaterial({ color: 0x15171c, roughness: 0.4, metalness: 0.5 });
+    const chrome = new T.MeshPhysicalMaterial({ color: 0xdfe4ea, metalness: 1, roughness: 0.12, clearcoat: 1 });
+    const WB = 1.28, R = 0.4, WY = 0.33;
+    const arch = (x) => { let h = 0; for (const wx of [-WB, WB]) { const d = x - wx; if (Math.abs(d) < R) h = Math.max(h, WY + Math.sqrt(R * R - d * d) * 0.98); } return h; };
+    // fiancate e cofano: sezioni arrotondate, coda tonda, muso basso, passaruota ricavati dalla forma
+    const body = (x) => {
+      let hw = 0.9;
+      if (x > 1.65) hw -= (x - 1.65) ** 2 * 0.62;
+      if (x < -1.85) hw -= (-1.85 - x) ** 2 * 1.5;
+      hw += 0.025 * Math.exp(-((x + WB) ** 2) / 0.18);                       // fianchi posteriori larghi
+      const top = x < -1.95 ? 0.6 + 0.33 * ss(-2.28, -1.98, x)
+        : x < 0.95 ? 0.93 - 0.03 * ss(-1.0, 0.95, x)
+          : 0.9 - 0.2 * ss(0.95, 1.95, x) - 0.2 * ss(1.95, 2.3, x);
+      let bot = 0.25 + 0.16 * ss(-1.95, -2.28, x) + 0.12 * ss(2.0, 2.3, x);
+      bot = Math.max(bot, arch(x));
+      return { hw, top, bot, ex: x > 2.15 || x < -2.18 ? 2.4 : 3.3, tumble: 0.07 };
     };
-    const wb = 1.28, ar = 0.39;
-    // fiancata: muso basso, cofano lungo, coda tronca
-    b.add(extrude([
-      [-2.12, 0.27], [-wb - ar, 0.27], [-wb, 0.31, ar, 1], [wb - ar, 0.27], [wb, 0.31, ar, 1], [2.12, 0.27],
-      [2.24, 0.42], [2.2, 0.56], [1.9, 0.66], [0.85, 0.83], [-0.9, 0.9], [-1.75, 0.93], [-2.12, 0.92], [-2.24, 0.78], [-2.2, 0.45],
-    ], 1.6, 0.11, this.paint));
-    // abitacolo: parabrezza inclinato, tetto corto, lunotto a fastback
-    const cab = extrude([[0.82, 0.84], [0.18, 1.2], [-0.55, 1.23], [-1.0, 1.15], [-1.7, 0.95], [-1.6, 0.9], [0.8, 0.83]], 1.18, 0.1, glass);
-    b.add(cab);
-    // montanti e tetto in tinta
-    const roof = new T.Mesh(new T.BoxGeometry(0.62, 0.035, 1.12), this.paint);
-    roof.position.set(-0.2, 1.25, 0); roof.castShadow = true; b.add(roof);
-    // alettone posteriore
-    for (const z of [-0.6, 0.6]) { const up = new T.Mesh(new T.BoxGeometry(0.08, 0.24, 0.05), this.paint); up.position.set(-2.0, 1.05, z); b.add(up); }
-    const wing = new T.Mesh(new T.BoxGeometry(0.34, 0.045, 1.62), this.paint);
-    wing.position.set(-2.03, 1.18, 0); wing.rotation.z = 0.08; wing.castShadow = true; b.add(wing);
-    // fari, fanali, griglia, terminale
+    this.bodyGeo = this.loftGeo(body, -2.28, 2.3, 96, 44);
+    this.bodyPos0 = this.bodyGeo.attributes.position.array.slice();
+    const shell = new T.Mesh(this.bodyGeo, this.paint); shell.castShadow = true; shell.receiveShadow = true; b.add(shell);
+    // abitacolo: lunotto molto inclinato, tetto corto, parabrezza
+    const roofY = (x) => (x < -0.25 ? 0.9 + 0.36 * Math.pow(ss(-1.0, -0.25, x), 0.75) : x < 0.28 ? 1.26 : 1.26 - 0.38 * ss(0.28, 1.0, x));
+    const cabin = (x) => ({ hw: 0.75 - 0.05 * ss(0.6, 1.0, x) - 0.05 * ss(-0.7, -1.0, x), top: roofY(x), bot: 0.86, ex: 4.2, tumble: 0.3 });
+    const gh = new T.Mesh(this.loftGeo(cabin, -1.0, 1.0, 48, 36), glass); gh.castShadow = true; b.add(gh);
+    const roof = (x) => ({ hw: 0.56 - 0.04 * Math.abs(x) * 2, top: roofY(x) + 0.008, bot: roofY(x) - 0.04, ex: 6, tumble: 0 });
+    const rp = new T.Mesh(this.loftGeo(roof, -0.42, 0.4, 20, 24), this.paint); rp.castShadow = true; b.add(rp);
+    for (const z of [1, -1]) {
+      b.add(this.rod([0.98, 0.89, z * 0.69], [0.36, 1.25, z * 0.54], 0.035, this.paint));          // montante A
+      b.add(this.rod([-0.98, 0.91, z * 0.7], [-0.44, 1.25, z * 0.55], 0.045, this.paint));         // montante C
+      b.add(this.rod([-0.05, 0.92, z * 0.71], [-0.05, 1.24, z * 0.55], 0.025, black));             // montante B
+      b.add(this.rod([0.95, 0.905, z * 0.74], [-0.95, 0.925, z * 0.74], 0.012, chrome));          // filetto del finestrino
+      for (const sx of [0.42, -0.62]) b.add(this.rod([sx, 0.33, z * 0.905], [sx, 0.88, z * 0.875], 0.005, black)); // fughe della portiera
+      const intake = new T.Mesh(new T.BoxGeometry(0.42, 0.09, 0.02), black); intake.position.set(-0.78, 0.56, z * 0.915); intake.rotation.z = 0.12; b.add(intake);
+      const mir = new T.Mesh(new T.SphereGeometry(0.1, 16, 10), this.paint); mir.scale.set(1.1, 0.6, 0.55); mir.position.set(0.74, 0.98, z * 0.98); mir.castShadow = true; b.add(mir);
+      b.add(this.rod([0.78, 0.93, z * 0.8], [0.76, 0.97, z * 0.92], 0.015, black));
+      const skirt = new T.Mesh(new T.BoxGeometry(1.7, 0.06, 0.04), black); skirt.position.set(0, 0.28, z * 0.9); b.add(skirt);
+      const marker = new T.Mesh(new T.BoxGeometry(0.1, 0.035, 0.01), new T.MeshBasicMaterial({ color: 0xff9a20 })); marker.position.set(1.95, 0.52, z * 0.74); b.add(marker);
+    }
+    // alettone ad arco della JZA80
+    const hoop = new T.CatmullRomCurve3([[-1.9, 0.92, 0.78], [-2.0, 1.1, 0.77], [-2.06, 1.18, 0.6], [-2.07, 1.19, 0], [-2.06, 1.18, -0.6], [-2.0, 1.1, -0.77], [-1.9, 0.92, -0.78]].map((p) => new T.Vector3(...p)));
+    const hm = new T.Mesh(new T.TubeGeometry(hoop, 48, 0.035, 10, false), this.paint); hm.castShadow = true; b.add(hm);
+    const blade = new T.Mesh(new T.BoxGeometry(0.3, 0.03, 1.36), this.paint); blade.position.set(-2.06, 1.19, 0); blade.rotation.z = 0.12; blade.castShadow = true; b.add(blade);
+    // fanali tondi posteriori (quattro), pannello centrale, targa, diffusore
+    this.lightR = new T.MeshStandardMaterial({ color: 0x2a0303, emissive: 0xff1a0a, emissiveIntensity: 0.4, roughness: 0.2 });
+    const lensG = new T.CylinderGeometry(0.075, 0.075, 0.035, 24); lensG.rotateZ(Math.PI / 2);
+    const ringG = new T.TorusGeometry(0.078, 0.01, 8, 24); ringG.rotateY(Math.PI / 2);
+    for (const z of [0.43, 0.62, -0.43, -0.62]) {
+      const l = new T.Mesh(lensG, this.lightR); l.position.set(-2.245, 0.66, z); b.add(l);
+      const r = new T.Mesh(ringG, chrome); r.position.set(-2.248, 0.66, z); b.add(r);
+    }
+    const garn = new T.Mesh(new T.BoxGeometry(0.02, 0.12, 0.62), black); garn.position.set(-2.25, 0.66, 0); b.add(garn);
+    const plateTex = this.carTex(256, 64, (g, w, h) => { g.fillStyle = '#f4f2ea'; g.fillRect(0, 0, w, h); g.strokeStyle = '#1b1d24'; g.lineWidth = 4; g.strokeRect(3, 3, w - 6, h - 6); g.fillStyle = '#1a1c24'; g.font = '700 40px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('2JZ·GTE', w / 2, h / 2 + 2); });
+    const plate = new T.Mesh(new T.PlaneGeometry(0.5, 0.12), new T.MeshStandardMaterial({ map: plateTex, roughness: 0.6 })); plate.rotation.y = -Math.PI / 2; plate.position.set(-2.262, 0.47, 0); b.add(plate);
+    const diff = new T.Mesh(new T.BoxGeometry(0.25, 0.08, 1.4), black); diff.position.set(-2.12, 0.29, 0); b.add(diff);
+    // fari, prese del paraurti, fendinebbia, labbro
     this.lightF = new T.MeshStandardMaterial({ color: 0x222222, emissive: 0xfff3dd, emissiveIntensity: 0.2 });
-    for (const z of [-0.58, 0.58]) { const h = new T.Mesh(new T.BoxGeometry(0.06, 0.07, 0.42), this.lightF); h.position.set(2.17, 0.6, z); h.rotation.z = -0.35; b.add(h); }
-    this.lightR = new T.MeshStandardMaterial({ color: 0x300404, emissive: 0xff1a0a, emissiveIntensity: 0.4 });
-    const tail = new T.Mesh(new T.BoxGeometry(0.05, 0.11, 1.62), this.lightR); tail.position.set(-2.33, 0.74, 0); b.add(tail);
-    const intake = new T.Mesh(new T.BoxGeometry(0.06, 0.12, 1.1), dark); intake.position.set(2.3, 0.38, 0); b.add(intake);
-    const diff = new T.Mesh(new T.BoxGeometry(0.3, 0.06, 1.5), dark); diff.position.set(-2.2, 0.27, 0); b.add(diff);
+    const lensF = new T.MeshPhysicalMaterial({ color: 0xcfe6ff, metalness: 0, roughness: 0.02, transparent: true, opacity: 0.35, clearcoat: 1 });
+    for (const z of [0.6, -0.6]) {
+      const bulb = new T.Mesh(new T.SphereGeometry(0.06, 16, 10), this.lightF); bulb.position.set(1.98, 0.66, z); b.add(bulb);
+      const cover = new T.Mesh(new T.SphereGeometry(0.13, 20, 12), lensF); cover.scale.set(1.6, 0.42, 1.05); cover.position.set(1.96, 0.67, z * 0.98); b.add(cover);
+      const fog = new T.Mesh(new T.CylinderGeometry(0.04, 0.04, 0.02, 16), this.lightF); fog.rotation.z = Math.PI / 2; fog.position.set(2.24, 0.4, z * 0.95); b.add(fog);
+    }
+    const mouth = new T.Mesh(new T.BoxGeometry(0.06, 0.13, 0.85), black); mouth.position.set(2.28, 0.4, 0); b.add(mouth);
+    const lipF = new T.Mesh(new T.BoxGeometry(0.22, 0.03, 1.5), black); lipF.position.set(2.18, 0.29, 0); b.add(lipF);
+    // terminali di scarico e fiammate
     this.tips = [];
     this.flameMat = new T.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false });
     for (const z of [0.55, -0.55]) {
-      const tip = new T.Mesh(new T.CylinderGeometry(0.06, 0.065, 0.2, 20, 1, true), chrome);
-      tip.rotation.z = Math.PI / 2; tip.position.set(-2.33, 0.33, z); b.add(tip);
+      const tip = new T.Mesh(new T.CylinderGeometry(0.055, 0.06, 0.2, 20, 1, true), chrome);
+      tip.rotation.z = Math.PI / 2; tip.position.set(-2.24, 0.33, z); b.add(tip);
       const fl = new T.Mesh(new T.ConeGeometry(0.07, 0.5, 16, 1, true), this.flameMat);
-      fl.rotation.z = Math.PI / 2; fl.position.set(-2.62, 0.33, z); b.add(fl);
+      fl.rotation.z = Math.PI / 2; fl.position.set(-2.55, 0.33, z); b.add(fl);
       this.tips.push({ tip, fl });
     }
-    // ruote
-    const tire = new T.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
-    const rim = new T.MeshStandardMaterial({ color: 0x9aa0a8, roughness: 0.3, metalness: 0.9 });
-    for (const [x, z] of [[wb, 0.79], [wb, -0.79], [-wb, 0.79], [-wb, -0.79]]) {
-      const w = new T.Group();
-      const t = new T.Mesh(new T.CylinderGeometry(0.33, 0.33, 0.26, 36), tire); t.rotation.x = Math.PI / 2; t.castShadow = true; w.add(t);
-      const disc = new T.Mesh(new T.CylinderGeometry(0.22, 0.22, 0.27, 36), rim); disc.rotation.x = Math.PI / 2; w.add(disc);
-      for (let k = 0; k < 5; k++) {
-        const sp = new T.Mesh(new T.BoxGeometry(0.05, 0.4, 0.04), rim);
-        sp.rotation.z = k * Math.PI * 2 / 5; sp.position.z = z > 0 ? 0.13 : -0.13; w.add(sp);
-      }
-      w.position.set(x, 0.33, z);
+    // graffi della carrozzeria (visibili quando ci sono danni)
+    const scratch = this.carTex(256, 128, (g, w, h) => {
+      g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(210,214,220,.9)'; g.lineCap = 'round';
+      for (let k = 0; k < 26; k++) { g.lineWidth = 1 + Math.random() * 2; g.beginPath(); const x = Math.random() * w, y = Math.random() * h; g.moveTo(x, y); g.lineTo(x + 30 + Math.random() * 90, y + (Math.random() - 0.5) * 30); g.stroke(); }
+      g.fillStyle = 'rgba(40,30,30,.6)'; for (let k = 0; k < 6; k++) { g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, 10 + Math.random() * 18, 5 + Math.random() * 8, 0, 0, Math.PI * 2); g.fill(); }
+    });
+    this.scratchMat = new T.MeshBasicMaterial({ map: scratch, transparent: true, opacity: 0, depthWrite: false });
+    for (const z of [1, -1]) { const sc = new T.Mesh(new T.PlaneGeometry(1.0, 0.36), this.scratchMat); sc.position.set(1.55, 0.58, z * 0.875); if (z < 0) sc.rotation.y = Math.PI; b.add(sc); }
+    // ruote: anteriori sterzanti; pinze ferme, il resto gira
+    for (const [x, z] of [[WB, 0.8], [WB, -0.8], [-WB, 0.8], [-WB, -0.8]]) {
+      const w = this.makeWheel(z > 0 ? 1 : -1); w.position.set(x, WY, z);
       this.root.add(w); this.wheels.push(w);
     }
     this.baseParts = [...b.children, ...this.wheels];
+    this.damage = 0;
+  }
+
+  carTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+    const t = new this.T.CanvasTexture(c); t.encoding = this.T.sRGBEncoding; return t;
+  }
+
+  // ammaccature: il muso si accartoccia, compaiono graffi
+  setDamage(d) {
+    if (!this.bodyGeo || Math.abs(d - this.damage) < 0.01) return;
+    this.damage = d;
+    const p = this.bodyGeo.attributes.position, o = this.bodyPos0;
+    for (let i = 0; i < p.count; i++) {
+      const x = o[i * 3], y = o[i * 3 + 1], z = o[i * 3 + 2];
+      const k = Garage3D.ss(1.55, 2.3, x) * d, n = Math.sin(i * 12.9898) * 0.5 + 0.5;
+      p.array[i * 3] = x - k * (0.12 + 0.1 * n);
+      p.array[i * 3 + 1] = y - k * 0.05 * n * (y > 0.5 ? 1 : 0);
+      p.array[i * 3 + 2] = z * (1 - k * 0.04 * n);
+    }
+    p.needsUpdate = true; this.bodyGeo.computeVertexNormals();
+    this.scratchMat.opacity = Math.min(1, d * 1.6);
   }
 
   setTips(n) { if (this.tips[1]) this.tips[1].tip.visible = n > 1; this.dual = n > 1; }
@@ -264,7 +408,10 @@ class Garage3D {
     const st = this.state; st.t += dt;
     st.spin += s.ww * dt;                 // posteriori: motrici, possono pattinare
     st.front = (st.front || 0) + s.v / 0.322 * dt;
-    this.wheels.forEach((w, i) => { w.rotation.z = -(i < 2 ? st.front : st.spin); });
+    this.wheels.forEach((w, i) => { w.userData.spin.rotation.z = -(i < 2 ? st.front : st.spin) * w.userData.dir; });
+    const steer = Math.max(-0.35, Math.min(0.35, (s.steer || 0)));
+    this.wheels[0].rotation.y = steer; this.wheels[1].rotation.y = Math.PI + steer;      // ruote anteriori che sterzano
+    if (s.damage !== undefined) this.setDamage(s.damage);
     (this.customWheels || []).forEach((w) => { w.pivot.rotation.z = -(w.front ? st.front : st.spin); });
     // ---- sospensioni: quattro ruote seguono l'asfalto, la scocca le segue su molle smorzate (~2 Hz)
     const d = s.dist || 0, wb = 1.28, H = Garage3D.roadH;

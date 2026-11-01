@@ -235,8 +235,8 @@ test('gara: la cambiata vicino al limitatore è perfetta e più rapida', () => {
   play(sim, game, 3.7, () => ({ thr: 0.6, brake: 1 }));
   assert.equal(game.race.phase, 'run');
   let fastT = null, slowT = null;
-  // prima → seconda a regime perfetto
-  play(sim, game, 4, (s) => {
+  // prima → seconda a regime perfetto (ci si ferma appena la cambiata è finita)
+  for (let n = 0; n < 400 && !(fastT !== null && !sim.shiftSeq); n++) play(sim, game, 1 / 60, (s) => {
     if (s.gear === 1 && s.rpm > s.P.limiter - 300 && !s.shiftSeq) { assert.equal(game.gradeShift(), 'perfetta'); s.shift(2); fastT = 0; }
     if (fastT !== null && s.shiftSeq) fastT += 1 / 60;
     return { thr: 1, brake: 0 };
@@ -294,9 +294,25 @@ test('corsie a mano: si cambia corsia e tamponare costa', () => {
   const money = game.s.money, v0 = sim.v;
   game.ents.push({ id: 77, kind: 'traffic', lane: 2, x: game.s.dist + 25, v: 8, color: 0x2b4c7e });
   play(sim, game, 3, flatOut);
-  assert.ok(game.s.money < money, 'il carrozziere si paga');
+  assert.ok(sim.damage > 0, 'la carrozzeria si ammacca'); assert.equal(game.s.money, money, 'si paga solo quando si ripara');
+  assert.ok(game.repair().ok); assert.equal(sim.damage, 0); assert.ok(game.s.money < money);
   assert.ok(game.s.crashes >= 1);
   assert.equal(game.steer(1), true); assert.equal(game.lane, 3);
   assert.equal(game.steer(1), false, 'non si va oltre la terza corsia');
   void v0;
+});
+
+test('gomme: si scaldano pattinando, la presa ha un ottimo e si consumano', () => {
+  const { sim } = career();
+  const cold = sim.tireGrip();
+  sim.tireT = 90; const hot = sim.tireGrip();
+  sim.tireT = 150; const cooked = sim.tireGrip();
+  assert.ok(hot > cold && hot > cooked, `fredde ${cold.toFixed(2)}, a temperatura ${hot.toFixed(2)}, cotte ${cooked.toFixed(2)}`);
+  sim.tireT = 24;
+  // burnout: freno tirato, gas a fondo in prima
+  sim.cfg.autoClutch = false; sim.in.clutch = 1; sim.shift(1);
+  drive(sim, 1, (s) => { s.in.thr = 0.5; s.in.brake = 1; s.in.clutch = 1; });
+  drive(sim, 6, (s) => { s.in.thr = 1; s.in.brake = 1; s.in.clutch = 0; });
+  assert.ok(sim.tireT > 45, `dopo il burnout ${sim.tireT.toFixed(0)} °C`);
+  assert.ok(sim.tireWear > 0.001);
 });

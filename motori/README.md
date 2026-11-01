@@ -10,7 +10,13 @@ balconi, cisterne, negozi, pedoni e un gatto. La Supra ha la silhouette della JZ
 lunotto inclinato, alettone ad arco) e le cose si scrivono in grande: VROOOM, PSSSH, BANG, SCREEECH, CRASH. Le luci si sommano all'immagine a bande morbide:
 pozze sull'asfalto sotto i lampioni, davanti ai fari e dietro agli stop, riflessi sul bagnato.
 
-Dalla barra sotto la strada si passa alla **vista 3D** (`street3d.js`): edifici di quattro tipi,
+**Gomme e carrozzeria.** Le gomme hanno temperatura (presa massima verso 90 °C, meno da fredde e
+da cotte), usura e sensibilità al carico; si vedono nel quadro e si cambiano in officina. I tamponamenti
+ammaccano la carrozzeria (visibile in 2D e 3D, aumenta la resistenza all'aria): si ripara dal carrozziere.
+Segni di gomma sull'asfalto, fumo, spruzzi d'acqua sul bagnato e scintille nei tamponamenti.
+
+Dalla barra sotto la strada si passa alla **vista 3D** (`street3d.js`): Supra JZA80 modellata per sezioni con vernice lucida che riflette la città, quattro
+fanali tondi, alettone ad arco, ruote con cerchi, dischi e pinze, anteriori sterzanti; edifici di quattro tipi,
 alberi, panchine, idranti, fermate, semafori che cambiano colore, strisce, frecce, tombini, auto
 parcheggiate, luna e stelle. È l'unica vista che carica modelli .glb.
 
