@@ -29,6 +29,11 @@ tracce delle gomme, macchie d'olio, tombini e pozzanghere lucide che riflettono 
 a lastre con cordolo chiaro, cavi elettrici lungo la via, distributori automatici illuminati davanti ai negozi
 e uno skyline lontano pieno di finestre accese.
 
+**Visuale pulita.** Nelle viste esterne pali e alberi che passerebbero davanti alla telecamera si nascondono;
+dall'abitacolo il quadro si legge sopra la corona del volante, le alette parasole sono ripiegate contro il
+cielo, la plancia ha una grana goffrata, una bocchetta del disappannamento alla base del parabrezza e le
+cuciture sulla palpebra. I montanti anteriori sono neri come la serra della JZA80.
+
 **Telecamere e qualità.** Il tasto C (o il pulsante 🎥) passa tra inseguimento, vista laterale, cofano
 e **abitacolo**: guida a destra come le JZA80 giapponesi, volante che gira con lo sterzo, leva del cambio
 che segue la marcia, sedili con cuciture rosse e il quadro strumenti del gioco disegnato sul cruscotto.

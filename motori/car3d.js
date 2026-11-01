@@ -193,7 +193,7 @@ class Garage3D {
     const roof = (x) => ({ hw: 0.56 - 0.04 * Math.abs(x) * 2, top: roofY(x) + 0.008, bot: roofY(x) - 0.04, ex: 6, tumble: 0 });
     const rp = new T.Mesh(this.loftGeo(roof, -0.42, 0.4, 20, 24), this.paint); rp.castShadow = true; b.add(rp);
     for (const z of [1, -1]) {
-      b.add(this.rod([0.98, 0.89, z * 0.69], [0.36, 1.25, z * 0.54], 0.035, this.paint));          // montante A
+      b.add(this.rod([0.98, 0.89, z * 0.69], [0.36, 1.25, z * 0.54], 0.028, black));               // montante A nero, come la serra della JZA80
       b.add(this.rod([-0.98, 0.91, z * 0.7], [-0.44, 1.25, z * 0.55], 0.045, this.paint));         // montante C
       b.add(this.rod([-0.05, 0.92, z * 0.71], [-0.05, 1.24, z * 0.55], 0.025, black));             // montante B
       b.add(this.rod([0.95, 0.9, z * 0.745], [-0.95, 0.92, z * 0.745], 0.016, black));           // guarnizione del finestrino
@@ -202,8 +202,7 @@ class Garage3D {
       const hcup = new T.Mesh(new T.BoxGeometry(0.2, 0.05, 0.01), black); hcup.position.set(-0.2, 0.8, z * 0.895); b.add(hcup);
       for (const sx of [0.42, -0.62]) b.add(this.rod([sx, 0.33, z * 0.905], [sx, 0.88, z * 0.875], 0.005, black)); // fughe della portiera
       // presa d'aria laterale incassata davanti al passaruota posteriore, con alette
-      const intake = new T.Mesh(new T.BoxGeometry(0.34, 0.07, 0.006), black); intake.position.set(-0.74, 0.58, z * 0.9); intake.rotation.z = 0.1; b.add(intake);
-      for (let k = 0; k < 3; k++) { const fin = new T.Mesh(new T.BoxGeometry(0.008, 0.06, 0.006), trimM); fin.position.set(-0.84 + k * 0.1, 0.585 + k * 0.01, z * 0.903); fin.rotation.z = 0.1; b.add(fin); }
+      const intake = new T.Mesh(new T.PlaneGeometry(0.3, 0.05), new T.MeshBasicMaterial({ color: 0x050506, transparent: true, opacity: 0.8 })); intake.position.set(-0.74, 0.58, z * 0.912); intake.rotation.set(0, z < 0 ? Math.PI : 0, 0.1); b.add(intake);
       const mir = new T.Mesh(new T.SphereGeometry(0.1, 16, 10), this.paint); mir.scale.set(1.1, 0.6, 0.55); mir.position.set(0.74, 0.98, z * 0.98); mir.castShadow = true; b.add(mir);
       b.add(this.rod([0.78, 0.93, z * 0.8], [0.76, 0.97, z * 0.92], 0.015, black));
       const skirt = new T.Mesh(new T.BoxGeometry(1.62, 0.05, 0.03), trimM); skirt.position.set(0, 0.27, z * 0.89); b.add(skirt);
@@ -308,7 +307,10 @@ class Garage3D {
     const T = this.T, I = new T.Group(); I.visible = false; this.body.add(I); this.interior = I;
     // l'abitacolo è in ombra: colori smorzati e riflessi d'ambiente quasi spenti (niente cruscotto azzurrino)
     const mat = (c, o = {}) => { const m = new T.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.8, envMapIntensity: 0.15 }, o)); m.color.multiplyScalar(0.45); return m; };
-    const dash = mat(0x121318), soft = mat(0x1a1717), alu = mat(0x8a9099, { metalness: 0.9, roughness: 0.3 });
+    // plancia in materiale morbido goffrato (grana fine) invece di un colore piatto
+    const grain = this.carTex(128, 128, (g, w, h) => { g.fillStyle = '#808080'; g.fillRect(0, 0, w, h); for (let i = 0; i < 5000; i++) { const v = 100 + Math.random() * 60; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(Math.random() * w, Math.random() * h, 1, 1); } });
+    grain.wrapS = grain.wrapT = T.RepeatWrapping; grain.repeat.set(6, 6);
+    const dash = mat(0x121318, { bumpMap: grain, bumpScale: 0.004, roughness: 0.85 }), soft = mat(0x1a1717, { bumpMap: grain, bumpScale: 0.003 }), alu = mat(0x8a9099, { metalness: 0.9, roughness: 0.3 });
     const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0, parent = I) => { const o = new T.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); parent.add(o); return o; };
     const twoSided = (c) => mat(c, { side: T.DoubleSide });
     add(new T.PlaneGeometry(2.0, 1.5), twoSided(0x0c0c0f), -0.1, 0.34, 0, -Math.PI / 2);                      // pavimento
@@ -346,12 +348,12 @@ class Garage3D {
     add(new T.SphereGeometry(0.038, 14, 10), mat(0x0e0e10, { roughness: 0.35 }), 0, 0.23, 0, 0, 0, 0, sh);
     add(new T.CylinderGeometry(0.06, 0.08, 0.05, 12), soft, 0, 0.0, 0, 0, 0, 0, sh);
     // volante sportivo a tre razze: corona in pelle spessa, razze forate, fascia rossa a ore 12
-    const tilt = new T.Group(); tilt.position.set(0.3, 0.84, 0.37); tilt.rotation.z = 0.45; I.add(tilt); this.wheelTilt = tilt;
+    const tilt = new T.Group(); tilt.position.set(0.3, 0.795, 0.37); tilt.rotation.z = 0.42; I.add(tilt); this.wheelTilt = tilt;
     const wheel = new T.Group(); tilt.add(wheel); this.steerWheel = wheel;
     const leather = mat(0x1a1716, { roughness: 0.62 });
-    const rim = new T.TorusGeometry(0.18, 0.024, 12, 56); rim.rotateY(Math.PI / 2);
+    const rim = new T.TorusGeometry(0.172, 0.023, 14, 64); rim.rotateY(Math.PI / 2);
     add(rim, leather, 0, 0, 0, 0, 0, 0, wheel);
-    const stripe = new T.TorusGeometry(0.18, 0.0245, 12, 6, 0.16); stripe.rotateZ(Math.PI / 2 - 0.08); stripe.rotateY(Math.PI / 2);
+    const stripe = new T.TorusGeometry(0.172, 0.0236, 12, 6, 0.16); stripe.rotateZ(Math.PI / 2 - 0.08); stripe.rotateY(Math.PI / 2);
     add(stripe, mat(0xd8261a, { roughness: 0.5 }), 0, 0, 0, 0, 0, 0, wheel);
     for (const a of [Math.PI, Math.PI / 2, -Math.PI / 2]) {
       const sp = add(new T.BoxGeometry(0.012, 0.15, 0.04), alu, -0.012, 0, 0, 0, 0, 0, wheel);
@@ -422,8 +424,8 @@ class Garage3D {
     const gripRot = new T.Group(); tilt.add(gripRot); this.gripRot = gripRot;
     const grip = (z, parent, rx = 0) => { const o = new T.Object3D(); o.position.set(0, 0, z); o.rotation.x = rx; parent.add(o); return o; };
     this.hands = [
-      { h: makeHand(false), rim: grip(0.18, gripRot), shoulder: new T.Vector3(-0.55, 0.9, 0.6) },          // destra (lato porta)
-      { h: makeHand(true), rim: grip(-0.18, gripRot), shoulder: new T.Vector3(-0.55, 0.9, 0.14) },          // sinistra: cambia marcia
+      { h: makeHand(false), rim: grip(0.172, gripRot), shoulder: new T.Vector3(-0.55, 0.9, 0.6) },          // destra (lato porta)
+      { h: makeHand(true), rim: grip(-0.172, gripRot), shoulder: new T.Vector3(-0.55, 0.9, 0.14) },          // sinistra: cambia marcia
     ];
     const knobGrip = new T.Object3D(); knobGrip.position.set(-0.02, 0.27, 0.035); knobGrip.rotation.set(Math.PI / 2, 0.2, -1.2); sh.add(knobGrip);
     this.hands[1].knob = knobGrip;
@@ -482,13 +484,17 @@ class Garage3D {
     for (const z of [-0.08, 0.08, -0.55, 0.62]) for (let k = 0; k < 4; k++) add(new T.BoxGeometry(0.004, 0.006, 0.09), mat(0x050506), 0.42, 0.835 + k * 0.011, z);
     // pedaliera, alette parasole, maniglie, altoparlanti e pulsantiere nelle porte
     for (const [dz, w] of [[0.48, 0.07], [0.37, 0.09], [0.26, 0.05]]) add(new T.BoxGeometry(0.02, 0.1, w), alu, 0.5, 0.45, dz, 0, 0, -0.4);
-    for (const z of [0.36, -0.36]) add(new T.BoxGeometry(0.2, 0.012, 0.36), mat(0x3a3836, { roughness: 1 }), 0.12, 1.225, z, 0, 0, 0);
+    for (const z of [0.36, -0.36]) add(new T.BoxGeometry(0.16, 0.008, 0.32), mat(0x34323a, { roughness: 1 }), 0.02, 1.238, z, 0, 0, 0);
     for (const z of [0.81, -0.81]) {
       const sp = new T.CircleGeometry(0.06, 20); add(sp, mat(0x070708, { roughness: 0.9 }), 0.25, 0.48, z, 0, z > 0 ? Math.PI : 0, 0);
       add(new T.BoxGeometry(0.12, 0.02, 0.05), dash, 0.05, 0.82, z * 0.95);
       add(new T.BoxGeometry(0.04, 0.01, 0.02), mat(0x8899aa), 0.04, 0.835, z * 0.94);
     }
     add(new T.PlaneGeometry(1.14, 1.5), twoSided(0x34323a), -0.33, 1.245, 0, Math.PI / 2);                    // cielo in tessuto: finisce dove inizia il parabrezza
+    // bocchetta del disappannamento alla base del parabrezza
+    for (let k = -6; k <= 6; k++) add(new T.BoxGeometry(0.05, 0.004, 0.06), mat(0x040405), 0.86, 0.918, k * 0.1);
+    // cuciture sulla palpebra del quadro
+    add(new T.TorusGeometry(0.095, 0.0025, 4, 24, Math.PI), mat(0x4a1410), 0.47, 0.93, 0.37, Math.PI / 2, 0, 0).rotation.set(0, Math.PI / 2, 0);
     // rivestimento interno dei montanti A (scuri, non color carrozzeria) e traversa sopra il parabrezza
     for (const z of [1, -1]) I.add(this.rod([0.98, 0.9, z * 0.76], [0.24, 1.24, z * 0.68], 0.05, mat(0x2a282c, { roughness: 0.9 })));
     I.add(this.rod([0.24, 1.24, 0.7], [0.24, 1.24, -0.7], 0.03, mat(0x2a282c, { roughness: 0.9 })));

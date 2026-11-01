@@ -648,6 +648,12 @@ class Street3D extends Garage3D {
     const dz = z - this.lastZ; this.lastZ = z;
     this.camera.position.z += dz; this.controls.target.z += dz;
     this.roadMap.offset.x = (dist / 24) % 1;
+    // pali e alberi che passerebbero davanti alla telecamera si nascondono (niente schermo coperto da un lampione)
+    if (!this.cockpitOn) {
+      const cp = this.camera.position, near = (x, z, r) => Math.abs(x - cp.x) < r && Math.abs(z - cp.z) < r + 1;
+      for (const l of this.lamps) { const hide = near(l.g.position.x, l.g.position.z, 2.6); l.g.children[0].visible = l.g.children[1].visible = !hide; }
+      for (const pr of this.props) pr.o.visible = !near(pr.o.position.x, pr.o.position.z, 4);
+    }
     if (this.roadRough) this.roadRough.offset.x = (dist / 24) % 1;
     if (this.walkMap) this.walkMap.offset.x = (dist / 4) % 1;
     const span = 16 * 24;
