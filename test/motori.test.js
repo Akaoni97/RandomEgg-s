@@ -326,6 +326,15 @@ test('pioggia: sul bagnato le gomme tengono circa un quarto in meno', () => {
   assert.ok(wet < dry * 0.78 && wet > dry * 0.68, `asciutto ${dry.toFixed(2)}, bagnato ${wet.toFixed(2)}`);
 });
 
+test('montagna: in curva la Supra va verso l\'esterno e il guardrail la ferma', () => {
+  const { sim, game } = career();
+  game.mode = 'free'; game.track = 'mountain'; game.laneZ = 0;
+  sim.shift(1); play(sim, game, 4, flatOut);
+  let maxZ = 0; for (let i = 0; i < 600; i++) { sim.update(1 / 60); game.update(1 / 60); sim.events.length = 0; maxZ = Math.max(maxZ, Math.abs(game.laneZ)); }
+  assert.ok(maxZ > 0.5, 'senza sterzare la curva sposta la Supra');
+  assert.ok(Math.abs(game.laneZ) <= 4.6 - 1.0 + 1e-9, 'il guardrail la tiene in strada');
+});
+
 test('gomme: si scaldano pattinando, la presa ha un ottimo e si consumano', () => {
   const { sim } = career();
   const cold = sim.tireGrip();

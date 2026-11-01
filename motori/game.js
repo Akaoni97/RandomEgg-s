@@ -11,6 +11,14 @@ const GAME_RIVALS = [
 ];
 const GAME_COLORS = [0x2b4c7e, 0x8a8f96, 0x1d1f22, 0xe8e6df, 0x6b1b14, 0x2f5d3a, 0xb38b2d];
 const GAME_LANE_Z = { 0: 6.1, 1: 3.5, 2: 0, 3: -3.5 };
+
+// strada di montagna: la direzione cambia con la distanza percorsa (somma di sinusoidi), raggi fino a ~60 m.
+// theta > 0 = la strada gira a sinistra. Carreggiata di 8 m (due corsie), guardrail a 4,6 m dal centro.
+const MOUNTAIN = {
+  half: 4.6,
+  theta: (s) => 0.55 * Math.sin(s / 140) + 0.35 * Math.sin(s / 61 + 1.3) + 0.2 * Math.sin(s / 29 + 0.4),
+  kappa: (s) => 0.55 / 140 * Math.cos(s / 140) + 0.35 / 61 * Math.cos(s / 61 + 1.3) + 0.2 / 29 * Math.cos(s / 29 + 0.4),
+};
 // bagagliaio: 12 posti, 150 kg; il peso si somma alla massa della Supra
 const TRUNK_SLOTS = 12, TRUNK_KG = 150, CAR_MASS = 1570;
 const INV = {
@@ -62,6 +70,7 @@ class StreetGame {
     this.nextSpawn = 250; this.id = 1;
     this.siren = 0;
     this.autoLane = true;      // sorpasso automatico (si può spegnere)
+    this.track = 'city';       // 'city' oppure 'mountain' (solo in modalità libera)
     this.manualT = 0;          // secondi in cui la corsia l'ha scelta il pilota
     this.steerIn = 0;          // sterzo libero tenuto dal pilota: +1 sinistra, -1 destra
     this.latV = 0;             // velocità laterale (m/s)
@@ -412,6 +421,24 @@ class StreetGame {
     if (this.prevLane !== undefined && this.lane !== this.prevLane) this.signal = { dir: this.lane > this.prevLane ? 'L' : 'R', t: 2.6 };
     this.prevLane = this.lane;
     if (this.signal) { this.signal.t -= dt; if (this.signal.t <= 0) this.signal = null; }
+    // strada di montagna: niente corsie fisse, in curva la Supra viene spinta verso l'esterno (v²·κ):
+    // va tenuta in strada con lo sterzo; contro il guardrail rallenta, struscia e si ammacca
+    if (this.track === 'mountain') {
+      const k = Math.min(1, dt * 10), want = Math.abs(this.steerIn) > 0.05;
+      const vmax = 1.8 + Math.min(4.2, sim.v * 0.14), st2 = Math.sign(this.steerIn) * Math.pow(Math.abs(this.steerIn), 1.3);
+      this.latV += ((want ? -st2 * vmax : 0) - this.latV) * k;
+      const drift = MOUNTAIN.kappa(d) * sim.v * sim.v * 0.16 * (1 + 0.35 * (sim.wet || 0));
+      this.laneZ += (this.latV + drift) * dt;
+      const lim = MOUNTAIN.half - 1.0;
+      this.rail = 0;
+      if (Math.abs(this.laneZ) > lim) {
+        this.rail = Math.sign(this.laneZ); this.laneZ = this.rail * lim;
+        if (sim.v > 3) { sim.v *= 1 - Math.min(0.5, dt * 0.9); sim.damage = Math.min(1, sim.damage + dt * 0.01 * sim.v / 20); if (Math.random() < dt * 8) this.fx.push({ k: 'scrape', side: this.rail }); }
+      }
+      this.free = true; this.lane = 1; this.prevLane = 1; this.signal = null;
+      this.updateRace(dt, d0);
+      return;
+    }
     // sterzo libero: velocità laterale che cresce con la velocità, nessuno scatto tra le corsie
     const freeOK = !this.race && !this.ap && sim.v > 0.3;
     if (freeOK && Math.abs(this.steerIn) > 0.05) {

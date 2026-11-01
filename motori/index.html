@@ -506,6 +506,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="modesw" id="modeSw" role="group" aria-label="Modalità">
         <button type="button" data-m="career">Carriera</button>
         <button type="button" data-m="free">Libera</button>
+        <button type="button" data-m="mountain">Montagna</button>
       </div>
       <button class="linkbtn" type="button" id="btnNew">Nuova carriera</button>
     </div>
@@ -549,6 +550,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="hud-l">
         <div class="hud-tag"><b>KM</b><span id="hudDist">0,0</span></div>
         <div class="hud-tag" id="hudFuelTag"><b>BENZINA</b><span id="hudFuel">—</span></div>
+        <div class="hud-tag"><b>ORA</b><span id="hudClock">23:00</span></div>
         <div class="hud-tag" id="hudJob" hidden></div>
       </div>
       <button class="radio-chip" type="button" id="radioBtn" aria-label="Autoradio: cambia stazione (P)"><i aria-hidden="true">▶</i><b id="radioFreq">FM 89.7</b><span id="radioName">Redline at Midnight</span><small>P</small></button>
@@ -598,7 +600,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <button class="kbtn only3d" type="button" id="glbReset">Modello di base</button>
       <button class="kbtn only3d" type="button" id="camReset">Inquadratura</button>
       <button class="kbtn only3d" type="button" id="camNext">Telecamera<small>C</small></button>
-      <button class="kbtn" type="button" id="rainBtn" aria-pressed="false">Pioggia<small>K</small></button>
+      <label class="kbtn qsel">Ora <select id="clockSel" aria-label="Ora del giorno"><option value="auto">dinamica</option><option value="giorno">giorno</option><option value="tramonto">tramonto</option><option value="notte">notte</option></select></label>
+      <label class="kbtn qsel">Meteo <select id="meteoSel" aria-label="Meteo (tasto K)"><option value="auto">dinamico</option><option value="sereno">sereno</option><option value="pioggia">pioggia</option></select></label>
       <label class="kbtn only3d qsel">Qualità <select id="q3d" aria-label="Qualità grafica 3D"><option value="alta">alta · bloom</option><option value="media">media</option><option value="bassa">bassa</option></select></label>
       <p class="hint"><span id="g3dName">modello di base</span> · trascina per girare la visuale</p>
     </div>
@@ -1010,7 +1013,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'h') hornOn();
     else if (k === 'b') openTrunk();
     else if (k === 'p') radioNext();
-    else if (k === 'k') toggleRain();
+    else if (k === 'k') cycleMeteo();
     else if ((k === 'a' || k === 'd') && game.race) flash('In gara si resta nella propria corsia', 1.4);
     else if (k === 'l') { S.launch = !S.launch; applySettings(); flash(S.launch ? 'Launch control inserito' : 'Launch control disinserito', 1.2); }
     else if (k === 'm') { S.muted = !S.muted; applySettings(); }
@@ -1541,6 +1544,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ }
   }
   function applyLook() {
+    if (game.track === 'mountain' && S.look === '2d') { S.look = 'smooth'; flash('In montagna c\'è solo la vista 3D', 1.8); }
     document.querySelectorAll('#lookSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.l === S.look)));
     const is2d = S.look === '2d';
     $('g2d').hidden = !is2d; $('g3d').hidden = is2d;
@@ -1771,7 +1775,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   });
 
   function renderMode() {
-    document.querySelectorAll('#modeSw button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === game.mode)));
+    const cur = game.track === 'mountain' ? 'mountain' : game.mode;
+    document.querySelectorAll('#modeSw button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === cur)));
     $('career').classList.toggle('free', game.mode === 'free');
     $('shopNote').textContent = game.mode === 'free'
       ? 'Modalità libera: tutte le parti sono gratis e si montano anche in movimento. I marchi indicano parti reali; il suono è una nostra modellazione fisica.'
@@ -1787,7 +1792,12 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
   $('modeSw').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
-    game.mode = b.dataset.m; game.prompt = null; game.ap = null; game.race = null; game.ents = [];
+    // "Montagna" è la modalità libera sulla strada di montagna (solo vista 3D: in 2D le curve non si vedono)
+    const mtn = b.dataset.m === 'mountain';
+    game.mode = mtn ? 'free' : b.dataset.m; game.track = mtn ? 'mountain' : 'city'; game.prompt = null; game.ap = null; game.race = null; game.ents = [];
+    game.laneZ = mtn ? 0 : GAME_LANE_Z[1]; game.lane = 1; game.free = false;
+    if (mtn && S.look === '2d') { S.look = 'smooth'; applyLook(); }
+    if (mtn) flash('Strada di montagna: tieni la Supra in strada con A/D, in curva ti spinge verso l\'esterno', 3.5);
     if (game.mode === 'career') {   // in carriera si torna ai pezzi che si possiedono
       for (const k of Object.keys(S.tune)) if (!game.owns(k, S.tune[k])) S.tune[k] = TUNING[k].items[0].id;
     }
@@ -1843,6 +1853,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     wasRunning = sim.running;
     if (audio.ready) audio.send({ p: sim.audioParams(), ev });
     if (rainSnd.g) updateRainSound(); else if (S.rain && audio.ctx) rainSound(true);
+    tickAtmosphere(dt);
     if (player && player.items.length) {
       const onT = sim.running && sim.cut === 0 && sim.thr > 0.06 ? 1 : 0;
       smpLoad += (onT - smpLoad) * Math.min(1, dt * 10);
@@ -1909,13 +1920,45 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
   function applyRain() {
     sim.wet = S.rain ? 1 : 0;
-    $('rainBtn').setAttribute('aria-pressed', String(!!S.rain));
     if (street3d) street3d.setRain(!!S.rain);
     if (street2d && street2d.setRain) street2d.setRain(!!S.rain);
     rainSound(!!S.rain);
   }
-  function toggleRain() { ensureAudio(); S.rain = !S.rain; applyRain(); flash(S.rain ? 'Pioggia: asfalto bagnato, meno aderenza' : 'Pioggia finita', 1.8); try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (e) { /* ignora */ } }
-  $('rainBtn').addEventListener('click', toggleRain);
+  // ---------------------------------------------------------------- ora del giorno e meteo dinamici
+  // un'ora di gioco ogni 20 s (giornata intera in 8 minuti); meteo dinamico: schiarite e acquazzoni a caso
+  if (!S.clock) S.clock = 'auto'; if (!S.meteo) S.meteo = 'auto';
+  const ATM = { hour: Number.isFinite(S.hour) ? S.hour : 21.5, wT: 70 + Math.random() * 60, txt: 0 };
+  const FIXED = { giorno: 13, tramonto: 19.3, notte: 23 };
+  function setRainState(on, why) { if (!!S.rain === on) return; S.rain = on; applyRain(); if (why) flash(why, 2.2); }
+  function applyMeteo() {
+    if (S.meteo === 'sereno') setRainState(false); else if (S.meteo === 'pioggia') setRainState(true);
+    $('meteoSel').value = S.meteo; $('clockSel').value = S.clock;
+    try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (e) { /* ignora */ }
+  }
+  function cycleMeteo() { ensureAudio(); S.meteo = { auto: 'pioggia', pioggia: 'sereno', sereno: 'auto' }[S.meteo] || 'auto'; applyMeteo(); flash('Meteo: ' + { auto: 'dinamico', pioggia: 'pioggia', sereno: 'sereno' }[S.meteo], 1.6); }
+  $('meteoSel').addEventListener('change', (e) => { S.meteo = e.target.value; applyMeteo(); });
+  $('clockSel').addEventListener('change', (e) => { S.clock = e.target.value; if (FIXED[S.clock]) ATM.hour = FIXED[S.clock]; applyMeteo(); });
+  const sm01 = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  function tickAtmosphere(dt) {
+    if (S.clock === 'auto') ATM.hour = (ATM.hour + dt / 20) % 24; else ATM.hour += (FIXED[S.clock] - ATM.hour) * Math.min(1, dt * 0.6);
+    const h = ATM.hour, d = Math.min(sm01((h - 5.5) / 2.2), sm01((20.6 - h) / 2.2));
+    const ss = Math.max(Math.exp(-(((h - 6.6) / 1.0) ** 2)), Math.exp(-(((h - 19.4) / 1.0) ** 2))) * (1 - 0.6 * d);
+    if (S.meteo === 'auto') {
+      ATM.wT -= dt;
+      if (ATM.wT <= 0) {
+        if (S.rain) { setRainState(false, 'Smette di piovere'); ATM.wT = 100 + Math.random() * 140; }
+        else if (Math.random() < 0.55) { setRainState(true, 'Comincia a piovere: asfalto viscido'); ATM.wT = 60 + Math.random() * 80; }
+        else ATM.wT = 60 + Math.random() * 60;
+      }
+    }
+    if (street3d) street3d.setDaylight(d, ss, S.rain ? 1 : 0);
+    if (street2d && street2d.setDaylight) street2d.setDaylight(d, ss);
+    if ((ATM.txt -= dt) <= 0) {
+      ATM.txt = 0.5; const hh = Math.floor(ATM.hour), mm = Math.floor((ATM.hour - hh) * 60);
+      $('hudClock').textContent = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + (S.rain ? ' · pioggia' : d > 0.5 ? ' · sole' : '');
+      S.hour = ATM.hour;
+    }
+  }
 
   // pannello stili dell'interfaccia
   (function buildThemes() {
@@ -1933,7 +1976,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       }
     }
   })();
-  applyRain();
+  applyRain(); applyMeteo();
   applyTheme(S.ui || 'garage'); $('uiName').textContent = TH.name.toLowerCase();
   applySettings();
   renderMode();

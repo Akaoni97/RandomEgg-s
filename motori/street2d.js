@@ -229,6 +229,7 @@ class Street2D {
   setPaint(hex) { if (hex && hex !== 'model') this.paintHex = hex; }
   setTips(n) { this.dual = n > 1; }
   setRain(on) { this.rainOn = on; }
+  setDaylight(d, ss) { this.day = d; this.sunset = ss; }
   resetCamera() {}
   raceCam() {}
 
@@ -551,6 +552,15 @@ class Street2D {
 
     // ---- sfondo: cielo, tre piani di città, foschia
     this.drawSky(g, st.t, dist);
+    // giorno e tramonto: cielo chiaro sopra quello notturno, sole basso al tramonto
+    const dd = this.day || 0, ss = this.sunset || 0, wt = this.rainOn ? 1 : 0;
+    if (dd > 0.01 || ss > 0.01) {
+      const gr = g.createLinearGradient(0, 0, 0, 224);
+      const top = wt ? '108,118,132' : '86,146,214', bot = wt ? '150,156,164' : ss > 0.3 ? '238,156,96' : '178,214,240';
+      gr.addColorStop(0, `rgba(${top},${Math.max(dd, ss * 0.8)})`); gr.addColorStop(1, `rgba(${bot},${Math.max(dd, ss * 0.85)})`);
+      g.fillStyle = gr; g.fillRect(0, 0, W, 224);
+      if (!wt) { const sx = W * 0.22, sy = 150 - dd * 110; this.light(g, sx, sy, 34, 34, ss > 0.3 ? '#ffb070' : '#fff2c0', 0.25, 4); g.fillStyle = ss > 0.3 ? '#ffc890' : '#fff6d8'; this.span(g, sx, sy, 11, 11); }
+    }
     this.drawCity(g, dist, st.t, 'haze', 0.025, 188, 50);
     g.fillStyle = 'rgba(70,50,114,.35)'; g.fillRect(0, 150, W, 40);
     this.drawCity(g, dist, st.t, 'far', 0.07, 200, 52);
@@ -830,6 +840,13 @@ class Street2D {
       this.prop(g, kind, x, 358, st.t);
     }
 
+    // ---- luce del giorno su tutta la scena (le insegne restano accese ma perdono forza)
+    if (dd > 0.01 || ss > 0.01) {
+      g.save(); g.globalCompositeOperation = 'screen';
+      g.fillStyle = `rgba(110,130,160,${0.32 * dd})`; g.fillRect(0, 0, W, 360);
+      if (ss > 0.01) { g.fillStyle = `rgba(255,150,90,${0.16 * ss})`; g.fillRect(0, 0, W, 360); }
+      g.restore();
+    }
     // ---- pioggia: trattini a pixel inclinati con la velocità, schizzi sull'asfalto, velo più scuro
     if (this.rainOn) {
       g.fillStyle = 'rgba(10,14,28,.18)'; g.fillRect(0, 0, W, 360);
