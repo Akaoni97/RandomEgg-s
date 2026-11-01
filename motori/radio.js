@@ -10,10 +10,13 @@ class CarRadio {
     this.stations = [
       { id: 'off', freq: '', name: 'Radio spenta' },
       { id: 'redline', freq: 'FM 89.7', name: 'Redline at Midnight', src: opts.src },
+      { id: 'redzone', freq: 'FM 91.3', name: 'Red Zone Needles', src: 'audio/red_zone_needles.mp3' },
+      { id: 'metal', freq: 'FM 94.5', name: 'Metal Alive', src: 'audio/metal_alive.mp3' },
+      { id: 'apex', freq: 'FM 98.1', name: 'Apex to Apex', src: 'audio/apex_to_apex.mp3' },
       { id: 'synth', freq: 'FM 76.1', name: 'Synth Notturno', gen: true },
     ];
     this.i = 1; this.vol = 0.3; this.master = 1; this.muted = false; this.on = false;
-    this.el = null; this.ctx = null; this.timer = null;
+    this.el = null; this.els = {}; this.ctx = null; this.timer = null;
     this.onChange = opts.onChange || (() => {});
   }
   get station() { return this.stations[this.i]; }
@@ -59,7 +62,9 @@ class CarRadio {
     const st = this.station;
     if (!this.on || st.id === 'off') return;
     if (st.src) {
-      if (!this.el) { this.el = new Audio(st.src); this.el.loop = true; this.el.preload = 'auto'; }
+      // un lettore per stazione: tornando su una stazione la canzone riprende da dove era
+      if (!this.els[st.id]) { const a = new Audio(st.src); a.loop = true; a.preload = 'auto'; this.els[st.id] = a; }
+      this.el = this.els[st.id];
       this.apply();
       const p = this.el.play(); if (p && p.catch) p.catch(() => {});
     } else if (st.gen && this.ctx) this.startSynth();

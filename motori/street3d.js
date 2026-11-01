@@ -92,6 +92,8 @@ class Street3D extends Garage3D {
     else { ref = this.root; eye = [0.6, 1.05, 6.8]; at = [0.6, 0.7, 0]; }
     this.camera.position.copy(ref.localToWorld(new T.Vector3(...eye)));
     this.camera.lookAt(ref.localToWorld(new T.Vector3(...at)));
+    // nell'abitacolo la testa si inclina appena con la sterzata (forza laterale), come nei simulatori
+    if (v === 'cockpit') { H.roll = (H.roll || 0) + (Math.max(-0.045, Math.min(0.045, (s.steer || 0) * Math.min(1, sp / 25) * 0.12)) - (H.roll || 0)) * Math.min(1, k * 5); this.camera.rotateZ(H.roll); }
   }
 
   // ---------------------------------------------------------------- qualità: bloom (luci che si irradiano), ombre, risoluzione
@@ -109,15 +111,26 @@ class Street3D extends Garage3D {
       this.bloom = new T.UnrealBloomPass(new T.Vector2(w, h), 0.85, 0.55, 0.92);
       comp.addPass(this.bloom);
       const fin = new T.ShaderPass({
-        uniforms: { tDiffuse: { value: null }, expo: { value: r.toneMappingExposure } },
+        uniforms: { tDiffuse: { value: null }, expo: { value: r.toneMappingExposure }, speed: { value: 0 }, kick: { value: 0 }, time: { value: 0 } },
         vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-        fragmentShader: `uniform sampler2D tDiffuse; uniform float expo; varying vec2 vUv;
+        // effetti di velocità: sfocatura radiale verso i bordi, aberrazione cromatica, grana leggera; "kick"
+        // (cambiata, tamponamento, fiammata) dà un colpo di aberrazione e di contrasto
+        fragmentShader: `uniform sampler2D tDiffuse; uniform float expo, speed, kick, time; varying vec2 vUv;
           vec3 aces(vec3 x){ return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
-          void main(){ vec3 c = aces(texture2D(tDiffuse, vUv).rgb * expo); c = pow(c, vec3(1.0 / 2.2));
-            float v = smoothstep(0.92, 0.3, length((vUv - 0.5) * vec2(1.25, 1.0))); c *= mix(0.68, 1.0, v);
+          float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+          void main(){
+            vec2 d = vUv - 0.5; float edge = smoothstep(0.18, 0.75, length(d * vec2(1.4, 1.0)));
+            float bl = speed * 0.045 * edge; vec3 acc = vec3(0.0);
+            for (int i = 0; i < 6; i++) { float t = float(i) / 5.0; acc += texture2D(tDiffuse, vUv - d * bl * t).rgb; }
+            vec3 src = acc / 6.0;
+            float ab = (speed * 0.004 + kick * 0.008) * edge;
+            src.r = mix(src.r, texture2D(tDiffuse, vUv - d * ab).r, 0.85); src.b = mix(src.b, texture2D(tDiffuse, vUv + d * ab).b, 0.85);
+            vec3 c = aces(src * expo * (1.0 + kick * 0.12)); c = pow(c, vec3(1.0 / 2.2));
+            float v = smoothstep(0.92, 0.3, length(d * vec2(1.25, 1.0))); c *= mix(0.62 - speed * 0.08, 1.0, v);
+            c += (h(vUv * 900.0 + time) - 0.5) * 0.025;
             gl_FragColor = vec4(c, 1.0); }`,
       });
-      fin.renderToScreen = true; comp.addPass(fin);
+      fin.renderToScreen = true; comp.addPass(fin); this.finPass = fin;
       this.composer = comp;
     }
     this.resize();
@@ -540,7 +553,10 @@ class Street3D extends Garage3D {
   updateFx(dt, s, dist) {
     const z0 = this.root.position.z, ry = this.root.rotation.y;
     // segni di pattinamento o frenata: restano sull'asfalto, legati alla strada
-    if ((s.skid || 0) > 0.18 && Math.abs(s.v) > 0.3 || (s.brake > 0.9 && Math.abs(s.v) > 8)) {
+    // sterzate brusche in velocità: le gomme strisciano di lato (segni e un filo di fumo)
+    const slide = Math.abs(this.lzV || 0) > 2.6 && Math.abs(s.v) > 18;
+    if (slide && Math.random() < 0.5) for (const zz of [0.85, -0.85]) this.emit('smoke', dist - 1.3, 0.2, z0 + zz, -1, 0.5 + Math.random() * 0.4, -(this.lzV || 0) * 0.2);
+    if ((s.skid || 0) > 0.18 && Math.abs(s.v) > 0.3 || (s.brake > 0.9 && Math.abs(s.v) > 8) || slide) {
       for (const zz of [0.8, -0.8]) {
         const mk = this.marks[this.markI = (this.markI + 1) % this.marks.length];
         mk.x = dist - 1.28; mk.z = z0 + zz; mk.len = Math.max(0.15, Math.abs(s.v) * dt * 1.05 + 0.05); mk.a = Math.min(0.75, 0.25 + (s.skid || 0.5));
@@ -639,9 +655,16 @@ class Street3D extends Garage3D {
     const zT = game ? game.laneZ : 3.5;
     this.lz = this.lz ?? zT; this.lzV = this.lzV || 0;
     // inseguitore critico: ~0,7 s nei cambi di corsia automatici, molto più stretto quando sterza il pilota
-    const kk = game && game.free ? 120 : 9, cc = game && game.free ? 22 : 6;
-    const acc = (zT - this.lz) * kk - this.lzV * cc;
-    this.lzV += acc * dt; this.lz += this.lzV * dt;
+    let acc;
+    if (game && game.free) {
+      // inseguimento esponenziale: stabile anche con fotogrammi lenti (niente oscillazioni che divergono)
+      const nz = this.lz + (zT - this.lz) * (1 - Math.exp(-dt * 22)), nv = (nz - this.lz) / Math.max(dt, 1e-3);
+      acc = Math.max(-30, Math.min(30, (nv - this.lzV) / Math.max(dt, 1e-3))); this.lzV = nv; this.lz = nz;
+    } else {
+      const h = Math.min(dt, 0.05);
+      acc = (zT - this.lz) * 9 - this.lzV * 6;
+      this.lzV += acc * h; this.lz += this.lzV * h;
+    }
     const z = this.lz;
     this.root.position.z = z;
     this.root.rotation.y = -Math.atan2(this.lzV, Math.max(3, Math.abs(s.v)));
@@ -679,6 +702,13 @@ class Street3D extends Garage3D {
     if (game) for (const f of game.fx) if (f.k === 'crash') this.sparkT = 0.35;
     this.updateFx(dt, s, dist);
     // un po' di "velocità": campo visivo che si allarga
+    if (this.finPass) {
+      const U = this.finPass.uniforms, sp = Math.max(0, Math.min(1, (Math.abs(s.v) - 12) / 45));
+      U.speed.value += (sp - U.speed.value) * Math.min(1, dt * 3); U.time.value = this.t % 100;
+      if ((s.events || []).some((e) => e.type === 'clunk' || e.type === 'bov') || (s.flame || 0) > 0.5) this.kickT = 1;
+      if (game) for (const f of game.fx) if (f.k === 'crash') this.kickT = 1.6;
+      this.kickT = Math.max(0, (this.kickT || 0) - dt * 4); U.kick.value = this.kickT;
+    }
     const fov = (this.baseFov || 40) + Math.min(this.cockpitOn ? 6 : 16, Math.max(0, s.v) * (this.cockpitOn ? 0.08 : 0.2));
     if (Math.abs(fov - this.camera.fov) > 0.05) { this.camera.fov += (fov - this.camera.fov) * Math.min(1, dt * 3); this.camera.updateProjectionMatrix(); }
     this.headlight.intensity = s.ign ? (s.high ? 4.6 : 2.6) : 0;

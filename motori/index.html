@@ -1433,7 +1433,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       street3d.loadModelURL(SUPRA_MODEL.url, 'supra_mk4.glb').then(() => {
         if (street3d.custom && !$('g3dName').dataset.model) { $('g3dName').dataset.model = SUPRA_MODEL.name; $('g3dName').textContent = SUPRA_MODEL.name; }
         street3d.setPaint(S.paint);
-      }).catch(() => { /* resta la Supra procedurale */ });
+      }).catch((err) => { console.warn('Supra MK4 non caricata:', err); flash('Modello Supra MK4 non disponibile: uso il modello di base', 2.5); });
       if (radio) { const st = radio.station; street3d.setRadio(st.id === 'off' ? '' : st.freq, st.name); }
       $('camReset').addEventListener('click', () => street3d.resetCamera());
     } catch (e) {

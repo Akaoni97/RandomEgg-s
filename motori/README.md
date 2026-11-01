@@ -56,6 +56,11 @@ affusolate a tre falangi con le articolazioni, pollice carnoso, unghie, orologio
 anche plafoniera, maniglia sul montante, tweeter, cinture, battitacco, logo sul volante e schema delle marce
 sul pomello.
 
+**Effetti di velocità.** Con qualità alta, oltre i 45 km/h circa i bordi dell'immagine si sfocano verso il centro con
+un filo di aberrazione cromatica; cambiate, valvola, fiammate e tamponamenti danno un colpo di contrasto;
+grana leggera. Nelle sterzate brusche ad alta velocità le gomme lasciano segni e un filo di fumo, e
+dall'abitacolo la testa si inclina appena con la curva.
+
 **Abitacolo, come nei simulatori.** La testa del pilota è una molla smorzata: va indietro in spinta, avanti
 in frenata, di lato nei cambi corsia e guarda verso dove sterzi in proporzione alla velocità (look to apex),
 con lo sguardo stabilizzato lontano davanti al cofano, come fanno le telecamere di Assetto Corsa, rFactor 2
@@ -74,7 +79,8 @@ Un portafortuna omamori appeso allo specchietto oscilla con accelerazioni, frena
 
 **Autoradio.** Mentre guidi c'è musica bassa di sottofondo, separata dal motore (volume "Radio" nelle
 impostazioni, e il tasto M la spegne con tutto il resto). P o il riquadro in alto a destra della strada cambiano
-stazione: FM 89.7 con *Redline at Midnight*, FM 76.1 "Synth Notturno" generata in tempo reale (cassa,
+stazione: FM 89.7 *Redline at Midnight*, FM 91.3 *Red Zone Needles*, FM 94.5 *Metal Alive*, FM 98.1
+*Apex to Apex* (ogni stazione riprende la canzone da dove era), FM 76.1 "Synth Notturno" generata in tempo reale (cassa,
 rullante, charleston, basso e accordi in La minore con eco a nastro) e radio spenta. Fra una stazione e l'altra
 si sente il fruscio della sintonia; il display dell'autoradio nell'abitacolo mostra la stazione. La scelta resta
 salvata nel browser.

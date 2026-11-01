@@ -723,8 +723,14 @@ class Garage3D {
   // url può essere una lista: si prova il primo, poi gli altri (.glb nel progetto, .gltf + texture dove .glb non si può servire)
   loadModelURL(url, name) {
     const urls = [].concat(url);
+    // un server può rispondere con una pagina HTML a un file che non c'è: si accetta solo un vero glTF
+    // (binario che inizia con "glTF" oppure JSON che inizia con "{"), altrimenti si passa al successivo
     const get = (i) => fetch(urls[i]).then((r) => { if (!r.ok) throw new Error('modello non trovato'); return r.arrayBuffer(); })
-      .then((buf) => ({ buf, base: urls[i].replace(/[^/]*$/, '') }))
+      .then((buf) => {
+        const h = new Uint8Array(buf, 0, Math.min(4, buf.byteLength)), magic = String.fromCharCode(...h);
+        if (magic !== 'glTF' && h[0] !== 0x7b) throw new Error('non è un modello glTF');
+        return { buf: magic === 'glTF' ? buf : Garage3D.jsonToGlb(buf), base: new URL(urls[i], document.baseURI).href.replace(/[^/]*$/, '') };
+      })
       .catch((e) => (i + 1 < urls.length ? get(i + 1) : Promise.reject(e)));
     return get(0)
       .then(({ buf, base }) => this.loadModelBuffer(buf, name, base))
@@ -748,6 +754,23 @@ class Garage3D {
     this.atlas = { g, orig, mask, tex, w, h };
     this.customPaint = [];
     if (this.paintHex) this.setPaint(this.paintHex);
+  }
+
+  // glTF in JSON con la geometria in base64: la si decodifica qui e si ricompone un .glb in memoria
+  // (certe pagine non permettono di scaricare indirizzi data:, che è ciò che farebbe il caricatore)
+  static jsonToGlb(buf) {
+    const j = JSON.parse(new TextDecoder().decode(buf)), b = j.buffers && j.buffers[0];
+    if (!b || !/^data:/.test(b.uri || '')) return buf;
+    const bin = atob(b.uri.slice(b.uri.indexOf(',') + 1)), B = new Uint8Array((bin.length + 3) & ~3);
+    for (let k = 0; k < bin.length; k++) B[k] = bin.charCodeAt(k);
+    delete b.uri; b.byteLength = bin.length;
+    let js = new TextEncoder().encode(JSON.stringify(j));
+    const pad = (4 - (js.length % 4)) % 4; if (pad) { const t = new Uint8Array(js.length + pad).fill(0x20); t.set(js); js = t; }
+    const out = new ArrayBuffer(12 + 8 + js.length + 8 + B.length), dv = new DataView(out), u8 = new Uint8Array(out);
+    dv.setUint32(0, 0x46546c67, true); dv.setUint32(4, 2, true); dv.setUint32(8, out.byteLength, true);
+    dv.setUint32(12, js.length, true); dv.setUint32(16, 0x4e4f534a, true); u8.set(js, 20);
+    const o = 20 + js.length; dv.setUint32(o, B.length, true); dv.setUint32(o + 4, 0x004e4942, true); u8.set(B, o + 8);
+    return out;
   }
 
   loadModelBuffer(buf, fileName, base = '') {
