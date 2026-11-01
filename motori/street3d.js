@@ -567,7 +567,8 @@ class Street3D extends Garage3D {
     // fumo delle gomme
     if ((s.spin || 0) > 0.25) for (const zz of [0.85, -0.85]) if (Math.random() < s.spin) this.emit('smoke', dist - 1.4, 0.25, z0 + zz, -1 - Math.random(), 0.8 + Math.random() * 0.8, zz * (0.6 + Math.random()));
     // spruzzi d'acqua sull'asfalto bagnato
-    if (Math.abs(s.v) > 12) for (const zz of [0.8, -0.8]) if (Math.random() < Math.min(1, (Math.abs(s.v) - 12) / 25)) this.emit('spray', dist - 1.6, 0.15, z0 + zz, s.v * 0.65 - 3, 0.6 + Math.random() * 0.6, zz * 0.8);
+    const wet = ((dist % 61) + 61) % 61 < 5;   // pozzanghere: spruzzi solo lì
+    if (wet && Math.abs(s.v) > 12) for (const zz of [0.8, -0.8]) if (Math.random() < Math.min(0.7, (Math.abs(s.v) - 12) / 30)) this.emit('spray', dist - 1.6, 0.15, z0 + zz, s.v * 0.65 - 3, 0.6 + Math.random() * 0.6, zz * 0.8);
     // scintille nei tamponamenti
     if (this.sparkT > 0) { this.sparkT -= dt; for (let k = 0; k < 4; k++) this.emit('spark', dist + 2.3, 0.5, z0 + (Math.random() - 0.5) * 1.4, 4 + Math.random() * 6, 2 + Math.random() * 3, (Math.random() - 0.5) * 6); }
     for (const p of this.parts) {

@@ -417,7 +417,7 @@ class StreetGame {
     if (freeOK && Math.abs(this.steerIn) > 0.05) {
       this.free = true; this.manualT = this.autoLane ? 5 : 1e9;
       // più reattivo: la velocità laterale arriva quasi subito e cresce con la velocità dell'auto
-      const vmax = 1.6 + Math.min(4.6, sim.v * 0.17);
+      const vmax = 1.6 + Math.min(3.6, sim.v * 0.12);
       // risposta un po' non lineare: piccole correzioni morbide, sterzata piena decisa
       const k = Math.sign(this.steerIn) * Math.pow(Math.abs(this.steerIn), 1.4);
       this.latV += (-k * vmax - this.latV) * Math.min(1, dt * 11);
@@ -425,6 +425,11 @@ class StreetGame {
     if (!freeOK || (this.manualT === 0 && Math.abs(this.steerIn) <= 0.05)) this.free = false;
     if (this.free) {
       this.laneZ = Math.max(GAME_LANE_Z[3] - 1.4, Math.min(GAME_LANE_Z[1] + 1.4, this.laneZ + this.latV * dt));
+      // assistenza: mollato lo sterzo a meno di 30 cm dal centro di una corsia, la Supra ci si centra piano
+      if (Math.abs(this.steerIn) <= 0.05 && Math.abs(this.latV) < 0.3) {
+        let c = GAME_LANE_Z[1]; for (const l of [2, 3]) if (Math.abs(GAME_LANE_Z[l] - this.laneZ) < Math.abs(c - this.laneZ)) c = GAME_LANE_Z[l];
+        if (Math.abs(c - this.laneZ) < 0.3) this.laneZ += Math.sign(c - this.laneZ) * Math.min(Math.abs(c - this.laneZ), dt * 0.8);
+      }
       if (this.laneZ === GAME_LANE_Z[3] - 1.4 || this.laneZ === GAME_LANE_Z[1] + 1.4) this.latV = 0;   // cordolo
       let best = 1; for (const l of [2, 3]) if (Math.abs(GAME_LANE_Z[l] - this.laneZ) < Math.abs(GAME_LANE_Z[best] - this.laneZ)) best = l;
       this.lane = best; this.prevLane = best;

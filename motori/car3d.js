@@ -404,7 +404,20 @@ class Garage3D {
     add(hornRing, mat(0xd8261a), -0.051, 0, 0, 0, 0, 0, wheel);
     add(new T.CylinderGeometry(0.03, 0.035, 0.3, 10), dash, 0.45, 0.78, 0.37, 0, 0, Math.PI / 2 + 0.75);   // piantone
     // leve dietro al volante (frecce e tergicristalli)
-    for (const dz of [0.1, -0.1]) add(new T.BoxGeometry(0.02, 0.016, 0.12), dash, 0.36, 0.84, 0.37 + dz * 1.4, 0, 0, 0);
+    // la leva delle frecce (lato porta, guida a destra) è un gruppo: si alza e si abbassa con la freccia
+    this.stalks = [];
+    for (const dz of [0.1, -0.1]) {
+      const sg = new T.Group(); sg.position.set(0.37, 0.84, 0.37 + dz * 0.6); I.add(sg); this.stalks.push(sg);
+      add(new T.CylinderGeometry(0.007, 0.009, 0.13, 8), dash, 0, 0, dz > 0 ? 0.065 : -0.065, Math.PI / 2, 0, 0, sg);
+      add(new T.SphereGeometry(0.011, 8, 6), mat(0x1a1a1e), 0, 0, dz > 0 ? 0.13 : -0.13, 0, 0, 0, sg);
+    }
+    // specchietti laterali visti da dentro: gusci color carrozzeria con il retrovisore riflesso
+    this.sideMirrors = [];
+    for (const z of [0.86, -0.86]) {
+      const g = new T.Group(); g.position.set(0.74, 0.97, z); I.add(g);
+      const shell = new T.Mesh(new T.SphereGeometry(0.1, 16, 10), this.paint); shell.scale.set(0.55, 0.62, 1.05); g.add(shell);
+      this.sideMirrors.push(g);
+    }
 
     // mani umane: dorso arrotondato, quattro dita a tre falangi che si avvolgono sulla corona,
     // pollice a due falangi sul lato interno, nocche, polso; orologio al polso sinistro
@@ -584,6 +597,10 @@ class Garage3D {
     this.mirror = add(mg, new T.MeshBasicMaterial({ map: this.mirrorRT.texture, toneMapped: false }), 0.358, 1.17, 0, 0, -Math.PI / 2, 0);
     this.mirrorCam = new T.PerspectiveCamera(22, 320 / 96, 0.3, 300);
     this.mirrorCam.position.set(0.33, 1.17, 0); this.mirrorCam.lookAt(-10, 1.05, 0); I.add(this.mirrorCam);
+    for (const g of this.sideMirrors) {
+      const mg2 = new T.PlaneGeometry(0.15, 0.1), uv2 = mg2.attributes.uv; for (let i = 0; i < uv2.count; i++) uv2.setX(i, 1 - uv2.getX(i));
+      const m = new T.Mesh(mg2, new T.MeshBasicMaterial({ map: this.mirrorRT.texture, toneMapped: false, color: 0xb8c4d0 })); m.position.set(-0.056, 0, 0); m.rotation.y = -Math.PI / 2 + (g.position.z > 0 ? -0.35 : 0.35); g.add(m);
+    }
     add(new T.CylinderGeometry(0.008, 0.008, 0.06, 6), dash, 0.39, 1.22, 0);
     // portafortuna omamori appeso allo specchietto: oscilla con accelerazioni, frenate e cambi corsia
     const charm = new T.Group(); charm.position.set(0.37, 1.13, -0.08); I.add(charm); this.charm = charm;
@@ -969,6 +986,8 @@ class Garage3D {
       this.charm.rotation.set(c.a, 0, c.b);
     }
     if (this.cockpitOn) {
+      // leva delle frecce: su per sinistra, giù per destra
+      if (this.stalks) { const tg = s.signal === 'L' ? 0.22 : s.signal === 'R' ? -0.22 : 0; const sk = this.stalks[0]; sk.rotation.x += (tg - sk.rotation.x) * Math.min(1, dt * 14); }
       if (this.cf % 6 === 0) this.drawAux(s);
       this.dashLight.intensity = s.ign ? 0.5 : 0.05;
     }

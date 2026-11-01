@@ -705,7 +705,9 @@ class Street2D {
       const mRear = dist + (left + 1 + 48 * k - carX) / PPM, len = Math.max(0.15, Math.abs(s.v) * dt * 1.05 + 0.05), a = Math.min(0.7, 0.25 + (s.skid || 0.5));
       this.marks.push({ m: mRear - len, y: y0 - 1, len, a }, { m: mRear - len, y: y0 - 4, len, a: a * 0.6 });
     }
-    if (Math.abs(s.v) > 12) for (let q = 0; q < 3; q++) if (Math.random() < Math.min(1, (Math.abs(s.v) - 12) / 20)) {
+    // spruzzi solo passando sulle pozzanghere (un tratto di 5 m ogni 61), non per tutto il viaggio
+    const wet = ((dist % 61) + 61) % 61 < 5;
+    if (wet && Math.abs(s.v) > 12) for (let q = 0; q < 2; q++) if (Math.random() < Math.min(0.8, (Math.abs(s.v) - 12) / 25)) {
       const wxm = Math.random() < 0.5 ? 48 : 158;
       this.parts.push({ k: 'spray', m: dist + (left + 1 + wxm * k - 14 * k - carX) / PPM, y: y0 - 2 - Math.random() * 4, vy: -14 - Math.random() * 18, dx: s.v * 0.6 - 4 - Math.random() * 6, r: 1, life: 1 });
     }

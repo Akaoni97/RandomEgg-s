@@ -47,6 +47,11 @@ cuciture sulla palpebra. I montanti anteriori sono neri come la serra della JZA8
 il quadro sul cruscotto dell'abitacolo): realistici *Garage*, *Fondo bianco* e *Carbonio e neon*; cartoon *Sticker
 Bomb*, *Nastro e spray* e *Fumetto neon*. La scelta resta salvata nel browser.
 
+**Spruzzi e assistenza.** Gli spruzzi d'acqua escono solo passando sulle pozzanghere (brevi tratti bagnati),
+non più per tutto il viaggio. Mollando lo sterzo a meno di 30 cm dal centro di una corsia la Supra ci si centra
+piano; fra le corsie resta dov'è. Dall'abitacolo si vedono gli specchietti laterali con la strada riflessa, e la
+leva delle frecce si muove quando lampeggiano.
+
 **Sterzo progressivo.** Con A/D un tocco corregge appena e tenendo premuto la sterzata cresce fino al massimo; al
 rilascio torna dritta in fretta. La risposta è non lineare (correzioni piccole morbide, sterzata piena decisa);
 la levetta del pad resta analogica.
