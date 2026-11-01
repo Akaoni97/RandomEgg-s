@@ -56,6 +56,13 @@ sottile, plancia poco sotto l'orizzonte, quadro visibile attraverso la parte alt
 interni scuri e larghi ai lati; dall'abitacolo la scocca esterna si nasconde e resta solo il cofano.
 Un portafortuna omamori appeso allo specchietto oscilla con accelerazioni, frenate e cambi corsia.
 
+**Autoradio.** Mentre guidi c'è musica bassa di sottofondo, separata dal motore (volume "Radio" nelle
+impostazioni, e il tasto M la spegne con tutto il resto). P o il riquadro in alto a destra della strada cambiano
+stazione: FM 89.7 con *Redline at Midnight*, FM 76.1 "Synth Notturno" generata in tempo reale (cassa,
+rullante, charleston, basso e accordi in La minore con eco a nastro) e radio spenta. Fra una stazione e l'altra
+si sente il fruscio della sintonia; il display dell'autoradio nell'abitacolo mostra la stazione. La scelta resta
+salvata nel browser.
+
 **Comandi in strada.** F abbaglianti (fascio più lungo in 2D e 3D, spia blu nel quadro), H clacson,
 frecce automatiche quando si cambia corsia (spie ◀ ▶ con il ticchettio del relè), B bagagliaio.
 

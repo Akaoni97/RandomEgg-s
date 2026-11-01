@@ -145,6 +145,16 @@ h1 span { color: var(--amber); }
 .hud-tag { background: rgba(3,6,12,.72); border-left: 3px solid var(--amber); padding: 5px 10px; font: 400 13px/1.25 var(--f-data); letter-spacing: .04em; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
 .hud-tag b { color: var(--muted); font-weight: 400; margin-right: 6px; }
 .hud-tag.fuel-low { border-color: var(--warn); color: var(--warn); }
+.radio-chip { position: absolute; right: 12px; top: 12px; pointer-events: auto; display: flex; align-items: baseline; gap: 8px; max-width: 46%;
+  background: rgba(3,6,12,.72); border: 0; border-right: 3px solid #ff2e88; padding: 6px 10px; color: var(--fg); cursor: pointer;
+  font: 400 13px/1.2 var(--f-data); letter-spacing: .04em; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.radio-chip i { font-style: normal; color: #ff2e88; font-size: 11px; }
+.radio-chip b { color: #3ff0ff; font-weight: 400; white-space: nowrap; }
+.radio-chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #c3d0de; }
+.radio-chip small { color: var(--muted); font-size: 11px; }
+.radio-chip.off b { color: var(--muted); }
+.radio-chip:focus-visible { outline: 2px solid #ff2e88; outline-offset: 2px; }
+@media (max-width: 600px) { .radio-chip span { display: none; } }
 .radar {
   position: absolute; left: 50%; top: 12px; transform: translateX(-50%) skewX(-10deg);
   font: 400 15px/1 var(--f-display); letter-spacing: .08em; padding: 8px 16px; color: #fff;
@@ -522,6 +532,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         <div class="hud-tag" id="hudFuelTag"><b>BENZINA</b><span id="hudFuel">—</span></div>
         <div class="hud-tag" id="hudJob" hidden></div>
       </div>
+      <button class="radio-chip" type="button" id="radioBtn" aria-label="Autoradio: cambia stazione (P)"><i aria-hidden="true">▶</i><b id="radioFreq">FM 89.7</b><span id="radioName">Redline at Midnight</span><small>P</small></button>
       <div class="radar" id="radar" hidden>POLIZIA</div>
       <div class="racebox" id="raceBox" hidden><div class="big" id="raceBig"></div><div class="sub" id="raceSub"></div></div>
       <div class="tree" id="tree" hidden aria-hidden="true"><i class="a"></i><i class="a"></i><i class="a"></i><i class="gr"></i><i class="rd"></i></div>
@@ -633,6 +644,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       </div>
       <div class="field"><span>Volume</span>
         <div class="vol"><input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"><output id="volOut">80</output></div>
+      </div>
+      <div class="field"><span>Radio</span>
+        <div class="vol"><input type="range" id="radioVol" min="0" max="100" value="30" aria-label="Volume della radio"><output id="radioVolOut">30</output></div>
       </div>
       <p class="hint" id="ecuHint"></p>
     </div>
@@ -754,6 +768,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 <script src="street3d.js"></script>
 <script src="street2d.js"></script>
 <script src="intro.js"></script>
+<script src="radio.js"></script>
 <script src="game.js"></script>
 <script>
 (() => {
@@ -775,6 +790,21 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     S.tune = Object.assign({}, TUNING_PRESETS[0].sel, saved.tune || {});
   } catch (e) { /* storage non disponibile */ }
   let TP = tuningParams(S.tune);
+
+  // ---------------------------------------------------------------- autoradio (musica bassa mentre si guida)
+  const radio = window.CarRadio ? new window.CarRadio({ src: 'audio/redline_at_midnight.mp3', onChange: () => renderRadio(true) }) : null;
+  if (radio) { radio.i = Number.isInteger(S.radio) ? S.radio : 1; radio.vol = (S.radioVol ?? 30) / 100; }
+  function renderRadio(announce) {
+    if (!radio) return;
+    const st = radio.station, on = st.id !== 'off';
+    $('radioFreq').textContent = on ? st.freq : 'RADIO'; $('radioName').textContent = on ? st.name : 'spenta';
+    $('radioBtn').classList.toggle('off', !on);
+    if (street3d && street3d.setRadio) street3d.setRadio(on ? st.freq : '', on ? st.name : '');
+    S.radio = radio.i;
+    try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (e) { /* ignora */ }
+    if (announce) flash(on ? `Radio: ${st.freq} · ${st.name}` : 'Radio spenta', 1.6);
+  }
+  function radioNext() { if (!radio) return; ensureAudio(); if (!radio.on) radio.start(audio.ctx); radio.next(); }
 
   // ---------------------------------------------------------------- audio
   const audio = { ctx: null, send: () => {}, ready: false, starting: null };
@@ -857,6 +887,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       : 'Frizione manuale: tienila giù (Spazio) per cambiare e per partire, poi rilasciala dando gas.';
     const pre = TUNING_PRESETS.find((p) => Object.keys(p.sel).every((k) => p.sel[k] === S.tune[k]));
     $('cfgName').textContent = pre ? pre.name.toLowerCase() : 'su misura';
+    if (radio) radio.setMaster(S.vol / 100, S.muted);
     try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (e) { /* ignora */ }
   }
   document.querySelectorAll('.seg[data-k]').forEach((seg) => seg.addEventListener('click', (e) => {
@@ -871,6 +902,11 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   $('tLane').addEventListener('change', (e) => { S.autoLane = e.target.checked; game.manualT = 0; applySettings(); flash(S.autoLane ? 'Sorpasso automatico: la Supra cambia corsia da sola' : 'Guida a mano: tieni premuto A o D e sterzi dove vuoi. Occhio ai tamponamenti', 2.4); });
   $('tLaunch').addEventListener('change', (e) => { S.launch = e.target.checked; applySettings(); if (S.launch) flash(S.autoClutch ? 'Launch: in 1ª tieni il freno, gas a fondo, poi molla il freno' : 'Launch: frizione giù, gas a fondo, poi rilascia la frizione'); });
   $('vol').addEventListener('input', (e) => { S.vol = +e.target.value; S.muted = false; applySettings(); });
+  if (radio) {
+    $('radioVol').value = Math.round(radio.vol * 100); $('radioVolOut').textContent = $('radioVol').value;
+    $('radioVol').addEventListener('input', (e) => { radio.setVolume(+e.target.value / 100); S.radioVol = +e.target.value; $('radioVolOut').textContent = e.target.value; try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } });
+    $('radioBtn').addEventListener('click', radioNext);
+  } else $('radioBtn').hidden = true;
 
   // ---------------------------------------------------------------- comandi
   const keys = new Set();
@@ -946,6 +982,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'f') { S.high = !S.high; flash(S.high ? 'Abbaglianti' : 'Anabbaglianti', 1); }
     else if (k === 'h') hornOn();
     else if (k === 'b') openTrunk();
+    else if (k === 'p') radioNext();
     else if ((k === 'a' || k === 'd') && game.race) flash('In gara si resta nella propria corsia', 1.4);
     else if (k === 'l') { S.launch = !S.launch; applySettings(); flash(S.launch ? 'Launch control inserito' : 'Launch control disinserito', 1.2); }
     else if (k === 'm') { S.muted = !S.muted; applySettings(); }
@@ -1390,6 +1427,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       street3d = new Street3D($('g3d'));
       street3d.setQuality(S.q || 'alta');
       street3d.setCluster($('gauges'));
+      if (radio) { const st = radio.station; street3d.setRadio(st.id === 'off' ? '' : st.freq, st.name); }
       $('camReset').addEventListener('click', () => street3d.resetCamera());
     } catch (e) {
       const m = $('g3dMsg'); m.hidden = false; m.textContent = 'La vista 3D non è disponibile: three.js non si è caricato o il browser non supporta WebGL.';
@@ -1726,7 +1764,11 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }) : null;
   window.__intro = intro;
   function hideGate() { if (intro) intro.finish(); else $('gate').hidden = true; }
-  $('goBtn').addEventListener('click', () => { ensureAudio(); hideGate(); setTimeout(() => $('btnIgn').focus(), 50); });
+  $('goBtn').addEventListener('click', () => {
+    ensureAudio(); hideGate(); setTimeout(() => $('btnIgn').focus(), 50);
+    // la sigla sfuma, poi si accende l'autoradio a volume basso
+    if (radio && !radio.on) setTimeout(() => { radio.setMaster(S.vol / 100, S.muted); radio.start(audio.ctx); renderRadio(false); }, intro ? 2400 : 0);
+  });
   if (intro) {
     $('introPress').addEventListener('click', () => intro.start());
     $('gate').addEventListener('click', (e) => { if (intro.state === 'wait' && !e.target.closest('.intro-ui')) intro.start(); });
@@ -1738,6 +1780,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   if (game.mode === 'career') for (const k of Object.keys(S.tune)) if (!game.owns(k, S.tune[k])) S.tune[k] = TUNING[k].items[0].id;
   applySettings();
   renderMode();
+  renderRadio(false);
   layout();
   (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => faceCache.clear());
   requestAnimationFrame(frame);

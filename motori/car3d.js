@@ -354,21 +354,14 @@ class Garage3D {
     this.clusterScreen.rotation.order = 'YXZ'; this.clusterScreen.rotation.x = -0.25;
     add(new T.BoxGeometry(0.28, 0.36, 0.34), dash, 0.52, 0.66, 0);
     // autoradio: frontalino nero con display ciano e tasti
-    const radioTex = this.carTex(256, 72, (g, w, h) => {
-      g.fillStyle = '#0b0b0d'; g.fillRect(0, 0, w, h);
-      g.fillStyle = '#04161a'; g.fillRect(56, 10, 144, 30);
-      g.fillStyle = '#3ff0ff'; g.font = '700 18px monospace'; g.textAlign = 'left'; g.fillText('FM 89.7', 64, 31);
-      g.font = '12px monospace'; g.fillStyle = '#ff4fa0'; g.fillText('00:00', 152, 31);
-      g.fillStyle = '#1e1f24'; for (let k = 0; k < 6; k++) g.fillRect(56 + k * 24, 48, 20, 12);
-      g.fillStyle = '#9aa2ad'; g.font = '9px monospace'; for (let k = 0; k < 6; k++) g.fillText(String(k + 1), 63 + k * 24, 57);
-      for (const x of [26, 230]) { g.fillStyle = '#26272c'; g.beginPath(); g.arc(x, 36, 18, 0, 7); g.fill(); g.fillStyle = '#4a4c54'; g.beginPath(); g.arc(x, 36, 12, 0, 7); g.fill(); }
-    });
+    const radioTex = this.carTex(256, 72, () => {});
+    this.radioTex = radioTex; this.setRadio('FM 89.7', 'Redline at Midnight');
     add(new T.PlaneGeometry(0.22, 0.062), new T.MeshBasicMaterial({ map: radioTex, toneMapped: false, color: 0xb8b8b8 }), 0.362, 0.62, 0.02, 0, -Math.PI / 2 - 0.18, 0);
     for (const z of [-0.08, 0.08, -0.55, 0.62]) add(new T.BoxGeometry(0.02, 0.05, 0.1), alu, 0.43, 0.85, z);
     add(new T.BoxGeometry(0.95, 0.16, 0.24), dash, 0.02, 0.5, 0);
     // paratia e vano piedi: chiudono la vista sotto la plancia
     add(new T.BoxGeometry(0.42, 0.44, 1.6), dash, 0.68, 0.53, 0);
-    add(new T.BoxGeometry(0.3, 0.2, 0.5), soft, 0.38, 0.66, 0.4, 0, 0, -0.5);
+    add(new T.BoxGeometry(0.26, 0.16, 0.5), soft, 0.54, 0.54, 0.4, 0, 0, -0.5);   // pannello ginocchia, sotto la corona
     // gambe del pilota
     const jeans = mat(0x1d2433, { roughness: 0.95 });
     for (const dz of [0.1, -0.1]) {
@@ -555,6 +548,23 @@ class Garage3D {
     add(new T.BoxGeometry(0.008, 0.045, 0.028), mat(0xc0201a, { roughness: 0.6 }), 0, -0.115, 0, 0, 0, 0, charm);
     add(new T.BoxGeometry(0.009, 0.012, 0.025), mat(0xe8c050, { metalness: 0.6, roughness: 0.4 }), 0, -0.1, 0, 0, 0, 0, charm);
     this.charmS = { a: 0, va: 0, b: 0, vb: 0, prev: 0 };
+  }
+
+  // display dell'autoradio: stazione sintonizzata (vuoto se spenta)
+  setRadio(freq, name) {
+    if (!this.radioTex) return;
+    const cv = this.radioTex.image, g = cv.getContext('2d'), w = cv.width, h = cv.height;
+    g.fillStyle = '#0b0b0d'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#04161a'; g.fillRect(56, 8, 144, 34);
+    g.textAlign = 'left';
+    if (freq) {
+      g.fillStyle = '#3ff0ff'; g.font = '700 16px monospace'; g.fillText(freq, 62, 23);
+      g.font = '10px monospace'; g.fillStyle = '#ff4fa0'; g.fillText(name.slice(0, 22).toUpperCase(), 62, 37);
+    } else { g.fillStyle = '#1d3a40'; g.font = '700 16px monospace'; g.fillText('-- OFF --', 80, 31); }
+    g.fillStyle = '#1e1f24'; for (let k = 0; k < 6; k++) g.fillRect(56 + k * 24, 48, 20, 12);
+    g.fillStyle = '#9aa2ad'; g.font = '9px monospace'; for (let k = 0; k < 6; k++) g.fillText(String(k + 1), 63 + k * 24, 57);
+    for (const x of [26, 230]) { g.fillStyle = '#26272c'; g.beginPath(); g.arc(x, 36, 18, 0, 7); g.fill(); g.fillStyle = '#4a4c54'; g.beginPath(); g.arc(x, 36, 12, 0, 7); g.fill(); }
+    this.radioTex.needsUpdate = true;
   }
 
   // strumenti supplementari (pressione e temperatura olio, voltmetro) disegnati a lancette
