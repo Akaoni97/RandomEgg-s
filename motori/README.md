@@ -3,10 +3,15 @@
 Gioco di guida notturna con gestione di soldi e pezzi, costruito sul Banco Suono 2JZ.
 Quadro strumenti in alto, strada a scorrimento sotto, consolle di guida, officina.
 
-La strada è disegnata in **pixel art cartoonesca vista di lato** (`street2d.js`): auto con contorni
-spessi e proporzioni da cartone, schiacciamento in partenza, tuffo in frenata, sobbalzi sui giunti,
-fumo delle gomme, fiammate, città su più piani con luna, insegne e lampioni retinati. Dalla barra
-sotto la strada si può passare alla vista 3D (pixel o liscia), che è l'unica a caricare modelli .glb.
+La strada è disegnata in **pixel art cartoonesca vista di lato** (`street2d.js`), a 360 px di
+altezza: auto con contorni e proporzioni da cartone, schiacciamento in partenza, tuffo in frenata,
+sobbalzi sui giunti, pilota che si muove, fumo, fiammate; città su tre piani con insegne a pixel,
+balconi, cisterne, negozi, pedoni e un gatto. Le luci si sommano all'immagine a bande morbide:
+pozze sull'asfalto sotto i lampioni, davanti ai fari e dietro agli stop, riflessi sul bagnato.
+
+Dalla barra sotto la strada si passa alla **vista 3D** (`street3d.js`): edifici di quattro tipi,
+alberi, panchine, idranti, fermate, semafori che cambiano colore, strisce, frecce, tombini, auto
+parcheggiate, luna e stelle. È l'unica vista che carica modelli .glb.
 
 ## La carriera
 
@@ -102,6 +107,6 @@ con modello di aderenza, resistenza aerodinamica e frenata. Con la configurazion
 | `samples.js` | Lettore dei campioni audio caricati |
 | `car3d.js` | Modello 3D dell'auto e sue animazioni |
 | `street2d.js` | Strada in pixel art cartoonesca vista di lato (vista predefinita) |
-| `street3d.js` | Strada notturna in 3D, città, traffico, polizia, distributore; resa pixel opzionale |
+| `street3d.js` | Strada notturna in 3D: città, arredo urbano, traffico, polizia, distributore |
 | `game.js` | Carriera: soldi, eventi, polizia, sfide, consegne, pilota automatico per le fermate |
 | `../test/motori.test.js` | Prove con `npm test` |

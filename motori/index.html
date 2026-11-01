@@ -479,7 +479,6 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     <div class="roadbar">
       <div class="seg look" id="lookSeg" role="group" aria-label="Stile grafico">
         <button type="button" data-l="2d">2D cartoon</button>
-        <button type="button" data-l="pixel">3D pixel</button>
         <button type="button" data-l="smooth">3D</button>
       </div>
       <div class="swatches" id="swatches" role="group" aria-label="Colore carrozzeria"></div>
@@ -1169,17 +1168,14 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     }
     return street3d;
   }
-  if (!['2d', 'pixel', 'smooth'].includes(S.look)) S.look = '2d';
+  if (!['2d', 'smooth'].includes(S.look)) S.look = '2d';
   function applyLook() {
     document.querySelectorAll('#lookSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.l === S.look)));
     const is2d = S.look === '2d';
     $('g2d').hidden = !is2d; $('g3d').hidden = is2d;
     document.querySelectorAll('.only3d').forEach((el) => { el.hidden = is2d; });
     if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); }
-    else {
-      garage = make3D();
-      if (garage) garage.setPixel(S.look === 'pixel' ? (window.innerWidth < 700 ? 2.5 : 4) : 0);
-    }
+    else garage = make3D();
     if (garage) { garage.visible = garageOn; garage.resize(); garage.setPaint(S.paint); garage.setTips(TP.dsp.ex.tips); }
     $('g3dName').textContent = is2d ? '2D cartoon' : (street3d && street3d.custom ? $('g3dName').dataset.model || 'modello caricato' : 'modello di base');
   }

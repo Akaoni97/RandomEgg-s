@@ -146,7 +146,6 @@ class Garage3D {
         this.body.add(this.custom);
         this.refloor();
         if (this.paintHex && this.paintHex !== 'model') this.setPaint(this.paintHex);
-        this.restyle(this.custom);
         this.baseParts.forEach((p) => { p.visible = p === this.tips[0]?.fl || p === this.tips[1]?.fl; });
         this.wheels.forEach((w) => { w.visible = false; });
         res({ name: file.name, wheels: this.customWheels.length, upFixed: this.upFixed, paint: this.customPaint.length > 0 });
@@ -256,67 +255,9 @@ class Garage3D {
     if (!w || !h) return;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
-    if (this.px) this.sizePixel();
   }
 
-  // ---- stile pixel art: stessa scena e stessa visuale, disegnata a bassa risoluzione
-  //      con una tavolozza notturna di 28 colori e retinatura a scacchiera (Bayer 4×4)
-  setPixel(scale) {
-    const T = this.T;
-    this.pxScale = scale || 0;
-    if (!this.pxScale) { this.px = null; this.restyle(); if (this.onLook) this.onLook(false); return; }
-    if (!this.px) {
-      const hex = ['#05060b', '#0d1220', '#17203a', '#24345a', '#3a4f7f', '#5f7bb0', '#9fb6dd', '#e8f0ff',
-        '#2ee6ff', '#1b8fa8', '#0d4a5c', '#b8ff3a', '#5a8f1c', '#ff2e88', '#8f1c55', '#ffb35c',
-        '#c06a22', '#ffe9b0', '#ff3b2e', '#a3150c', '#4f0b07', '#7a7f88', '#3d4149', '#f4f1e6',
-        '#6b3a14', '#3a2410', '#2a1a2e', '#8a5a2a'];
-      const pal = hex.map((h) => new T.Vector3(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255));
-      const rt = new T.WebGLRenderTarget(4, 4, { minFilter: T.NearestFilter, magFilter: T.NearestFilter, depthBuffer: true });
-      const mat = new T.ShaderMaterial({
-        uniforms: { tDiffuse: { value: rt.texture }, res: { value: new T.Vector2(4, 4) }, pal: { value: pal }, expo: { value: this.renderer.toneMappingExposure } },
-        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
-        fragmentShader: `
-          uniform sampler2D tDiffuse; uniform vec2 res; uniform vec3 pal[28]; uniform float expo; varying vec2 vUv;
-          float bayer(vec2 p) {
-            int x = int(mod(p.x, 4.0)), y = int(mod(p.y, 4.0)); int i = x + y * 4;
-            float m[16]; m[0]=0.;m[1]=8.;m[2]=2.;m[3]=10.;m[4]=12.;m[5]=4.;m[6]=14.;m[7]=6.;m[8]=3.;m[9]=11.;m[10]=1.;m[11]=9.;m[12]=15.;m[13]=7.;m[14]=13.;m[15]=5.;
-            float v = 0.0; for (int k = 0; k < 16; k++) { if (k == i) v = m[k]; } return v / 16.0 - 0.47;
-          }
-          vec3 aces(vec3 x) { return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
-          void main() {
-            vec3 c = pow(aces(texture2D(tDiffuse, vUv).rgb * expo), vec3(1.0 / 2.2));
-            c += bayer(floor(vUv * res)) * 0.085;
-            float best = 1e9; vec3 o = c;
-            for (int i = 0; i < 28; i++) { vec3 d = c - pal[i]; d *= vec3(0.9, 1.15, 0.8); float e = dot(d, d); if (e < best) { best = e; o = pal[i]; } }
-            gl_FragColor = vec4(o, 1.0);
-          }`,
-        depthTest: false, depthWrite: false, toneMapped: false,
-      });
-      const quad = new T.Mesh(new T.PlaneGeometry(2, 2), mat); quad.frustumCulled = false;
-      const scene = new T.Scene(); scene.add(quad);
-      this.px = { rt, mat, scene, cam: new T.OrthographicCamera(-1, 1, 1, -1, 0, 1) };
-    }
-    this.sizePixel(); this.restyle();
-    if (this.onLook) this.onLook(!!this.px);
-  }
-  sizePixel() {
-    const w = Math.max(1, Math.round(this.canvas.clientWidth / this.pxScale)), h = Math.max(1, Math.round(this.canvas.clientHeight / this.pxScale));
-    this.px.rt.setSize(w, h); this.px.mat.uniforms.res.value.set(w, h);
-  }
-  // facce piatte in pixel art, ombreggiatura morbida nello stile liscio
-  restyle(root) {
-    const flat = !!this.px;
-    (root || this.scene).traverse((o) => {
-      const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
-      for (const m of ms) if ('flatShading' in m && m.flatShading !== flat && !m.isShaderMaterial) { m.flatShading = flat; m.needsUpdate = true; }
-    });
-  }
-  draw() {
-    if (!this.px) { this.renderer.render(this.scene, this.camera); return; }
-    const r = this.renderer;
-    r.setRenderTarget(this.px.rt); r.render(this.scene, this.camera);
-    r.setRenderTarget(null); r.render(this.px.scene, this.px.cam);
-  }
+  draw() { this.renderer.render(this.scene, this.camera); }
 
   // s: stato dalla simulazione
   update(dt, s) {
