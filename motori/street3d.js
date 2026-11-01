@@ -64,9 +64,9 @@ class Street3D extends Garage3D {
     this.view = mode;
     c.enabled = mode === 'chase';
     this.cockpitOn = mode === 'cockpit';
-    if (this.shell) { this.shell.visible = !this.cockpitOn; this.hoodOnly.visible = this.cockpitOn; }
+    this.setCabinView(this.cockpitOn);
     if (mode === 'chase' && this.chaseCam) { this.camera.position.copy(this.chaseCam.p); c.target.copy(this.chaseCam.t); }
-    this.baseFov = mode === 'cockpit' ? 64 : mode === 'hood' ? 58 : mode === 'side' ? 30 : (this.canvas.clientWidth / this.canvas.clientHeight < 1.3 ? 62 : 40);
+    this.baseFov = mode === 'cockpit' ? 54 : mode === 'hood' ? 58 : mode === 'side' ? 30 : (this.canvas.clientWidth / this.canvas.clientHeight < 1.3 ? 62 : 40);
   }
   beforeRender(dt, s) {
     const v = this.view || 'chase';
@@ -87,7 +87,7 @@ class Street3D extends Garage3D {
     const bump = Math.sin((st.t || 0) * 11) * Math.min(0.0025, sp * 0.00006);
     const vib = (Math.random() - 0.5) * Math.min(0.005, sp * 0.0001) + (st.heaveV || 0) * 0.002 + bump;
     let eye, at, ref = this.body;
-    if (v === 'cockpit') { eye = [-0.3 + H.x, 1.09 + vib - Math.max(0, H.x) * 0.3, 0.37 + H.z]; at = [14, 1.0 + H.x * 2, 0.33 + H.yaw]; }
+    if (v === 'cockpit') { eye = [-0.3 + H.x, 1.07 + vib - Math.max(0, H.x) * 0.3, 0.37 + H.z]; at = [14, 1.0 + H.x * 2, 0.37 + H.yaw]; }
     else if (v === 'hood') { eye = [0.95, 1.02 + vib, 0]; at = [14, 0.8, (s.steer || 0) * 4]; }
     else { ref = this.root; eye = [0.6, 1.05, 6.8]; at = [0.6, 0.7, 0]; }
     this.camera.position.copy(ref.localToWorld(new T.Vector3(...eye)));

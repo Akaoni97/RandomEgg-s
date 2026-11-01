@@ -36,6 +36,11 @@ disegna su una texture), tre strumenti supplementari a lancetta sulla consolle r
 manopole del clima, pedaliera, alette parasole, altoparlanti nelle porte e la luce arancio del quadro
 che illumina mani e volante.
 
+Proporzioni da gioco di guida: parabrezza che occupa più di metà dello schermo, cornice superiore
+sottile, plancia poco sotto l'orizzonte, quadro visibile attraverso la parte alta del volante, montanti
+interni scuri e larghi ai lati; dall'abitacolo la scocca esterna si nasconde e resta solo il cofano.
+Un portafortuna omamori appeso allo specchietto oscilla con accelerazioni, frenate e cambi corsia.
+
 **Comandi in strada.** F abbaglianti (fascio più lungo in 2D e 3D, spia blu nel quadro), H clacson,
 frecce automatiche quando si cambia corsia (spie ◀ ▶ con il ticchettio del relè), B bagagliaio.
 

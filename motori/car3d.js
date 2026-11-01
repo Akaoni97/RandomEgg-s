@@ -267,14 +267,13 @@ class Garage3D {
 
   // ---------------------------------------------------------------- abitacolo (guida a destra, come le JZA80 giapponesi)
   buildInterior() {
-    const T = this.T, I = new T.Group(); this.body.add(I); this.interior = I;
+    const T = this.T, I = new T.Group(); I.visible = false; this.body.add(I); this.interior = I;
     // l'abitacolo è in ombra: colori smorzati e riflessi d'ambiente quasi spenti (niente cruscotto azzurrino)
     const mat = (c, o = {}) => { const m = new T.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.8, envMapIntensity: 0.15 }, o)); m.color.multiplyScalar(0.45); return m; };
     const dash = mat(0x121318), soft = mat(0x1a1717), alu = mat(0x8a9099, { metalness: 0.9, roughness: 0.3 }), skin = mat(0xc98a62, { roughness: 0.6 });
     const add = (geo, m, x, y, z, rx = 0, ry = 0, rz = 0, parent = I) => { const o = new T.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); parent.add(o); return o; };
     const twoSided = (c) => mat(c, { side: T.DoubleSide });
     add(new T.PlaneGeometry(2.0, 1.5), twoSided(0x0c0c0f), -0.1, 0.34, 0, -Math.PI / 2);                      // pavimento
-    add(new T.PlaneGeometry(1.25, 1.06), twoSided(0x1b1b20), -0.08, 1.215, 0, Math.PI / 2);                   // cielo dell'abitacolo
     for (const z of [0.83, -0.83]) {
       const door = add(new T.PlaneGeometry(1.9, 0.56), twoSided(0x17161a), -0.05, 0.62, z, 0, z > 0 ? Math.PI : 0);
       add(new T.BoxGeometry(1.1, 0.05, 0.08), soft, -0.1, 0.8, z * 0.97);                                     // bracciolo
@@ -282,17 +281,17 @@ class Garage3D {
       void door;
     }
     // plancia: imbottitura, palpebra del quadro, consolle centrale con radio e bocchette
-    add(new T.BoxGeometry(0.45, 0.22, 1.56), dash, 0.66, 0.84, 0);
-    add(new T.BoxGeometry(0.55, 0.05, 1.56), soft, 0.6, 0.96, 0, 0, 0, -0.18);
-    const hood = new T.CylinderGeometry(0.2, 0.2, 0.5, 20, 1, true, 0, Math.PI); hood.rotateX(Math.PI / 2);
-    add(hood, dash, 0.52, 0.98, 0.37, 0, 0, 0).material.side = T.DoubleSide;
+    add(new T.BoxGeometry(0.45, 0.22, 1.56), dash, 0.66, 0.8, 0);
+    add(new T.BoxGeometry(0.4, 0.05, 1.56), soft, 0.7, 0.905, 0, 0, 0, -0.1);
+    const hood = new T.CylinderGeometry(0.095, 0.095, 0.4, 20, 1, true, 0, Math.PI); hood.rotateX(Math.PI / 2);
+    add(hood, dash, 0.47, 0.93, 0.37, 0, 0, 0).material.side = T.DoubleSide;
     this.clusterMat = new T.MeshBasicMaterial({ color: 0xffffff });
-    this.clusterScreen = add(new T.PlaneGeometry(0.42, 0.16), this.clusterMat, 0.47, 1.0, 0.37, 0, -Math.PI / 2, 0);
+    this.clusterScreen = add(new T.PlaneGeometry(0.3, 0.11), this.clusterMat, 0.425, 0.935, 0.37, 0, -Math.PI / 2, 0);
     this.clusterScreen.rotation.order = 'YXZ'; this.clusterScreen.rotation.x = -0.25;
     add(new T.BoxGeometry(0.28, 0.36, 0.34), dash, 0.52, 0.66, 0);
-    const radio = add(new T.PlaneGeometry(0.2, 0.05), new T.MeshBasicMaterial({ color: 0x2ee6ff }), 0.375, 0.76, 0, 0, -Math.PI / 2, 0);
+    const radio = add(new T.PlaneGeometry(0.2, 0.05), new T.MeshBasicMaterial({ color: 0x0c5a68 }), 0.375, 0.76, 0, 0, -Math.PI / 2, 0);
     void radio;
-    for (const z of [-0.08, 0.08, -0.55, 0.62]) add(new T.BoxGeometry(0.02, 0.05, 0.1), alu, 0.43, 0.88, z);
+    for (const z of [-0.08, 0.08, -0.55, 0.62]) add(new T.BoxGeometry(0.02, 0.05, 0.1), alu, 0.43, 0.85, z);
     add(new T.BoxGeometry(0.95, 0.16, 0.24), dash, 0.02, 0.5, 0);
     // paratia e vano piedi: chiudono la vista sotto la plancia
     add(new T.BoxGeometry(0.42, 0.44, 1.6), dash, 0.68, 0.53, 0);
@@ -309,7 +308,7 @@ class Garage3D {
     add(new T.SphereGeometry(0.038, 14, 10), mat(0x0e0e10, { roughness: 0.35 }), 0, 0.23, 0, 0, 0, 0, sh);
     add(new T.CylinderGeometry(0.06, 0.08, 0.05, 12), soft, 0, 0.0, 0, 0, 0, 0, sh);
     // volante sportivo a tre razze: corona in pelle spessa, razze forate, fascia rossa a ore 12
-    const tilt = new T.Group(); tilt.position.set(0.3, 0.93, 0.37); tilt.rotation.z = 0.5; I.add(tilt); this.wheelTilt = tilt;
+    const tilt = new T.Group(); tilt.position.set(0.3, 0.84, 0.37); tilt.rotation.z = 0.45; I.add(tilt); this.wheelTilt = tilt;
     const wheel = new T.Group(); tilt.add(wheel); this.steerWheel = wheel;
     const leather = mat(0x1a1716, { roughness: 0.62 });
     const rim = new T.TorusGeometry(0.18, 0.024, 12, 56); rim.rotateY(Math.PI / 2);
@@ -327,9 +326,9 @@ class Garage3D {
     add(horn, mat(0x2a2a30, { metalness: 0.6, roughness: 0.3 }), -0.051, 0, 0, 0, 0, 0, wheel);
     const hornRing = new T.RingGeometry(0.036, 0.042, 24); hornRing.rotateY(-Math.PI / 2);
     add(hornRing, mat(0xd8261a), -0.051, 0, 0, 0, 0, 0, wheel);
-    add(new T.CylinderGeometry(0.03, 0.035, 0.3, 10), dash, 0.45, 1.04, 0.37, 0, 0, Math.PI / 2 + 0.5);   // piantone
+    add(new T.CylinderGeometry(0.03, 0.035, 0.3, 10), dash, 0.45, 0.78, 0.37, 0, 0, Math.PI / 2 + 0.75);   // piantone
     // leve dietro al volante (frecce e tergicristalli)
-    for (const dz of [0.1, -0.1]) add(new T.BoxGeometry(0.02, 0.016, 0.12), dash, 0.36, 0.93, 0.37 + dz * 1.4, 0, 0, 0);
+    for (const dz of [0.1, -0.1]) add(new T.BoxGeometry(0.02, 0.016, 0.12), dash, 0.36, 0.84, 0.37 + dz * 1.4, 0, 0, 0);
 
     // mani: guanti da guida con dita avvolte sulla corona, pollice sulla razza, polsino rosso
     const glove = mat(0x161412, { roughness: 0.55 }), knuck = mat(0x24201d, { roughness: 0.5 }), cuff = mat(0xb3261c, { roughness: 0.7 });
@@ -396,25 +395,34 @@ class Garage3D {
     this.auxGlow = add(new T.PlaneGeometry(0.1, 0.02), new T.MeshBasicMaterial({ color: 0xffa24a, toneMapped: false }), 0.387, 0.70, 0.03, 0, -Math.PI / 2 - 0.18, 0);
     // pedaliera, alette parasole, maniglie, altoparlanti e pulsantiere nelle porte
     for (const [dz, w] of [[0.48, 0.07], [0.37, 0.09], [0.26, 0.05]]) add(new T.BoxGeometry(0.02, 0.1, w), alu, 0.5, 0.45, dz, 0, 0, -0.4);
-    for (const z of [0.36, -0.36]) add(new T.BoxGeometry(0.2, 0.012, 0.36), mat(0x3a3836, { roughness: 1 }), 0.32, 1.185, z, 0, 0, 0.12);
+    for (const z of [0.36, -0.36]) add(new T.BoxGeometry(0.2, 0.012, 0.36), mat(0x3a3836, { roughness: 1 }), 0.12, 1.225, z, 0, 0, 0);
     for (const z of [0.81, -0.81]) {
       const sp = new T.CircleGeometry(0.06, 20); add(sp, mat(0x070708, { roughness: 0.9 }), 0.25, 0.48, z, 0, z > 0 ? Math.PI : 0, 0);
       add(new T.BoxGeometry(0.12, 0.02, 0.05), dash, 0.05, 0.82, z * 0.95);
       add(new T.BoxGeometry(0.04, 0.01, 0.02), mat(0x8899aa), 0.04, 0.835, z * 0.94);
     }
-    add(new T.PlaneGeometry(1.25, 1.06), twoSided(0x34323a), -0.08, 1.205, 0, Math.PI / 2);                   // cielo in tessuto
+    add(new T.PlaneGeometry(1.14, 1.5), twoSided(0x34323a), -0.33, 1.245, 0, Math.PI / 2);                    // cielo in tessuto: finisce dove inizia il parabrezza
+    // rivestimento interno dei montanti A (scuri, non color carrozzeria) e traversa sopra il parabrezza
+    for (const z of [1, -1]) I.add(this.rod([0.98, 0.9, z * 0.76], [0.24, 1.24, z * 0.68], 0.05, mat(0x2a282c, { roughness: 0.9 })));
+    I.add(this.rod([0.24, 1.24, 0.7], [0.24, 1.24, -0.7], 0.03, mat(0x2a282c, { roughness: 0.9 })));
     // luce del quadro: i quadranti arancio illuminano mani e volante di notte
-    this.dashLight = new T.PointLight(0xff8a3a, 0.5, 0.6, 2); this.dashLight.position.set(0.4, 0.98, 0.37); I.add(this.dashLight);
+    this.dashLight = new T.PointLight(0xff8a3a, 0.5, 0.6, 2); this.dashLight.position.set(0.4, 0.92, 0.37); I.add(this.dashLight);
 
     // specchietto retrovisore vero: un'altra telecamera guarda indietro e disegna su una texture
-    add(new T.BoxGeometry(0.04, 0.075, 0.27), dash, 0.6, 1.15, 0);
+    add(new T.BoxGeometry(0.04, 0.075, 0.27), dash, 0.38, 1.17, 0);
     this.mirrorRT = new T.WebGLRenderTarget(320, 96);
     const mg = new T.PlaneGeometry(0.25, 0.064); const uv = mg.attributes.uv;
     for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i));                                            // immagine speculare
-    this.mirror = add(mg, new T.MeshBasicMaterial({ map: this.mirrorRT.texture, toneMapped: false }), 0.578, 1.15, 0, 0, -Math.PI / 2, 0);
+    this.mirror = add(mg, new T.MeshBasicMaterial({ map: this.mirrorRT.texture, toneMapped: false }), 0.358, 1.17, 0, 0, -Math.PI / 2, 0);
     this.mirrorCam = new T.PerspectiveCamera(22, 320 / 96, 0.3, 300);
-    this.mirrorCam.position.set(0.55, 1.15, 0); this.mirrorCam.lookAt(-10, 1.0, 0); I.add(this.mirrorCam);
-    add(new T.CylinderGeometry(0.008, 0.008, 0.08, 6), dash, 0.62, 1.2, 0);
+    this.mirrorCam.position.set(0.33, 1.17, 0); this.mirrorCam.lookAt(-10, 1.05, 0); I.add(this.mirrorCam);
+    add(new T.CylinderGeometry(0.008, 0.008, 0.06, 6), dash, 0.39, 1.22, 0);
+    // portafortuna omamori appeso allo specchietto: oscilla con accelerazioni, frenate e cambi corsia
+    const charm = new T.Group(); charm.position.set(0.37, 1.13, -0.08); I.add(charm); this.charm = charm;
+    add(new T.CylinderGeometry(0.0015, 0.0015, 0.09, 4), mat(0xd8b040), 0, -0.045, 0, 0, 0, 0, charm);
+    add(new T.BoxGeometry(0.008, 0.045, 0.028), mat(0xc0201a, { roughness: 0.6 }), 0, -0.115, 0, 0, 0, 0, charm);
+    add(new T.BoxGeometry(0.009, 0.012, 0.025), mat(0xe8c050, { metalness: 0.6, roughness: 0.4 }), 0, -0.1, 0, 0, 0, 0, charm);
+    this.charmS = { a: 0, va: 0, b: 0, vb: 0, prev: 0 };
   }
 
   // strumenti supplementari (pressione e temperatura olio, voltmetro) disegnati a lancette
@@ -472,8 +480,20 @@ class Garage3D {
     const r = this.renderer, prev = r.getRenderTarget();
     this.mirror.visible = false; this.interior.visible = false;
     r.setRenderTarget(this.mirrorRT); r.render(this.scene, this.mirrorCam); r.setRenderTarget(prev);
-    this.mirror.visible = true; this.interior.visible = true;
+    this.mirror.visible = true; this.interior.visible = this.cockpitOn;
   }
+  // dall'abitacolo si vedono solo interni e cofano: la scocca esterna (tetto, montanti, specchietti) si nasconde
+  setCabinView(on) {
+    if (!this.body) return;
+    if (this.interior) this.interior.visible = on;
+    this.body.children.forEach((c) => {
+      if (c === this.interior || c.isLight) return;
+      if (c === this.hoodOnly) { c.visible = on; return; }
+      if (on) { if (c.visible) { c.userData.cabinHid = true; c.visible = false; } }
+      else if (c.userData.cabinHid) { c.visible = true; c.userData.cabinHid = false; }
+    });
+  }
+
   // il quadro strumenti del gioco disegnato sul cruscotto
   setCluster(canvas) {
     const T = this.T;
@@ -617,7 +637,7 @@ class Garage3D {
     (this.customWheels || []).forEach((w) => this.root.remove(w.pivot));
     this.customWheels = []; this.customPaint = [];
     this.baseParts.forEach((p) => { p.visible = true; });
-    if (this.hoodOnly) { this.shell.visible = !this.cockpitOn; this.hoodOnly.visible = !!this.cockpitOn; }
+    if (this.hoodOnly) { this.hoodOnly.visible = false; if (this.cockpitOn) this.setCabinView(true); }
     this.setTips(this.dual ? 2 : 1);
   }
 
@@ -692,6 +712,12 @@ class Garage3D {
     }
     if (this.clusterTex && this.cockpitOn && (this.cf = (this.cf || 0) + 1) % 2 === 0) this.clusterTex.needsUpdate = true;
     this.updateHands(dt, s);
+    if (this.charm) {
+      const c = this.charmS, k = Math.min(dt, 0.05), steer = s.steer || 0, lat = (steer - c.prev) / Math.max(k, 1e-3) * Math.abs(s.v || 0) * 0.4; c.prev = steer;
+      c.va += (-40 * Math.sin(c.a) - 1.2 * c.va + lat * 2) * k; c.a += c.va * k;                       // di lato
+      c.vb += (-40 * Math.sin(c.b) - 1.2 * c.vb + (s.acc || 0) * 4 + (Math.random() - 0.5) * Math.abs(s.v || 0) * 0.3) * k; c.b += c.vb * k;   // avanti e indietro
+      this.charm.rotation.set(c.a, 0, c.b);
+    }
     if (this.cockpitOn) {
       if (this.cf % 6 === 0) this.drawAux(s);
       this.dashLight.intensity = s.ign ? 0.5 : 0.05;
