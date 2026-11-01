@@ -10,6 +10,12 @@ balconi, cisterne, negozi, pedoni e un gatto. La Supra ha la silhouette della JZ
 lunotto inclinato, alettone ad arco) e le cose si scrivono in grande: VROOOM, PSSSH, BANG, SCREEECH, CRASH. Le luci si sommano all'immagine a bande morbide:
 pozze sull'asfalto sotto i lampioni, davanti ai fari e dietro agli stop, riflessi sul bagnato.
 
+**Supra disegnata.** Nel 2D la Supra è l'illustrazione in pixel art fornita dall'utente, ridotta a 200×58 pixel
+netti (un pixel del disegno per unità) con lo sfondo tolto e le ruote separate: girano con la velocità mentre la
+pinza rossa resta ferma. La vernice dell'officina ricolora i pixel rossi della carrozzeria mantenendo luci e
+ombre; pilota, stop e frecce sono allineati ai fanali del disegno. Finché l'immagine non è pronta si vede la Supra
+vettoriale di prima.
+
 **Gomme e carrozzeria.** Le gomme hanno temperatura (presa massima verso 90 °C, meno da fredde e
 da cotte), usura e sensibilità al carico; si vedono nel quadro e si cambiano in officina. I tamponamenti
 ammaccano la carrozzeria (visibile in 2D e 3D, aumenta la resistenza all'aria): si ripara dal carrozziere.
