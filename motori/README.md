@@ -1,4 +1,4 @@
-# 2JZ Night Run
+# Night Run
 
 Gioco di guida notturna con gestione di soldi e pezzi, costruito sul Banco Suono 2JZ.
 Quadro strumenti in alto, strada a scorrimento sotto, consolle di guida, officina.
@@ -50,13 +50,16 @@ retrotreno (più trazione, più lenta in accelerazione). Tanica (+10 L), kit di 
 fermo), ruota di scorta, zavorra, i pacchi delle consegne (non si buttano durante il lavoro) e i trofei dei
 capi battuti. Si compra e si butta dal pannello del bagagliaio.
 
-**Intro.** All'apertura parte una sigla in pixel art sulla canzone *Redline at Midnight*
-(`audio/redline_at_midnight.mp3`, `intro.js`), legata ai momenti del brano: città di notte e orologio che
-scatta a mezzanotte, alla cassa parte la corsa e arriva la Supra da dietro (quattro fanali tondi, alettone
-ad arco), nel crescendo linee di velocità e contagiri verso la zona rossa, al picco il titolo 2JZ Night Run,
-poi il menu. Fanali, fiammate, lampi e titolo pulsano sui bassi grazie a un inviluppo calcolato in anticipo
-(funziona anche aprendo il file in locale). Invio o tocco per iniziare, Esc per saltare, M per la musica;
-entrando in gioco la canzone sfuma.
+**Intro.** All'apertura parte una sigla sulla canzone *Redline at Midnight* (`audio/redline_at_midnight.mp3`,
+`intro.js`) girata con il motore 3D del gioco: la tua Supra (vernice, scarichi e preparazione dell'officina)
+nella città notturna, con bande cinematografiche, grana della pellicola e bloom. Le inquadrature seguono il
+brano: a mezzanotte la Supra ferma si accende (motorino d'avviamento, due colpi di gas), alla cassa parte
+da dietro tra fumo e pattinamento, carrellata laterale in teleobiettivo durante le cambiate, arriva in camera
+nel crescendo, al picco il titolo NIGHT RUN, poi il menu con lente orbite mentre la Supra continua ad
+affondare e rilasciare. Il suono non è registrato: una simulazione propria guida il motore audio del gioco,
+quindi si sentono il 2JZ, il fischio delle turbine e la valvola che soffia a ogni cambiata e rilascio, sotto
+la musica. Invio o tocco per iniziare, Esc per saltare, M per la musica; entrando in gioco la canzone sfuma.
+Senza three.js resta una versione in pixel art.
 
 ## La carriera
 

@@ -1,4 +1,7 @@
-// 2JZ Night Run — intro con "Redline at Midnight" di sottofondo.
+// Night Run — intro con "Redline at Midnight" di sottofondo.
+// Versione 3D: la Supra del gioco nella città notturna, ripresa con inquadrature da film e guidata da una
+// simulazione propria (avviamento, colpi di gas, partenza, cambiate) che fa suonare motore, turbine e valvola.
+// Se three.js non c'è, resta la scena in pixel art qui sotto.
 // Scena in pixel art (320×180, ingrandita a pixel netti) che pulsa sui bassi della canzone:
 // città di notte, strada in prospettiva, lampioni, traffico, la Supra JZA80 vista da dietro
 // con i quattro fanali tondi e l'alettone ad arco. I titoli sono HTML sopra la tela.
@@ -24,7 +27,7 @@
       this.root = root; this.opts = opts;
       this.cv = root.querySelector('canvas'); this.cv.width = W; this.cv.height = H;
       this.c = this.cv.getContext('2d'); this.c.imageSmoothingEnabled = false;
-      this.audio = new Audio(opts.src); this.audio.loop = true; this.audio.preload = 'auto'; this.audio.volume = 0.8;
+      this.audio = new Audio(opts.src); this.audio.loop = true; this.audio.preload = 'auto'; this.audio.volume = 0.62;
       this.state = 'wait';           // wait → play → menu → done
       this.t0 = performance.now(); this.muted = false; this.flash = 0; this.shake = 0;
       this.z = 0; this.speed = 0; this.kickPrev = 0; this.flame = 0; this.carY = 1;
@@ -32,6 +35,7 @@
       this.buildCity();
       this.traffic = Array.from({ length: 5 }, (_, i) => ({ z: 20 + i * 18, lane: i % 2 ? -1 : 1, oncoming: i % 2 === 1 }));
       this.active = true;
+      this.init3D();
       const loop = () => { if (!this.active) return; this.frame(); requestAnimationFrame(loop); };
       requestAnimationFrame(loop);
     }
@@ -40,6 +44,7 @@
     start() {
       if (this.state !== 'wait') return;
       this.state = 'play'; this.root.classList.add('playing');
+      this.opts.onStart?.();
       this.audio.currentTime = 0;
       const p = this.audio.play(); if (p && p.catch) p.catch(() => {});
     }
@@ -50,11 +55,14 @@
     // si entra in gioco: la musica sfuma e la scena si chiude
     finish() {
       if (this.state === 'done') return;
-      this.state = 'done'; this.root.classList.add('out');
+      this.state = 'done'; this.root.classList.add('out'); this.handback = true;
       const a = this.audio, v0 = a.volume, t0 = performance.now();
       const fade = () => { const k = (performance.now() - t0) / 2200; if (k >= 1) { a.pause(); a.volume = v0; return; } a.volume = v0 * (1 - k) * (1 - k); requestAnimationFrame(fade); };
       fade();
-      setTimeout(() => { this.active = false; this.root.hidden = true; }, 900);
+      setTimeout(() => {
+        this.active = false; this.root.hidden = true;
+        if (this.v3) { try { this.v3.visible = false; this.v3.renderer.dispose(); this.v3.renderer.forceContextLoss?.(); } catch (_) { /* ignora */ } this.v3 = null; }
+      }, 900);
     }
 
     // --------------------------------------------------------------- città
@@ -71,6 +79,99 @@
         return b;
       });
       this.stars = Array.from({ length: 60 }, () => [r() * W, r() * (HOR - 40), r()]);
+    }
+
+    // --------------------------------------------------------------- intro 3D: la Supra vera nella città del gioco
+    init3D() {
+      if (typeof Street3D === 'undefined' || typeof SupraSim === 'undefined' || !window.THREE) return false;
+      try {
+        const cv = document.createElement('canvas'); cv.className = 'intro-3d'; cv.setAttribute('aria-hidden', 'true');
+        this.cv.after(cv);
+        const v = this.v3 = new Street3D(cv);
+        v.setQuality('alta'); v.setView('side');
+        v.beforeRender = (dt, st) => this.cine(dt, st);
+        this.cv.style.display = 'none';
+        window.addEventListener('resize', () => this.v3 && this.v3.resize());
+      } catch (err) { this.v3 = null; return false; }
+      const sm = this.sim = new SupraSim();
+      this.opts.setup?.(this.v3, sm);
+      Object.assign(sm.cfg, { autoClutch: true, revMatch: true, pops: true });
+      sm.fuel = 1;
+      this.fake = { s: { dist: 0 }, laneZ: GAME_LANE_Z[1], ents: [], fx: [], signal: null, steerIn: 0 };
+      const cols = [0x2b4c7e, 0xd8d8d0, 0x1c1c22, 0x8a1c1c, 0x3f6f4a, 0xb9a46a];
+      for (let i = 0; i < 7; i++) this.fake.ents.push({ id: 500 + i, kind: 'traffic', lane: 2, x: 60 + i * 55, v: 14 + (i % 3) * 3, color: cols[i % cols.length] });
+      this.cam = { shot: -1, k: 0 }; this.drv = { blip: 0, cruiseT: 0 };
+      return true;
+    }
+    directing() { return !!(this.v3 && this.active && this.state !== 'done'); }
+    // pilota automatico della sigla: avviamento, colpi di gas, partenza sulla cassa, cambiate al limitatore
+    drive(dt) {
+      const sm = this.sim, T = this.state === 'wait' ? -1 : this.T || 0, d = this.drv;
+      sm.in.brake = 0; sm.in.clutch = 0; let thr = 0;
+      if (T < 0) { sm.update(dt); return; }
+      if (T > 0.6 && !d.started) sm.setStarter(true);              // il motorino gira finché il motore non prende
+      if (sm.running && sm.rpm > 650) { d.started = true; if (sm.starter) sm.setStarter(false); }
+      if (T > 2.3 && T < 2.55) thr = 0.7;                      // due colpi di gas da fermo
+      if (T > 3.05 && T < 3.3) thr = 0.9;
+      if (T > 3.9 && T < 4.6) { if (sm.gear === 0) sm.shift(1); sm.in.brake = 1; thr = 0.5; }   // in prima, freno, giri su
+      if (T >= 4.6) {
+        const lim = sm.P.limiter - 350;
+        if (sm.running && sm.gear === 0) sm.shift(1);              // anche se si salta la sigla prima della partenza
+        if (T < T_MENU + 1) { thr = 1; if (sm.rpm > lim && sm.v > 4 && sm.gear > 0 && sm.gear < (T < T_TITLE ? 4 : 5)) sm.shift(sm.gear + 1); }
+        else {
+          // crociera sotto il menu: affondo, rilascio (valvola che soffia), di nuovo giù; marce 4-5
+          d.cruiseT += dt; const ph = d.cruiseT % 7;
+          thr = ph < 3.6 ? 1 : ph < 4.9 ? 0 : 0.45;
+          if (sm.v > 58) thr = Math.min(thr, 0.2);
+          if (ph >= 4.9 && ph < 5.0 && sm.gear > 4) sm.shift(4);
+          if (thr > 0.9 && sm.rpm > lim && sm.gear < 5) sm.shift(sm.gear + 1);
+        }
+      }
+      sm.in.thr = thr;
+      sm.fuel = 1;
+      sm.update(dt);
+    }
+    // stato per la vista 3D, come quello del gioco
+    state3d(ev) {
+      const sm = this.sim, sp = Math.min(1, Math.max(0, (Math.abs(sm.ww * sm.P.r - sm.v) - 1.5) / 5));
+      return { v: sm.v, ww: sm.ww, acc: sm.acc, rpm: sm.rpm, running: sm.running, lope: 0, torque: sm.Tc, ign: sm.ign, brake: sm.in.brake,
+        flame: sm.cut ? 1 : (sm.thr < 0.05 && sm.rpm > 4000 ? 0.5 : 0), spin: sp, thr: sm.thr, events: ev, skid: sm.skid, damage: 0, tireT: sm.tireT,
+        gear: sm.gear, signal: null, high: (this.T || 0) > T_TITLE };
+    }
+    render(dt, ev) {
+      const f = this.fake, sm = this.sim;
+      f.s.dist += sm.v * dt;
+      for (const e of f.ents) { e.x += e.v * dt; if (e.x - f.s.dist < -60) e.x = f.s.dist + 220 + Math.random() * 120; }
+      this.v3.update(dt, this.state3d(ev), f);
+    }
+    // regia: inquadrature legate alla canzone, con stacchi netti sui colpi
+    cine(dt, st) {
+      const v = this.v3, T3 = v.T, T = this.state === 'wait' ? -1 : this.T || 0, now = performance.now() / 1000;
+      const shots = [
+        { t: -99, eye: [4.6, 0.8, -5.6], eye2: [3.0, 0.68, -4.4], at: [0.3, 0.55, 0], fov: 32, len: 4.6 },     // ferma, muso e fari
+        { t: 4.6, eye: [-6.2, 0.42, -1.1], eye2: [-8.4, 0.6, -0.6], at: [1.2, 0.55, 0], fov: 36, len: 3 },   // partenza da dietro
+        { t: 7.6, eye: [1.6, 0.8, -6.3], eye2: [-1.6, 0.72, -6.0], at: [0.1, 0.55, 0], fov: 30, len: 2.8 },   // carrellata di lato
+        { t: 10.4, eye: [10, 0.32, 1.6], eye2: [7.2, 0.36, 0.9], at: [0, 0.65, 0], fov: 32, len: 1.6 },     // arriva in camera
+        { t: 12.0, eye: [-9, 2.4, 3.6], eye2: [-7.4, 1.6, 2.6], at: [2.2, 0.6, 0], fov: 38, len: 6 },       // eroe, titolo
+      ];
+      let i = 0; for (let n = 0; n < shots.length; n++) if (T >= shots[n].t) i = n;
+      let sh = shots[i], k = ease(sh.t < 0 ? (T < 0 ? 0 : T / sh.len) : (T - sh.t) / sh.len);
+      if (T >= T_MENU + 4) {   // sotto il menu: lente orbite intorno alla Supra
+        const a = (now * 0.12) % (Math.PI * 2), r = 8.5;
+        sh = { eye: [Math.cos(a) * r - 1, 1.1 + Math.sin(now * 0.3) * 0.5, -Math.abs(Math.sin(a)) * 5.8 - 0.8], at: [0.6, 0.6, 0], fov: 36 };
+        sh.eye2 = sh.eye; k = 0;
+      }
+      if (i !== this.cam.shot) { this.cam.shot = i; if (T > 0) this.flash = Math.max(this.flash, 0.35); }
+      const lerp = (a, b) => a.map((x, n) => x + (b[n] - x) * k);
+      const eye = lerp(sh.eye, sh.eye2);
+      const shake = (Math.abs(st.acc || 0) > 4 ? 0.02 : 0) + (st.v || 0) * 0.0006 + this.shake * 0.02;
+      eye[0] += (Math.random() - 0.5) * shake; eye[1] += (Math.random() - 0.5) * shake;
+      const root = v.root; root.updateMatrixWorld(true);
+      v.camera.position.copy(root.localToWorld(new T3.Vector3(...eye)));
+      v.camera.lookAt(root.localToWorld(new T3.Vector3(...sh.at)));
+      const fov = sh.fov + Math.min(8, Math.max(0, st.v || 0) * 0.1);
+      if (Math.abs(v.camera.fov - fov) > 0.05) { v.camera.fov = fov; v.camera.updateProjectionMatrix(); }
+      v.baseFov = fov;
     }
 
     env(t) {
@@ -106,7 +207,8 @@
         clock.classList.toggle('mid', playing && T >= 3.9);
         clock.classList.toggle('gone', playing && T >= 7.5);
       }
-      this.draw(T, e, playing, build);
+      this.T = T; this.E = e; this.build = build;
+      if (!this.v3) this.draw(T, e, playing, build);
     }
 
     // --------------------------------------------------------------- disegno
