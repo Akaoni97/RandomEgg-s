@@ -1422,7 +1422,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   const io = window.IntersectionObserver ? new IntersectionObserver((es) => { es.forEach((e) => { garageOn = e.isIntersecting; if (garage) garage.visible = garageOn; }); }) : null;
   if (io) io.observe($('roadStage'));
   if (window.ResizeObserver) new ResizeObserver(() => garage && garage.resize()).observe($('roadStage'));
-  const SUPRA_MODEL = { url: 'models/supra_mk4.glb', name: 'Toyota Supra MK4 · modello di Mike Farrant (CC BY 4.0)' };
+  const SUPRA_MODEL = { url: ['models/supra_mk4.glb', 'models/supra_mk4.gltf.json'], name: 'Toyota Supra MK4 · modello di Mike Farrant (CC BY 4.0)' };
   function make3D() {
     if (street3d) return street3d;
     try {
@@ -1771,7 +1771,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   // tutta sua: si sentono motore, turbine e valvola sotto la canzone
   const intro = window.NightIntro ? new window.NightIntro($('gate'), {
     src: 'audio/redline_at_midnight.mp3', onGo: () => $('goBtn').click(), onStart: () => ensureAudio(),
-    setup: (v, sm) => { v.loadModelURL('models/supra_mk4.glb', 'supra_mk4.glb').then(() => v.setPaint(S.paint === 'model' ? '#c81d11' : S.paint)).catch(() => {}); v.setPaint(S.paint === 'model' ? '#c81d11' : S.paint); v.setTips(TP.dsp.ex.tips); sm.setTune(TP.sim); sm.P.mass = sim.P.mass; sm.P.rearW = sim.P.rearW; },
+    setup: (v, sm) => { v.loadModelURL(['models/supra_mk4.glb', 'models/supra_mk4.gltf.json'], 'supra_mk4.glb').then(() => v.setPaint(S.paint === 'model' ? '#c81d11' : S.paint)).catch(() => {}); v.setPaint(S.paint === 'model' ? '#c81d11' : S.paint); v.setTips(TP.dsp.ex.tips); sm.setTune(TP.sim); sm.P.mass = sim.P.mass; sm.P.rearW = sim.P.rearW; },
   }) : null;
   window.__intro = intro;
   function hideGate() { if (intro) intro.finish(); else $('gate').hidden = true; }

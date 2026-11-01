@@ -687,9 +687,14 @@ class Garage3D {
 
   // modello predefinito (la Supra MK4 di Mike Farrant): stessa strada dei modelli caricati, più la vernice
   // ricolorata sull'atlante delle texture e il pilota dietro i vetri
+  // url può essere una lista: si prova il primo, poi gli altri (.glb nel progetto, .gltf + texture dove .glb non si può servire)
   loadModelURL(url, name) {
-    return fetch(url).then((r) => { if (!r.ok) throw new Error('modello non trovato'); return r.arrayBuffer(); })
-      .then((buf) => this.loadModelBuffer(buf, name))
+    const urls = [].concat(url);
+    const get = (i) => fetch(urls[i]).then((r) => { if (!r.ok) throw new Error('modello non trovato'); return r.arrayBuffer(); })
+      .then((buf) => ({ buf, base: urls[i].replace(/[^/]*$/, '') }))
+      .catch((e) => (i + 1 < urls.length ? get(i + 1) : Promise.reject(e)));
+    return get(0)
+      .then(({ buf, base }) => this.loadModelBuffer(buf, name, base))
       .then((res) => { this.initAtlasPaint(); return res; });
   }
 
@@ -712,10 +717,10 @@ class Garage3D {
     if (this.paintHex) this.setPaint(this.paintHex);
   }
 
-  loadModelBuffer(buf, fileName) {
+  loadModelBuffer(buf, fileName, base = '') {
     const T = this.T;
     return Promise.resolve(buf).then(() => new Promise((res, rej) => {
-      new T.GLTFLoader().parse(buf, '', (gltf) => {
+      new T.GLTFLoader().parse(buf, base, (gltf) => {
         if (this.custom) { this.body.remove(this.custom); (this.customWheels || []).forEach((w) => this.root.remove(w.pivot)); }
         this.atlas = null;
         const m = gltf.scene;
