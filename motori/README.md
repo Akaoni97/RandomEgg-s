@@ -47,6 +47,13 @@ cuciture sulla palpebra. I montanti anteriori sono neri come la serra della JZA8
 il quadro sul cruscotto dell'abitacolo): realistici *Garage*, *Fondo bianco* e *Carbonio e neon*; cartoon *Sticker
 Bomb*, *Nastro e spray* e *Fumetto neon*. La scelta resta salvata nel browser.
 
+**Pioggia.** Il pulsante "Pioggia" o il tasto K la accendono e spengono, e la scelta resta salvata. In 3D
+cadono migliaia di gocce che si inclinano con la velocità; l'asfalto si fa lucido e riflette di più neon e
+lampioni, la nebbia si infittisce e gli aloni dei lampioni si allargano. Dall'abitacolo le gocce si posano sul
+parabrezza, a velocità salgono col vento e le spazzole le puliscono (più veloci sopra gli 80 km/h). Anche il 2D
+ha pioggia a pixel e schizzi sull'asfalto. Si sente lo scroscio, più ovattato dall'abitacolo, e le gomme
+tengono circa un quarto in meno: frenate più lunghe e coda che scappa se si esagera col gas.
+
 **Spruzzi e assistenza.** Gli spruzzi d'acqua escono solo passando sulle pozzanghere (brevi tratti bagnati),
 non più per tutto il viaggio. Mollando lo sterzo a meno di 30 cm dal centro di una corsia la Supra ci si centra
 piano; fra le corsie resta dov'è. Dall'abitacolo si vedono gli specchietti laterali con la strada riflessa, e la

@@ -188,6 +188,7 @@ class Street2D {
 
   setPaint(hex) { if (hex && hex !== 'model') this.paintHex = hex; }
   setTips(n) { this.dual = n > 1; }
+  setRain(on) { this.rainOn = on; }
   resetCamera() {}
   raceCam() {}
 
@@ -781,6 +782,20 @@ class Street2D {
       const x = wx(m + Street2D.rnd(k + 302) * 8);
       g.fillStyle = 'rgba(4,5,12,.45)'; g.fillRect(x - 10, 356, 22, 3);
       this.prop(g, kind, x, 358, st.t);
+    }
+
+    // ---- pioggia: trattini a pixel inclinati con la velocità, schizzi sull'asfalto, velo più scuro
+    if (this.rainOn) {
+      g.fillStyle = 'rgba(10,14,28,.18)'; g.fillRect(0, 0, W, 360);
+      const sl = Math.min(6, Math.abs(s.v) * 0.12), n = 260;
+      g.fillStyle = 'rgba(170,190,230,.45)';
+      for (let i = 0; i < n; i++) {
+        const sx = (Street2D.rnd(i * 3 + 1) * (W + 60) - (st.t * (60 + Math.abs(s.v) * 25) + i * 7) % (W + 60) + W + 60) % (W + 60) - 30;
+        const sy = (Street2D.rnd(i * 3 + 2) * 360 + st.t * (420 + Street2D.rnd(i) * 160)) % 360;
+        for (let k = 0; k < 5; k++) g.fillRect(Math.round(sx + k * sl / 5), Math.round(sy - k * 2), 1, 2);
+      }
+      g.fillStyle = 'rgba(190,210,240,.55)';
+      for (let i = 0; i < 26; i++) { const x = Street2D.rnd(i + Math.floor(st.t * 9) * 31) * W, y = 230 + Street2D.rnd(i * 7 + Math.floor(st.t * 9)) * 110; g.fillRect(Math.round(x) - 1, Math.round(y), 3, 1); g.fillRect(Math.round(x), Math.round(y) - 1, 1, 1); }
     }
 
     // ---- su schermo

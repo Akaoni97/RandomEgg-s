@@ -598,6 +598,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <button class="kbtn only3d" type="button" id="glbReset">Modello di base</button>
       <button class="kbtn only3d" type="button" id="camReset">Inquadratura</button>
       <button class="kbtn only3d" type="button" id="camNext">Telecamera<small>C</small></button>
+      <button class="kbtn" type="button" id="rainBtn" aria-pressed="false">Pioggia<small>K</small></button>
       <label class="kbtn only3d qsel">Qualità <select id="q3d" aria-label="Qualità grafica 3D"><option value="alta">alta · bloom</option><option value="media">media</option><option value="bassa">bassa</option></select></label>
       <p class="hint"><span id="g3dName">modello di base</span> · trascina per girare la visuale</p>
     </div>
@@ -1009,6 +1010,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'h') hornOn();
     else if (k === 'b') openTrunk();
     else if (k === 'p') radioNext();
+    else if (k === 'k') toggleRain();
     else if ((k === 'a' || k === 'd') && game.race) flash('In gara si resta nella propria corsia', 1.4);
     else if (k === 'l') { S.launch = !S.launch; applySettings(); flash(S.launch ? 'Launch control inserito' : 'Launch control disinserito', 1.2); }
     else if (k === 'm') { S.muted = !S.muted; applySettings(); }
@@ -1516,6 +1518,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       street3d = new Street3D($('g3d'));
       street3d.setQuality(S.q || 'alta');
       street3d.setCluster($('gauges'));
+      street3d.setRain(!!S.rain);
       // auto principale: la Supra MK4 di Mike Farrant (CC BY 4.0); se il file non si carica resta il modello di base
       street3d.loadModelURL(SUPRA_MODEL.url, 'supra_mk4.glb').then(() => {
         if (street3d.custom && !$('g3dName').dataset.model) { $('g3dName').dataset.model = SUPRA_MODEL.name; $('g3dName').textContent = SUPRA_MODEL.name; }
@@ -1542,7 +1545,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const is2d = S.look === '2d';
     $('g2d').hidden = !is2d; $('g3d').hidden = is2d;
     document.querySelectorAll('.only3d').forEach((el) => { el.hidden = is2d; });
-    if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); }
+    if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); street2d.setRain(!!S.rain); }
     else {
       garage = make3D();
       if (garage) garage.setView(S.look === 'cockpit' ? 'cockpit' : (S.cam && S.cam !== 'cockpit' ? S.cam : 'chase'));
@@ -1839,6 +1842,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (wasRunning && !sim.running && sim.stalled) flash('Motore spento: stallo. Folle e riavvia', 3);
     wasRunning = sim.running;
     if (audio.ready) audio.send({ p: sim.audioParams(), ev });
+    if (rainSnd.g) updateRainSound(); else if (S.rain && audio.ctx) rainSound(true);
     if (player && player.items.length) {
       const onT = sim.running && sim.cut === 0 && sim.thr > 0.06 ? 1 : 0;
       smpLoad += (onT - smpLoad) * Math.min(1, dt * 10);
@@ -1881,6 +1885,38 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   window.addEventListener('resize', layout);
   if (window.ResizeObserver) new ResizeObserver(() => { if (Math.abs(cv.clientWidth - W) > 1) layout(); }).observe(cv);
   if (game.mode === 'career') for (const k of Object.keys(S.tune)) if (!game.owns(k, S.tune[k])) S.tune[k] = TUNING[k].items[0].id;
+  // ---------------------------------------------------------------- pioggia: vista 2D e 3D, aderenza, rumore
+  const rainSnd = { g: null };
+  function rainSound(on) {
+    if (!audio.ctx) return;
+    const ctx = audio.ctx;
+    if (!rainSnd.g) {
+      const len = ctx.sampleRate * 2, buf = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch); let b = 0; for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; b = 0.97 * b + 0.03 * w; d[i] = w * 0.35 + b * 2.2 + (Math.random() < 0.0009 ? (Math.random() - 0.5) * 2.5 : 0); } }
+      const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 280;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5200;
+      const g = ctx.createGain(); g.gain.value = 0; src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(ctx.destination); src.start();
+      rainSnd.g = g; rainSnd.lp = lp;
+    }
+    rainSnd.on = on;
+  }
+  function updateRainSound() {
+    if (!rainSnd.g) return;
+    const inCab = S.look === 'cockpit', lvl = rainSnd.on && !S.muted ? (S.vol / 100) * (inCab ? 0.16 : 0.1) * (1 + Math.min(1, sim.v / 40) * 0.6) : 0;
+    rainSnd.g.gain.setTargetAtTime(lvl, audio.ctx.currentTime, 0.4);
+    rainSnd.lp.frequency.setTargetAtTime(inCab ? 2600 : 5200, audio.ctx.currentTime, 0.3);
+  }
+  function applyRain() {
+    sim.wet = S.rain ? 1 : 0;
+    $('rainBtn').setAttribute('aria-pressed', String(!!S.rain));
+    if (street3d) street3d.setRain(!!S.rain);
+    if (street2d && street2d.setRain) street2d.setRain(!!S.rain);
+    rainSound(!!S.rain);
+  }
+  function toggleRain() { ensureAudio(); S.rain = !S.rain; applyRain(); flash(S.rain ? 'Pioggia: asfalto bagnato, meno aderenza' : 'Pioggia finita', 1.8); try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (e) { /* ignora */ } }
+  $('rainBtn').addEventListener('click', toggleRain);
+
   // pannello stili dell'interfaccia
   (function buildThemes() {
     const box = $('uiThemes'); if (!box) return;
@@ -1897,6 +1933,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       }
     }
   })();
+  applyRain();
   applyTheme(S.ui || 'garage'); $('uiName').textContent = TH.name.toLowerCase();
   applySettings();
   renderMode();

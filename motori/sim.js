@@ -60,7 +60,8 @@ class SupraSim {
   tireGrip() {
     const d = (this.tireT - 90) / 65;
     const cooked = this.tireT > 110 ? (this.tireT - 110) * 0.004 : 0;
-    return SIM_CLAMP(1.03 - 0.08 * d * d - cooked, 0.7, 1.03) * (1 - 0.3 * this.tireWear);
+    // asfalto bagnato: circa un quarto di aderenza in meno (wet da 0 a 1)
+    return SIM_CLAMP(1.03 - 0.08 * d * d - cooked, 0.7, 1.03) * (1 - 0.3 * this.tireWear) * (1 - 0.27 * (this.wet || 0));
   }
   get rpm() { return Math.max(0, this.we) * 9.5493; }
   get kmh() { return Math.abs(this.v) * 3.6; }

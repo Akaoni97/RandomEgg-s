@@ -319,6 +319,13 @@ test('sterzo libero: si va dove si vuole, si resta lì, cordolo come limite', ()
   assert.equal(game.lane, 1);
 });
 
+test('pioggia: sul bagnato le gomme tengono circa un quarto in meno', () => {
+  const { sim } = career();
+  sim.tireT = 90; const dry = sim.tireGrip();
+  sim.wet = 1; const wet = sim.tireGrip();
+  assert.ok(wet < dry * 0.78 && wet > dry * 0.68, `asciutto ${dry.toFixed(2)}, bagnato ${wet.toFixed(2)}`);
+});
+
 test('gomme: si scaldano pattinando, la presa ha un ottimo e si consumano', () => {
   const { sim } = career();
   const cold = sim.tireGrip();

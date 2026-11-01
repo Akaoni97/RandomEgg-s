@@ -96,6 +96,40 @@ class Street3D extends Garage3D {
     if (v === 'cockpit') { H.roll = (H.roll || 0) + (Math.max(-0.045, Math.min(0.045, (s.steer || 0) * Math.min(1, sp / 25) * 0.12)) - (H.roll || 0)) * Math.min(1, k * 5); this.camera.rotateZ(H.roll); }
   }
 
+  // ---------------------------------------------------------------- pioggia
+  // gocce come trattini che cadono in un volume attorno all'auto e si inclinano con la velocità;
+  // asfalto più lucido, nebbia più fitta, aloni dei lampioni più grandi
+  setRain(on) {
+    const T = this.T; this.rainOn = on;
+    if (on && !this.rain) {
+      const N = 2600, pos = new Float32Array(N * 6), seed = [];
+      for (let i = 0; i < N; i++) seed.push([Math.random() * 60 - 20, Math.random() * 14, Math.random() * 30 - 15, 0.7 + Math.random() * 0.6]);
+      const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3));
+      const m = new T.LineBasicMaterial({ color: 0xb8c8e0, transparent: true, opacity: 0.38, depthWrite: false });
+      this.rain = new T.LineSegments(g, m); this.rain.frustumCulled = false; this.rain.userData.seed = seed; this.scene.add(this.rain);
+    }
+    if (this.rain) this.rain.visible = on;
+    this.scene.fog.near = on ? 18 : 45; this.scene.fog.far = on ? 120 : 175;
+    this.scene.fog.color.set(on ? 0x0a0d14 : 0x04060b);
+    if (this.reflMat) this.reflMat.opacity = on ? 0.9 : 0.5;
+    if (this.roadMat) { this.roadMat.roughness = on ? 0.32 : 0.7; this.roadMat.envMapIntensity = on ? 2.0 : 1.3; this.roadMat.needsUpdate = true; }
+    for (const l of this.lamps || []) { const halo = l.g.children[4]; if (halo && halo.isSprite) halo.scale.setScalar(on ? 5 : 3.2); }
+  }
+  updateRain(dt, s) {
+    if (!this.rain || !this.rainOn) return;
+    const pos = this.rain.geometry.attributes.position.array, seed = this.rain.userData.seed, v = Math.abs(s.v || 0);
+    const z0 = this.root.position.z, fall = 11, tilt = v * 0.045, len = 0.45 + v * 0.012;
+    for (let i = 0; i < seed.length; i++) {
+      const q = seed[i];
+      q[1] -= fall * q[3] * dt; q[0] -= v * dt;
+      if (q[1] < 0) { q[1] += 14; q[0] = Math.random() * 60 - 20; }
+      if (q[0] < -20) q[0] += 60;
+      const x = q[0], y = q[1], z = z0 + q[2], k = i * 6;
+      pos[k] = x; pos[k + 1] = y; pos[k + 2] = z; pos[k + 3] = x + tilt * len; pos[k + 4] = y + len; pos[k + 5] = z;
+    }
+    this.rain.geometry.attributes.position.needsUpdate = true;
+  }
+
   // ---------------------------------------------------------------- qualità: bloom (luci che si irradiano), ombre, risoluzione
   setQuality(q) {
     const T = this.T, r = this.renderer;
@@ -193,6 +227,7 @@ class Street3D extends Garage3D {
     });
     rough.wrapS = T.RepeatWrapping; rough.repeat.set(480 / 24, 1); this.roadRough = rough;
     const road = new T.Mesh(new T.PlaneGeometry(480, 10.5), new T.MeshStandardMaterial({ map, roughnessMap: rough, roughness: 0.7, metalness: 0.3, color: 0xb0b4bc, envMapIntensity: 1.3 }));
+    this.roadMat = road.material;
     road.rotation.x = -Math.PI / 2; road.position.set(100, 0, 0); road.receiveShadow = true;
     this.scene.add(road);
     const ground = new T.Mesh(new T.PlaneGeometry(480, 140), new T.MeshStandardMaterial({ color: 0x07080b, roughness: 0.95 }));
@@ -678,7 +713,7 @@ class Street3D extends Garage3D {
     if (!this.cockpitOn) {
       // vicino alla telecamera, oppure fra la telecamera e l'auto
       const cp = this.camera.position, cz = this.root.position.z;
-      const near = (x, z, r) => (Math.abs(x - cp.x) < r && Math.abs(z - cp.z) < r + 1) || (Math.abs(x - cp.x) < 4.5 && (z - cp.z) * (cz - z) > 0);
+      const near = (x, z, r) => (Math.abs(x - cp.x) < r && Math.abs(z - cp.z) < r + 1) || ((z - cp.z) * (cz - z) > 0 && (x - cp.x + 2) * (3 - x) > 0);
       for (const l of this.lamps) { const hide = near(l.g.position.x, l.g.position.z, 2.6); l.g.children[0].visible = l.g.children[1].visible = !hide; }
       for (const pr of this.props) pr.o.visible = !near(pr.o.position.x, pr.o.position.z, 4);
     }
@@ -702,6 +737,7 @@ class Street3D extends Garage3D {
     s.steer = this.steerVis;
     if (game) for (const f of game.fx) if (f.k === 'crash') this.sparkT = 0.35;
     this.updateFx(dt, s, dist);
+    this.updateRain(dt, s);
     // un po' di "velocità": campo visivo che si allarga
     if (this.finPass) {
       const U = this.finPass.uniforms, sp = Math.max(0, Math.min(1, (Math.abs(s.v) - 12) / 45));

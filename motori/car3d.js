@@ -564,6 +564,12 @@ class Garage3D {
     const wsLen = Math.hypot(0.98 - 0.26, 1.24 - 0.89), ws = new T.PlaneGeometry(1.42, wsLen);
     const wsM = new T.MeshPhysicalMaterial({ map: tint, transparent: true, opacity: 1, roughness: 0.02, metalness: 0, envMapIntensity: 0.35, depthWrite: false, side: T.DoubleSide, color: 0xffffff });
     const wsMesh = add(ws, wsM, (0.98 + 0.26) / 2, (0.89 + 1.24) / 2, 0, 0, -Math.PI / 2, 0); wsMesh.rotation.order = 'YXZ'; wsMesh.rotation.x = Math.atan2(0.98 - 0.26, 1.24 - 0.89);
+    // pioggia sul parabrezza: una tela con gocce e spazzole, appena davanti al vetro
+    this.glassCv = document.createElement('canvas'); this.glassCv.width = 512; this.glassCv.height = 256;
+    this.glassTex = new T.CanvasTexture(this.glassCv); this.glassTex.encoding = T.sRGBEncoding;
+    const gm = new T.Mesh(ws.clone(), new T.MeshBasicMaterial({ map: this.glassTex, transparent: true, depthWrite: false, side: T.DoubleSide, toneMapped: false }));
+    gm.position.copy(wsMesh.position); gm.rotation.copy(wsMesh.rotation); gm.translateZ(0.012); gm.visible = false; I.add(gm); this.glassMesh = gm;
+    this.drops = []; this.wiper = { a: 0, dir: 1, t: 0 };
     // bocchetta del disappannamento alla base del parabrezza
     for (let k = -6; k <= 6; k++) add(new T.BoxGeometry(0.05, 0.004, 0.06), mat(0x040405), 0.86, 0.918, k * 0.1);
     // cuciture sulla palpebra del quadro
@@ -608,6 +614,41 @@ class Garage3D {
     add(new T.BoxGeometry(0.008, 0.045, 0.028), mat(0xc0201a, { roughness: 0.6 }), 0, -0.115, 0, 0, 0, 0, charm);
     add(new T.BoxGeometry(0.009, 0.012, 0.025), mat(0xe8c050, { metalness: 0.6, roughness: 0.4 }), 0, -0.1, 0, 0, 0, 0, charm);
     this.charmS = { a: 0, va: 0, b: 0, vb: 0, prev: 0 };
+  }
+
+  // gocce sul parabrezza: nascono a caso, crescono, a velocità salgono col vento; le spazzole le tolgono
+  updateGlass(dt, s) {
+    const on = !!this.rainOn && this.cockpitOn;
+    if (!this.glassMesh) return;
+    this.glassMesh.visible = on || this.drops.length > 0 && this.cockpitOn;
+    if (!this.cockpitOn) return;
+    const c = this.glassCv.getContext('2d'), W = 512, H = 256, v = Math.abs(s.v || 0), D = this.drops, w = this.wiper;
+    if (on) for (let k = 0; k < 2 + v * 0.08; k++) if (Math.random() < 0.6) D.push({ x: Math.random() * W, y: Math.random() * H, r: 1.2 + Math.random() * 2.6, vy: 0 });
+    for (const d of D) {
+      d.vy = v > 8 ? -(v - 8) * (0.6 + d.r * 0.15) : d.r > 3 ? 6 : 0;   // canvas: y in basso = base del vetro
+      d.y += d.vy * dt; if (Math.random() < 0.01) d.r = Math.min(4.5, d.r + 0.4);
+    }
+    // spazzole: due bracci con perno alla base, avanti e indietro (più veloci in velocità)
+    const per = v > 22 ? 0.9 : 1.5, prev = w.a;
+    if (on || w.a > 0.01) { w.t += dt / per; const ph = w.t % 1; w.a = ph < 0.5 ? ph * 2 : (1 - ph) * 2; }
+    const piv = [[W * 0.27, H + 6], [W * 0.7, H + 6]], L = H * 1.05, A = (t) => Math.PI * (0.06 + t * 0.86);
+    const swept = (d) => piv.some(([px, py]) => {
+      const dx = d.x - px, dy = py - d.y, dist = Math.hypot(dx, dy), ang = Math.atan2(dy, -dx);
+      const a0 = Math.min(A(prev), A(w.a)) - 0.05, a1 = Math.max(A(prev), A(w.a)) + 0.05;
+      return dist < L && ang >= a0 && ang <= a1;
+    });
+    for (let i = D.length - 1; i >= 0; i--) if (D[i].y < -6 || D[i].y > H + 6 || swept(D[i])) D.splice(i, 1);
+    if (D.length > 900) D.splice(0, D.length - 900);
+    if ((this.gf = (this.gf || 0) + 1) % 2) return;
+    c.clearRect(0, 0, W, H);
+    for (const d of D) {
+      c.fillStyle = 'rgba(170,190,220,.28)'; c.beginPath(); c.arc(d.x, d.y, d.r, 0, 7); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.45)'; c.beginPath(); c.arc(d.x - d.r * 0.3, d.y - d.r * 0.3, d.r * 0.35, 0, 7); c.fill();
+      if (d.vy) { c.strokeStyle = 'rgba(170,190,220,.14)'; c.lineWidth = d.r; c.beginPath(); c.moveTo(d.x, d.y); c.lineTo(d.x, d.y - d.vy * 0.06); c.stroke(); }
+    }
+    c.strokeStyle = '#0c0c0e'; c.lineCap = 'round';
+    for (const [px, py] of piv) { const a = A(w.a); c.lineWidth = 5; c.beginPath(); c.moveTo(px, py); c.lineTo(px - Math.cos(a) * L, py - Math.sin(a) * L); c.stroke(); }
+    this.glassTex.needsUpdate = true;
   }
 
   // display dell'autoradio: stazione sintonizzata (vuoto se spenta)
@@ -985,6 +1026,7 @@ class Garage3D {
       c.vb += (-40 * Math.sin(c.b) - 1.2 * c.vb + (s.acc || 0) * 4 + (Math.random() - 0.5) * Math.abs(s.v || 0) * 0.3) * k; c.b += c.vb * k;   // avanti e indietro
       this.charm.rotation.set(c.a, 0, c.b);
     }
+    this.updateGlass(dt, s);
     if (this.cockpitOn) {
       // leva delle frecce: su per sinistra, giù per destra
       if (this.stalks) { const tg = s.signal === 'L' ? 0.22 : s.signal === 'R' ? -0.22 : 0; const sk = this.stalks[0]; sk.rotation.x += (tg - sk.rotation.x) * Math.min(1, dt * 14); }
