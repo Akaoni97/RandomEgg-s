@@ -165,6 +165,12 @@ Senza three.js resta una versione in pixel art.
   (5 stelle, scende col tempo). Un avviso in alto segnala le pattuglie in arrivo.
 - Officina: i pezzi si pagano coi contanti e si montano solo da fermo. Le preparazioni pronte mostrano
   quanto manca per completarle.
+- Strumenti in gioco sopra la strada (tasto J per spegnerli): contagiri con la marcia al centro e la zona rossa
+  del limitatore, tachimetro in km/h, pressione del turbo, benzina, contachilometri della Supra e parziale.
+- Chilometri: ogni auto ha il suo contachilometri. I pezzi dell'officina si sbloccano anche con la strada fatta
+  (più costano, più chilometri chiedono) e ci sono quattro traguardi che non si comprano: 25 km rodaggio finito
+  (+3 % di potenza), 75 km cambiate più rapide, 150 km cliente fisso (−10 % in officina), 300 km leggenda della
+  notte (+3 % di potenza e +4 % di aderenza).
 - Città in 2D: lungo la strada ci sono tre luoghi fissi, che si ripetono ogni 2,4 km: **Benzina 24H**, **Officina 2JZ**
   e **Neon Kustom** (ricambi estetici). Una mappa a barra in basso scorre mentre guidi e mostra i luoghi nei
   prossimi 2,7 km, la consegna in corso e le pattuglie vicine. Quando sei davanti a un ingresso compare

@@ -93,7 +93,7 @@ class SupraSim {
     if (this.gear === -1 && target > 0 && this.v < -1.2) { this.events.push({ type: 'grind' }); return false; }
     if (this.cfg.autoClutch) {
       const down = target > 0 && this.gear > 0 && target < this.gear;
-      this.shiftSeq = { t: 0, target, down, done: false, fast: !!this.fastShift && !down };
+      this.shiftSeq = { t: 0, target, down, done: false, fast: !!this.fastShift && !down, quick: !!this.quickShift };
       this.fastShift = false;
       return true;
     }
@@ -155,7 +155,7 @@ class SupraSim {
     if (cfg.autoClutch) {
       if (this.shiftSeq) {
         const s = this.shiftSeq; s.t += h;
-        const f = s.fast ? 0.55 : 1;                       // cambiata perfetta: frizione aperta per meno tempo
+        const f = s.fast ? 0.55 : s.quick ? 0.75 : 1;                       // cambiata perfetta: frizione aperta per meno tempo
         if (s.t < 0.07 * f) { this.clutch = Math.min(1, this.clutch + h / (0.045 * f)); if (!s.down) thrCmd = 0; }
         else {
           if (!s.done) { s.done = true; this.gear = s.target; this.lock = false; if (s.target !== 0) this.events.push({ type: 'clunk' }); }

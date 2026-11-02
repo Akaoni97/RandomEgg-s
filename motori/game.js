@@ -50,6 +50,13 @@ const GAME_COSMETICS = {
     { id: '#6d2bd9', name: 'Viola perlato', price: 900 }, { id: '#1f8f4e', name: 'Verde Kawasaki', price: 900 },
     { id: '#f2c200', name: 'Giallo Lancia', price: 900 }, { id: '#36c5d6', name: 'Azzurro Midnight', price: 1100 } ] },
 };
+// traguardi di chilometri: premi che non si comprano, si guadagnano guidando
+const GAME_KM_PERKS = [
+  { km: 25, id: 'rodaggio', name: 'Rodaggio finito', note: 'Motore sciolto: +3 % di potenza' },
+  { km: 75, id: 'mano', name: 'Mano sul cambio', note: 'Cambiate più rapide' },
+  { km: 150, id: 'cliente', name: 'Cliente fisso', note: '−10 % su pezzi, carrozziere e gomme' },
+  { km: 300, id: 'leggenda', name: 'Leggenda della notte', note: '+3 % di potenza e +4 % di aderenza' },
+];
 // bagagliaio: 12 posti, 150 kg; il peso si somma alla massa della Supra
 const TRUNK_SLOTS = 12, TRUNK_KG = 150, CAR_MASS = 1570;
 const INV = {
@@ -92,6 +99,8 @@ class StreetGame {
     this.s = { money: 3000, rep: 0, heat: 0, dist: 0, owned: {}, wins: 0, losses: 0, fines: 0, jobs: 0, ladder: 0,
       trunk: [{ kind: 'scorta', kg: 14 }, { kind: 'kit', kg: 7, uses: 3 }, { kind: 'tanica', kg: 9 }] };
     this.ents = [];
+    this.car = 'supra'; this.trip = 0;
+    this.s.cars = { supra: { km: 0 } }; this.s.perks = [];
     this.prompt = null;
     this.ap = null;                        // pilota automatico (fermate)
     this.race = null;
@@ -194,6 +203,9 @@ class StreetGame {
   load(json) {
     try { const o = JSON.parse(json); if (o && o.s) { Object.assign(this.s, o.s); this.mode = o.mode === 'free' ? 'free' : 'career'; } } catch (e) { /* salvataggio illeggibile */ }
     if (!Array.isArray(this.s.trunk)) this.s.trunk = [];
+    // contachilometri per auto (i salvataggi vecchi partono dalla distanza già percorsa)
+    if (!this.s.cars || !this.s.cars.supra) this.s.cars = { supra: { km: Math.max(0, (this.s.dist || 0) / 1000) } };
+    if (!Array.isArray(this.s.perks)) this.s.perks = GAME_KM_PERKS.filter((p) => this.s.cars.supra.km >= p.km).map((p) => p.id);
     this.applyMass();
   }
   reset() { const m = this.mode; Object.assign(this, new StreetGame(this.sim, this.rnd)); this.mode = m; }
@@ -243,8 +255,8 @@ class StreetGame {
   }
 
   // servizi d'officina: carrozziere e gomme nuove
-  repairCost() { return Math.round(this.sim.damage * 2600 / 10) * 10; }
-  tireCost() { return Math.max(380, Math.round(tuningItem('tires', this.tireId || 'oem').price * 0.55 / 10) * 10); }
+  repairCost() { return Math.round(this.sim.damage * 2600 * this.disc() / 10) * 10; }
+  tireCost() { return Math.round(Math.max(380, tuningItem('tires', this.tireId || 'oem').price * 0.55) * this.disc() / 10) * 10; }
   repair() {
     const c = this.mode === 'career' ? this.repairCost() : 0;
     if (!this.sim.damage) return { ok: false, why: 'La carrozzeria è già a posto' };
@@ -256,14 +268,25 @@ class StreetGame {
     if (c > this.s.money) return { ok: false, why: `Un treno di gomme costa € ${c}` };
     this.s.money -= c; this.sim.tireWear = 0; this.sim.tireT = 24; this.say(`Gomme nuove montate${c ? `: − € ${c}` : ''}`, 'buy'); return { ok: true };
   }
+  // ------------------------------------------------------------ chilometri
+  get odo() { return (this.s.cars[this.car] || { km: 0 }).km; }
+  hasPerk(id) { return this.s.perks.includes(id); }
+  perkPow() { return 1 + (this.hasPerk('rodaggio') ? 0.03 : 0) + (this.hasPerk('leggenda') ? 0.03 : 0); }
+  perkGrip() { return this.hasPerk('leggenda') ? 1.04 : 1; }
+  disc() { return this.hasPerk('cliente') ? 0.9 : 1; }
+  nextPerk() { return GAME_KM_PERKS.find((p) => !this.hasPerk(p.id)) || null; }
+  // ogni pezzo chiede anche un po' di strada: più costa, più chilometri servono per sbloccarlo
+  partKm(cat, id) { const it = tuningItem(cat, id); return !it || !it.price ? 0 : Math.max(5, Math.round(it.price / 150 / 5) * 5); }
+  partLocked(cat, id) { return this.mode === 'career' && !this.owns(cat, id) && this.odo < this.partKm(cat, id); }
   owns(cat, id) { return this.mode === 'free' || TUNING[cat].items[0].id === id || tuningItem(cat, id).price === 0 || !!this.s.owned[cat + ':' + id]; }
-  price(cat, id) { return this.owns(cat, id) ? 0 : tuningItem(cat, id).price; }
+  price(cat, id) { return this.owns(cat, id) ? 0 : Math.round(tuningItem(cat, id).price * this.disc() / 10) * 10; }
   canMount() { return this.mode === 'free' || (Math.abs(this.sim.v) < 0.5 && !this.race); }
   // con i luoghi in città (2D, carriera) i pezzi si montano solo dentro l'officina
   inShop() { return !!(this.inside && this.inside.id === 'shop' && this.inside.phase === 'shop'); }
   needsShop() { return this.mode === 'career' && this.placesOn && !this.inShop(); }
   buy(cat, id) {
     const p = this.price(cat, id);
+    if (this.partLocked(cat, id)) return { ok: false, why: `Si sblocca a ${this.partKm(cat, id)} km: la Supra ne ha ${Math.floor(this.odo)}` };
     if (p > this.s.money) return { ok: false, why: `Servono € ${p}, ne hai ${Math.floor(this.s.money)}` };
     this.s.money -= p;
     this.s.owned[cat + ':' + id] = true;
@@ -433,6 +456,13 @@ class StreetGame {
     const sim = this.sim, d0 = this.s.dist;
     if (sim.v > 0) this.s.dist += sim.v * dt;
     const d = this.s.dist;
+    // contachilometri e traguardi
+    if (d > d0) {
+      const km = (d - d0) / 1000, car = this.s.cars[this.car] || (this.s.cars[this.car] = { km: 0 });
+      car.km += km; this.trip += km;
+      const np = this.nextPerk();
+      if (np && car.km >= np.km) { this.s.perks.push(np.id); this.perkUp = np; this.say(`${np.km} km: ${np.name}! ${np.note}`, 'money'); }
+    }
     if (this.prompt) {
       this.prompt.t -= dt;
       if (this.prompt.t <= 0) {          // senza risposta vale l'ultima opzione (di solito "no")

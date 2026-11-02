@@ -213,7 +213,16 @@ h1 span { color: var(--amber); }
 .place .cos .opt small { opacity: .75; }
 .place p.hint { margin: 0; }
 body.inplace .lanebtn { display: none; }
-@media (max-width: 600px) { .place { width: 100%; top: 30%; } .minimap { width: calc(100% - 140px); bottom: 20px; } .mm-next { display: none; } .enterbtn { bottom: 48px; font-size: 12px; padding: 6px 10px; } }
+@media (max-width: 600px) { .place { width: 100%; top: 30%; } .minimap { width: calc(100% - 140px); bottom: 20px; } .mm-next { display: none; } .enterbtn { bottom: auto; top: 46px; left: auto; right: 8px; transform: skewX(-8deg); font-size: 12px; padding: 6px 10px; } }
+.kmbox { display: grid; gap: 6px; padding: 10px 12px; background: #0b0a08; box-shadow: inset 0 0 0 1px #2a251d; }
+.km-head { display: flex; justify-content: space-between; gap: 10px; font: 400 14px/1.2 var(--f-data); } .km-head b { font: 400 15px/1 var(--f-display); letter-spacing: .05em; text-transform: uppercase; color: var(--amber); }
+.km-bar { height: 6px; background: #1e1b16; } .km-bar i { display: block; height: 100%; background: var(--lime); box-shadow: 0 0 8px var(--lime); }
+.km-perks { display: flex; flex-wrap: wrap; gap: 6px; } .km-perks span { font: 400 12px/1.2 var(--f-data); padding: 4px 8px; color: var(--muted); box-shadow: inset 0 0 0 1px #2a251d; }
+.km-perks span b { font-weight: 400; margin-right: 6px; } .km-perks span.on { color: #141a04; background: var(--lime); box-shadow: none; }
+.kmbox p.hint { margin: 0; } .kmbox p.hint b { font-weight: 400; color: var(--fg); }
+#hudG { position: absolute; right: 12px; bottom: 74px; width: clamp(170px, 24%, 280px); aspect-ratio: 2 / 1; pointer-events: none; }
+body.inplace #hudG { display: none; }
+@media (max-width: 600px) { #hudG { width: 156px; left: 6px; right: auto; top: 6px; bottom: auto; } .hud-l.hasg { display: none; } }
 .lanebtn { touch-action: none; user-select: none; -webkit-user-select: none; position: absolute; bottom: 12px; width: 52px; height: 52px; border: 0; background: rgba(12,11,9,.55); color: var(--amber); font: 400 22px/1 var(--f-display); box-shadow: inset 0 0 0 1px #4a4234; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); display: grid; place-items: center; }
 .lanebtn small { font: 400 10px/1 var(--f-data); color: var(--muted); margin-top: -10px; }
 .lanebtn.l { left: 12px; } .lanebtn.r { right: 12px; }
@@ -629,6 +638,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         <button class="go" type="button" id="resOk">Continua <kbd>Invio</kbd></button>
       </div>
       <div class="toasts" id="toasts" aria-live="polite"></div>
+      <canvas id="hudG" aria-hidden="true"></canvas>
       <button class="enterbtn" type="button" id="enterBtn" hidden></button>
       <div class="minimap" id="miniMap" hidden aria-label="Mappa: luoghi lungo la strada">
         <div class="mm-track" id="mmTrack"><i class="mm-you" aria-hidden="true"></i></div>
@@ -753,6 +763,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="svc"><b>Carrozzeria</b><span id="svcBody">nessun danno</span><div class="bar"><i id="svcBodyBar"></i></div><button class="kbtn" type="button" id="btnRepair">Carrozziere</button></div>
       <div class="svc"><b>Gomme posteriori</b><span id="svcTire">—</span><div class="bar"><i id="svcTireBar"></i></div><button class="kbtn" type="button" id="btnTires">Gomme nuove</button></div>
     </div>
+    <div class="kmbox" id="kmBox"></div>
     <div class="presets" id="presets"></div>
     <div class="tgrid" id="tgrid"></div>
     <p class="hint" id="shopNote">I marchi indicano parti reali per JZA80 e 2JZ. Il carattere sonoro di ciascuna è una nostra modellazione fisica, non una registrazione del prodotto.</p>
@@ -987,6 +998,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   // ---------------------------------------------------------------- impostazioni
   function applySettings() {
     TP = tuningParams(S.tune);
+    TP.sim.pw = (TP.sim.pw || 1) * game.perkPow(); TP.sim.mu = (TP.sim.mu || sim.P.mu || 1.1) * game.perkGrip();   // traguardi di chilometri
+    sim.quickShift = game.hasPerk('mano');
     sim.setTune(TP.sim);
     Object.assign(sim.cfg, { pops: S.pops && TP.sim.ecuPops, launch: S.launch, autoClutch: S.autoClutch, revMatch: S.revMatch });
     if (garage) { garage.setTips(TP.dsp.ex.tips); garage.setPaint(S.paint); }
@@ -1110,6 +1123,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'b') openTrunk();
     else if (k === 'p') radioNext();
     else if (k === 'u') placeKey();
+    else if (k === 'j') { S.hudG = S.hudG === false; flash(S.hudG ? 'Strumenti in gioco: accesi' : 'Strumenti in gioco: spenti', 1.2); try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } }
     else if (k === 'k') cycleMeteo();
     else if (k === 'g') openShowroom();
     else if (k === 'x') takePhoto();
@@ -1498,7 +1512,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       const sel = box.querySelector('select');
       Array.from(sel.options).forEach((o) => {
         const x = tuningItem(k, o.value), label = (['Su misura', '—', 'Integrata'].includes(x.brand) ? '' : x.brand + ' · ') + x.name;
-        o.textContent = label + (game.owns(k, x.id) ? (x.id === it.id ? '' : ' · tuo') : ` · € ${fmt(x.price)}`);
+        const lk = game.partLocked(k, x.id);
+        o.textContent = label + (game.owns(k, x.id) ? (x.id === it.id ? '' : ' · tuo') : lk ? ` · da ${game.partKm(k, x.id)} km` : ` · € ${fmt(game.price(k, x.id))}`);
+        o.disabled = lk;
       });
       sel.value = it.id;
       let note = it.note;
@@ -1509,8 +1525,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     $('presets').querySelectorAll('button').forEach((b) => {
       const p = TUNING_PRESETS.find((x) => x.id === b.dataset.id);
       b.setAttribute('aria-pressed', String(Object.keys(p.sel).every((k) => p.sel[k] === S.tune[k])));
-      const cost = presetCost(p);
-      b.innerHTML = p.name + (cost ? `<small>€ ${fmt(cost)}</small>` : '');
+      const cost = presetCost(p), need = presetKm(p);
+      b.innerHTML = p.name + (need > game.odo ? `<small>da ${fmt(need)} km</small>` : cost ? `<small>€ ${fmt(cost)}</small>` : '');
     });
     const est = sim.estimatePeak(), et = game.etEstimate(), kgcv = (sim.P.mass + 75) / est.cv;
     const stat = (n, v, f) => `<div class="st"><b>${n}<span>${v}</span></b><div class="sb"><i style="width:${Math.max(4, Math.min(100, f * 100)).toFixed(0)}%"></i></div></div>`;
@@ -1523,7 +1539,17 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     $('tuneSum').textContent = `${fmt(Math.round(est.cv / 5) * 5)} CV a ${fmt(est.rpmCv)} · ${fmt(Math.round(est.nm / 5) * 5)} Nm · ${fmt(TP.sim.turbo.max, 2)} bar · limitatore ${fmt(TP.sim.limiter)}`;
   }
 
+  function renderKm() {
+    const odo = game.odo, np = game.nextPerk(), prev = np ? (GAME_KM_PERKS[GAME_KM_PERKS.indexOf(np) - 1] || { km: 0 }).km : 0;
+    const f = np ? Math.min(1, (odo - prev) / (np.km - prev)) : 1;
+    const html = `<div class="km-head"><b>Supra JZA80</b><span>${fmt(odo, 1)} km percorsi</span></div>`
+      + `<div class="km-bar"><i style="width:${(f * 100).toFixed(1)}%"></i></div>`
+      + `<p class="hint">${np ? `Prossimo traguardo a ${fmt(np.km)} km: <b>${np.name}</b> (${np.note}). I pezzi si sbloccano anche con i chilometri, non solo coi soldi.` : 'Tutti i traguardi raggiunti.'}</p>`
+      + `<div class="km-perks">${GAME_KM_PERKS.map((p) => `<span class="${game.hasPerk(p.id) ? 'on' : ''}" title="${p.note}"><b>${fmt(p.km)} km</b>${p.name}</span>`).join('')}</div>`;
+    if ($('kmBox').innerHTML !== html) $('kmBox').innerHTML = html;
+  }
   function renderServices() {
+    renderKm();
     const d = sim.damage, w = sim.tireWear;
     $('svcBody').textContent = d > 0.005 ? `danni al ${Math.round(d * 100)} %: muso ammaccato, più resistenza all'aria` : 'nessun danno';
     $('svcBodyBar').style.width = (d * 100) + '%'; $('svcBodyBar').style.background = d > 0.3 ? 'var(--crit)' : d > 0 ? 'var(--warn)' : '';
@@ -1589,6 +1615,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     flash(Math.abs(sim.v) > 0.5 ? 'Bagagliaio: per usare gli oggetti fermati' : 'Bagagliaio aperto', 1.4);
   }
   let trunkSig = '';
+  function presetKm(p) { return game.mode === 'career' ? Math.max(0, ...Object.entries(p.sel).map(([k, id]) => (game.owns(k, id) ? 0 : game.partKm(k, id)))) : 0; }
   function presetCost(p) { return Object.entries(p.sel).reduce((a, [k, id]) => a + game.price(k, id), 0); }
   function mountPart(k, id, selEl) {
     const revert = () => { if (selEl) selEl.value = S.tune[k]; };
@@ -1603,7 +1630,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   function mountPreset(p) {
     if (!game.canMount()) { flash('Le parti si montano da fermo: accosta e frena', 2.4); return; }
     if (game.needsShop()) { flash('I pezzi si montano in officina: la trovi sulla mappa (O)', 2.8); return; }
-    const cost = presetCost(p);
+    const cost = presetCost(p), need = presetKm(p);
+    if (need > game.odo) { flash(`Questa preparazione si sblocca a ${fmt(need)} km: la Supra ne ha ${fmt(Math.floor(game.odo))}`, 2.8); return; }
     if (cost > game.s.money) { flash(`Mancano € ${fmt(cost - Math.floor(game.s.money))} per questa preparazione`, 2.6); return; }
     for (const [k, id] of Object.entries(p.sel)) if (!game.owns(k, id)) game.buy(k, id);
     S.tune = Object.assign({}, p.sel); applySettings(); saveGame();
@@ -1835,6 +1863,60 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     $('fuelSt').textContent = I.fill ? `erogazione… ${I.fill.got.toFixed(1).replace('.', ',')} L · € ${I.fill.cost.toFixed(2).replace('.', ',')}` : `€ ${GAME_FUEL_PRICE.toFixed(2).replace('.', ',')} al litro`;
     $('fuelBox').querySelectorAll('button').forEach((b) => { b.disabled = !!I.fill; });
     renderPlaceCash();
+  }
+
+  // ---------------------------------------------------------------- manometri in gioco (sopra la strada)
+  // contagiri con marcia al centro, tachimetro digitale, pressione turbo, benzina, contachilometri e parziale
+  const hudG = { c: $('hudG'), t: 0, col: null };
+  function hudColors() {
+    const cs = getComputedStyle(document.body), v = (n, d) => (cs.getPropertyValue(n) || '').trim() || d;
+    hudG.col = { acc: v('--amber', '#ffb347'), crit: v('--crit', '#ff5a3a'), lime: v('--lime', '#c9dd5a'), fg: v('--fg', '#f2eadb'), mut: v('--muted', '#8c826f'), dial: v('--dial', v('--fg', '#f2eadb')),
+      disp: v('--f-display', 'sans-serif'), data: v('--f-data', 'monospace') };
+  }
+  function drawHudG(dt) {
+    const c = hudG.c, show = S.hudG !== false && S.look !== 'cockpit' && !game.inside && !rp.on;
+    c.hidden = !show; document.querySelector('.hud-l').classList.toggle('hasg', show); if (!show) return;
+    hudG.t += dt; if (!hudG.col || hudG.t > 2) { hudG.t = 0; hudColors(); }
+    const dpr = Math.min(2, window.devicePixelRatio || 1), w = c.clientWidth, h = c.clientHeight;
+    if (!w) return;
+    if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+    const g = c.getContext('2d'), K = c.width / 240, C = hudG.col, lit = sim.ign;
+    g.setTransform(K, 0, 0, K, 0, 0); g.clearRect(0, 0, 240, 120);
+    // fondo
+    g.fillStyle = 'rgba(10,9,7,.74)'; g.beginPath(); g.moveTo(10, 0); g.lineTo(240, 0); g.lineTo(230, 120); g.lineTo(0, 120); g.closePath(); g.fill();
+    g.fillStyle = C.acc; g.fillRect(232, 0, 3, 120);
+    // contagiri
+    const cx = 60, cy = 62, R = 48, a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, max = 8000, lim = sim.P.limiter || 7000;
+    const ang = (r) => a0 + (a1 - a0) * Math.min(1, Math.max(0, r / max));
+    g.lineWidth = 6; g.strokeStyle = '#26221b'; g.beginPath(); g.arc(cx, cy, R, a0, a1); g.stroke();
+    g.strokeStyle = C.crit; g.beginPath(); g.arc(cx, cy, R, ang(lim), a1); g.stroke();
+    if (lit) { g.strokeStyle = sim.rpm > lim - 350 ? C.crit : C.acc; g.beginPath(); g.arc(cx, cy, R, a0, ang(sim.rpm)); g.stroke(); }
+    g.lineWidth = 1.5; g.fillStyle = C.mut; g.font = `400 9px ${C.data}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (let r = 0; r <= 8; r++) { const a = ang(r * 1000); g.strokeStyle = r * 1000 >= lim ? C.crit : C.mut; g.beginPath(); g.moveTo(cx + Math.cos(a) * (R - 9), cy + Math.sin(a) * (R - 9)); g.lineTo(cx + Math.cos(a) * (R - 4), cy + Math.sin(a) * (R - 4)); g.stroke(); g.fillText(String(r), cx + Math.cos(a) * (R - 17), cy + Math.sin(a) * (R - 17)); }
+    if (lit) { const a = ang(sim.rpm); g.strokeStyle = C.fg; g.lineWidth = 2.5; g.beginPath(); g.moveTo(cx - Math.cos(a) * 6, cy - Math.sin(a) * 6); g.lineTo(cx + Math.cos(a) * (R - 6), cy + Math.sin(a) * (R - 6)); g.stroke(); }
+    const flash = lit && (sim.cut === 2 || sim.rpm > lim - 350) && Math.floor(performance.now() / 70) % 2 === 0;
+    g.fillStyle = flash ? C.crit : '#14110e'; g.beginPath(); g.arc(cx, cy, 17, 0, Math.PI * 2); g.fill();
+    g.fillStyle = flash ? '#fff' : lit ? C.dial : '#494033'; g.font = `400 24px ${C.disp}`; g.fillText(sim.gear === 0 ? 'N' : sim.gear === -1 ? 'R' : String(sim.gear), cx, cy + 1);
+    g.fillStyle = C.mut; g.font = `400 8px ${C.data}`; g.fillText('x1000', cx, cy + 30);
+    // tachimetro digitale
+    const kmh = Math.round(Math.abs(sim.v) * 3.6);
+    g.textAlign = 'right'; g.textBaseline = 'alphabetic';
+    g.fillStyle = '#2a251d'; g.font = `400 44px ${C.disp}`; g.fillText('888', 196, 50);
+    g.fillStyle = lit ? C.dial : '#494033'; g.fillText(String(kmh), 196, 50);
+    g.fillStyle = C.mut; g.font = `400 10px ${C.data}`; g.fillText('km/h', 226, 50);
+    // turbo e benzina
+    const bar = (y, label, f, txt, col) => {
+      g.textAlign = 'left'; g.fillStyle = C.mut; g.font = `400 9px ${C.data}`; g.fillText(label, 120, y + 6);
+      g.fillStyle = '#26221b'; g.fillRect(150, y, 52, 7); g.fillStyle = col; g.fillRect(150, y, 52 * Math.max(0, Math.min(1, f)), 7);
+      g.textAlign = 'right'; g.fillStyle = C.fg; g.fillText(txt, 228, y + 6);
+    };
+    const bmax = Math.max(0.5, (TP.sim.turbo && TP.sim.turbo.max) || 1);
+    bar(62, 'TURBO', lit ? sim.pipeP / bmax : 0, lit ? fmt(Math.max(0, sim.pipeP), 2) : '—', sim.pipeP > bmax * 0.9 ? C.crit : C.acc);
+    bar(76, 'BENZ', sim.fuel, Math.round(sim.fuel * sim.P.tank) + ' L', sim.fuel < 0.15 ? C.crit : C.lime);
+    // contachilometri e parziale
+    g.textAlign = 'left'; g.fillStyle = C.mut; g.font = `400 9px ${C.data}`; g.fillText('ODO', 120, 100); g.fillText('TRIP', 120, 113);
+    g.fillStyle = C.fg; g.font = `400 11px ${C.data}`; g.textAlign = 'right';
+    g.fillText(fmt(game.odo, 1) + ' km', 228, 100); g.fillText(fmt(game.trip, 1) + ' km', 228, 113);
   }
 
   // ---------------------------------------------------------------- campioni della mod
@@ -2147,6 +2229,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     game.steerHold(clamp(keyAxis + (inp.pad.steer || 0), -1, 1));
     game.update(dt);
     placesTick(dt);
+    drawHudG(dt);
+    if (game.perkUp) { game.perkUp = null; applySettings(); renderServices(); saveGame(); }
     renderGame(dt);
     const ev = sim.events.splice(0);
     // giunti dell'asfalto ogni 47 m: prima l'asse anteriore, poi il posteriore ("ta-dum")
