@@ -675,7 +675,12 @@ class Street2D {
 
     // ---- entità (dalla più lontana)
     const items = game ? game.ents.slice() : [];
-    const zOf = (e) => (e.kind === 'station' || e.lane === 0 ? 9 : e.kind === 'line' || e.kind === 'drop' ? 1.75 : GAME_LANE_Z[e.lane]);
+    const zOf = (e) => {
+      if (e.kind === 'station' || e.lane === 0) return 9;
+      if (e.kind === 'line' || e.kind === 'drop') return 1.75;
+      e._z = e._z === undefined ? GAME_LANE_Z[e.lane] : e._z + (GAME_LANE_Z[e.lane] - e._z) * Math.min(1, dt * 1.8);   // cambio corsia morbido
+      return e._z;
+    };
     items.sort((a, b) => zOf(a) - zOf(b));
     const front = [];
     const drawEnt = (e) => {
@@ -709,6 +714,11 @@ class Street2D {
       if (e.kind === 'line') {
         for (let y = 240; y < 334; y += 6) for (let k = 0; k < 2; k++) { g.fillStyle = ((y / 6 + k) | 0) % 2 ? '#f4f1e6' : C.ink; g.fillRect(x + k * 6, y, 6, 6); }
         if (e.finish) {
+          // arco a scacchi sopra la carreggiata con bandiere
+          g.fillStyle = C.ink; g.fillRect(x - 3, 96, 6, 240); g.fillRect(x + 40, 96, 6, 240);
+          for (let yy = 96; yy < 118; yy += 6) for (let xx = x - 3; xx < x + 46; xx += 6) { g.fillStyle = ((yy - 96) / 6 + (xx - x + 3) / 6) % 2 ? '#f4f1e6' : C.ink; g.fillRect(xx, yy, 6, 6); }
+          const fw = Math.round(Math.sin(st.t * 9) * 2);
+          for (const fx2 of [x - 3, x + 40]) { g.fillStyle = C.ink; g.fillRect(fx2 + 2, 70, 2, 28); for (let q = 0; q < 4; q++) { g.fillStyle = q % 2 ? '#f4f1e6' : '#111'; g.fillRect(fx2 + 4, 70 + q * 4 + (q % 2 ? fw : 0), 10, 4); } }
           g.fillStyle = C.ink; g.fillRect(x - 2, 132, 8, 108); g.fillStyle = '#b8ff3a'; g.fillRect(x, 134, 4, 104);
           g.fillStyle = C.ink; g.fillRect(x - 36, 120, 78, 20); g.fillStyle = '#b8ff3a'; g.fillRect(x - 34, 122, 74, 16);
           this.text(g, 'ARRIVO', x - 21, 125, C.ink, 2);
@@ -723,10 +733,13 @@ class Street2D {
       const ang = -(e.x / 0.32);
       for (const ax of spr.geo.ax) this.wheel(g, left + 1 + ax * k, sy + 1 + 42 * k, Math.max(6, Math.round(15 * k)), ang, e.v || 0);
       this.light(g, left + 3, sy + 35 * k, 8, 6, '#ff2a2a', 0.15, 2);
+      if (e.sig > 0 && Math.floor(st.t * 3) % 2 === 0) { g.fillStyle = '#ffa020'; g.fillRect(left + 2, sy + Math.round(38 * k), 4, 3); g.fillRect(left + w - 6, sy + Math.round(36 * k), 4, 3); this.light(g, left + 4, sy + 39 * k, 9, 6, '#ffa020', 0.3, 3); }
+      if (e.honk > 3.5 && !(this.cool['honk' + e.id] > st.t) && (this.cool['honk' + e.id] = st.t + 3)) this.comic(Math.random() < 0.5 ? 'BEEEP!' : 'HONK!', left + w * 0.3, sy - 8, '#ffe14d', 2);
       if (e.kind === 'police') {
         const on = e.chase || e.v > 0 || Math.abs(e.x - dist) < 120, ph = Math.floor(st.t * 8) % 2;
         const lx = Math.round(left + 82 * k), ly = sy + Math.round(5 * k);
         g.fillStyle = on && ph ? '#ff2e4d' : '#4a1020'; g.fillRect(lx, ly, Math.round(13 * sc), 3);
+        if (on) { this.light(g, lx + 14 * sc, ly, 120, 60, ph ? '#ff2e4d' : '#4f7bff', 0.16, 4); this.light(g, lx + 14 * sc, y, 160, 14, ph ? '#ff2e4d' : '#4f7bff', 0.12, 3); }
         g.fillStyle = on && !ph ? '#4f7bff' : '#101a4a'; g.fillRect(lx + Math.round(15 * sc), ly, Math.round(13 * sc), 3);
         if (on) {
           const col = ph ? '#ff2e4d' : '#4f7bff';
@@ -936,6 +949,31 @@ class Street2D {
       }
       g.fillStyle = 'rgba(190,210,240,.55)';
       for (let i = 0; i < 26; i++) { const x = Street2D.rnd(i + Math.floor(st.t * 9) * 31) * W, y = 230 + Street2D.rnd(i * 7 + Math.floor(st.t * 9)) * 110; g.fillRect(Math.round(x) - 1, Math.round(y), 3, 1); g.fillRect(Math.round(x), Math.round(y) - 1, 1, 1); }
+    }
+
+    // ---- gara: semaforo da drag grande, barra di avanzamento, striscione a scacchi
+    if (game && game.race) {
+      const R = game.race, tx = Math.round(W * 0.66), ty = 74;
+      if (R.phase === 'count' || (R.phase === 'run' && R.tt < 1.6)) {
+        const lit = R.phase === 'run' ? 4 : R.t < 1 ? 3 : R.t < 2 ? 2 : R.t < 3 ? 1 : 0;
+        g.fillStyle = C.ink; g.fillRect(tx - 2, ty + 120, 6, 40); g.fillRect(tx - 18, ty - 4, 38, 128);
+        g.fillStyle = '#1b1d28'; g.fillRect(tx - 16, ty - 2, 34, 124);
+        for (let i = 0; i < 4; i++) {
+          const on = i < 3 ? lit > i && lit < 4 : lit === 4, col = i < 3 ? '#ffb000' : '#3cff6a', yy = ty + 14 + i * 30;
+          g.fillStyle = on ? col : '#33281a'; this.span(g, tx + 1, yy, 10, 10);
+          if (on) { g.fillStyle = '#fff6d0'; this.span(g, tx - 2, yy - 3, 3, 3); this.light(g, tx + 1, yy, 34, 30, col, 0.28, 4); }
+        }
+      }
+      if (R.phase === 'run') {
+        const rival = game.ents.find((e) => e.kind === 'rival'), bx = Math.round(W * 0.3), bw = Math.round(W * 0.4), by = 14;
+        g.fillStyle = 'rgba(8,8,14,.75)'; g.fillRect(bx - 4, by - 4, bw + 8, 14);
+        g.fillStyle = '#3a3f58'; g.fillRect(bx, by + 3, bw, 2);
+        for (let q = 0; q <= 4; q++) g.fillRect(bx + Math.round(bw * q / 4), by, 1, 8);
+        for (let q = 0; q < 6; q++) { g.fillStyle = q % 2 ? '#f4f1e6' : C.ink; g.fillRect(bx + bw - 3 + (q % 2) * 3, by - 2 + Math.floor(q / 2) * 4, 3, 4); }
+        const mark = (m, col) => { const xx = bx + Math.round(Math.max(0, Math.min(1, m / 402.3)) * bw); g.fillStyle = C.ink; g.fillRect(xx - 4, by - 1, 9, 8); g.fillStyle = col; g.fillRect(xx - 3, by, 7, 6); };
+        if (rival) mark(rival.x - R.x0, '#b8b8c8');
+        mark(game.s.dist - R.x0, this.paintHex);
+      }
     }
 
     // ---- su schermo

@@ -1871,6 +1871,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         ign: sim.ign, brake: sim.in.brake, flame: flameT, spin: Math.min(1, Math.max(0, (Math.abs(sim.ww * sim.P.r - sim.v) - 1.5) / 5)),
         thr: sim.thr, events: ev, skid: sim.skid, damage: sim.damage, tireT: sim.tireT, gear: sim.gear, signal: game.signal ? game.signal.dir : null, high: !!S.high }, game);
     }
+    for (const f of game.fx) if (f.k === 'honk') carHorn();
     game.fx.length = 0;
     if (msgT > 0) { msgT -= dt; if (msgT <= 0) $('msg').classList.remove('show'); }
     draw(); updateDom(dt);
@@ -1922,6 +1923,14 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const inCab = S.look === 'cockpit', lvl = rainSnd.on && !S.muted ? (S.vol / 100) * (inCab ? 0.16 : 0.1) * (1 + Math.min(1, sim.v / 40) * 0.6) : 0;
     rainSnd.g.gain.setTargetAtTime(lvl, audio.ctx.currentTime, 0.4);
     rainSnd.lp.frequency.setTargetAtTime(inCab ? 2600 : 5200, audio.ctx.currentTime, 0.3);
+  }
+  // clacson di un'altra auto: due toni più bassi e corti del nostro
+  function carHorn() {
+    if (!audio.ctx || S.muted) return;
+    const ctx = audio.ctx, g = ctx.createGain(), lp = ctx.createBiquadFilter(), t = ctx.currentTime;
+    lp.type = 'lowpass'; lp.frequency.value = 1600; lp.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.05 * S.vol / 100, t + 0.02); g.gain.setValueAtTime(0.05 * S.vol / 100, t + 0.45); g.gain.linearRampToValueAtTime(0, t + 0.55);
+    for (const f of [340, 425]) { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f; o.connect(lp); o.start(t); o.stop(t + 0.6); }
   }
   function thunderSound() {
     if (!audio.ctx || S.muted) return;

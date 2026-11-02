@@ -373,6 +373,16 @@ class StreetGame {
       if (e.chase) { e.x += (d - 9 - e.x) * Math.min(1, dt * 1.6) + sim.v * dt; e.lane = this.lane; continue; }
       e.x += (e.v || 0) * dt;
       const rel = e.x - d;
+      // traffico vivo: ogni tanto cambia corsia (con la freccia prima), e suona se gli stai attaccato
+      if (e.kind === 'traffic') {
+        if (e.sig > 0) { e.sig -= dt; if (e.sig <= 0 && e.to) { e.lane = e.to; e.to = 0; } }
+        else if ((rel > 30 || rel < -15) && Math.random() < dt * 0.05) {
+          const to = e.lane + (e.lane === 1 ? 1 : e.lane === 3 ? -1 : Math.random() < 0.5 ? 1 : -1);
+          if (!this.ents.some((o) => o !== e && o.kind === 'traffic' && (o.lane === to || o.to === to) && Math.abs(o.x - e.x) < 14)) { e.to = to; e.sig = 1.6; }
+        }
+        e.honk = Math.max(0, (e.honk || 0) - dt);
+        if (rel > 3 && rel < 9 && Math.abs(GAME_LANE_Z[e.lane] - this.laneZ) < 1.4 && sim.v > (e.v || 0) + 2 && !e.honk) { e.honk = 4; this.fx.push({ k: 'honk', x: e.x }); }
+      }
       if (e.kind === 'police' && !e.checked && rel < 3 && rel > -8 && this.mode === 'career') {
         e.checked = true;
         if (sim.gear === 6 && sim.v > 4 && !this.ap) this.busted(e);
