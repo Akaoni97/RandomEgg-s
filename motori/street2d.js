@@ -431,6 +431,29 @@ class Street2D {
     }
   }
 
+  // treno sopraelevato sullo sfondo: viadotto con piloni e un convoglio illuminato che passa ogni tanto
+  drawTrain(g, dist, t) {
+    const W = this.LW, C = this.C, y = 150, off = dist * 0.12;
+    g.fillStyle = '#141236'; g.fillRect(0, y, W, 5); g.fillStyle = '#2a2560'; g.fillRect(0, y, W, 1);
+    for (let x = -((off % 64) + 64) % 64; x < W; x += 64) { g.fillStyle = '#141236'; g.fillRect(Math.round(x), y + 5, 5, 66); g.fillStyle = '#1c1946'; g.fillRect(Math.round(x), y + 5, 1, 66); }
+    for (let x = -((off % 32) + 32) % 32; x < W; x += 32) { g.fillStyle = '#1c1946'; g.fillRect(Math.round(x), y - 12, 1, 12); g.fillRect(Math.round(x) - 3, y - 12, 7, 1); }   // pali della linea aerea
+    g.fillStyle = '#221f50'; g.fillRect(0, y - 11, W, 1);
+    const per = 34, ph = (t % per) / per;
+    if (ph > 0.45) return;
+    const dir = Math.floor(t / per) % 2 ? 1 : -1, n = 6, cw = 44, len = n * (cw + 2), k = ph / 0.45;
+    const x0 = dir > 0 ? -len + k * (W + len * 2) - len * 0.5 : W + len * 0.5 - k * (W + len * 2);
+    for (let c = 0; c < n; c++) {
+      const cx = Math.round(x0 + c * (cw + 2));
+      if (cx > W || cx + cw < 0) continue;
+      g.fillStyle = C.ink; g.fillRect(cx - 1, y - 11, cw + 2, 11);
+      g.fillStyle = '#b8c0d0'; g.fillRect(cx, y - 10, cw, 9); g.fillStyle = '#2b8a4e'; g.fillRect(cx, y - 4, cw, 2);
+      for (let w2 = 3; w2 < cw - 4; w2 += 6) { g.fillStyle = Street2D.rnd(c * 9 + w2) < 0.85 ? '#ffe6a3' : '#4a4f66'; g.fillRect(cx + w2, y - 9, 4, 3); }
+      if ((c === 0 && dir < 0) || (c === n - 1 && dir > 0)) { g.fillStyle = '#fff6d0'; g.fillRect(dir < 0 ? cx : cx + cw - 2, y - 6, 2, 2); }
+      this.light(g, cx + cw / 2, y - 6, cw * 0.7, 8, '#ffe6a3', 0.05, 2);
+    }
+    if (Math.floor(t * 9) % 7 === 0) { const sx = Math.round(x0 + len * 0.3); g.fillStyle = '#bfe8ff'; g.fillRect(sx, y - 13, 2, 2); this.light(g, sx, y - 12, 10, 8, '#7fe7ff', 0.2, 2); }   // scintilla del pantografo
+  }
+
   // ---------------------------------------------------------------- palazzi (cache per tessera)
   building(layer, i) {
     const key = layer + ':' + i;
@@ -998,6 +1021,7 @@ class Street2D {
     g.fillStyle = 'rgba(70,50,114,.35)'; g.fillRect(0, 150, W, 40);
     this.drawCity(g, dist, st.t, 'far', 0.07, 200, 52);
     g.fillStyle = 'rgba(70,50,114,.22)'; g.fillRect(0, 168, W, 34);
+    this.drawTrain(g, dist, st.t);
     const shops = this.drawCity(g, dist, st.t, 'mid', 0.22, 216, 72);
 
     // ---- marciapiede lontano, luce delle vetrine, pedoni
@@ -1036,6 +1060,12 @@ class Street2D {
     for (let m = Math.ceil(visFrom / 23) * 23; m < visTo; m += 23) { const x = wx(m); g.fillStyle = C.ink; g.fillRect(x - 1, 330, 14, 6); g.fillStyle = '#12141f'; g.fillRect(x, 331, 12, 4); g.fillStyle = '#3a3f58'; for (let k = 1; k < 12; k += 3) g.fillRect(x + k, 331, 1, 4); }
     g.fillStyle = C.line; g.fillRect(0, 238, W, 2); g.fillRect(0, 335, W, 2);
     for (let x = -((dist * PPM) % (12 * PPM)); x < W; x += 12 * PPM) { g.fillRect(Math.round(x), 262, Math.round(4.5 * PPM), 2); g.fillRect(Math.round(x), 300, Math.round(4.5 * PPM), 2); }
+    // incroci: strisce pedonali ogni 260 m (il semaforo si disegna davanti, alla fine)
+    for (let m = Math.floor((visFrom - 140) / 260) * 260 + 130; m < visTo + 10; m += 260) {
+      const x = wx(m);
+      for (let yy = 242; yy < 334; yy += 8) { g.fillStyle = 'rgba(216,212,198,.82)'; g.fillRect(x, yy, 4 * PPM, 5); g.fillStyle = 'rgba(120,118,110,.5)'; g.fillRect(x, yy + 5, 4 * PPM, 1); }
+      g.fillStyle = 'rgba(232,228,214,.9)'; g.fillRect(x - 12, 242, 3, 92);                    // linea d'arresto
+    }
     // pozzanghere che riflettono il cielo e i neon
     for (let m = Math.ceil(visFrom / 37) * 37; m < visTo; m += 37) {
       const k = Math.round(m / 37); if (Street2D.rnd(k) < 0.45) continue;
@@ -1236,7 +1266,7 @@ class Street2D {
 
     g.globalAlpha = 1;
     // ---- effetti
-    const rx = left, exY = y0 - 9 * k;
+    const rx = Math.round(left + 7 * k), exY = Math.round(top - skew * SW / 2 + skew * 7 * k + 46 * k * (1 - squash) + (spr.img ? k : 0));
     if (((s.skid || 0) > 0.18 && Math.abs(s.v) > 0.3) || (s.brake > 0.9 && Math.abs(s.v) > 8)) {
       const mRear = dist + (left + 1 + 48 * k - carX) / PPM, len = Math.max(0.15, Math.abs(s.v) * dt * 1.05 + 0.05), a = Math.min(0.7, 0.25 + (s.skid || 0.5));
       this.marks.push({ m: mRear - len, y: y0 - 1, len, a }, { m: mRear - len, y: y0 - 4, len, a: a * 0.6 });
@@ -1263,16 +1293,35 @@ class Street2D {
       this.parts.push({ k: 'smoke', m: dist + (rx - 14 - carX) / PPM, y: exY - 2, vy: -8 - Math.random() * 8, r: 3, life: 0.8, dx: -14 });
     }
     if (st.flame > 0.05) {
-      const L = Math.round(10 + st.flame * 26), fl = st.flame;
+      // fiammata a tre strati che esce dalla bocca: rosso-arancio fuori, giallo in mezzo, nucleo bianco-azzurro;
+      // tremola, si gonfia a metà e sale un po' verso la coda
+      const fl = Math.min(1.5, st.flame), L = Math.round((16 + fl * 40) * k), H0 = (2.6 + fl * 3.2) * k, seed = Math.floor(st.t * 30);
+      g.save(); g.globalCompositeOperation = 'lighter';
       for (let i = 0; i < L; i++) {
-        const u = i / L, wob = Math.round(Math.sin(i * 0.9 + st.t * 45) * 1.6 * u), th = Math.max(1, Math.round((1 - u * 0.85) * (4 + fl * 5)));
-        g.fillStyle = u < 0.12 ? '#ffffff' : u < 0.3 ? '#fff2a8' : u < 0.55 ? '#ffb000' : u < 0.8 ? '#ff5a1a' : 'rgba(190,40,20,.7)';
-        g.fillRect(Math.round(rx - 2 - i), Math.round(exY - th / 2 + wob), 1, th);
-        if (u > 0.2 && u < 0.7) { g.fillStyle = '#7ad0ff'; if (i % 5 === 0) g.fillRect(Math.round(rx - 2 - i), Math.round(exY), 1, 1); }   // nucleo azzurro
+        const u = i / L, rise = -u * u * 7 * k;
+        const wob = (Math.sin(i * 0.7 + st.t * 50) * 1.4 + Math.sin(i * 0.31 + st.t * 23) * 0.8) * u * k;
+        const half = H0 * (0.5 + Math.sin(Math.min(1, u * 1.4) * Math.PI) * 0.9) * (1 - u * 0.3) * (0.8 + 0.4 * Street2D.rnd(i + seed));
+        const X = rx - 1 - i, yc = exY + rise + wob;
+        g.fillStyle = `rgba(255,${70 + (1 - u) * 70 | 0},20,${0.85 * (1 - u)})`; g.fillRect(X, Math.round(yc - half), 1, Math.max(1, Math.round(half * 2)));
+        const hm = half * 0.62 * (1 - u * 0.7); if (hm > 0.4) { g.fillStyle = `rgba(255,${200 + (1 - u) * 40 | 0},70,${0.9 * (1 - u * 0.9)})`; g.fillRect(X, Math.round(yc - hm), 1, Math.max(1, Math.round(hm * 2))); }
+        const hc = half * 0.32 * (1 - u * 1.5); if (hc > 0.3) { g.fillStyle = u < 0.15 ? 'rgba(255,255,255,.95)' : 'rgba(170,225,255,.9)'; g.fillRect(X, Math.round(yc - hc), 1, Math.max(1, Math.round(hc * 2))); }
+        // lingue che si staccano dal bordo
+        if (u > 0.45 && Street2D.rnd(i * 3 + seed) < 0.12) { g.fillStyle = 'rgba(255,120,30,.7)'; g.fillRect(X, Math.round(yc - half - 2 * k), 1, Math.max(1, Math.round(2 * k))); }
       }
-      if (fl > 0.9) { const R = Math.round(3 + (fl - 0.9) * 10); g.fillStyle = '#fff6d0'; this.span(g, rx - L * 0.55, exY, R, R); g.fillStyle = '#ffb000'; this.span(g, rx - L * 0.55, exY, R - 1, R - 2); }
+      g.restore();
+      if (fl > 0.9) {                                                                       // palla di fuoco a un terzo
+        const R = Math.round((3 + (fl - 0.9) * 10) * k), fx = rx - L * 0.38, fy = exY - 2 * k;
+        g.fillStyle = '#ff5a1a'; this.span(g, fx, fy, R + 1, R); g.fillStyle = '#ffb000'; this.span(g, fx, fy, R, R - 1); g.fillStyle = '#fff6d0'; this.span(g, fx + 1, fy - 1, R * 0.55, R * 0.5);
+      }
+      if (Math.random() < fl * 0.8) this.parts.push({ k: 'fire', m: dist + (rx - L * (0.3 + Math.random() * 0.5) - carX) / PPM, y: exY - Math.random() * 3 * k, vy: -14 - Math.random() * 18, dx: -30 - Math.random() * 40, r: 1.5 + Math.random() * 2 * k, life: 1 });
       this.light(g, rx - L / 2, exY, L * 1.1, 14, '#ff9a20', 0.22 * Math.min(1, fl), 3);
+      this.light(g, rx + 10 * k, exY - 6 * k, 18 * k, 8 * k, '#ff7a20', 0.18 * Math.min(1, fl), 3);   // riverbero sul paraurti
     }
+    // anello d'urto alla bocca negli scoppi grossi; la punta cromata si arroventa
+    st.ring = Math.max(0, (st.ring || 0) - dt * 5); st.tipHeat = Math.max(0, (st.tipHeat || 0) - dt * 0.6);
+    if (st.flame > 1.05 && !(st.ringLock > st.t)) { st.ring = 1; st.ringLock = st.t + 0.25; st.tipHeat = Math.min(1, st.tipHeat + 0.35); }
+    if (st.ring > 0.02) { const rr = (1 - st.ring) * 14 * k + 2; g.strokeStyle = `rgba(255,240,200,${st.ring * 0.8})`; g.lineWidth = 1; g.beginPath(); g.ellipse(rx - 2, exY, rr * 0.6, rr, 0, 0, Math.PI * 2); g.stroke(); }
+    if (st.tipHeat > 0.03) { g.fillStyle = `rgba(255,${120 + (1 - st.tipHeat) * 80 | 0},40,${st.tipHeat * 0.8})`; g.fillRect(rx, exY - Math.round(k), Math.max(2, Math.round(5 * k)), Math.max(1, Math.round(2 * k))); }
     if (st.popFlash > 0.02) this.light(g, rx - 20, y0, 70 * st.popFlash, 8, '#ff8a20', 0.25 * st.popFlash, 3);   // lampo sull'asfalto
     if (s.running && Math.random() < dt * (s.rpm < 1500 ? 2.5 : 0.6)) this.parts.push({ k: 'puff', m: dist + (rx - carX) / PPM, y: exY, vy: -6, r: 2, life: 1, dx: -8 });
     for (const p of this.parts) {
@@ -1281,6 +1330,13 @@ class Street2D {
         const X = wx(p.m), Y = Math.round(p.y);
         if (p.k === 'spark') { g.fillStyle = p.life > 0.5 ? '#fff2a0' : '#ff8a20'; g.fillRect(X, Y, 2, 1); g.fillStyle = 'rgba(255,140,40,.5)'; g.fillRect(X - 2, Y, 2, 1); }
         else { g.fillStyle = `rgba(190,215,255,${0.55 * p.life})`; g.fillRect(X, Y, 2, 2); g.fillStyle = `rgba(255,255,255,${0.4 * p.life})`; g.fillRect(X, Y, 1, 1); }
+        continue;
+      }
+      if (p.k === 'fire') {                                                                // pallina di fuoco: gialla, arancio, rossa, poi fumo
+        p.life -= dt * 3.2; p.m += p.dx / PPM * dt; p.y += p.vy * dt; p.r += dt * 7;
+        const X = wx(p.m), L2 = Math.max(0, p.life);
+        if (L2 > 0.35) { g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = L2 > 0.75 ? 'rgba(255,230,140,.9)' : L2 > 0.55 ? 'rgba(255,150,40,.85)' : 'rgba(220,60,20,.7)'; this.span(g, X, p.y, p.r, p.r); g.restore(); }
+        else { g.fillStyle = `rgba(90,92,104,${L2 * 1.2})`; this.span(g, X, p.y, p.r + 1, p.r + 1); }
         continue;
       }
       p.life -= dt * (p.k === 'smoke' ? 0.8 : p.k === 'steam' ? 0.6 : 1.5);
@@ -1300,6 +1356,20 @@ class Street2D {
     }
 
     for (const e of front) drawEnt(e);
+    // semafori degli incroci, in primo piano sul marciapiede vicino: verde, giallo, rosso a ciclo
+    for (let m = Math.floor((visFrom - 140) / 260) * 260 + 130; m < visTo + 20; m += 260) {
+      const px2 = wx(m) + 4 * PPM + 10, ph = ((st.t + m * 0.013) % 14 + 14) % 14, light = ph < 8 ? 2 : ph < 10 ? 1 : 0;
+      const ax = px2 - 120;
+      g.fillStyle = C.ink; g.fillRect(px2 - 2, 108, 6, 252); g.fillRect(ax, 108, px2 - ax + 2, 5);
+      g.fillStyle = '#4a5070'; g.fillRect(px2 - 1, 110, 2, 250); g.fillRect(ax, 109, px2 - ax, 2);
+      for (const hx of [ax + 6, px2 - 40]) {
+        g.fillStyle = C.ink; g.fillRect(hx - 1, 112, 12, 32); g.fillStyle = '#1a1d2a'; g.fillRect(hx, 113, 10, 30);
+        const cols = ['#ff2e2e', '#ffb000', '#3bff7a'];
+        for (let q = 0; q < 3; q++) { const on = q === light; g.fillStyle = on ? cols[q] : Street2D.shade(cols[q], -0.75); this.span(g, hx + 5, 118 + q * 9, 3, 3); if (on) this.light(g, hx + 5, 118 + q * 9, 22, 18, cols[q], 0.16, 3); }
+      }
+      if (light !== 1) this.light(g, ax + 60, 260, 120, 30, light ? '#3bff7a' : '#ff2e2e', 0.035, 3);   // riflesso sull'asfalto
+      g.fillStyle = C.ink; g.fillRect(px2 - 6, 286, 14, 18); g.fillStyle = light === 2 ? '#3bff7a' : '#ff2e2e'; g.fillRect(px2 - 4, 289, 3, 6); g.fillRect(px2 - 3, 296, 1, 5);   // omino pedonale
+    }
 
     // ---- scritte: cosa succede, scritto in grande
     const cd = (k2, sec) => { const ok = !(this.cool[k2] > st.t); if (ok) this.cool[k2] = st.t + sec; return ok; };

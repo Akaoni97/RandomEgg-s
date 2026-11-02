@@ -180,6 +180,11 @@ quasi quadrata. Senza la vista 2D resta una versione in prospettiva.
   porte, riflessi sui vetri e ombre di contatto delle gomme. Dietro le razze si vedono il disco forato, che gira
   con la ruota e si arroventa nelle frenate forti, e la pinza dorata ferma (il colore si cambia al Neon Kustom).
 - Cielo vivo: fari della città che spazzano il cielo, un elicottero col faro di ricerca, stelle cadenti.
+- Fiamme dalla marmitta: escono dalla punta cromata (seguono beccheggio e molleggio), a tre strati con nucleo
+  azzurro, tremolano e salgono verso la coda lasciando palline di fuoco che finiscono in fumo; negli scoppi grossi
+  palla di fuoco, anello d'urto e punta della marmitta che si arroventa.
+- Treno sopraelevato illuminato che passa sul viadotto dietro le case; incroci ogni 260 m con strisce pedonali,
+  linea d'arresto, semafori a ciclo con riflesso sull'asfalto e omino pedonale.
 - La città in 2D è un quartiere vario: condomini, case giapponesi col tetto a falde e le finestre di carta,
   konbini illuminati con i distributori automatici, torri di uffici in vetro, santuari col torii rosso e le
   lanterne, giardinetti con panchina e lampione, magazzini con la saracinesca numerata, banchi di ramen con le
