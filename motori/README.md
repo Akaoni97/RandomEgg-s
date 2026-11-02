@@ -176,6 +176,10 @@ quasi quadrata. Senza la vista 2D resta una versione in prospettiva.
   (più costano, più chilometri chiedono) e ci sono quattro traguardi che non si comprano: 25 km rodaggio finito
   (+3 % di potenza), 75 km cambiate più rapide, 150 km cliente fisso (−10 % in officina), 300 km leggenda della
   notte (+3 % di potenza e +4 % di aderenza).
+- Supra in 2D più dettagliata: riflessi morbidi sulla carrozzeria, filo di luce sulla fiancata, ombra sotto le
+  porte, riflessi sui vetri e ombre di contatto delle gomme. Dietro le razze si vedono il disco forato, che gira
+  con la ruota e si arroventa nelle frenate forti, e la pinza dorata ferma (il colore si cambia al Neon Kustom).
+- Cielo vivo: fari della città che spazzano il cielo, un elicottero col faro di ricerca, stelle cadenti.
 - La città in 2D è un quartiere vario: condomini, case giapponesi col tetto a falde e le finestre di carta,
   konbini illuminati con i distributori automatici, torri di uffici in vetro, santuari col torii rosso e le
   lanterne, giardinetti con panchina e lampione, magazzini con la saracinesca numerata, banchi di ramen con le

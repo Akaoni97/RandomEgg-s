@@ -45,6 +45,10 @@ const GAME_COSMETICS = {
   tint: { label: 'Vetri', items: [ { id: 'none', name: 'Chiari', price: 0 }, { id: 'dark', name: 'Oscurati', price: 250 } ] },
   decal: { label: 'Adesivo sulla portiera', items: [
     { id: 'none', name: 'Nessuno', price: 0 }, { id: '2JZ', name: '2JZ', price: 120 }, { id: 'JDM', name: 'JDM', price: 120 }, { id: 'NIGHT RUN', name: 'Night Run', price: 180 } ] },
+  caliper: { label: 'Pinze dei freni', items: [
+    { id: 'none', name: 'Oro di serie', price: 0 },
+    { id: '#d0141e', name: 'Rosse', price: 300 }, { id: '#2e6bff', name: 'Blu', price: 300 },
+    { id: '#b8ff3a', name: 'Verde acido', price: 350 }, { id: '#1c1d22', name: 'Nere', price: 250 } ] },
   paint: { label: 'Vernice speciale', items: [
     { id: 'none', name: 'Tinte di serie', price: 0 },
     { id: '#6d2bd9', name: 'Viola perlato', price: 900 }, { id: '#1f8f4e', name: 'Verde Kawasaki', price: 900 },
