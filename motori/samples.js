@@ -79,6 +79,21 @@ class SamplePlayer {
     return item;
   }
 
+  // inviluppo dello "stu-tu-tu": colpi da ~20 Hz che rallentano a ~9 Hz, irregolari, e si spengono
+  static chop(len, a) {
+    const n = Math.max(16, Math.round(len * 1000)), c = new Float32Array(n);
+    let ph = 0, rate = 19 + Math.random() * 4, amp = 1;
+    for (let i = 0; i < n; i++) {
+      const t = i / 1000, pr = i / n;
+      ph += rate / 1000;
+      if (ph >= 1) { ph -= 1; amp = 0.6 + 0.4 * Math.random(); rate = (19 - 10 * pr) * (0.9 + 0.2 * Math.random()); }
+      const pulse = 0.06 + 0.94 * Math.pow(0.5 + 0.5 * Math.cos(2 * Math.PI * ph), 3) * amp;
+      c[i] = a * pulse * Math.min(1, t / 0.008) * Math.pow(1 - pr, 0.8);
+    }
+    c[n - 1] = 0;
+    return c;
+  }
+
   has(role) { return this.items.some((i) => i.fx === role && !i.mute); }
 
   // effetto singolo: un file a caso del suo tipo, con piccole variazioni di tono
@@ -93,8 +108,9 @@ class SamplePlayer {
     src.connect(g).connect(this.fxOut);
     const len = opt.len ? Math.min(opt.len, it.dur) : it.dur;
     const off = opt.len && it.dur > len + 0.2 ? Math.random() * (it.dur - len - 0.1) : 0;
-    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + 0.006);
-    if (opt.len) { g.gain.setValueAtTime(a, t + len * 0.55); g.gain.linearRampToValueAtTime(0, t + len); }
+    if (opt.chop) g.gain.setValueCurveAtTime(SamplePlayer.chop(len, a), t, len);
+    else { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + 0.006); }
+    if (opt.len && !opt.chop) { g.gain.setValueAtTime(a, t + len * 0.55); g.gain.linearRampToValueAtTime(0, t + len); }
     src.start(t, off, len + 0.02);
     this.voices++; src.onended = () => { this.voices--; g.disconnect(); };
     return true;

@@ -173,7 +173,7 @@ class StreetGame {
     if (c > this.s.money) return { ok: false, why: `Un treno di gomme costa € ${c}` };
     this.s.money -= c; this.sim.tireWear = 0; this.sim.tireT = 24; this.say(`Gomme nuove montate${c ? `: − € ${c}` : ''}`, 'buy'); return { ok: true };
   }
-  owns(cat, id) { return this.mode === 'free' || TUNING[cat].items[0].id === id || !!this.s.owned[cat + ':' + id]; }
+  owns(cat, id) { return this.mode === 'free' || TUNING[cat].items[0].id === id || tuningItem(cat, id).price === 0 || !!this.s.owned[cat + ':' + id]; }
   price(cat, id) { return this.owns(cat, id) ? 0 : tuningItem(cat, id).price; }
   canMount() { return this.mode === 'free' || (Math.abs(this.sim.v) < 0.5 && !this.race); }
   buy(cat, id) {

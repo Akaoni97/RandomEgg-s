@@ -864,6 +864,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     S.tune = Object.assign({}, TUNING_PRESETS[0].sel, saved.tune || {});
   } catch (e) { /* storage non disponibile */ }
   if (!S.realSnd) { S.realSnd = 1; S.mix = 55; }
+  if (!S.flut) { S.flut = 1; if (S.tune.bov === 'oem') S.tune.bov = 'none'; }   // stu-tu-tu di serie
   let TP = tuningParams(S.tune);
 
   // ---------------------------------------------------------------- autoradio (musica bassa mentre si guida)
@@ -1687,7 +1688,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     player.updateFx({ boost: sm.pipeP, turbo: sm.tur, thr: sm.thr, cut: sm.cut, rpm: sm.rpm, running: sm.running }, lv);
     for (const e of events) if (e.type === 'bov') {
       const I = e.I || 0.8, flut = sm.cfg.valve === 'flutter' || !player.has('bov');
-      if (flut) player.shot('flutter', 0.55 + 0.45 * I, { len: 0.35 + 0.5 * I });
+      if (flut) { const o = { len: 0.8 + 0.7 * I, chop: true }; if (!player.shot('flutter', 1.1 + 0.4 * I, o)) player.shot('bov', 0.9 + 0.3 * I, o); }
       else player.shot('bov', (sm.cfg.valve === 'recirc' ? 0.5 : 0.85) * Math.min(1.2, 0.4 + 0.7 * I));
     }
     if (!player.has('pop') || !sm.running) return;

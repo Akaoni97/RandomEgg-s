@@ -179,7 +179,7 @@ class EngineDSP {
     const T = this.T;
     if (e.type === 'bov') {
       this.bov.I = Math.min(1.3, e.I || 0.8); this.bov.t = 0; this.bov.env = 0.0001;
-      this.bov.len = this.tn.bov.v === 2 ? 0.45 + 0.35 * this.bov.I : 0.16 + 0.38 * this.bov.I;
+      this.bov.len = this.tn.bov.v === 2 ? 0.75 + 0.65 * this.bov.I : 0.16 + 0.38 * this.bov.I;
       this.chirpPh = 0;
       this.bov.rate = 23;
     } else if (e.type === 'grind') this.grind = 1;
@@ -407,8 +407,8 @@ class EngineDSP {
         if (bv.v === 2) {
           this.flPh += B.rate / sr;
           if (this.flPh > 1) { this.flPh -= 1; this.flAmp = 0.65 + 0.35 * Math.random(); B.rate *= 0.94 + 0.12 * Math.random(); }   // battiti irregolari
-          const chop = Math.pow(0.5 + 0.5 * Math.cos(TAU * this.flPh), 3) * this.flAmp;
-          bov = (nb * 0.45 + this.flBP.p(nz2) * 1.3 + low * 0.5 + Math.sin(TAU * this.tph) * 0.06) * chop * env * wob * B.I * bv.g + click * bv.g * B.I * 0.5;
+          const chop = Math.pow(0.5 + 0.5 * Math.cos(TAU * this.flPh), 4) * this.flAmp;
+          bov = (nb * 0.5 + this.flBP.p(nz2) * 1.5 + low * 0.95 + Math.sin(TAU * this.tph) * 0.1) * chop * env * wob * B.I * bv.g * 1.35 + click * bv.g * B.I * 0.5;
         } else {
           bov = (nb * 0.62 + air * 0.32 + low * 0.45) * env * wob * B.I * bv.g + click * bv.g * B.I;
           // sibilo tonale iniziale (tipo "trombetta") che scende di frequenza

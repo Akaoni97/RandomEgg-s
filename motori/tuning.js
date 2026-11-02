@@ -51,7 +51,7 @@ const TUNING = {
       { id: 'ssqv', price: 380, brand: 'HKS', name: 'SSQV', note: 'Sfiato in atmosfera con il celebre sibilo acuto a “trombetta”.', dsp: { v: 1, f0: 2700, sw: 1100, q: 1.1, g: 0.85, chirp: 1 } },
       { id: 'raceport', price: 450, brand: 'Turbosmart', name: 'Race Port', note: 'Grande portata: soffio forte e pieno, molto aria.', dsp: { v: 1, f0: 2000, sw: 900, q: 0.7, g: 0.9, chirp: 0.2 } },
       { id: 'greddy', price: 300, brand: 'GReddy', name: 'Type-RS', note: 'Regolabile, tono più basso e rotondo.', dsp: { v: 1, f0: 1600, sw: 700, q: 0.75, g: 0.7, chirp: 0 } },
-      { id: 'none', price: 0, brand: '—', name: 'Nessuna (flutter)', note: 'Il compressore va in pompaggio: il famoso “stu-tu-tu”.', dsp: { v: 2, f0: 1500, sw: 1000, q: 0.75, g: 0.55, chirp: 0 } },
+      { id: 'none', price: 0, brand: '—', name: 'Nessuna (flutter)', note: 'Il compressore va in pompaggio: il famoso “stu-tu-tu”.', dsp: { v: 2, f0: 1500, sw: 1000, q: 0.75, g: 0.75, chirp: 0 } },
     ],
   },
   wastegate: {

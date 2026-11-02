@@ -242,7 +242,7 @@ class SupraSim {
     this.tur += (tgtT - this.tur) * Math.min(1, h / tau);
     if (!closed) this.pipeP += (tc.max * Math.min(1, this.tur * this.tur) * SIM_SS(0.12, 0.6, this.thr) - this.pipeP) * Math.min(1, h / 0.08);
     else this.pipeP += (0 - this.pipeP) * Math.min(1, h / (cfg.valve === 'flutter' ? 0.45 : 0.07));
-    if (closed && !this.bovLatch && this.pipeP > 0.2) {
+    if (closed && !this.bovLatch && this.pipeP > (cfg.valve === 'flutter' ? 0.1 : 0.2)) {
       this.bovLatch = true;
       this.events.push({ type: 'bov', I: SIM_CLAMP(this.pipeP / tc.max * 1.1, 0.35, 1.25) });
     }
