@@ -176,6 +176,10 @@ quasi quadrata. Senza la vista 2D resta una versione in prospettiva.
   (più costano, più chilometri chiedono) e ci sono quattro traguardi che non si comprano: 25 km rodaggio finito
   (+3 % di potenza), 75 km cambiate più rapide, 150 km cliente fisso (−10 % in officina), 300 km leggenda della
   notte (+3 % di potenza e +4 % di aderenza).
+- La città in 2D è un quartiere vario: condomini, case giapponesi col tetto a falde e le finestre di carta,
+  konbini illuminati con i distributori automatici, torri di uffici in vetro, santuari col torii rosso e le
+  lanterne, giardinetti con panchina e lampione, magazzini con la saracinesca numerata, banchi di ramen con le
+  tende noren e parcheggi a piani; dietro, sagome a gradoni e guglie.
 - Città in 2D: lungo la strada ci sono tre luoghi fissi, che si ripetono ogni 2,4 km: **Benzina 24H**, **Officina 2JZ**
   e **Neon Kustom** (ricambi estetici). Una mappa a barra in basso scorre mentre guidi e mostra i luoghi nei
   prossimi 2,7 km, la consegna in corso e le pattuglie vicine. Quando sei davanti a un ingresso compare

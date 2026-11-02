@@ -387,8 +387,19 @@ class Street2D {
       if (r(12) < 0.5) { px('#2a2560', Math.floor(w / 2), top - 14, 2, 14); meta.beacons.push({ x: Math.floor(w / 2), y: top - 15 }); }
       t = { c, ...meta }; this.tiles.set(key, t); return t;
     }
+    if (!far) {
+      // quartiere vario: condomini, case con tetto a falde, konbini, uffici di vetro, santuari, giardinetti,
+      // magazzini, banchi di ramen, parcheggi a piani
+      const q = r(20), kind = q < 0.3 ? 'apt' : q < 0.42 ? 'house' : q < 0.52 ? 'konbini' : q < 0.62 ? 'office' : q < 0.68 ? 'shrine' : q < 0.76 ? 'park' : q < 0.84 ? 'warehouse' : q < 0.92 ? 'ramen' : 'parking';
+      if (kind !== 'apt') { t = this.buildingKind(kind, r); this.tiles.set(key, t); if (this.tiles.size > 260) this.tiles.delete(this.tiles.keys().next().value); return t; }
+    }
     const base = far ? ['#171640', '#1c1a4a', '#141338', '#1e1844'][Math.floor(r(4) * 4)] : this.C.mid[Math.floor(r(4) * this.C.mid.length)];
     px(this.C.ink, 0, top - 1, w + 2, h + 1);
+    if (far && r(30) < 0.35) {                                                                       // sagome lontane più varie: gradoni e guglie
+      const sw2 = Math.floor(w * 0.5), sx2 = Math.floor((w - sw2) / 2);
+      px(this.C.ink, sx2, top - 13, sw2 + 2, 13); px(base, sx2 + 1, top - 12, sw2, 12);
+      if (r(31) < 0.5) { px(this.C.ink, Math.floor(w / 2), top - 30, 2, 18); meta.beacons.push({ x: Math.floor(w / 2), y: top - 31 }); }
+    }
     px(base, 1, top, w, h);
     if (!far) {
       px(Street2D.shade(base, 0.16), 1, top, 4, h); px(Street2D.shade(base, 0.08), 5, top, 2, h); px(Street2D.shade(base, -0.3), w - 1, top, 2, h);
@@ -469,6 +480,139 @@ class Street2D {
     return t;
   }
 
+  // edifici del piano vicino, uno per tipo; la tessera ha il piano strada sul bordo basso
+  buildingKind(kind, r) {
+    const C = this.C, ink = C.ink;
+    const dims = { house: [62, 50], konbini: [70, 50], office: [60, 128], shrine: [72, 62], park: [66, 40], warehouse: [68, 54], ramen: [56, 48], parking: [70, 74] }[kind];
+    const w = dims[0] + Math.floor(r(1) * 6), h = dims[1] + Math.floor(r(2) * (kind === 'office' ? 30 : 10)), top = 30;
+    const c = document.createElement('canvas'); c.width = w + 2; c.height = h + top + 1;
+    const x = c.getContext('2d'), gy = top + h;                              // gy: livello del marciapiede
+    const px = (col, xx, yy, ww = 1, hh = 1) => { x.fillStyle = col; x.fillRect(Math.round(xx), Math.round(yy), ww, hh); };
+    const meta = { w: w + 2, h: h + top + 1, signs: [], beacons: [], shop: null, glows: [] };
+    const win = (xx, yy, ww, hh, lit, col) => { px(ink, xx - 1, yy - 1, ww + 2, hh + 2); px(lit ? col : '#0d1426', xx, yy, ww, hh); if (lit) px(Street2D.shade(col, 0.35), xx, yy, ww, 1); };
+    const tree = (cx, cy, rr, hue) => {
+      px('#2a1d12', cx - 1, cy, 3, gy - cy);
+      for (let dy = -rr; dy <= rr; dy++) { const ww = Math.round(Math.sqrt(rr * rr - dy * dy) * 2); px(dy < -rr / 3 ? Street2D.shade(hue, 0.25) : dy > rr / 3 ? Street2D.shade(hue, -0.3) : hue, cx - ww / 2, cy - rr + dy, ww, 1); }
+      for (let k = 0; k < 6; k++) px(Street2D.shade(hue, 0.45), cx - rr / 2 + r(40 + k + cx) * rr, cy - rr * 1.6 + r(50 + k + cx) * rr, 2, 1);
+    };
+    const vending = (vx, col) => {
+      px(ink, vx - 1, gy - 26, 13, 26); px('#d8dde6', vx, gy - 25, 11, 25); px(col, vx + 1, gy - 23, 9, 12);
+      for (let k = 0; k < 3; k++) for (let q = 0; q < 3; q++) px(['#c42a1a', '#2b8a6e', '#ffd23f', '#163a8c'][(k + q) % 4], vx + 2 + q * 3, gy - 22 + k * 4, 2, 3);
+      px('#1a1d2a', vx + 2, gy - 8, 7, 3);
+      meta.glows.push({ x: vx + 5, y: gy - 16, r: 14, col, a: 0.12 });
+    };
+    if (kind === 'house') {
+      const wall = ['#4a3f55', '#3d4a52', '#56473a', '#3f3550'][Math.floor(r(4) * 4)];
+      px(ink, 0, top + 10, w + 2, h - 9); px(wall, 1, top + 11, w, h - 10);
+      for (let yy = top + 13; yy < gy; yy += 4) px(Street2D.shade(wall, -0.12), 1, yy, w, 1);    // perlinato
+      // tetto a falde di tegole scure
+      for (let j = 0; j < 14; j++) { const ext = 4 - Math.round(j * 0.3), ww = w + 2 + ext * 2 - j * 2; px(j % 3 === 0 ? '#2a3352' : '#1b2236', Math.round((w + 2 - ww) / 2), top - 3 + j, ww, 1); }
+      px(ink, -2, top + 10, w + 6, 2); px('#3a4468', 0, top - 4, w + 2, 1);
+      // finestre di carta (shoji) al piano alto, porta scorrevole e finestra al piano terra
+      const warm = r(5) < 0.75;
+      for (const wx of [8, w - 26]) { win(wx, top + 16, 18, 11, warm, '#ffe6a3'); if (warm) { for (let k = 4; k < 18; k += 5) px('#c89a50', wx + k, top + 16, 1, 11); px('#c89a50', wx, top + 21, 18, 1); meta.glows.push({ x: wx + 9, y: top + 22, r: 12, col: '#ffcf7a', a: 0.06 }); } }
+      px(ink, 7, gy - 22, 22, 22); px('#6b4a2e', 8, gy - 21, 20, 21); px('#ffe6a3', 10, gy - 19, 7, 12); px('#ffe6a3', 19, gy - 19, 7, 12);
+      for (const k of [10, 19]) { px('#c89a50', k + 3, gy - 19, 1, 12); px('#c89a50', k, gy - 13, 7, 1); }
+      win(w - 26, gy - 20, 16, 9, r(6) < 0.5, '#cfefff');
+      px('#5a6070', w - 10, gy - 30, 8, 6); px('#8a90a6', w - 10, gy - 30, 8, 1);                // condizionatore
+      // lanterna all'ingresso, cassetta della posta, siepe
+      px(ink, 32, gy - 22, 5, 8); px('#ff5a3a', 33, gy - 21, 3, 6); meta.glows.push({ x: 34, y: gy - 18, r: 10, col: '#ff5a3a', a: 0.12 });
+      px('#c42a1a', w - 32, gy - 12, 5, 4); px(ink, w - 31, gy - 8, 1, 8);
+      for (let k = 1; k < w; k += 3) { px('#1f4a2e', k, gy - 6, 3, 6); px('#2f6a3e', k, gy - 6, 2, 2); }
+      if (r(7) < 0.5) { px(ink, w - 20, gy - 9, 1, 9); px(ink, w - 14, gy - 9, 1, 9); x.strokeStyle = '#6a7090'; x.beginPath(); x.arc(w - 20, gy - 3, 3, 0, 7); x.arc(w - 12, gy - 3, 3, 0, 7); x.stroke(); }   // bicicletta
+      meta.shop = { x: 18, w: 22, col: '#ffcf7a' };
+    } else if (kind === 'konbini') {
+      const brand = [['#2b8a4e', '#ffb000', 'MART'], ['#163a8c', '#2ee6ff', 'MINI'], ['#e2690f', '#c42a1a', '24 ORE']][Math.floor(r(4) * 3)];
+      px(ink, 0, top + 6, w + 2, h - 5); px('#d8dde6', 1, top + 7, w, h - 6);
+      px(brand[0], 1, top + 9, w, 4); px(brand[1], 1, top + 13, w, 2); px(brand[0], 1, top + 15, w, 4);
+      const tw = this.textW(brand[2], 2); px(ink, (w - tw) / 2 - 3, top - 4, tw + 6, 15); px('#f4f1e6', (w - tw) / 2 - 2, top - 3, tw + 4, 13);
+      this.text(x, brand[2], (w + 2 - tw) / 2, top, brand[0], 2);
+      meta.glows.push({ x: w / 2, y: top + 3, r: 30, col: '#fff6e0', a: 0.07 });
+      // vetrata illuminata con scaffali e un cliente
+      px(ink, 4, gy - 24, w - 22, 24); px('#eaf6ff', 5, gy - 23, w - 24, 23);
+      for (let s2 = 0; s2 < 3; s2++) { px('#9aa3b2', 7, gy - 20 + s2 * 7, w - 28, 1); for (let k = 8; k < w - 22; k += 4) px(['#c42a1a', '#2b8a6e', '#ffd23f', '#163a8c', '#ff2e88'][Math.floor(r(k + s2 * 9) * 5)], k, gy - 23 + s2 * 7, 2, 3); }
+      px('#1a1530', 20 + r(8) * 20, gy - 15, 4, 15); px(C.skin, 20 + r(8) * 20, gy - 18, 4, 3);
+      for (let k = 4; k < w - 18; k += 16) px('#b8c0d0', k, gy - 23, 1, 23);
+      vending(w - 13, '#7fe7ff');
+      meta.shop = { x: (w - 18) / 2, w: w - 22, col: '#eaf6ff' }; meta.glows.push({ x: (w - 18) / 2, y: gy - 10, r: 34, col: '#eaf6ff', a: 0.1 });
+    } else if (kind === 'office') {
+      const glass = ['#123049', '#163a4a', '#1b2a52'][Math.floor(r(4) * 3)];
+      px(ink, 0, top - 1, w + 2, h + 1); px(glass, 1, top, w, h);
+      for (let yy = top + 3; yy < gy - 14; yy += 6) {
+        const litFloor = r(yy) < 0.35;
+        for (let xx = 3; xx < w - 3; xx += 6) {
+          const on = litFloor ? r(xx + yy * 1.3) < 0.8 : r(xx + yy * 1.3) < 0.12;
+          px(on ? (litFloor ? '#bfe9ff' : '#ffe6a3') : Street2D.shade(glass, 0.18), xx, yy, 5, 4);
+        }
+        px(Street2D.shade(glass, -0.3), 1, yy + 4, w, 2);
+      }
+      for (let k = 0; k < h; k += 3) px('rgba(160,220,255,.12)', 1 + ((k * 3) % w), top + k, 6, 1);   // riflessi sul vetro
+      px(ink, 0, top - 6, w + 2, 6); px(Street2D.shade(glass, 0.3), 1, top - 5, w, 4);
+      const logo = ['NEO', 'KAI', 'ZEN', 'ORION'][Math.floor(r(9) * 4)];
+      meta.signs.push({ word: logo, sc: 2, x: Math.round((w + 2 - this.textW(logo, 2)) / 2), y: top + 4, col: C.neon[Math.floor(r(10) * 5)], flick: false });
+      px(ink, w / 2, top - 22, 2, 16); meta.beacons.push({ x: Math.floor(w / 2), y: top - 23 });
+      px('#0b0f1c', 1, gy - 14, w, 14); px('#cfefff', 6, gy - 12, w - 12, 12); for (let k = 6; k < w - 6; k += 8) px('#7a86a0', k, gy - 12, 1, 12);
+      meta.shop = { x: w / 2, w: w - 12, col: '#cfefff' };
+    } else if (kind === 'shrine') {
+      // alberi scuri dietro, santuario col tetto curvo, torii rosso, lanterne di pietra e di carta
+      tree(10, gy - 30, 14, '#16351f'); tree(w - 10, gy - 34, 16, '#1a3d24'); tree(w / 2, gy - 44, 18, '#143020');
+      const sx = w / 2 - 22;
+      px(ink, sx, gy - 24, 44, 24); px('#5a2a1a', sx + 1, gy - 23, 42, 23); px('#ffcf7a', sx + 14, gy - 18, 16, 14);
+      for (let k = 0; k < 9; k++) px(k < 2 ? '#2a3352' : '#1b2236', sx - 6 + k * 0.5, gy - 32 + k, 56 - k, 1);
+      px(ink, sx - 8, gy - 33, 60, 2); px(ink, sx - 9, gy - 35, 3, 3); px(ink, sx + 50, gy - 35, 3, 3);
+      meta.glows.push({ x: sx + 22, y: gy - 12, r: 16, col: '#ffcf7a', a: 0.1 });
+      const tx = 6, tw2 = w - 10;
+      px('#c42a1a', tx + 6, gy - 40, 4, 40); px('#c42a1a', tx + tw2 - 10, gy - 40, 4, 40);
+      px(ink, tx, gy - 44, tw2, 4); px('#e0402a', tx + 1, gy - 43, tw2 - 2, 2); px('#c42a1a', tx + 4, gy - 36, tw2 - 8, 3);
+      px(ink, tx + tw2 / 2 - 3, gy - 40, 6, 5); px('#d9c08a', tx + tw2 / 2 - 2, gy - 39, 4, 3);
+      for (const lx of [16, w - 22]) { px('#7a7e8a', lx, gy - 12, 6, 12); px('#9aa0ae', lx - 2, gy - 14, 10, 2); px('#ffcf7a', lx + 2, gy - 10, 2, 3); }
+      for (let k = 0; k < 4; k++) { const lx = sx + 4 + k * 11; px(ink, lx, gy - 22, 6, 7); px('#ff3a2a', lx + 1, gy - 21, 4, 5); meta.glows.push({ x: lx + 3, y: gy - 18, r: 8, col: '#ff3a2a', a: 0.12 }); }
+    } else if (kind === 'park') {
+      tree(14, gy - 26, 13, '#1f4a2e'); tree(w - 16, gy - 30, 15, '#235532'); if (w > 84) tree(w / 2, gy - 22, 10, '#1a4028');
+      px('#3a3f58', 0, gy - 4, w + 2, 4); px('#5a6080', 0, gy - 4, w + 2, 1);                     // muretto
+      px(ink, w / 2 - 9, gy - 9, 18, 2); px('#6b4a2e', w / 2 - 8, gy - 9, 16, 1); px(ink, w / 2 - 7, gy - 7, 1, 3); px(ink, w / 2 + 6, gy - 7, 1, 3);   // panchina
+      px(ink, w / 2 + 22, gy - 34, 2, 34); px('#ffe2a8', w / 2 + 20, gy - 36, 6, 2); meta.glows.push({ x: w / 2 + 23, y: gy - 34, r: 18, col: '#ffcf7a', a: 0.1 }); meta.glows.push({ x: w / 2 + 23, y: gy - 2, r: 20, col: '#ffcf7a', a: 0.05, ry: 0.25 });
+      vending(4, '#ff9ccf');
+      if (r(11) < 0.5) { px('#c42a1a', w - 30, gy - 10, 6, 6); px('#d9c08a', w - 29, gy - 9, 4, 1); }   // altalena / gioco
+    } else if (kind === 'warehouse') {
+      const tin = ['#3a4258', '#4a3f38', '#33473f'][Math.floor(r(4) * 3)];
+      px(ink, 0, top + 2, w + 2, h - 1); px(tin, 1, top + 3, w, h - 2);
+      for (let k = 2; k < w; k += 3) px(Street2D.shade(tin, -0.2), k, top + 3, 1, h - 2);           // lamiera ondulata
+      for (let j = 0; j < 6; j++) px(Street2D.shade(tin, 0.15), 1 + j * 2, top + 2 - j, w - j * 4, 1);
+      const dw = Math.floor(w * 0.55), dx = 6;
+      px(ink, dx - 1, gy - 32, dw + 2, 32); px('#5a6070', dx, gy - 31, dw, 31);
+      for (let yy = gy - 28; yy < gy; yy += 4) px('#454b5a', dx, yy, dw, 1);
+      for (let k = 0; k < dw; k += 6) { px('#ffd23f', dx + k, gy - 35, 3, 3); px(ink, dx + k + 3, gy - 35, 3, 3); }
+      const n = String(Math.floor(r(12) * 40) + 1).padStart(2, '0'); this.text(x, n, dx + dw / 2 - 8, gy - 26, '#f4f1e6', 2);
+      win(w - 22, top + 14, 14, 9, r(13) < 0.5, '#ffd36b');
+      px(ink, w - 18, gy - 34, 8, 3); px('#fff6d8', w - 17, gy - 32, 6, 1); meta.glows.push({ x: w - 14, y: gy - 30, r: 22, col: '#fff2c4', a: 0.08 });
+      if (r(14) < 0.6) for (let k = 0; k < 3; k++) px(C.neon[Math.floor(r(15 + k) * 5)], dx + 6 + k * 14, gy - 16 + (k % 2) * 3, 12, 3);   // graffiti
+    } else if (kind === 'ramen') {
+      px(ink, 0, top + 4, w + 2, h - 3); px('#5a3a22', 1, top + 5, w, h - 4);
+      for (let yy = top + 7; yy < gy; yy += 5) px('#4a2e1a', 1, yy, w, 1);
+      for (let j = 0; j < 8; j++) px(j % 2 ? '#2a3352' : '#1b2236', -2 + j * 0.5, top - 4 + j, w + 6 - j, 1);   // tettoia
+      px(ink, 6, top + 9, w - 10, 12); px('#e8d8b0', 7, top + 10, w - 12, 10);
+      const word = w > 60 ? 'RAMEN' : 'SOBA'; this.text(x, word, (w + 2 - this.textW(word, 2)) / 2, top + 11, '#c42a1a', 2);
+      // tende noren davanti alla porta, luce calda dietro
+      px('#ffcf7a', 6, gy - 26, w - 10, 26);
+      for (let k = 0; k < 4; k++) { const nx = 6 + k * ((w - 10) / 4); px(ink, nx, gy - 26, (w - 10) / 4 - 1, 15); px('#1a2a52', nx + 1, gy - 26, (w - 10) / 4 - 3, 14); px('#f4f1e6', nx + (w - 10) / 8 - 2, gy - 22, 3, 3); }
+      meta.glows.push({ x: w / 2, y: gy - 8, r: 26, col: '#ffcf7a', a: 0.12 });
+      for (const lx of [2, w - 6]) { px(ink, lx, top + 22, 7, 11); px('#ff3a2a', lx + 1, top + 23, 5, 9); px('#ffd0a0', lx + 2, top + 26, 3, 1); meta.glows.push({ x: lx + 3, y: top + 27, r: 11, col: '#ff3a2a', a: 0.14 }); }
+      meta.shop = { x: w / 2, w: w - 10, col: '#ffcf7a' }; meta.steam = true;
+    } else {                                                                                   // parcheggio a piani
+      px(ink, 0, top - 1, w + 2, h + 1); px('#4a4e5c', 1, top, w, h);
+      for (let lv = 0; lv < 4; lv++) {
+        const yy = top + 4 + lv * 17; if (yy + 12 > gy) break;
+        px('#151826', 3, yy, w - 4, 11); px('#ffd23f', 3, yy + 10, w - 4, 1);
+        for (let k = 0; k < 4; k++) if (r(lv * 7 + k) < 0.6) { const cx2 = 6 + k * ((w - 10) / 4); px(['#c42a1a', '#e8e6df', '#2b4c7e', '#8a8f96', '#1d1f22'][Math.floor(r(lv + k * 3) * 5)], cx2, yy + 5, 14, 4); px('#0b0f1c', cx2 + 2, yy + 9, 3, 2); px('#0b0f1c', cx2 + 10, yy + 9, 3, 2); }
+        meta.glows.push({ x: w / 2, y: yy + 2, r: 30, col: '#dfeaff', a: 0.04, ry: 0.15 });
+      }
+      px(ink, w - 16, top - 14, 14, 14); px('#163a8c', w - 15, top - 13, 12, 12); this.text(x, 'P', w - 12, top - 11, '#f4f1e6', 2);
+      meta.glows.push({ x: w - 9, y: top - 7, r: 12, col: '#4f7bff', a: 0.12 });
+    }
+    return { c, ...meta };
+  }
+
   drawCity(g, dist, t, layer, speed, baseY, tileW) {
     const off = dist * speed;
     const i0 = Math.floor(off / tileW) - 2, i1 = i0 + Math.ceil(this.LW / tileW) + 4;
@@ -488,6 +632,7 @@ class Street2D {
         if (on) this.text(g, s.word, x + s.x, y + s.y, 'rgba(255,255,255,.35)', s.sc);
       }
       for (const bc of b.beacons) if (Math.floor(t * 1.5 + i) % 2) { g.fillStyle = '#ff3b3b'; g.fillRect(x + bc.x, y + bc.y, 2, 2); this.light(g, x + bc.x + 1, y + bc.y + 1, 5, 5, '#ff3b3b', 0.12, 2); }
+      if (b.glows) for (const gl of b.glows) this.light(g, x + gl.x, y + gl.y, gl.r, gl.r * (gl.ry || 0.7), gl.col, gl.a || 0.09, 3);
       if (b.shop) shops.push({ x: x + b.shop.x, w: b.shop.w, col: b.shop.col });
     }
     return shops;
@@ -1188,11 +1333,12 @@ class Street2D {
     const c = this.ctx; c.imageSmoothingEnabled = false;
     c.fillStyle = '#04060b'; c.fillRect(0, 0, this.canvas.width, this.canvas.height);
     // inquadratura: zoom su un punto (sigla) o scena intera
-    const z = Math.max(1, this.zoom || 1);
+    const z = Math.max(1, this.zoom || 1), pad = this.padBottom || 0;
     let src = [0, 0, this.LW, this.LH];
-    if (z > 1.001) {
+    if (z > 1.001 || pad) {
+      // padBottom: la ripresa può scendere sotto la scena (lì c'è la banda nera della sigla)
       const sw = this.LW / z, sh = this.LH / z, f = this.zoomFocus || { x: this.LW / 2, y: this.LH / 2 };
-      const sx = Math.max(0, Math.min(this.LW - sw, f.x - sw / 2)), sy = Math.max(0, Math.min(this.LH - sh, f.y - sh / 2));
+      const sx = Math.max(0, Math.min(this.LW - sw, f.x - sw / 2)), sy = Math.max(0, Math.min(this.LH - sh + pad, f.y - sh / 2));
       src = [sx, sy, sw, sh];
       c.drawImage(this.lo, sx + shakeX / z, sy + shake / z, sw, sh, 0, 0, this.canvas.width, this.canvas.height);
     } else c.drawImage(this.lo, shakeX * (this.canvas.height / this.LH), shake * (this.canvas.height / this.LH), this.canvas.width, this.canvas.height);

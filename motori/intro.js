@@ -95,7 +95,7 @@
         cv.width = LW * 2; cv.height = 720;
         const v = this.v2 = new Street2D(cv);
         v.resize = () => {}; v.LW = LW; v.lo.width = LW; v.lo.height = 360; v.canvas.width = LW * 2; v.canvas.height = 720;
-        v.quality = 'alta';
+        v.quality = 'alta'; v.padBottom = 60; v.bars = 0;
         this.cv.style.display = 'none';
       } catch (err) { this.v2 = null; return false; }
       const sm = this.sim = new SupraSim();
@@ -130,10 +130,12 @@
       if (i !== this.cam.shot) { const cut = this.cam.shot >= 0; this.cam.shot = i; if (cut && T > 0) { this.flash = Math.max(this.flash, 0.35); this.cam.z = zt; } }
       this.cam.z += (zt - this.cam.z) * Math.min(1, dt * 3);
       const W2 = 200 * k;
-      const tx = cp.x + sh.fx * W2, ty = cp.y + sh.fy * W2;
+      // le bande nere della pagina coprono l'11 % sopra e sotto: il fondo della Supra resta al 78 % dell'altezza
+      const shH = v.LH / Math.max(1, this.cam.z), carBottom = cp.y + 24 * k;
+      const tx = cp.x + sh.fx * W2, ty = Math.min(cp.y + sh.fy * W2, carBottom - 0.78 * shH + shH / 2);
       this.cam.fx += (tx - this.cam.fx) * Math.min(1, dt * (this.cam.fx ? 4 : 99)); this.cam.fy += (ty - this.cam.fy) * Math.min(1, dt * (this.cam.fy ? 4 : 99));
       v.zoom = this.cam.z; v.zoomFocus = { x: this.cam.fx + (Math.random() - 0.5) * this.shake * 3, y: this.cam.fy + (Math.random() - 0.5) * this.shake * 2 };
-      v.bars += ((sh.b ?? 0) - (v.bars || 0)) * Math.min(1, dt * 3);
+
     }
     // --------------------------------------------------------------- intro 3D (non più usata: la sigla è in 2D)
     init3D() {
