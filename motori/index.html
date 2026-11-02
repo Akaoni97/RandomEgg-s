@@ -1812,7 +1812,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     applySettings(); renderMode(); saveGame(); flash('Nuova carriera: € 3.000 e una Supra di serie', 2.4);
   });
   window.addEventListener('pagehide', saveGame);
-  window.nightRun = { sim, game, get view() { return street3d; } };   // utile per provare eventi dalla console
+  window.nightRun = { sim, game, get view() { return street3d; }, get view2d() { return street2d; } };   // utile per provare eventi dalla console
 
   // ---------------------------------------------------------------- ciclo principale
   const joints = {};
@@ -1861,7 +1861,10 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       smpMeter(dt);
     }
     if (garage && garageOn) {
-      flameT = (sim.cut === 2 || sim.cut === 3) && TP.sim.sparkCut ? 1 : sim.cut === 1 && sim.cfg.pops && sim.ovr < 3 ? 0.35 : 0;
+      // fiammate: limitatore a taglio d'accensione, e al rilascio del gas (più a lungo con la mappa pop & bang)
+      const liftT = sim.cfg.pops ? 2.8 : 1.1;
+      flameT = (sim.cut === 2 || sim.cut === 3) && TP.sim.sparkCut ? 1
+        : sim.cut === 1 && sim.ovr < liftT && sim.rpm > 2200 ? (sim.cfg.pops ? 0.6 : 0.38) * (1 - sim.ovr / liftT) * Math.min(1, sim.rpm / 4500) * TP.dsp.cat.pop : 0;
       garage.update(dt, { v: sim.v, ww: sim.ww, acc: sim.acc, rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
         ign: sim.ign, brake: sim.in.brake, flame: flameT, spin: Math.min(1, Math.max(0, (Math.abs(sim.ww * sim.P.r - sim.v) - 1.5) / 5)),
         thr: sim.thr, events: ev, skid: sim.skid, damage: sim.damage, tireT: sim.tireT, gear: sim.gear, signal: game.signal ? game.signal.dir : null, high: !!S.high }, game);

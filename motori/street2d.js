@@ -716,6 +716,16 @@ class Street2D {
     const spr = this.carSprite(k), SW = spr.width, left = Math.round(carX - SW / 2);
     if (s.ign) this.light(g, left + SW + (s.high ? 110 : 60) * k, y0 - 2, s.high ? 150 : 80, s.high ? 9 : 7, '#fff2c4', s.high ? 0.1 : 0.08, 4);   // pozza dei fari (più lunga con gli abbaglianti)
     if (s.brake > 0.05) this.light(g, left - 30 * k, y0 - 1, 40, 5, '#ff2a2a', 0.1, 3);             // pozza degli stop
+    // fascio dei fari nell'aria, di notte e sotto la pioggia
+    if (s.ign && (this.day || 0) < 0.6) {
+      const fx = left + SW - 4, fy = y0 - 22 * k, len = s.high ? 260 : 170, a2 = (0.09 + (this.rainOn ? 0.06 : 0)) * (1 - (this.day || 0));
+      g.save(); g.globalCompositeOperation = 'lighter';
+      for (let b = 0; b < 4; b++) {
+        const t2 = (b + 1) / 4; g.fillStyle = `rgba(255,240,200,${a2 * (1 - t2 * 0.6)})`;
+        g.beginPath(); g.moveTo(fx, fy - 2); g.lineTo(fx + len * t2, fy - 6 * t2 - 2); g.lineTo(fx + len * t2, fy + (y0 - fy) * 0.9 * t2 + 4); g.lineTo(fx, fy + 2); g.closePath(); g.fill();
+      }
+      g.restore();
+    }
     this.shadow(g, carX, y0, SW * 0.46, 5);
     // asfalto bagnato: la Supra si specchia sulla strada, sbiadita
     if (this.rainOn && spr.img) {
@@ -723,7 +733,8 @@ class Street2D {
       g.save(); g.globalAlpha = 0.2; g.imageSmoothingEnabled = false;
       g.setTransform(1, 0, 0, -0.55, left, y0 + hgt * 0.55 + 2); g.drawImage(spr, 0, 0); g.restore();
     }
-    const heave = Math.round(-st.heave + idleShake * 0.6);
+    st.popJolt = Math.max(0, (st.popJolt || 0) - dt * 10);
+    const heave = Math.round(-st.heave + idleShake * 0.6 - (st.popJolt > 0.3 ? 1 : 0));
     const skew = -st.pitch * 0.8;
     const squash = Math.max(-0.06, Math.min(0.08, -st.pitch * 0.35));
     const archY = 42 * k + 1, top = y0 - 15 * k - archY * (1 - squash) + heave;
@@ -788,16 +799,27 @@ class Street2D {
       for (let q = 0; q < 5; q++) this.parts.push({ k: 'spark', m: dist + (left + SW - carX) / PPM, y: y0 - 10 - Math.random() * 20, vy: -40 - Math.random() * 60, dx: 6 + Math.random() * 10, r: 1, life: 1 });
     }
     if (s.spin > 0.25 && Math.random() < s.spin * 0.9) this.parts.push({ k: 'smoke', m: dist + (left + 48 * k - carX) / PPM, y: y0 - 8, vy: -12 - Math.random() * 16, r: 4, life: 1, dx: -20 });
-    st.flame = Math.max(0, st.flame - dt * 9);
-    if (s.flame && Math.random() < s.flame * dt * 18) st.flame = 0.7 + Math.random() * 0.5;
-    if (st.flame > 0.05) {
-      const L = Math.round(8 + st.flame * 20);
-      for (let i = 0; i < L; i++) {
-        const wob = Math.round(Math.sin(i * 0.8 + st.t * 40) * 1.5), th = Math.max(1, Math.round((1 - i / L) * 6));
-        g.fillStyle = i < 3 ? '#fff6c2' : i < L * 0.45 ? '#ffb000' : '#ff5a1a'; g.fillRect(Math.round(rx - 2 - i), Math.round(exY - th / 2 + wob), 1, th);
-      }
-      this.light(g, rx - L / 2, exY, L * 0.8, 10, '#ff9a20', 0.18, 3);
+    // scoppiettii: ogni scoppio è una fiammata a strati con una palla di fuoco, braci, fumo e un lampo sulla strada
+    st.flame = Math.max(0, st.flame - dt * 8);
+    st.popFlash = Math.max(0, (st.popFlash || 0) - dt * 6);
+    if (s.flame && Math.random() < s.flame * dt * 22) {
+      const big = Math.random() < 0.35 + s.flame * 0.3;
+      st.flame = big ? 1.1 + Math.random() * 0.4 : 0.6 + Math.random() * 0.4; st.popFlash = big ? 1 : 0.55; st.popJolt = big ? 1.2 : 0.5;
+      for (let q = 0; q < (big ? 9 : 4); q++) this.parts.push({ k: 'spark', m: dist + (rx - carX) / PPM, y: exY + (Math.random() - 0.5) * 4, vy: -20 - Math.random() * 50, dx: -30 - Math.random() * 50, r: 1, life: 1 });
+      this.parts.push({ k: 'smoke', m: dist + (rx - 14 - carX) / PPM, y: exY - 2, vy: -8 - Math.random() * 8, r: 3, life: 0.8, dx: -14 });
     }
+    if (st.flame > 0.05) {
+      const L = Math.round(10 + st.flame * 26), fl = st.flame;
+      for (let i = 0; i < L; i++) {
+        const u = i / L, wob = Math.round(Math.sin(i * 0.9 + st.t * 45) * 1.6 * u), th = Math.max(1, Math.round((1 - u * 0.85) * (4 + fl * 5)));
+        g.fillStyle = u < 0.12 ? '#ffffff' : u < 0.3 ? '#fff2a8' : u < 0.55 ? '#ffb000' : u < 0.8 ? '#ff5a1a' : 'rgba(190,40,20,.7)';
+        g.fillRect(Math.round(rx - 2 - i), Math.round(exY - th / 2 + wob), 1, th);
+        if (u > 0.2 && u < 0.7) { g.fillStyle = '#7ad0ff'; if (i % 5 === 0) g.fillRect(Math.round(rx - 2 - i), Math.round(exY), 1, 1); }   // nucleo azzurro
+      }
+      if (fl > 0.9) { const R = Math.round(3 + (fl - 0.9) * 10); g.fillStyle = '#fff6d0'; this.span(g, rx - L * 0.55, exY, R, R); g.fillStyle = '#ffb000'; this.span(g, rx - L * 0.55, exY, R - 1, R - 2); }
+      this.light(g, rx - L / 2, exY, L * 1.1, 14, '#ff9a20', 0.22 * Math.min(1, fl), 3);
+    }
+    if (st.popFlash > 0.02) this.light(g, rx - 20, y0, 70 * st.popFlash, 8, '#ff8a20', 0.25 * st.popFlash, 3);   // lampo sull'asfalto
     if (s.running && Math.random() < dt * (s.rpm < 1500 ? 2.5 : 0.6)) this.parts.push({ k: 'puff', m: dist + (rx - carX) / PPM, y: exY, vy: -6, r: 2, life: 1, dx: -8 });
     for (const p of this.parts) {
       if (p.k === 'spray' || p.k === 'spark') {
@@ -834,7 +856,7 @@ class Street2D {
     }
     if (game) for (const f of game.fx) if (f.k === 'crash') this.comic('CRASH!', left + SW + 6, carTop, '#ff2e4d', 5, '#ffd23f');
     if ((st.prevV || 0) < 0.6 && s.v >= 0.6 && s.thr > 0.6 && cd('vroom', 3)) this.comic('VROOOM!', carX - 20, carTop - 20, '#ffd23f', 4);
-    if (st.flame > 0.9 && (st.prevFlame || 0) < 0.5 && cd('bang', 0.35)) this.comic(Math.random() < 0.55 ? 'BANG!' : 'POP!', rx - 26, exY - 16, '#ff5a1a', 3, '#ffd23f');
+    if (st.flame > 0.55 && st.flame > (st.prevFlame || 0) + 0.3 && cd('bang', 0.5)) { const w = ['BANG!', 'POP!', 'BRAP!', 'PAH!', 'CRACK!'][Math.floor(Math.random() * 5)]; this.comic(w, rx - 40 - Math.random() * 14, exY - 34 - Math.random() * 12, st.flame > 1 ? '#ffd23f' : '#ff5a1a', st.flame > 1 ? 4 : 3, st.flame > 1 ? '#ff2e1a' : '#ffd23f'); }
     if (s.spin > 0.55 && cd('screech', 1.6)) this.comic('SCREEECH!', left + 40 * k, y0 - 46 * k, '#f4f1e6', 2);
     if (game && game.siren && !st.prevSiren) this.comic('ALT! POLIZIA', carX + 40, carTop - 30, '#4f7bff', 3);
     if (game && game.race && game.race.phase === 'run' && game.race.tt < 0.05 && cd('go', 2)) this.comic('VIA!', carX + 80, carTop - 30, '#b8ff3a', 6, '#163a8c');
@@ -891,5 +913,21 @@ class Street2D {
     const c = this.ctx; c.imageSmoothingEnabled = false;
     c.fillStyle = '#04060b'; c.fillRect(0, 0, this.canvas.width, this.canvas.height);
     c.drawImage(this.lo, 0, shake * (this.canvas.height / this.LH), this.canvas.width, this.canvas.height);
+    // bagliore: copia ridotta, tenute solo le parti luminose, ingrandita e sommata (neon, fari, fiamme, lampioni)
+    if (typeof c.filter === 'string' && this.glow !== false) {
+      const bw = Math.max(1, Math.round(this.LW / 4)), bh = 90;
+      if (!this.bl) { this.bl = document.createElement('canvas'); }
+      if (this.bl.width !== bw) { this.bl.width = bw; this.bl.height = bh; }
+      const b = this.bl.getContext('2d');
+      b.filter = 'brightness(0.55) contrast(3.2) blur(2px)'; b.clearRect(0, 0, bw, bh); b.drawImage(this.lo, 0, 0, bw, bh); b.filter = 'none';
+      c.save(); c.imageSmoothingEnabled = true; c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.5 - (this.day || 0) * 0.3;
+      c.drawImage(this.bl, 0, 0, this.canvas.width, this.canvas.height); c.restore();
+    }
+    // vignettatura
+    if (!this.vg || this.vg.w !== this.canvas.width) {
+      const W2 = this.canvas.width, H2 = this.canvas.height, gr = c.createRadialGradient(W2 / 2, H2 * 0.55, H2 * 0.35, W2 / 2, H2 * 0.55, Math.max(W2, H2) * 0.75);
+      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.45)'); this.vg = { w: W2, gr };
+    }
+    c.fillStyle = this.vg.gr; c.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 }

@@ -223,7 +223,11 @@ class EngineDSP {
     if (!fire && run && S.rpm > 1600) {
       let ch = 0, big = false;
       const pm = this.tn.cat.pop, sp = this.tn.spark;
-      if (T.cut === 1) ch = this.cfg.pops ? (0.16 * Math.exp(-T.ovr / 2.2) + 0.02) * pm : 0;
+      // rilascio del gas: raffica di scoppiettii subito dopo il rilascio, più fitta ai giri alti;
+      // con la mappa pop & bang durano di più e sono più forti
+      const hi = Math.min(1, (S.rpm - 1600) / 4000);
+      if (T.cut === 1) ch = (this.cfg.pops ? 0.2 * Math.exp(-T.ovr / 2.6) + 0.03 : (0.13 * Math.exp(-T.ovr / 0.9) + 0.006) * (0.4 + 0.6 * hi)) * pm;
+      if (T.cut === 1 && Math.abs(this.r()) < ch * 0.35) big = true;
       else if (T.cut === 2) { ch = sp ? (this.cfg.pops ? 0.34 : 0.16) * pm : 0.02; big = true; }
       else if (T.cut === 3) { ch = (this.cfg.pops ? 0.55 : 0.3) * pm; big = true; }
       if (Math.abs(this.r()) < ch) this.addPop(big || Math.abs(this.r()) < 0.15);

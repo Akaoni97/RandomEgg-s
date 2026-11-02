@@ -189,6 +189,12 @@ e irregolare, la distorsione dello scarico in tirata è morbida e un brontolio d
 giri. La variazione dell'energia fra un ciclo motore e l'altro passa circa dall'1% al 3% al minimo e ai medi, e dal
 3,7% al 5% in tirata, a parità di volume.
 
+**Scoppiettii.** Al rilascio del gas sopra i 2200 giri lo scarico scoppietta anche con la centralina di serie: una
+raffica subito dopo il rilascio, più fitta ai giri alti e più forte con catalizzatore sportivo o decat; con la mappa
+pop & bang dura quasi tre secondi. Ogni scoppio si vede: fiammata a strati con nucleo azzurro e palla di fuoco,
+braci, sbuffo di fumo, lampo arancio sull'asfalto, un sobbalzo dell'auto e scritte BANG!, POP!, BRAP!, CRACK!.
+Il 2D ha anche bagliore sulle luci (neon, fari, fiamme), il fascio dei fari nell'aria di notte e una vignettatura.
+
 **2D più vivo.** La telecamera segue la guida (in velocità la Supra scivola indietro sullo schermo e si vede più
 strada davanti, in accelerazione resta indietro, in frenata va avanti); oltre i 90 km/h compaiono linee di
 velocità; le ruote si sfocano in un disco quando girano forte; sotto la pioggia la Supra si specchia sull'asfalto.
