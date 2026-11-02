@@ -487,6 +487,19 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 .ui-spray .panel h2 { font-style: normal; color: var(--amber); }
 .ui-fumetto .panel { box-shadow: inset 0 0 0 1px var(--line), 0 0 16px rgba(46,230,255,.22); }
 .ui-fumetto .panel h2 { font-style: normal; color: #fff; text-shadow: 0 0 10px rgba(255,46,136,.8); }
+
+/* ---- vetrina e foto ---- */
+.showroom { position: fixed; inset: 0; z-index: 30; background: radial-gradient(ellipse at 50% 70%, #26221c, #050403 70%); display: grid; grid-template-rows: auto 1fr auto; }
+.showroom canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.show-top, .show-bar { position: relative; z-index: 1; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  padding: max(14px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px)); }
+.show-top { justify-content: space-between; }
+.show-top h2 { margin: 0; font: 400 clamp(22px, 4vw, 36px)/1 var(--f-display); text-transform: uppercase; letter-spacing: .06em; color: var(--fg); text-shadow: 0 2px 12px #000; }
+.show-top h2 em { display: block; margin-top: 6px; font: 400 13px/1.3 var(--f-data); font-style: normal; letter-spacing: .04em; color: var(--amber); text-transform: none; }
+.show-bar { grid-row: 3; background: linear-gradient(0deg, rgba(0,0,0,.7), transparent); padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)); }
+.photo { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.88); display: grid; place-items: center; gap: 12px; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); align-content: center; }
+.photo img { max-width: 100%; max-height: 78vh; box-shadow: 0 0 0 6px #f4f1e6, 0 20px 60px #000; }
+.photo p { margin: 0; color: var(--muted); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
 </style>
 </head>
 <body>
@@ -600,6 +613,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <button class="kbtn only3d" type="button" id="glbReset">Modello di base</button>
       <button class="kbtn only3d" type="button" id="camReset">Inquadratura</button>
       <button class="kbtn only3d" type="button" id="camNext">Telecamera<small>C</small></button>
+      <button class="kbtn" type="button" id="showBtn">Vetrina<small>G</small></button>
+      <button class="kbtn" type="button" id="photoBtn">Foto<small>X</small></button>
       <label class="kbtn qsel">Ora <select id="clockSel" aria-label="Ora del giorno"><option value="auto">dinamica</option><option value="giorno">giorno</option><option value="tramonto">tramonto</option><option value="notte">notte</option></select></label>
       <label class="kbtn qsel">Meteo <select id="meteoSel" aria-label="Meteo (tasto K)"><option value="auto">dinamico</option><option value="sereno">sereno</option><option value="pioggia">pioggia</option></select></label>
       <label class="kbtn qsel">Qualità <select id="q3d" aria-label="Qualità grafica 3D"><option value="alta">alta · bloom</option><option value="media">media</option><option value="bassa">bassa</option></select></label>
@@ -753,6 +768,25 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       </div>
     </div>
   </section>
+</div>
+
+<div class="showroom" id="showroom" hidden role="dialog" aria-labelledby="showTitle">
+  <canvas id="showCv" aria-label="La Supra in vetrina, trascina per girarla"></canvas>
+  <div class="show-top">
+    <h2 id="showTitle">Vetrina <em id="showSpec">—</em></h2>
+    <button class="kbtn" type="button" id="showClose">Chiudi<small>Esc</small></button>
+  </div>
+  <div class="show-bar">
+    <div class="swatches" id="showSw" role="group" aria-label="Colore"></div>
+    <label class="kbtn qsel">Assetto <select id="showStance" aria-label="Assetto"><option value="0">di serie</option><option value="0.035">ribassato</option><option value="0.07">slammed</option></select></label>
+    <label class="kbtn qsel">Luci <select id="showLight" aria-label="Luci dello studio"><option value="studio">studio</option><option value="neon">neon</option><option value="tramonto">tramonto</option></select></label>
+    <button class="kbtn" type="button" id="showSpin" aria-pressed="true">Piattaforma</button>
+    <button class="kbtn" type="button" id="showPhoto">Foto<small>X</small></button>
+  </div>
+</div>
+<div class="photo" id="photoBox" hidden role="dialog" aria-label="Foto">
+  <img id="photoImg" alt="Foto della Supra">
+  <p>Tieni premuto (o tasto destro) sulla foto per salvarla · <button class="kbtn" type="button" id="photoClose">Chiudi</button></p>
 </div>
 
 <div class="gate intro" id="gate">
@@ -994,6 +1028,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       else if (intro.state === 'wait') intro.start();
       return;
     }
+    if (e.key === 'Escape' && (showOn || !$('photoBox').hidden)) { if (!$('photoBox').hidden) $('photoBox').hidden = true; else closeShowroom(); return; }
     let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
     if ([' ', 'w', 's', 'e', 'q'].includes(k) || e.key.startsWith('Arrow')) e.preventDefault();
     if (e.key === 'Enter') { e.preventDefault(); if (game.result) { closeResult(); return; } if (!e.repeat) startOn(); return; }
@@ -1014,6 +1049,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'b') openTrunk();
     else if (k === 'p') radioNext();
     else if (k === 'k') cycleMeteo();
+    else if (k === 'g') openShowroom();
+    else if (k === 'x') takePhoto();
     else if ((k === 'a' || k === 'd') && game.race) flash('In gara si resta nella propria corsia', 1.4);
     else if (k === 'l') { S.launch = !S.launch; applySettings(); flash(S.launch ? 'Launch control inserito' : 'Launch control disinserito', 1.2); }
     else if (k === 'm') { S.muted = !S.muted; applySettings(); }
@@ -1981,6 +2018,66 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       S.hour = ATM.hour;
     }
   }
+
+  // ---------------------------------------------------------------- vetrina: la Supra in studio, girevole
+  let show = null, showOn = false, showLast = 0;
+  const SHOW_LIGHTS = {
+    studio: { bg: 0x0b0a08, hemi: 0.6, key: 1.9, rim: 1.1, rimC: 0xbfd4ff, warm: 0.6 },
+    neon: { bg: 0x07060f, hemi: 0.25, key: 0.7, rim: 2.2, rimC: 0xff2e88, warm: 1.8 },
+    tramonto: { bg: 0x1a0d08, hemi: 0.45, key: 2.2, rim: 0.8, rimC: 0xffa060, warm: 1.2 },
+  };
+  function showSpecText() { const e = sim.estimatePeak(); return `${Math.round(e.cv)} CV · ${Math.round(e.nm || 0)} Nm · 400 m in ${fmt(game.etEstimate(), 1)} s · ${(sim.P.mass + game.trunkKg()).toFixed(0)} kg`; }
+  function openShowroom() {
+    if (!window.THREE) { flash('La vetrina richiede la grafica 3D', 2); return; }
+    $('showroom').hidden = false; showOn = true;
+    if (!show) {
+      try {
+        show = new Garage3D($('showCv'));
+        show.setQuality = () => {};
+        show.floor.material.color.set(0x08080a); show.floor.material.roughness = 0.22; show.floor.material.metalness = 0.6; show.grid.material.opacity = 0.12;
+        show.camera.position.set(5.6, 1.6, 5.4); show.controls.autoRotate = true; show.controls.autoRotateSpeed = 1.1;
+        show.loadModelURL(SUPRA_MODEL.url, 'supra_mk4.glb').then(() => show.setPaint(S.paint)).catch(() => {});
+        const sw = $('showSw');
+        for (const b of document.querySelectorAll('#swatches button')) {
+          const c = b.cloneNode(true); c.addEventListener('click', () => { b.click(); show.setPaint(S.paint); sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === c))); }); sw.appendChild(c);
+        }
+      } catch (e) { flash('La vetrina non è disponibile su questo browser', 2.5); closeShowroom(); return; }
+    }
+    show.setPaint(S.paint); show.setTips(TP.dsp.ex.tips); show.stance = +$('showStance').value; applyShowLight();
+    $('showSpec').textContent = showSpecText();
+    requestAnimationFrame(() => show.resize());
+    showLast = performance.now(); requestAnimationFrame(showLoop);
+  }
+  function applyShowLight() {
+    if (!show) return; const L = SHOW_LIGHTS[$('showLight').value] || SHOW_LIGHTS.studio, T3 = window.THREE;
+    show.scene.background = new T3.Color(L.bg); show.scene.fog.color.set(L.bg);
+    show.hemi.intensity = L.hemi; show.key.intensity = L.key; show.rim.intensity = L.rim; show.rim.color.set(L.rimC); show.warm.intensity = L.warm;
+  }
+  function showLoop(now) {
+    if (!showOn) return;
+    const dt = Math.min(0.05, (now - showLast) / 1000); showLast = now;
+    show.update(dt, { v: 0, ww: 0, acc: 0, rpm: sim.running ? sim.rpm : 0, running: sim.running, lope: 0, torque: 0, ign: true, brake: 0, flame: 0, spin: 0, thr: 0, events: [], damage: sim.damage, gear: 0 });
+    requestAnimationFrame(showLoop);
+  }
+  function closeShowroom() { $('showroom').hidden = true; showOn = false; }
+  $('showBtn').addEventListener('click', openShowroom);
+  $('showClose').addEventListener('click', closeShowroom);
+  $('showStance').addEventListener('change', (e) => { if (show) show.stance = +e.target.value; });
+  $('showLight').addEventListener('change', applyShowLight);
+  $('showSpin').addEventListener('click', (e) => { if (!show) return; show.controls.autoRotate = !show.controls.autoRotate; e.currentTarget.setAttribute('aria-pressed', String(show.controls.autoRotate)); });
+  // foto: l'immagine della vista attiva (vetrina, 3D o 2D) in un riquadro da salvare
+  function takePhoto() {
+    let url = null;
+    try {
+      if (showOn && show) { show.draw(); url = show.canvas.toDataURL('image/jpeg', 0.92); }
+      else if (S.look !== '2d' && street3d) { street3d.draw(); url = street3d.canvas.toDataURL('image/jpeg', 0.92); }
+      else if (street2d) url = street2d.canvas.toDataURL('image/png');
+    } catch (e) { url = null; }
+    if (!url) { flash('Foto non disponibile', 1.5); return; }
+    $('photoImg').src = url; $('photoBox').hidden = false; flash('Click!', 0.6);
+  }
+  $('photoBtn').addEventListener('click', takePhoto); $('showPhoto').addEventListener('click', takePhoto);
+  $('photoClose').addEventListener('click', () => { $('photoBox').hidden = true; });
 
   // pannello stili dell'interfaccia
   (function buildThemes() {

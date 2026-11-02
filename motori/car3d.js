@@ -995,7 +995,7 @@ class Garage3D {
     const shake = Math.sin(st.t * f) * amp + Math.sin(st.t * f * 0.5 + 1.3) * amp * 0.6 * s.lope;
     this.body.rotation.z = st.pitch;
     this.body.rotation.x = st.roll + shake * 2;
-    this.body.position.y = st.heave + shake;
+    this.body.position.y = st.heave + shake - (this.stance || 0);
     // fanali e fiammate
     this.lightF.emissiveIntensity = s.ign ? 1.6 : 0.15;
     this.lightR.emissiveIntensity = s.ign ? 0.6 + s.brake * 2.4 : 0.25;
