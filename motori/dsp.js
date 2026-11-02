@@ -82,7 +82,7 @@ class EngineDSP {
     this.beltPh = 0;
 
     // scoppiettii (afterfire)
-    this.pops = []; this.popEnv = 0; this.popDec = Math.exp(-1 / (sr * 0.009)); this.thPh = 0;
+    this.pops = []; this.popEnv = 0; this.popDec = Math.exp(-1 / (sr * 0.014)); this.thPh = 0;
 
     // motorino d'avviamento, pompa benzina
     this.stPh = 0; this.stLP = new BQ().set('lp', 900, 0.7, sr); this.pumpPh = 0; this.pumpLP = new BQ().set('lp', 600, 0.7, sr);
@@ -186,7 +186,7 @@ class EngineDSP {
   addPop(big) {
     if (this.pops.length > 8) return;
     const d = Math.round((0.002 + this.r() * 0.5 * 0.03 + 0.015) * this.sr);
-    const a = big ? 0.9 + 0.7 * Math.abs(this.r()) : 0.25 + 0.45 * Math.abs(this.r());
+    const a = big ? 1.3 + 0.9 * Math.abs(this.r()) : 0.45 + 0.55 * Math.abs(this.r());
     this.pops.push({ d: Math.max(1, d), a });
   }
 
@@ -350,8 +350,11 @@ class EngineDSP {
       // radiazione dalla bocca del terminale (≈ derivata) + blocco DC
       const rad = y - 0.9 * this.radPrev; this.radPrev = y;
       const ex = rad - this.dc1x + 0.995 * this.dc1y; this.dc1x = rad; this.dc1y = ex;
-      const crack = this.crackHP.p(pop) * 0.35;
-      let exh = this.viewLP2.p(this.viewLP.p(ex + crack));
+      // scoppio all'uscita del terminale: schiocco secco (crack) più un colpo sordo (thump) che non passa dal silenziatore
+      const crack = this.crackHP.p(pop) * 0.55;
+      this.thumpPh = ((this.thumpPh || 0) + 88 / sr) % 1;
+      const thump = Math.sin(TAU * this.thumpPh) * Math.min(1.6, this.popEnv) * 0.24;
+      let exh = this.viewLP2.p(this.viewLP.p(ex + crack)) + thump;
       const boom = this.boomBP.p(ex) * 1.6;
       // screamer pipe della wastegate: gas di scarico liberi, impulsi compresi
       if (tn.scream && S.wg > 0.005) exh += (this.scrBP.p(nz2) * 0.6 + this.scrHP.p(col) * 0.45) * S.wg * 0.4;

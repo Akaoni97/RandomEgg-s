@@ -195,6 +195,12 @@ pop & bang dura quasi tre secondi. Ogni scoppio si vede: fiammata a strati con n
 braci, sbuffo di fumo, lampo arancio sull'asfalto, un sobbalzo dell'auto e scritte BANG!, POP!, BRAP!, CRACK!.
 Il 2D ha anche bagliore sulle luci (neon, fari, fiamme), il fascio dei fari nell'aria di notte e una vignettatura.
 
+**Colpi più forti e 2D a specchio.** Gli scoppi escono dal terminale con uno schiocco secco e un colpo sordo che
+non passano dal silenziatore: picco circa 3,5 dB più alto, saturazione leggera solo sui più grossi. Nel 2D la città
+si riflette capovolta e tremolante sull'asfalto (forte sotto la pioggia, appena accennata di notte sull'asciutto),
+la luce dei lampioni scorre sulla carrozzeria, sotto la pioggia arrivano fulmini con lampo sulla scena e tuono
+qualche istante dopo, e gli scoppi grossi fanno tremare l'immagine.
+
 **2D più vivo.** La telecamera segue la guida (in velocità la Supra scivola indietro sullo schermo e si vede più
 strada davanti, in accelerazione resta indietro, in frenata va avanti); oltre i 90 km/h compaiono linee di
 velocità; le ruote si sfocano in un disco quando girano forte; sotto la pioggia la Supra si specchia sull'asfalto.

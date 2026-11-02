@@ -560,6 +560,14 @@ class Street2D {
 
     // ---- sfondo: cielo, tre piani di città, foschia
     this.drawSky(g, st.t, dist);
+    // temporale: con la pioggia ogni tanto un fulmine (saetta nel cielo, lampo su tutta la scena, poi il tuono)
+    st.bolt = Math.max(0, (st.bolt || 0) - dt * 3.2);
+    if (this.rainOn && st.bolt === 0 && Math.random() < dt / 9) { st.bolt = 1; st.boltX = 40 + Math.random() * (W - 80); st.boltSeed = Math.random() * 1000; this.thunder = 0.6 + Math.random() * 1.4; }
+    if (st.bolt > 0.35) {
+      g.strokeStyle = `rgba(230,240,255,${st.bolt})`; g.lineWidth = 1; g.beginPath(); let bx = st.boltX, by = 0; g.moveTo(bx, by);
+      for (let q = 0; q < 14; q++) { bx += (Street2D.rnd(st.boltSeed + q) - 0.5) * 22; by += 8 + Street2D.rnd(st.boltSeed + q + 50) * 6; g.lineTo(Math.round(bx), Math.round(by)); }
+      g.stroke();
+    }
     // giorno e tramonto: cielo chiaro sopra quello notturno, sole basso al tramonto
     const dd = this.day || 0, ss = this.sunset || 0, wt = this.rainOn ? 1 : 0;
     if (dd > 0.01 || ss > 0.01) {
@@ -618,6 +626,21 @@ class Street2D {
       g.fillStyle = '#262f55'; this.span(g, x, y, rx, 3); g.fillStyle = '#323d6e'; this.span(g, x - 2, y - 1, rx * 0.7, 1.5);
       g.fillStyle = C.neon[k % 5]; g.fillRect(x + 4, y, 4, 1); g.fillRect(x + 6, y - 1, 1, 1);
       g.fillStyle = '#7a86c0'; g.fillRect(x - rx + 5, y - 1, 3, 1);
+    }
+
+    // ---- asfalto a specchio: la città (neon, finestre) si riflette capovolta e tremolante sulla strada
+    const wetA = (this.rainOn ? 0.26 : 0.09) * (1 - 0.7 * (this.day || 0));
+    if (wetA > 0.02) {
+      if (!this.rf) this.rf = document.createElement('canvas');
+      if (this.rf.width !== W) { this.rf.width = W; this.rf.height = 106; }
+      const rg = this.rf.getContext('2d'); rg.clearRect(0, 0, W, 106); rg.drawImage(this.lo, 0, 110, W, 106, 0, 0, W, 106);
+      g.save(); g.globalCompositeOperation = 'lighter';
+      for (let r = 0; r < 90; r++) {
+        const srcY = 105 - Math.floor(r / 0.85), wob = Math.round(Math.sin(r * 0.55 + st.t * 6) * (1 + r * 0.03) * (this.rainOn ? 1.6 : 0.8));
+        g.globalAlpha = wetA * (1 - r / 95);
+        g.drawImage(this.rf, 0, Math.max(0, srcY), W, 1, wob, 241 + r, W, 1);
+      }
+      g.restore();
     }
 
     // ---- segni di gomma sull'asfalto (restano dove sono stati lasciati)
@@ -769,6 +792,8 @@ class Street2D {
       if (dmg > 0.5) P(C.ink, 188, 46, 10, 6);                                                            // paraurti sfondato
     }
     g.restore();
+    // luce dei lampioni che scorre sulla carrozzeria passando sotto
+    for (const lx of lampX) { const dx = lx + 18 - (left + SW / 2); if (Math.abs(dx) < SW * 0.7) this.light(g, lx + 18, top + 16 * k, 26, 12, '#ffd59a', 0.2 * (1 - Math.abs(dx) / (SW * 0.7)) * (1 - (this.day || 0)), 3); }
     if (s.brake > 0.05) this.light(g, left + 2, top + 34 * k, 12, 9, '#ff2a2a', 0.2, 3);
     if (s.ign) this.light(g, left + SW - 6, top + 33 * k, s.high ? 20 : 12, s.high ? 9 : 6, '#fff2c4', s.high ? 0.3 : 0.2, 3);
     if (s.signal && Math.floor(st.t * 3) % 2 === 0) { this.light(g, left + 178 * k, top + 38 * k, 10, 6, '#ffa020', 0.25, 3); this.light(g, left + 4, top + 40 * k, 8, 6, '#ffa020', 0.25, 3); }
@@ -886,6 +911,7 @@ class Street2D {
         g.fillRect(Math.round(x), Math.round(y), Math.round(len), 1);
       }
     }
+    if ((st.bolt || 0) > 0.05) { g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = `rgba(150,170,220,${0.35 * st.bolt * st.bolt})`; g.fillRect(0, 0, W, 360); g.restore(); }
     // ---- luce del giorno su tutta la scena (le insegne restano accese ma perdono forza)
     if (dd > 0.01 || ss > 0.01) {
       g.save(); g.globalCompositeOperation = 'screen';
@@ -909,10 +935,11 @@ class Street2D {
 
     // ---- su schermo
     if (!this.visible) return;
-    const shake = Math.round((bF + bR) * 0.05);
+    const shake = Math.round((bF + bR) * 0.05 + (st.popJolt > 0.8 ? (Math.random() < 0.5 ? -1 : 1) : 0));
+    const shakeX = st.popJolt > 0.8 ? Math.round((Math.random() - 0.5) * 3) : 0;
     const c = this.ctx; c.imageSmoothingEnabled = false;
     c.fillStyle = '#04060b'; c.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    c.drawImage(this.lo, 0, shake * (this.canvas.height / this.LH), this.canvas.width, this.canvas.height);
+    c.drawImage(this.lo, shakeX * (this.canvas.height / this.LH), shake * (this.canvas.height / this.LH), this.canvas.width, this.canvas.height);
     // bagliore: copia ridotta, tenute solo le parti luminose, ingrandita e sommata (neon, fari, fiamme, lampioni)
     if (typeof c.filter === 'string' && this.glow !== false) {
       const bw = Math.max(1, Math.round(this.LW / 4)), bh = 90;
