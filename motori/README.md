@@ -26,7 +26,7 @@ fanali tondi, alettone ad arco, ruote con cerchi, dischi e pinze, anteriori ster
 alberi, panchine, idranti, fermate, semafori che cambiano colore, strisce, frecce, tombini,
 luna e stelle. È l'unica vista che carica modelli .glb.
 
-**Modello 3D della Supra.** L'auto principale (in strada e nella sigla) è
+**Modello 3D della Supra.** L'auto principale nella vista 3D è
 [*Toyota Supra MK4 (LowPoly)*](https://sketchfab.com/3d-models/toyota-supra-mk4-lowpoly-36e53ad2f8f04e819baf5519dcb1bf7a)
 di [Mike Farrant](https://sketchfab.com/MikeFarrant), licenza [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
 Il file `models/supra_mk4.glb` è una versione ricavata dall'originale: orientato e scalato in metri, ruote
@@ -140,15 +140,15 @@ fermo), ruota di scorta, zavorra, i pacchi delle consegne (non si buttano durant
 capi battuti. Si compra e si butta dal pannello del bagagliaio.
 
 **Intro.** All'apertura parte una sigla sulla canzone *Redline at Midnight* (`audio/redline_at_midnight.mp3`,
-`intro.js`) girata con il motore 3D del gioco: la tua Supra (vernice, scarichi e preparazione dell'officina)
-nella città notturna, con bande cinematografiche, grana della pellicola e bloom. Le inquadrature seguono il
-brano: a mezzanotte la Supra ferma si accende (motorino d'avviamento, due colpi di gas), alla cassa parte
-da dietro tra fumo e pattinamento, carrellata laterale in teleobiettivo durante le cambiate, arriva in camera
-nel crescendo, al picco il titolo NIGHT RUN, poi il menu con lente orbite mentre la Supra continua ad
-affondare e rilasciare. Il suono non è registrato: una simulazione propria guida il motore audio del gioco,
-quindi si sentono il 2JZ, il fischio delle turbine e la valvola che soffia a ogni cambiata e rilascio, sotto
-la musica. Invio o tocco per iniziare, Esc per saltare, M per la musica; entrando in gioco la canzone sfuma.
-Senza three.js resta una versione in pixel art.
+`intro.js`) girata in 2D con la stessa grafica del gioco: la città in pixel art, la tua Supra illustrata (vernice
+e ricambi estetici) e i fumetti degli effetti. Le inquadrature sono zoom e bande nere da cinema legati al brano:
+a mezzanotte primo piano sul muso mentre la Supra si accende, poi sulla coda per i colpi di gas, alla cassa
+parte tra fumo e "BANG!" e l'inquadratura si allarga, carrellata larga sulla città durante le cambiate, stretta
+sul muso nel crescendo, al picco il titolo NIGHT RUN sulla scena intera, poi il menu con la Supra che continua
+ad affondare e rilasciare. Il suono non è registrato: una simulazione propria guida il motore audio del gioco,
+quindi si sentono il 2JZ, il fischio delle turbine e la valvola sotto la musica. Invio o tocco per iniziare,
+Esc per saltare, M per la musica; entrando in gioco la canzone sfuma. Col telefono in verticale la scena è
+quasi quadrata. Senza la vista 2D resta una versione in prospettiva.
 
 ## La carriera
 

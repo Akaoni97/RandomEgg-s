@@ -951,6 +951,7 @@ class Street2D {
     const y0 = Math.round(this.laneY(myZ) - entLift), k = kq(y0), sc = k;
     const spr = this.carSprite(k), SW = spr.width, left = Math.round(carX + entDX - SW / 2);
     g.globalAlpha = entA;
+    this.carPos = { x: left + SW / 2, y: y0 - 22 * k, k };
     if (s.ign) this.light(g, left + SW + (s.high ? 110 : 60) * k, y0 - 2, s.high ? 150 : 80, s.high ? 9 : 7, '#fff2c4', s.high ? 0.1 : 0.08, 4);   // pozza dei fari (più lunga con gli abbaglianti)
     if (s.brake > 0.05) this.light(g, left - 30 * k, y0 - 1, 40, 5, '#ff2a2a', 0.1, 3);             // pozza degli stop
     // fascio dei fari nell'aria, di notte e sotto la pioggia
@@ -1186,14 +1187,22 @@ class Street2D {
     if (!this.visible) return;
     const c = this.ctx; c.imageSmoothingEnabled = false;
     c.fillStyle = '#04060b'; c.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    c.drawImage(this.lo, shakeX * (this.canvas.height / this.LH), shake * (this.canvas.height / this.LH), this.canvas.width, this.canvas.height);
+    // inquadratura: zoom su un punto (sigla) o scena intera
+    const z = Math.max(1, this.zoom || 1);
+    let src = [0, 0, this.LW, this.LH];
+    if (z > 1.001) {
+      const sw = this.LW / z, sh = this.LH / z, f = this.zoomFocus || { x: this.LW / 2, y: this.LH / 2 };
+      const sx = Math.max(0, Math.min(this.LW - sw, f.x - sw / 2)), sy = Math.max(0, Math.min(this.LH - sh, f.y - sh / 2));
+      src = [sx, sy, sw, sh];
+      c.drawImage(this.lo, sx + shakeX / z, sy + shake / z, sw, sh, 0, 0, this.canvas.width, this.canvas.height);
+    } else c.drawImage(this.lo, shakeX * (this.canvas.height / this.LH), shake * (this.canvas.height / this.LH), this.canvas.width, this.canvas.height);
     // bagliore: copia ridotta, tenute solo le parti luminose, ingrandita e sommata (neon, fari, fiamme, lampioni)
     if (typeof c.filter === 'string' && this.glow !== false && (this.quality || 'alta') === 'alta') {
       const bw = Math.max(1, Math.round(this.LW / 4)), bh = 90;
       if (!this.bl) { this.bl = document.createElement('canvas'); }
       if (this.bl.width !== bw) { this.bl.width = bw; this.bl.height = bh; }
       const b = this.bl.getContext('2d');
-      b.filter = 'brightness(0.55) contrast(3.2) blur(2px)'; b.clearRect(0, 0, bw, bh); b.drawImage(this.lo, 0, 0, bw, bh); b.filter = 'none';
+      b.filter = 'brightness(0.55) contrast(3.2) blur(2px)'; b.clearRect(0, 0, bw, bh); b.drawImage(this.lo, src[0], src[1], src[2], src[3], 0, 0, bw, bh); b.filter = 'none';
       c.save(); c.imageSmoothingEnabled = true; c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.5 - (this.day || 0) * 0.3;
       c.drawImage(this.bl, 0, 0, this.canvas.width, this.canvas.height); c.restore();
     }
@@ -1203,5 +1212,6 @@ class Street2D {
       gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.45)'); this.vg = { w: W2, gr };
     }
     c.fillStyle = this.vg.gr; c.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    if (this.bars > 0.001) { const bh = Math.round(this.canvas.height * this.bars); c.fillStyle = '#000'; c.fillRect(0, 0, this.canvas.width, bh); c.fillRect(0, this.canvas.height - bh, this.canvas.width, bh); }
   }
 }

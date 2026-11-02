@@ -1,7 +1,8 @@
 // Night Run — intro con "Redline at Midnight" di sottofondo.
-// Versione 3D: la Supra del gioco nella città notturna, ripresa con inquadrature da film e guidata da una
+// Versione 2D, nello stile del gioco: la stessa città in pixel art, la Supra illustrata, i fumetti degli effetti,
+// ripresa con inquadrature da film (zoom sul muso, sulla coda, carrellata larga, bande nere) e guidata da una
 // simulazione propria (avviamento, colpi di gas, partenza, cambiate) che fa suonare motore, turbine e valvola.
-// Se three.js non c'è, resta la scena in pixel art qui sotto.
+// Se la vista 2D del gioco non c'è, resta la scena in prospettiva qui sotto.
 // Scena in pixel art (320×180, ingrandita a pixel netti) che pulsa sui bassi della canzone:
 // città di notte, strada in prospettiva, lampioni, traffico, la Supra JZA80 vista da dietro
 // con i quattro fanali tondi e l'alettone ad arco. I titoli sono HTML sopra la tela.
@@ -35,7 +36,7 @@
       this.buildCity();
       this.traffic = Array.from({ length: 5 }, (_, i) => ({ z: 20 + i * 18, lane: i % 2 ? -1 : 1, oncoming: i % 2 === 1 }));
       this.active = true;
-      this.init3D();
+      this.init2D();
       const loop = () => { if (!this.active) return; this.frame(); requestAnimationFrame(loop); };
       requestAnimationFrame(loop);
     }
@@ -61,6 +62,7 @@
       fade();
       setTimeout(() => {
         this.active = false; this.root.hidden = true;
+        this.v2 = null;
         if (this.v3) { try { this.v3.visible = false; this.v3.renderer.dispose(); this.v3.renderer.forceContextLoss?.(); } catch (_) { /* ignora */ } this.v3 = null; }
       }, 900);
     }
@@ -81,7 +83,59 @@
       this.stars = Array.from({ length: 60 }, () => [r() * W, r() * (HOR - 40), r()]);
     }
 
-    // --------------------------------------------------------------- intro 3D: la Supra vera nella città del gioco
+    // --------------------------------------------------------------- intro 2D: la città e la Supra del gioco
+    init2D() {
+      if (typeof Street2D === 'undefined' || typeof SupraSim === 'undefined') return false;
+      try {
+        const cv = document.createElement('canvas'); cv.className = 'intro-2d'; cv.setAttribute('aria-hidden', 'true');
+        this.cv.after(cv);
+        // risoluzione fissa: 16:9 (640×360) in orizzontale, quasi quadrata (420×360) col telefono in verticale;
+        // ingrandita a pixel netti, la pagina la adatta con object-fit
+        const LW = window.innerWidth < window.innerHeight ? 420 : 640;
+        cv.width = LW * 2; cv.height = 720;
+        const v = this.v2 = new Street2D(cv);
+        v.resize = () => {}; v.LW = LW; v.lo.width = LW; v.lo.height = 360; v.canvas.width = LW * 2; v.canvas.height = 720;
+        v.quality = 'alta';
+        this.cv.style.display = 'none';
+      } catch (err) { this.v2 = null; return false; }
+      const sm = this.sim = new SupraSim();
+      this.opts.setup?.(this.v2, sm);
+      Object.assign(sm.cfg, { autoClutch: true, revMatch: true, pops: true });
+      sm.fuel = 1;
+      this.fake = { s: { dist: 0 }, laneZ: GAME_LANE_Z[1], ents: [], fx: [], signal: null, steerIn: 0, siren: 0, sim: sm, placesOn: false, nearPlace: () => null };
+      const cols = [0x2b4c7e, 0xd8d8d0, 0x1c1c22, 0x8a1c1c, 0x3f6f4a, 0xb9a46a];
+      for (let i = 0; i < 6; i++) this.fake.ents.push({ id: 500 + i, kind: 'traffic', lane: 2 + (i % 2), x: 70 + i * 60, v: 13 + (i % 3) * 3, color: cols[i % cols.length] });
+      this.cam = { shot: -1, z: 2.4, fx: 0, fy: 0 }; this.drv = { blip: 0, cruiseT: 0 };
+      return true;
+    }
+    // regia in 2D: zoom e punto di fuoco attorno alla Supra, legati alla canzone, con stacchi sui colpi
+    cine2d(dt) {
+      const v = this.v2, T = this.state === 'wait' ? -1 : this.T || 0, now = performance.now() / 1000, cp = v.carPos;
+      if (!cp) return;
+      const k = cp.k || 1;
+      // [inizio, zoom, fuoco x (in larghezze di Supra dal centro), fuoco y, bande]
+      const shots = [
+        { t: -99, z: 2.6, fx: 0.32, fy: 0.05, b: 0.13 },        // ferma: muso e fari
+        { t: 2.2, z: 2.3, fx: -0.36, fy: 0.12, b: 0.13 },        // colpi di gas: coda e scarico
+        { t: 4.6, z: 1.7, fx: -0.15, fy: 0.05, b: 0.12, to: 1.15 },  // partenza: si allarga mentre scappa
+        { t: 7.6, z: 1.0, fx: 0.4, fy: -0.4, b: 0.1 },           // carrellata larga sulla città
+        { t: 10.4, z: 1.45, fx: 0.25, fy: 0, b: 0.12 },          // crescendo: stretto sul muso
+        { t: 12.0, z: 1.0, fx: 0.5, fy: -0.5, b: 0.0 },          // titolo: scena intera
+      ];
+      let i = 0; for (let n = 0; n < shots.length; n++) if (T >= shots[n].t) i = n;
+      const sh = shots[i], nx = shots[i + 1];
+      let zt = sh.z;
+      if (sh.to && nx) zt = sh.z + (sh.to - sh.z) * ease((T - sh.t) / (nx.t - sh.t));
+      if (T >= 14) zt = 1.0 + 0.12 * (0.5 + 0.5 * Math.sin(now * 0.4));     // sotto il menu: respiro lento
+      if (i !== this.cam.shot) { const cut = this.cam.shot >= 0; this.cam.shot = i; if (cut && T > 0) { this.flash = Math.max(this.flash, 0.35); this.cam.z = zt; } }
+      this.cam.z += (zt - this.cam.z) * Math.min(1, dt * 3);
+      const W2 = 200 * k;
+      const tx = cp.x + sh.fx * W2, ty = cp.y + sh.fy * W2;
+      this.cam.fx += (tx - this.cam.fx) * Math.min(1, dt * (this.cam.fx ? 4 : 99)); this.cam.fy += (ty - this.cam.fy) * Math.min(1, dt * (this.cam.fy ? 4 : 99));
+      v.zoom = this.cam.z; v.zoomFocus = { x: this.cam.fx + (Math.random() - 0.5) * this.shake * 3, y: this.cam.fy + (Math.random() - 0.5) * this.shake * 2 };
+      v.bars += ((sh.b ?? 0) - (v.bars || 0)) * Math.min(1, dt * 3);
+    }
+    // --------------------------------------------------------------- intro 3D (non più usata: la sigla è in 2D)
     init3D() {
       if (typeof Street3D === 'undefined' || typeof SupraSim === 'undefined' || !window.THREE) return false;
       try {
@@ -103,7 +157,7 @@
       this.cam = { shot: -1, k: 0 }; this.drv = { blip: 0, cruiseT: 0 };
       return true;
     }
-    directing() { return !!(this.v3 && this.active && this.state !== 'done'); }
+    directing() { return !!((this.v2 || this.v3) && this.active && this.state !== 'done'); }
     // pilota automatico della sigla: avviamento, colpi di gas, partenza sulla cassa, cambiate al limitatore
     drive(dt) {
       const sm = this.sim, T = this.state === 'wait' ? -1 : this.T || 0, d = this.drv;
@@ -142,6 +196,7 @@
       const f = this.fake, sm = this.sim;
       f.s.dist += sm.v * dt;
       for (const e of f.ents) { e.x += e.v * dt; if (e.x - f.s.dist < -60) e.x = f.s.dist + 220 + Math.random() * 120; }
+      if (this.v2) { this.cine2d(dt); this.v2.update(dt, this.state3d(ev), f); return; }
       this.v3.update(dt, this.state3d(ev), f);
     }
     // regia: inquadrature legate alla canzone, con stacchi netti sui colpi
@@ -208,7 +263,7 @@
         clock.classList.toggle('gone', playing && T >= 7.5);
       }
       this.T = T; this.E = e; this.build = build;
-      if (!this.v3) this.draw(T, e, playing, build);
+      if (!this.v3 && !this.v2) this.draw(T, e, playing, build);
     }
 
     // --------------------------------------------------------------- disegno
