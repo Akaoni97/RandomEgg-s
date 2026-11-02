@@ -102,9 +102,11 @@ class SamplePlayer {
     for (const it of its) {
       const g = it.g.gain, r = it.src.playbackRate, r0 = r.value;
       g.cancelScheduledValues(t); r.cancelScheduledValues(t);
-      const k = Math.min(1.4, 0.75 + 0.45 * I) * it.norm;
-      g.setValueCurveAtTime((curve || SamplePlayer.chop(len, 1)).map((v) => v * k), t, len);
-      r.setValueAtTime(r0, t); r.linearRampToValueAtTime(r0 * 0.8, t + len);
+      const k = Math.min(2.2, 1.3 + 0.6 * I) * it.norm, c = curve || SamplePlayer.chop(len, 1), n = c.length;
+      g.setValueCurveAtTime(c.map((v) => v * k), t, len);
+      // l'altezza sale in ogni colpo e la girante intanto rallenta
+      const top = Math.max(1e-3, Math.max(...c));
+      r.setValueCurveAtTime(c.map((v, i) => r0 * (1.12 - 0.3 * i / n) * (0.88 + 0.16 * v / top)), t, len);
       it.hold = t + len + 0.01;
     }
     return true;
