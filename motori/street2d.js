@@ -120,7 +120,9 @@ class Street2D {
   }
   // geometria dell'auto nello sprite (scala 1): ruote, pilota, luci, marmitta
   geo() {
-    if (this.carId === 'v40') return { h: 71, wy: 56, wr: 14.4, ax: [41, 156], hx: 110, hy: 6, tail: [1, 28, 5, 10], blinkF: [188, 47, 6, 2], blinkR: [1, 47, 4, 2], ex: [6, 64], low: this.v40Look && this.v40Look.low ? 3 : 0 };
+    if (this.carId === 'v40') return this.v40Ready
+      ? { h: 71, wy: 56, wr: 14.4, ax: [41, 156], hx: 112, hy: 3, tail: [2, 26, 6, 7], blinkF: [173, 46, 7, 2], blinkR: [19, 44, 6, 2], ex: [3, 54], low: this.v40Look && this.v40Look.low ? 3 : 0 }
+      : { h: 71, wy: 56, wr: 14.4, ax: [41, 156], hx: 110, hy: 6, tail: [1, 28, 5, 10], blinkF: [188, 47, 6, 2], blinkR: [1, 47, 4, 2], ex: [6, 64], low: this.v40Look && this.v40Look.low ? 3 : 0 };
     return { h: 58, wy: 42, wr: 15, ax: [48, 158], hx: 92, hy: 0, tail: [7, 18, 5, 5], blinkF: [176, 37, 7, 3], blinkR: [19, 33, 4, 3], ex: [7, 46], low: 0 };
   }
   // Volvo V40 SW: cambia auto, vernice e potenziamenti visibili
@@ -139,11 +141,27 @@ class Street2D {
     const sh = (k) => Street2D.shade(hex, k), ink = this.C.ink;
     if (this.v40Ready) {
       x.imageSmoothingEnabled = false; x.drawImage(this.v40Img, 0, 0, W, H);
-      if (hex.toLowerCase() !== '#2a4b57') {       // ricolora la vernice (pixel blu-petrolio dell'illustrazione)
-        const d = x.getImageData(0, 0, W, H), p = d.data, n = parseInt(hex.slice(1), 16), R = n >> 16, G = (n >> 8) & 255, B = n & 255;
-        for (let i = 0; i < p.length; i += 4) { const r = p[i], g = p[i + 1], b = p[i + 2]; if (p[i + 3] && b > r + 8 && g > r + 4 && b < 150 && (r + g + b) > 60) { const kk = (g + b) / 2 / 95; p[i] = Math.min(255, R * kk); p[i + 1] = Math.min(255, G * kk); p[i + 2] = Math.min(255, B * kk); } }
-        x.putImageData(d, 0, 0);
+      const d = x.getImageData(0, 0, W, H), p = d.data;
+      const isBody = (r, g, b) => b > r + 8 && g > r + 4 && b < 150 && (r + g + b) > 60;
+      // lavaggio: lo sporco del disegno (pixel bruni sulle fiancate) prende il colore della carrozzeria sopra
+      // sporco del disegno: grigio-oliva o bruno nella fascia bassa (la carrozzeria è sempre più blu che rossa)
+      const dirty = (r, g, b) => (r + g + b) > 95 && b - r < 10 && Math.max(r, g, b) - Math.min(r, g, b) < 45;
+      if (L.clean) for (let yy = 40; yy < 66; yy++) for (let xx = 0; xx < W; xx++) {
+        const i = (yy * W + xx) * 4;
+        if (!p[i + 3] || !dirty(p[i], p[i + 1], p[i + 2])) continue;
+        if (Math.hypot(xx - 41, yy - 56) < 15.5 || Math.hypot(xx - 156, yy - 56) < 15.5) continue;   // non nelle ruote
+        let j = -1;
+        for (let dd = 1; dd < 9 && j < 0; dd++) for (const [dx, dy] of [[-dd, 0], [dd, 0], [0, -dd], [-dd, -1], [dd, -1]]) {
+          const x2 = xx + dx, y2 = yy + dy; if (x2 < 0 || x2 >= W || y2 < 0) continue;
+          const q = (y2 * W + x2) * 4; if (p[q + 3] && isBody(p[q], p[q + 1], p[q + 2])) { j = q; break; }
+        }
+        if (j >= 0) { p[i] = p[j]; p[i + 1] = p[j + 1]; p[i + 2] = p[j + 2]; }
       }
+      if (hex.toLowerCase() !== '#2a4b57') {       // ricolora la vernice (pixel blu-petrolio dell'illustrazione), non vetri e montanti
+        const n = parseInt(hex.slice(1), 16), R = n >> 16, G = (n >> 8) & 255, B = n & 255;
+        for (let i = 0; i < p.length; i += 4) { const r = p[i], g = p[i + 1], b = p[i + 2]; if (p[i + 3] && isBody(r, g, b)) { const kk = (g + b) / 2 / 67 * 0.9; p[i] = Math.min(255, R * kk); p[i + 1] = Math.min(255, G * kk); p[i + 2] = Math.min(255, B * kk); } }
+      }
+      x.putImageData(d, 0, 0);
     } else {
       // segnaposto: station wagon con portellone verticale, tetto lungo con barre, tre luci laterali
       const body = [[2, 66], [1, 30], [3, 15], [9, 9], [118, 8], [150, 26], [190, 34], [198, 40], [199, 58], [196, 66]];
@@ -174,7 +192,7 @@ class Street2D {
       for (const cx2 of [41, 156]) { x.fillStyle = '#0b0d12'; x.beginPath(); x.arc(cx2, 56, 17, Math.PI, 0); x.fill(); }
     }
     // --- strati dei potenziamenti
-    if (!L.clean) for (let i = 0; i < 260; i++) {                                             // sporco su fiancate e passaruota
+    if (!L.clean && !this.v40Ready) for (let i = 0; i < 260; i++) {                                             // sporco su fiancate e passaruota
       const xx = 4 + Street2D.rnd(i) * 192, yy = 52 + Street2D.rnd(i + 7) * 13;
       if (Math.abs(xx - 41) < 17 && yy > 50 && Math.hypot(xx - 41, yy - 56) < 17) continue;
       if (Math.abs(xx - 156) < 17 && Math.hypot(xx - 156, yy - 56) < 17) continue;
@@ -186,14 +204,15 @@ class Street2D {
       px(ink, 0, 64, 18, 3); for (let q = 2; q < 16; q += 3) px('#3a4048', q, 64, 1, 2);       // diffusore
       px(sh(0.05), 180, 52, 20, 10); px(ink, 184, 57, 14, 4);                                  // paraurti in tinta con presa
     }
-    if (L.spoiler) { px(ink, 1, 6, 18, 5); px(sh(0.05), 2, 7, 16, 3); px(sh(0.35), 2, 7, 16, 1); }
+    if (L.spoiler) { const sy = this.v40Ready ? 2 : 6; px(ink, 0, sy, 20, 5); px(sh(0.05), 1, sy + 1, 18, 3); px(sh(0.35), 1, sy + 1, 18, 1); px(ink, 15, sy + 4, 3, 3); }
     if (L.turbo) {                                                                             // intercooler nel paraurti e sigla
       px(ink, 182, 57, 16, 6); px('#9aa3b2', 183, 58, 14, 4); for (let q = 183; q < 197; q += 2) px('#5a6070', q, 58, 1, 4);
-      this.text(x, L.turbo2 ? 'T5' : 'T4', 8, 40, '#d8dde6');
-      if (L.turbo2) { this.text(x, 'TURBO', 66, 41, '#d8dde6'); px('#c41a1a', 64, 47, 24, 1); }
+      this.text(x, L.turbo2 ? 'T5' : 'T4', 6, 36, ink, 2); this.text(x, L.turbo2 ? 'T5' : 'T4', 5, 35, '#d8dde6', 2);
+      if (L.turbo2) { this.text(x, 'TURBO', 61, 37, ink, 2); this.text(x, 'TURBO', 60, 36, '#e8ecf2', 2); px('#c41a1a', 60, 47, 38, 2); }
     }
-    if (L.exhaust) { px(ink, 3, 63, 11, 5); px('#c9ced6', 4, 64, 9, 3); px('#f4f1e6', 5, 64, 6, 1); px('#2a2d34', 4, 65, 2, 2); }
-    else { px('#2a2d34', 6, 64, 5, 2); }
+    const ey = this.v40Ready ? 52 : 63;
+    if (L.exhaust) { px(ink, 2, ey, 12, 5); px('#c9ced6', 3, ey + 1, 10, 3); px('#f4f1e6', 4, ey + 1, 7, 1); px('#2a2d34', 3, ey + 2, 2, 2); }
+    else { px('#2a2d34', 5, ey + 1, 5, 2); }
     return (this.spr[key] = c);
   }
   v40Sprite(k) {

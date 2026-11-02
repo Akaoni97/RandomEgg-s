@@ -172,8 +172,9 @@ danni e vernice.
 | 8 | Kit turbo T4 (0,7 bar) | circa 213 CV, fischio e valvola | intercooler nel paraurti, sigla T4 |
 | 9 | Turbo maggiorato (1,3 bar) | circa 261 CV, scoppi e fiammate | sigla T5, scritta TURBO |
 
-Il disegno della V40 è un segnaposto in pixel art: se c'è `img/v40.png` (200×71, ruote centrate a x 41 e 156,
-y 56) si usa quello. La V40 per ora si vede solo nella vista 2D; i campioni registrati sono della Supra e con la
+Il disegno della V40 (`img/v40.png`, 200×71) è l'illustrazione fornita dal giocatore, riportata sulla sua griglia
+di pixel e scontornata; ruote centrate a x 41 e 156, y 56. Il lavaggio toglie lo sporco dai pixel del disegno, la
+vernice del Neon Kustom ricolora solo la carrozzeria; senza l'immagine resta un segnaposto disegnato in codice. La V40 per ora si vede solo nella vista 2D; i campioni registrati sono della Supra e con la
 V40 tacciono (si sente la sintesi del quattro cilindri).
 
 - Si parte con € 3.000, una Supra di serie e 50 litri di benzina (serbatoio da 70, consumo reale).
