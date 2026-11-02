@@ -311,7 +311,12 @@ class Street2D {
       this.skyCache = c;
     }
     g.drawImage(this.skyCache, 0, 0);
-    for (let i = 0; i < 150; i++) {
+    // pioggia: nuvole basse e cupe coprono luna e stelle
+    if (this.rainOn) {
+      g.fillStyle = '#1a1c2c'; g.fillRect(0, 0, W, 224);
+      for (let i = 0; i < 18; i++) { const cx = ((i * 97 + t * 4) % (W + 160)) - 80, cy = 30 + (i % 5) * 26; g.fillStyle = i % 2 ? '#22253a' : '#262a40'; this.span(g, cx, cy, 70 + (i % 3) * 20, 16 + (i % 4) * 4); }
+    }
+    for (let i = 0; i < (this.rainOn ? 0 : 150); i++) {
       const x = Math.floor(Street2D.rnd(i) * W), y = Math.floor(Street2D.rnd(i + 50) * 160);
       const tw = Math.sin(t * (2 + Street2D.rnd(i + 9) * 3) + i) > 0.55;
       g.fillStyle = tw ? '#ffffff' : '#7f88d8'; g.fillRect(x, y, 1, 1);
@@ -629,7 +634,7 @@ class Street2D {
     }
 
     // ---- asfalto a specchio: la città (neon, finestre) si riflette capovolta e tremolante sulla strada
-    const wetA = (this.rainOn ? 0.26 : 0.09) * (1 - 0.7 * (this.day || 0));
+    const wetA = this.quality === 'bassa' ? 0 : (this.rainOn ? 0.26 : 0.09) * (1 - 0.7 * (this.day || 0));
     if (wetA > 0.02) {
       if (!this.rf) this.rf = document.createElement('canvas');
       if (this.rf.width !== W) { this.rf.width = W; this.rf.height = 106; }
@@ -941,7 +946,7 @@ class Street2D {
     c.fillStyle = '#04060b'; c.fillRect(0, 0, this.canvas.width, this.canvas.height);
     c.drawImage(this.lo, shakeX * (this.canvas.height / this.LH), shake * (this.canvas.height / this.LH), this.canvas.width, this.canvas.height);
     // bagliore: copia ridotta, tenute solo le parti luminose, ingrandita e sommata (neon, fari, fiamme, lampioni)
-    if (typeof c.filter === 'string' && this.glow !== false) {
+    if (typeof c.filter === 'string' && this.glow !== false && (this.quality || 'alta') === 'alta') {
       const bw = Math.max(1, Math.round(this.LW / 4)), bh = 90;
       if (!this.bl) { this.bl = document.createElement('canvas'); }
       if (this.bl.width !== bw) { this.bl.width = bw; this.bl.height = bh; }

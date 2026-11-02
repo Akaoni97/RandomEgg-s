@@ -286,7 +286,7 @@ class Street3D extends Garage3D {
     if (this.poolMat) this.poolMat.opacity = 0.55 * Math.max(0.08, night);
     if (this.reflMat) this.reflMat.opacity = (this.rainOn ? 0.9 : 0.5) * Math.max(0.1, night);
     for (const l of this.lamps || []) { const h = l.g.children[4]; if (h && h.isSprite) h.material.opacity = 0.55 * Math.max(0.05, night); }
-    if (this.moon) { const on = d < 0.35; this.moon.visible = this.halo.visible = this.stars.visible = on && this.track !== 'mountain' || on && wet < 0.5 && this.track === 'mountain'; }
+    if (this.moon) { const on = d < 0.35; this.moon.visible = this.halo.visible = this.stars.visible = on && wet < 0.5; }
     this.sun.visible = d > 0.15 && wet < 0.6; this.sun.material.opacity = Math.min(1, d) * (1 - wet); this.sun.position.y = 40 + 110 * d;
     this.sun.material.color.copy(C(0xfff2d0).lerp(C(0xff9a50), ss));
     if (this.bloom) { this.bloom.strength = 0.85 - d * 0.72; this.bloom.threshold = 0.92 + d * 0.06; }

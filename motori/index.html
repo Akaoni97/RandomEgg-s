@@ -283,7 +283,7 @@ h1 span { color: var(--amber); }
 .pedal.gas { height: 170px; }
 .pedal .fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, rgba(201,221,90,.9), rgba(255,179,71,.5)); }
 .pedal.brake .fill { background: linear-gradient(0deg, rgba(255,90,58,.9), rgba(255,90,58,.35)); }
-.pedal.clutch .fill { background: linear-gradient(0deg, rgba(79,123,255,.85), rgba(79,123,255,.3)); }
+.pedal.clutch .fill { background: linear-gradient(0deg, color-mix(in srgb, var(--muted) 85%, transparent), color-mix(in srgb, var(--muted) 30%, transparent)); }
 .pedal label { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font: 400 13px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; pointer-events: none; }
 .pedal output { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font: 400 14px/1 var(--f-data); pointer-events: none; }
 .pedal kbd { position: absolute; left: 50%; transform: translateX(-50%); top: 27px; pointer-events: none; }
@@ -602,7 +602,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <button class="kbtn only3d" type="button" id="camNext">Telecamera<small>C</small></button>
       <label class="kbtn qsel">Ora <select id="clockSel" aria-label="Ora del giorno"><option value="auto">dinamica</option><option value="giorno">giorno</option><option value="tramonto">tramonto</option><option value="notte">notte</option></select></label>
       <label class="kbtn qsel">Meteo <select id="meteoSel" aria-label="Meteo (tasto K)"><option value="auto">dinamico</option><option value="sereno">sereno</option><option value="pioggia">pioggia</option></select></label>
-      <label class="kbtn only3d qsel">Qualità <select id="q3d" aria-label="Qualità grafica 3D"><option value="alta">alta · bloom</option><option value="media">media</option><option value="bassa">bassa</option></select></label>
+      <label class="kbtn qsel">Qualità <select id="q3d" aria-label="Qualità grafica 3D"><option value="alta">alta · bloom</option><option value="media">media</option><option value="bassa">bassa</option></select></label>
       <p class="hint"><span id="g3dName">modello di base</span> · trascina per girare la visuale</p>
     </div>
   </section>
@@ -1549,7 +1549,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const is2d = S.look === '2d';
     $('g2d').hidden = !is2d; $('g3d').hidden = is2d;
     document.querySelectorAll('.only3d').forEach((el) => { el.hidden = is2d; });
-    if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); street2d.setRain(!!S.rain); }
+    if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); street2d.setRain(!!S.rain); street2d.quality = S.q || 'alta'; }
     else {
       garage = make3D();
       if (garage) garage.setView(S.look === 'cockpit' ? 'cockpit' : (S.cam && S.cam !== 'cockpit' ? S.cam : 'chase'));
@@ -1565,7 +1565,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   applyLook();
   $('camNext').addEventListener('click', nextCam);
   $('q3d').value = S.q || 'alta';
-  $('q3d').addEventListener('change', (e) => { S.q = e.target.value; if (street3d) street3d.setQuality(S.q); try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } });
+  $('q3d').addEventListener('change', (e) => { S.q = e.target.value; if (street3d) street3d.setQuality(S.q); if (street2d) street2d.quality = S.q; try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } });
   const sw = $('swatches');
   PAINTS.push(['model', 'Colore del modello']);
   PAINTS.forEach(([hex, name]) => {
