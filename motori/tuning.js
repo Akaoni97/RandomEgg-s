@@ -87,9 +87,25 @@ const TUNING = {
   tires: {
     label: 'Gomme posteriori',
     items: [
-      { id: 'oem', price: 0, brand: 'Bridgestone', name: 'Potenza originali 265/40 R17', note: 'Stradali: con molta coppia pattinano in prima e in seconda.', sim: { mu: 1.1 }, dsp: {} },
-      { id: 'r888r', price: 1100, brand: 'Toyo', name: 'Proxes R888R', note: 'Semi-slick: più presa in partenza, stridio più acuto quando slittano.', sim: { mu: 1.3 }, dsp: {} },
-      { id: 'etstreet', price: 1500, brand: 'Mickey Thompson', name: 'ET Street R', note: 'Radiali da drag: partenze piantate anche con 700 CV.', sim: { mu: 1.55 }, dsp: {} },
+      // tyre: curva di Pacejka (B rigidezza, C forma, E caduta dopo il picco), temperatura ideale e ampiezza della finestra
+      { id: 'oem', price: 0, brand: 'Bridgestone', name: 'Potenza originali 265/40 R17', note: 'Stradali: picco al 10 % di slittamento, poi calano dolcemente. Lavorano bene da freddo (ideale 80 °C).', sim: { mu: 1.1, tyre: { B: 20, C: 1.42, E: 0.1, opt: 80, win: 70, crr: 0.012 } }, dsp: {} },
+      { id: 'r888r', price: 1100, brand: 'Toyo', name: 'Proxes R888R', note: 'Semi-slick: tanta presa ma picco stretto al 7 %, oltre mollano di colpo. Vanno scaldate (ideale 95 °C).', sim: { mu: 1.3, tyre: { B: 22, C: 1.5, E: 0.4, opt: 95, win: 45, crr: 0.013 } }, dsp: {} },
+      { id: 'etstreet', price: 1500, brand: 'Mickey Thompson', name: 'ET Street R', note: 'Radiali da drag: fianco morbido, picco largo al 15 % e calo minimo. Ideali tiepide (70 °C); in curva e in frenata sono le peggiori.', sim: { mu: 1.55, tyre: { B: 15, C: 1.3, E: -0.3, opt: 70, win: 55, crr: 0.016, brake: 0.88 } }, dsp: {} },
+    ],
+  },
+  final: {
+    label: 'Differenziale e rapporto finale',
+    items: [
+      { id: 'oem', price: 0, brand: 'Toyota', name: 'Torsen, finale 3,133', note: 'Il differenziale della RZ: ripartisce la coppia sulla ruota che tiene. Lungo: 285 km/h in sesta.', sim: { fd: 3.133, diff: 'torsen' } },
+      { id: 'f3769', price: 900, brand: 'Toyota', name: 'Torsen, finale 3,769 (corto)', note: 'Coppia conica della versione automatica: +20 % di spinta in ogni marcia, meno allungo.', sim: { fd: 3.769, diff: 'torsen' } },
+      { id: 'osg4083', price: 1900, brand: 'OS Giken', name: 'Autobloccante a 2 vie, finale 4,083', note: 'Da drag: blocca tutto in trazione e in rilascio, partenze cattive, velocità massima più bassa.', sim: { fd: 4.083, diff: 'lsd' } },
+    ],
+  },
+  gearbox: {
+    label: 'Cambio',
+    items: [
+      { id: 'oem', price: 0, brand: 'Getrag', name: 'V160 a 6 marce', note: 'Rapporti di serie: prima lunga, sesta di riposo.', sim: { gears: null } },
+      { id: 'close', price: 4200, brand: 'Quaife', name: 'Ravvicinato a 6 marce', note: 'Prima più corta, marce vicine: a ogni cambiata i giri calano poco e il turbo resta in pressione.', sim: { gears: [0, 3.25, 2.25, 1.72, 1.38, 1.13, 0.94] } },
     ],
   },
   clutch: {
@@ -102,10 +118,10 @@ const TUNING = {
 };
 
 const TUNING_PRESETS = [
-  { id: 'stock', name: 'Originale', sel: { exhaust: 'oem', cat: 'oem', turbo: 'ct12b', bov: 'oem', wastegate: 'int', intake: 'oem', cams: 'oem', ecu: 'oem', clutch: 'oem', tires: 'oem' } },
-  { id: 'street', name: 'Street biturbo', sel: { exhaust: 'hks', cat: 'sport', turbo: 'ct12b', bov: 'ssqv', wastegate: 'int', intake: 'pf', cams: 'oem', ecu: 'link', clutch: 'oem', tires: 'r888r' } },
-  { id: 'single', name: 'Big single', sel: { exhaust: 'tomei', cat: 'sport', turbo: 'pte6466', bov: 'raceport', wastegate: 'tial', intake: 'pf', cams: 'hks264', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet' } },
-  { id: 'drag', name: 'Drag anni 90', sel: { exhaust: 'straight', cat: 'decat', turbo: 't51r', bov: 'none', wastegate: 'tial', intake: 'pf', cams: 'hks272', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet' } },
+  { id: 'stock', name: 'Originale', sel: { exhaust: 'oem', cat: 'oem', turbo: 'ct12b', bov: 'oem', wastegate: 'int', intake: 'oem', cams: 'oem', ecu: 'oem', clutch: 'oem', tires: 'oem', final: 'oem', gearbox: 'oem' } },
+  { id: 'street', name: 'Street biturbo', sel: { exhaust: 'hks', cat: 'sport', turbo: 'ct12b', bov: 'ssqv', wastegate: 'int', intake: 'pf', cams: 'oem', ecu: 'link', clutch: 'oem', tires: 'r888r', final: 'oem', gearbox: 'oem' } },
+  { id: 'single', name: 'Big single', sel: { exhaust: 'tomei', cat: 'sport', turbo: 'pte6466', bov: 'raceport', wastegate: 'tial', intake: 'pf', cams: 'hks264', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet', final: 'f3769', gearbox: 'close' } },
+  { id: 'drag', name: 'Drag anni 90', sel: { exhaust: 'straight', cat: 'decat', turbo: 't51r', bov: 'none', wastegate: 'tial', intake: 'pf', cams: 'hks272', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet', final: 'osg4083', gearbox: 'close' } },
 ];
 
 function tuningItem(cat, id) {
@@ -124,7 +140,7 @@ function tuningParams(sel) {
     sim: {
       turbo, pw, limiter: ecu.sim.lim, sparkCut: ecu.sim.spark, ecuLaunch: ecu.sim.launch, ecuPops: ecu.sim.pops,
       idle: cams.sim.idle, camLow: cams.sim.low, camHigh: cams.sim.high, lope: cams.sim.lope, Ie: cl.sim.Ie,
-      mu: g('tires').sim.mu,
+      mu: g('tires').sim.mu, tyre: g('tires').sim.tyre, fd: g('final').sim.fd, diff: g('final').sim.diff, gears: g('gearbox').sim.gears,
       valve: g('bov').dsp.v === 2 ? 'flutter' : g('bov').dsp.v === 1 ? 'bov' : 'recirc',
     },
     dsp: {

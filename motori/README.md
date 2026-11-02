@@ -171,6 +171,7 @@ danni e vernice.
 | 7 | Spoiler | — | alettone sul portellone |
 | 8 | Kit turbo T4 (0,7 bar) | circa 213 CV, fischio e valvola | intercooler nel paraurti, sigla T4 |
 | 9 | Turbo maggiorato (1,3 bar) | circa 261 CV, scoppi e fiammate | sigla T5, scritta TURBO |
+| 10 | Autobloccante Quaife e finale 4,45 | trazione e spinta | — |
 
 Il disegno della V40 (`img/v40.png`, 200×71) è l'illustrazione fornita dal giocatore, riportata sulla sua griglia
 di pixel e scontornata; ruote centrate a x 41 e 156, y 56. Il lavaggio toglie lo sporco dai pixel del disegno, la
@@ -301,6 +302,31 @@ alla frequenza della girante (più una sua armonica), con una componente tonale 
 derivano lentamente e un filtro che toglie la parte stridula. La valvola si apre con uno scatto secco, poi suonano
 tre strati con tempi propri (sibilo alto che si spegne per primo, getto che scende di tono, "pff" grave che dura di
 più) e un tremolio irregolare del getto; il flutter ha battiti di forza e ritmo leggermente diversi. Livelli invariati.
+
+## Gomme, rapporti e trazione
+
+- **Gomme a mescola:** ogni gomma ha la sua curva di aderenza (formula di Pacejka) e la sua temperatura ideale.
+  - Stradali di serie: picco largo, calano dolcemente dopo, ideali a 80 °C.
+  - Semi-slick Toyo R888R: più presa ma picco stretto, oltre mollano di colpo; vanno scaldate (95 °C).
+  - Mickey Thompson ET Street R: fianco morbido, picco largo e calo minimo, ideali tiepide; peggiori in frenata.
+  - Il battistrada risponde con un piccolo ritardo (lunghezza di rilassamento), quindi la sgommata cresce e si
+    calma in modo progressivo. Calore, usura e pioggia cambiano la presa.
+- **Differenziale:** aperto, Torsen (di serie sulla Supra RZ) o autobloccante; più blocca, più spinta passa a terra.
+- **Rapporti:** in officina c'è la tabella con la velocità al limitatore in ogni marcia e i giri a cui si riparte
+  dopo la cambiata. Nuovi pezzi per la Supra: finale corto 3,769, autobloccante OS Giken con finale 4,083, cambio
+  Quaife ravvicinato.
+- **Trazione anteriore della V40:** in accelerazione il peso va dietro e le ruote davanti perdono presa; il decimo
+  potenziamento (autobloccante Quaife e finale 4,45) la mette a terra.
+- **Controllo di trazione (TRC)** inseribile: oltre il picco della gomma toglie gas finché le ruote riprendono.
+  **Freni limitati dall'aderenza** con ABS a impulsi. Spie TRC, ABS e SLIP sul quadro in gioco.
+
+| Prova (TRC inserito) | 0-100 | 400 m |
+| --- | --- | --- |
+| Supra di serie | 5,8 s | 13,8 s a 179 km/h |
+| Supra "Drag anni 90" | 4,2 s | 11,5 s a 226 km/h |
+| V40 di serie | 9,0 s | 16,7 s a 139 km/h |
+| V40 col turbo maggiorato | 6,9 s | 14,8 s a 170 km/h |
+| V40 completa (autobloccante) | 6,3 s | 14,4 s a 172 km/h |
 
 ## Da dove viene il suono
 

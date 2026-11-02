@@ -30,7 +30,8 @@ const CARS = {
       { id: 'kit', name: 'Kit estetico', price: 1200, km: 16, note: 'Paraurti con labbro, minigonne e diffusore in tinta.' },
       { id: 'spoiler', name: 'Spoiler sul portellone', price: 350, km: 20, note: 'Alettone sopra il lunotto.' },
       { id: 'turbo', name: 'Kit turbo T4', price: 3800, km: 28, note: 'Il turbo della V40 T4: Mitsubishi TD04HL, intercooler nel paraurti, 0,7 bar. Fischio e valvola.' },
-      { id: 'turbo2', name: 'Turbo maggiorato e iniettori', price: 5500, km: 45, note: 'Turbo più grande a 1,2 bar, iniettori e taglio d\'accensione: scoppi e fiammate.' },
+      { id: 'turbo2', name: 'Turbo maggiorato e iniettori', price: 5500, km: 45, note: 'Turbo più grande a 1,3 bar, iniettori e taglio d\'accensione: scoppi e fiammate.' },
+      { id: 'lsd', name: 'Autobloccante Quaife e finale corto', price: 1800, km: 60, note: 'Con tanta coppia sulle ruote davanti il differenziale aperto fa pattinare la ruota scarica: il Quaife la tiene giù. Finale 4,45: più spinta in ogni marcia.' },
     ],
   },
 };
@@ -53,6 +54,9 @@ function v40Params(level) {
     sim: {
       turbo, pw, limiter: has('aspira') ? 6900 : 6500, sparkCut: t2, ecuLaunch: t2, ecuPops: t2,
       idle: 800, camLow: 1, camHigh: 1, lope: 0, Ie: 0.16, mu, valve: t1 ? 'bov' : 'recirc',
+      // gomme: di serie 195/55 R15 da turismo; coi cerchi 205/45 R16 sportive
+      tyre: has('cerchi') ? { B: 20, C: 1.45, E: 0.2, opt: 85, win: 60, crr: 0.012 } : { B: 17, C: 1.4, E: 0.05, opt: 70, win: 75, crr: 0.011, brake: 0.95 },
+      diff: has('lsd') ? 'lsd' : 'open', fd: has('lsd') ? 4.45 : 4.0, gears: null,
       boostK: 0.42,                 // 1.9-2.0 litri: la stessa pressione rende meno che sul 3.0 della Supra
     },
     dsp: Object.assign({}, base.dsp, {

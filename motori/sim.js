@@ -18,7 +18,7 @@ class SupraSim {
     // parti montate (default: Supra originale). tuning.js → tuningParams(sel).sim
     this.tune = { turbo: { max: 0.75, a: 1500, b: 3000, up: 0.26, down: 0.75, twin: true }, limiter: 7000, sparkCut: false,
       ecuLaunch: false, ecuPops: false, idle: 750, camLow: 1, camHigh: 1, lope: 0, Ie: 0.21, valve: 'recirc', pw: 1 };
-    this.cfg = { valve: 'recirc', pops: false, launch: false, autoClutch: true, revMatch: true };
+    this.cfg = { valve: 'recirc', pops: false, launch: false, autoClutch: true, revMatch: true, tc: true };
     this.in = { thr: 0, brake: 0, clutch: 0 };
     this.reset();
   }
@@ -46,6 +46,9 @@ class SupraSim {
     Object.assign(this.tune, t);
     this.P.limiter = this.tune.limiter; this.P.idle = this.tune.idle; this.P.Ie = this.tune.Ie;
     if (this.tune.mu) this.P.mu = this.tune.mu;
+    if (this.tune.fd) this.P.fd = this.tune.fd;
+    if (Array.isArray(this.tune.gears)) this.P.gears = this.tune.gears.slice();
+    if (this.tune.tyre && this.tune.tyre.crr) this.P.crr = this.tune.tyre.crr;
     this.cfg.valve = this.tune.valve;
   }
   // potenza e coppia massime a regime stabilizzato, per la scheda del tuning
@@ -65,7 +68,7 @@ class SupraSim {
   }
   // aderenza da temperatura (ottimo verso 90 °C) e usura (fino a −30 %)
   tireGrip() {
-    const d = (this.tireT - 90) / 65;
+    const ty = this.tune.tyre || {}, d = (this.tireT - (ty.opt || 90)) / (ty.win || 65);
     const cooked = this.tireT > 110 ? (this.tireT - 110) * 0.004 : 0;
     // asfalto bagnato: circa un quarto di aderenza in meno (wet da 0 a 1)
     return SIM_CLAMP(1.03 - 0.08 * d * d - cooked, 0.7, 1.03) * (1 - 0.3 * this.tireWear) * (1 - 0.27 * (this.wet || 0));
@@ -199,6 +202,12 @@ class SupraSim {
       this.clutch = clutchPos;
     }
 
+    // ---- controllo di trazione (TRC): oltre il picco della gomma toglie gas finché le ruote riprendono ----
+    const tcOn = cfg.tc && this.gear > 0 && this.running && Math.abs(this.v) > 0.3 && !this.shiftSeq;
+    const over = tcOn && (this.slipNow || 0) > 0.16 ? 1 : 0;
+    this.tcCut = (this.tcCut || 0) + (over - (this.tcCut || 0)) * Math.min(1, h / (over ? 0.03 : 0.12));
+    this.tcAct = this.tcCut > 0.15;
+    if (this.tcCut > 0.01) thrCmd *= 1 - 0.8 * this.tcCut;
     // ---- launch control (2-step) -------------------------------------------------
     this.launchArmed = cfg.launch && tn.ecuLaunch && this.running && this.gear >= 1 && Math.abs(this.v) < 1.5 &&
       (cfg.autoClutch ? I.brake > 0.25 : clutchPos > 0.5);
@@ -275,8 +284,16 @@ class SupraSim {
     // gomme: carico (con trasferimento in accelerazione), sensibilità al carico, temperatura e usura
     // carico sull'asse motore: in accelerazione il peso va dietro (aiuta la trazione posteriore, toglie a quella anteriore)
     const Nr = SIM_CLAMP(P.mass * 9.81 * P.rearW + (P.fwd ? -1 : 1) * P.mass * this.acc * P.cgH / P.wb, 2500, 12000);
-    const Fmax = P.mu * Nr * (1 - 0.08 * (Nr / 7260 - 1)) * this.tireGrip();
-    const Ft = Fmax * Math.sin(1.3 * Math.atan(18 * slip));
+    // differenziale: aperto (la ruota scarica gira a vuoto), Torsen (ripartisce), autobloccante (blocca)
+    const dk = tn.diff === 'lsd' ? 1 : tn.diff === 'torsen' ? 0.96 : 0.87;
+    const Fmax = P.mu * Nr * (1 - 0.08 * (Nr / 7260 - 1)) * this.tireGrip() * dk;
+    // gomma: lo slittamento "visto" dal battistrada segue quello reale con un ritardo (lunghezza di rilassamento ~0,3 m),
+    // poi curva di Pacejka della mescola: picco, e oltre la forza cala più o meno in fretta
+    const ty = tn.tyre || { B: 20, C: 1.42, E: 0.1 };
+    this.kap = (this.kap || 0) + (slip - (this.kap || 0)) * Math.min(1, h * (Math.abs(this.v) + 3) / 0.3);
+    const bk = ty.B * this.kap;
+    const Ft = Fmax * Math.sin(ty.C * Math.atan(bk - ty.E * (bk - Math.atan(bk))));
+    this.slipNow = slip;
     this.slipPow = Math.abs(Ft * (vw - this.v));                          // potenza dissipata nello slittamento (W)
     const Tloss = (6 + 0.35 * Math.abs(this.ww)) * Math.tanh(this.ww * 4);
     const Tload = Ft * P.r + Tloss;
@@ -304,7 +321,11 @@ class SupraSim {
     // ---- vettura ---------------------------------------------------------------------------------
     const v0 = this.v;
     const drag = 0.5 * 1.2 * P.cd * (1 + this.damage * 0.25) * P.A * this.v * Math.abs(this.v);
-    const Fb = I.brake * P.mass * 9.81 * 1.05;
+    // freni: chiedono fino a 1,1 g, ma più di quanto tengono le quattro gomme non danno; l'ABS lavora a impulsi al limite
+    const ty2 = tn.tyre || {}, gripAll = (P.mu * 0.92 + 0.08) * this.tireGrip() * (ty2.brake || 1) * P.mass * 9.81;
+    let Fb = I.brake * P.mass * 9.81 * 1.1;
+    this.abs = Fb > gripAll * 0.97 && Math.abs(this.v) > 1.5;
+    if (this.abs) { this.absPh = ((this.absPh || 0) + h * 14) % 1; Fb = gripAll * (this.absPh < 0.7 ? 0.97 : 0.8); }
     const Froll = P.crr * (1 + Math.abs(this.v) / 120) * P.mass * 9.81;
     if (Math.abs(this.v) < 0.03) {
       const Fs = Fb + Froll;
@@ -334,7 +355,7 @@ class SupraSim {
     return {
       rpm: this.rpm, charge: this.charge, air: this.air, thr: this.thr, boost: this.pipeP, turbo: this.tur,
       cut: this.cut, ovr: this.ovr, running: this.running ? 1 : 0, starter: this.starter ? 1 : 0,
-      speed: Math.abs(this.v), spin: SIM_CLAMP((Math.abs(vw - this.v) - 1.5) / 5, 0, 1),
+      speed: Math.abs(this.v), spin: SIM_CLAMP((Math.abs(vw - this.v) - 1.5) / 5, 0, 1), abs: this.abs ? 1 : 0, tc: this.tcAct ? 1 : 0,
       drive: Math.abs(this.Tc * this.ratio(this.gear)) / 3000, gearRpm: this.ww * this.ratio(this.gear) * 9.5493,
       rev: this.gear === -1 ? 1 : 0, wg: this.wg, sec: this.tune.turbo.twin ? this.sec : 0,
       rattle: this.running && (this.gear === 0 || this.shiftSeq) && this.clutch < 0.3 ? 1 - SIM_SS(900, 1600, this.rpm) : 0,
