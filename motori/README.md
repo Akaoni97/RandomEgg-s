@@ -227,6 +227,13 @@ Il minimo (`on_760.wav` e `off_760.wav`, 760 giri) viene da *BMW 320 (1988) engi
 [Freesound (173005)](https://freesound.org/people/ninebilly/sounds/173005/), CC0: un sei cilindri in linea come il 2JZ,
 perché nella registrazione al banco il minimo è coperto dai rulli. Il cursore Sintesi/Campioni parte a metà; i campioni si possono togliere o sostituire dal pannello.
 
+**Registrazioni suonate meglio e telecamera viva.** Gli anelli registrati si sovrappongono solo nella fascia centrale
+fra due regimi (vicino al proprio regime ognuno suona da solo, niente effetto "due motori"), passano da un filtro che
+dà corpo ai bassi sotto carico e si scurisce in rilascio, e da una saturazione morbida che li scalda. In 3D la
+telecamera d'inseguimento resta indietro in accelerazione e si avvicina in frenata, vibra con la velocità e dà un
+colpo di campo visivo a ogni cambiata; di notte si vedono i fasci dei fari nell'aria, più marcati sotto la pioggia
+e con gli abbaglianti.
+
 **Turbo e valvola più naturali.** Il fischio del turbo non è più una sinusoide pura: è una banda d'aria risonante
 alla frequenza della girante (più una sua armonica), con una componente tonale leggera, intonazione e volume che
 derivano lentamente e un filtro che toglie la parte stridula. La valvola si apre con uno scatto secco, poi suonano

@@ -39,6 +39,13 @@ class Street3D extends Garage3D {
     this.brakeGlow = [0.55, -0.55].map((z) => { const sp = new T.Sprite(this.glowMat('#ff2a1a', 0)); sp.scale.set(1.6, 1.0, 1); sp.position.set(-2.45, 0.74, z); this.root.add(sp); return sp; });
     this.headGlow = [0.58, -0.58].map((z) => { const sp = new T.Sprite(this.glowMat('#fff3dd', 0.5)); sp.scale.set(1.1, 0.8, 1); sp.position.set(2.3, 0.6, z); this.root.add(sp); return sp; });
     this.shakeT = 0;
+    // fasci dei fari nell'aria: coni additivi che sfumano in lunghezza (si vedono di notte, di più nella pioggia)
+    const beamTex = this.tex(16, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.18, 'rgba(255,255,255,.4)'); gr.addColorStop(0.55, 'rgba(255,255,255,.08)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+    this.beamMat = new T.MeshBasicMaterial({ color: 0xfff2d8, alphaMap: beamTex, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false, side: T.BackSide, fog: false });
+    this.beams = [0.6, -0.6].map((z) => {
+      const L = 18, cg = new T.ConeGeometry(2.2, L, 32, 1, true); cg.translate(0, -L / 2, 0); cg.rotateZ(Math.PI / 2);
+      const m = new T.Mesh(cg, this.beamMat); m.position.set(2.15, 0.66, z); m.rotation.z = -0.045; m.renderOrder = 5; this.root.add(m); return m;
+    });
   }
 
   resize() {
@@ -73,7 +80,18 @@ class Street3D extends Garage3D {
   }
   beforeRender(dt, s) {
     const v = this.view || 'chase';
-    if (v === 'chase') return;
+    if (v === 'chase') {
+      // telecamera da inseguimento viva: resta indietro in accelerazione e si avvicina in frenata, oscilla con la
+      // velocità, si inclina in curva; l'offset si applica e si toglie ogni fotogramma (l'utente può sempre girarla)
+      const C = this.camFx || (this.camFx = { o: 0, r: 0, sx: 0, sy: 0 }), cam = this.camera;
+      cam.position.x -= C.sx; cam.position.y -= C.sy;
+      const tgt = Math.max(-0.7, Math.min(0.9, -(s.acc || 0) * 0.09));
+      const no = C.o + (tgt - C.o) * Math.min(1, dt * 2.2);
+      cam.position.x += no - C.o; this.controls.target.x += (no - C.o) * 0.35; C.o = no;
+      const sp = Math.abs(s.v || 0), amp = Math.min(0.03, sp * 0.0006) + (this.kickT || 0) * 0.03;
+      C.sx = (Math.random() - 0.5) * amp; C.sy = (Math.random() - 0.5) * amp; cam.position.x += C.sx; cam.position.y += C.sy;
+      return;
+    }
     const T = this.T, st = this.state;
     this.body.updateMatrixWorld(true); this.root.updateMatrixWorld(true);
     // testa del pilota come nei simulatori: molla smorzata sulle accelerazioni (indietro in spinta,
@@ -263,6 +281,7 @@ class Street3D extends Garage3D {
   // ---------------------------------------------------------------- ora del giorno e tempo
   // d: luce del giorno 0 (notte) … 1 (pieno giorno); ss: tramonto/alba 0…1; wet: pioggia 0…1
   setDaylight(d, ss, wet) {
+    this.dayK = d;
     const T = this.T, C = (h) => new T.Color(h);
     if (!this.dl) {
       this.dl = { hemi: this.hemi.intensity, key: this.key.intensity, rim: this.rim.intensity, expo: this.renderer.toneMappingExposure };
@@ -950,9 +969,16 @@ class Street3D extends Garage3D {
       if (game) for (const f of game.fx) if (f.k === 'crash') this.kickT = 1.6;
       this.kickT = Math.max(0, (this.kickT || 0) - dt * 4); U.kick.value = this.kickT;
     }
-    const fov = (this.baseFov || 40) + Math.min(this.cockpitOn ? 6 : 16, Math.max(0, s.v) * (this.cockpitOn ? 0.08 : 0.2));
+    if ((s.events || []).some((e) => e.type === 'clunk')) this.fovKick = 3.5;
+    this.fovKick = Math.max(0, (this.fovKick || 0) - dt * 7);
+    const fov = (this.baseFov || 40) + Math.min(this.cockpitOn ? 6 : 16, Math.max(0, s.v) * (this.cockpitOn ? 0.08 : 0.2)) + this.fovKick;
     if (Math.abs(fov - this.camera.fov) > 0.05) { this.camera.fov += (fov - this.camera.fov) * Math.min(1, dt * 3); this.camera.updateProjectionMatrix(); }
     this.headlight.intensity = s.ign ? (s.high ? 4.6 : 2.6) : 0;
+    if (this.beams) {
+      const night = 1 - (this.dayK || 0), on = s.ign && !this.cockpitOn ? 1 : 0;
+      this.beamMat.opacity += ((0.022 + (this.rainOn ? 0.035 : 0) + (s.high ? 0.02 : 0)) * night * on - this.beamMat.opacity) * Math.min(1, dt * 4);
+      for (const b of this.beams) { b.visible = this.beamMat.opacity > 0.004; b.scale.set(s.high ? 1.35 : 1, 1, 1); }
+    }
     this.headlight.distance = s.high ? 130 : 70; this.headlight.angle = s.high ? 0.33 : 0.42;
     this.brakeGlow.forEach((b) => { b.material.opacity = s.ign ? 0.25 + (s.brake || 0) * 0.75 : 0; });
     this.headGlow.forEach((b) => { b.material.opacity = s.ign ? (s.high ? 0.95 : 0.55) : 0; b.scale.set(s.high ? 1.7 : 1.1, s.high ? 1.1 : 0.8, 1); });

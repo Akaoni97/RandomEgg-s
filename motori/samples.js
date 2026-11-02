@@ -9,7 +9,13 @@ class SamplePlayer {
     this.ctx = ctx;
     this.out = ctx.createGain();
     this.out.gain.value = 0;
-    this.out.connect(dest);
+    // catena: corpo sui bassi sotto carico, filtro che si chiude in rilascio, saturazione morbida (calore)
+    this.body = ctx.createBiquadFilter(); this.body.type = 'lowshelf'; this.body.frequency.value = 180; this.body.gain.value = 0;
+    this.tone = ctx.createBiquadFilter(); this.tone.type = 'lowpass'; this.tone.frequency.value = 9000; this.tone.Q.value = 0.5;
+    this.warm = ctx.createWaveShaper(); const k = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; k[i] = Math.tanh(x * 1.6) / Math.tanh(1.6); }
+    this.warm.curve = k; this.warm.oversample = '2x';
+    this.out.connect(this.body); this.body.connect(this.tone); this.tone.connect(this.warm); this.warm.connect(dest);
     this.items = [];
   }
 
@@ -60,7 +66,9 @@ class SamplePlayer {
     for (let i = 1; i < list.length; i++) {
       const a = list[i - 1], b = list[i];
       if (rpm <= b.rpm) {
-        const t = (rpm - a.rpm) / Math.max(1, b.rpm - a.rpm);
+        // dissolvenza solo nella fascia centrale: vicino al proprio regime ogni anello suona da solo
+        // (due motori a giri diversi sovrapposti a lungo suonano "doppi")
+        let t = (rpm - a.rpm) / Math.max(1, b.rpm - a.rpm); t = Math.min(1, Math.max(0, (t - 0.275) / 0.45));
         w.set(a, Math.cos(t * Math.PI / 2)); w.set(b, Math.sin(t * Math.PI / 2));
         return w;
       }
@@ -71,6 +79,8 @@ class SamplePlayer {
   update(rpm, load, level) {
     const t = this.ctx.currentTime;
     this.out.gain.setTargetAtTime(rpm > 150 ? level : 0, t, 0.06);
+    this.body.gain.setTargetAtTime(1 + 4 * load, t, 0.08);
+    this.tone.frequency.setTargetAtTime(2600 + 7400 * load, t, 0.12);
     const on = this.items.filter((i) => !i.off), off = this.items.filter((i) => i.off);
     const wOn = SamplePlayer.weights(on.length ? on : off, rpm);
     const wOff = SamplePlayer.weights(off.length ? off : on, rpm);
