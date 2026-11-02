@@ -94,6 +94,22 @@ class SamplePlayer {
     return c;
   }
 
+  // pompaggio: il fischio del turbo in loop viene spezzato a colpi e cala di tono mentre la girante rallenta
+  surge(I, len, curve) {
+    const its = this.items.filter((i) => i.fx === 'whine' && i.src && !i.mute);
+    if (!its.length) return false;
+    const t = this.ctx.currentTime;
+    for (const it of its) {
+      const g = it.g.gain, r = it.src.playbackRate, r0 = r.value;
+      g.cancelScheduledValues(t); r.cancelScheduledValues(t);
+      const k = Math.min(1.4, 0.75 + 0.45 * I) * it.norm;
+      g.setValueCurveAtTime((curve || SamplePlayer.chop(len, 1)).map((v) => v * k), t, len);
+      r.setValueAtTime(r0, t); r.linearRampToValueAtTime(r0 * 0.8, t + len);
+      it.hold = t + len + 0.01;
+    }
+    return true;
+  }
+
   has(role) { return this.items.some((i) => i.fx === role && !i.mute); }
 
   // effetto singolo: un file a caso del suo tipo, con piccole variazioni di tono
@@ -108,7 +124,7 @@ class SamplePlayer {
     src.connect(g).connect(this.fxOut);
     const len = opt.len ? Math.min(opt.len, it.dur) : it.dur;
     const off = opt.len && it.dur > len + 0.2 ? Math.random() * (it.dur - len - 0.1) : 0;
-    if (opt.chop) g.gain.setValueCurveAtTime(SamplePlayer.chop(len, a), t, len);
+    if (opt.chop) g.gain.setValueCurveAtTime((opt.curve || SamplePlayer.chop(len, 1)).map((v) => v * a), t, len);
     else { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + 0.006); }
     if (opt.len && !opt.chop) { g.gain.setValueAtTime(a, t + len * 0.55); g.gain.linearRampToValueAtTime(0, t + len); }
     src.start(t, off, len + 0.02);
@@ -122,7 +138,8 @@ class SamplePlayer {
     this.fxOut.gain.setTargetAtTime(level, t, 0.05);
     const b = Math.min(1, Math.max(0, p.boost / 0.8)), sp = Math.min(1, Math.max(0, p.turbo));
     for (const it of this.items) {
-      if (!it.fx || !it.src) continue;
+      if (!it.fx || !it.src || (it.hold && t < it.hold)) continue;
+      if (it.hold) { it.hold = 0; it.g.gain.cancelScheduledValues(t); it.src.playbackRate.cancelScheduledValues(t); it.g.gain.setValueAtTime(0, t); }
       let w = 0, r = 1;
       if (!it.mute && p.running) {
         // come nella mod: tono del turbo da -0,29 a +0,24 ottave con la pressione

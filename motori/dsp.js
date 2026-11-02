@@ -77,7 +77,7 @@ class EngineDSP {
     this.wDrift = 0; this.wAmp = 0; this.wN = 0;
     // valvola: strati con filtri propri, scatto d'apertura, tremolio dell'aria
     this.bovAir = new BQ().set('hp', 3200, 0.6, sr); this.bovLow = new BQ().set('bp', 650, 1.1, sr); this.bovWob = 0; this.bovClick = new BQ().set('hp', 1800, 0.7, sr);
-    this.flAmp = 1; this.fxB = 1; this.fxT = 1;
+    this.flAmp = 1; this.fxB = 1; this.fxT = 1; this.fxS = 1; this.flOn = 0;
     this.bov = { env: 0, t: 1, I: 0, len: 0.3, rate: 20 };
     this.bovBP = new BQ(); this.bovHP = new BQ().set('hp', 500, 0.7, sr);
     this.flBP = new BQ().set('bp', 520, 1.2, sr); this.flPh = 0;
@@ -137,7 +137,7 @@ class EngineDSP {
   msg(m) {
     if (m.p) Object.assign(this.T, m.p);
     if (m.cfg) this.configure(Object.assign(this.cfg, m.cfg));
-    const fx = this.cfg.fx || {}; this.fxB = fx.bov ? 0 : 1; this.fxT = fx.turbo ? 0.25 : 1;
+    const fx = this.cfg.fx || {}; this.fxB = fx.bov ? 0 : 1; this.fxT = fx.turbo ? 0.25 : 1; this.fxS = fx.turbo ? 0 : 1;
     if (m.ev) for (const e of m.ev) this.event(e);
   }
 
@@ -392,7 +392,7 @@ class EngineDSP {
       const tAmp = Math.pow(S.turbo, 1.7) * (0.22 + 0.78 * S.thr) * tb.w * (0.6 + 0.4 * tn.intake.wh);
       let turbo = this.wLP.p(whistle * tAmp) + this.whooshBP.p(nz3) * S.turbo * S.air * tb.wh * tn.intake.wh;
 
-      let bov = 0;
+      let bov = 0; this.flOn = 0;
       if (this.bov.env > 0) {
         const B = this.bov; B.t += 1 / sr;
         const att = 0.004;
@@ -408,6 +408,7 @@ class EngineDSP {
           this.flPh += B.rate / sr;
           if (this.flPh > 1) { this.flPh -= 1; this.flAmp = 0.65 + 0.35 * Math.random(); B.rate *= 0.94 + 0.12 * Math.random(); }   // battiti irregolari
           const chop = Math.pow(0.5 + 0.5 * Math.cos(TAU * this.flPh), 4) * this.flAmp;
+          this.flOn = chop * env * B.I;
           bov = (nb * 0.5 + this.flBP.p(nz2) * 1.5 + low * 0.95 + Math.sin(TAU * this.tph) * 0.1) * chop * env * wob * B.I * bv.g * 1.35 + click * bv.g * B.I * 0.5;
         } else {
           bov = (nb * 0.62 + air * 0.32 + low * 0.45) * env * wob * B.I * bv.g + click * bv.g * B.I;
@@ -488,9 +489,12 @@ class EngineDSP {
         this.rattle *= this.knockDec;
       }
 
+      // pompaggio del compressore: il fischio della turbina (ancora in rotazione) si spezza a colpi, "stu-tu-tu"
+      let surge = 0;
+      if (this.flOn > 0) { surge = whistle * this.flOn * (0.35 + 0.65 * Math.min(1, S.turbo * 1.6)) * tn.tb.w * 1.3; turbo *= 1 - 0.6 * Math.min(1, this.flOn * 2); }
       // ---- mix per punto d'ascolto ---------------------------------------------------------
       const side = exhR * M.exh - exh * M.exh;   // differenza tra i terminali → immagine stereo
-      let out = exh * M.exh + boom * M.boom + intake * M.intake + mech * M.mech + turbo * M.turbo * this.fxT + bov * M.bov * this.fxB
+      let out = exh * M.exh + boom * M.boom + intake * M.intake + mech * M.mech + turbo * M.turbo * this.fxT + surge * (M.turbo + M.bov) * this.fxS + bov * M.bov * this.fxB
         + road * M.road + wind * M.wind + tire * M.tire + gear * M.gear + starter * M.starter + pump * M.pump;
       out += 1e-18;
 
