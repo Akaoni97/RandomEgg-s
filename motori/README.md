@@ -227,6 +227,12 @@ Il minimo (`on_760.wav` e `off_760.wav`, 760 giri) viene da *BMW 320 (1988) engi
 [Freesound (173005)](https://freesound.org/people/ninebilly/sounds/173005/), CC0: un sei cilindri in linea come il 2JZ,
 perché nella registrazione al banco il minimo è coperto dai rulli. Il cursore Sintesi/Campioni parte a metà; i campioni si possono togliere o sostituire dal pannello.
 
+**Turbo e valvola più naturali.** Il fischio del turbo non è più una sinusoide pura: è una banda d'aria risonante
+alla frequenza della girante (più una sua armonica), con una componente tonale leggera, intonazione e volume che
+derivano lentamente e un filtro che toglie la parte stridula. La valvola si apre con uno scatto secco, poi suonano
+tre strati con tempi propri (sibilo alto che si spegne per primo, getto che scende di tono, "pff" grave che dura di
+più) e un tremolio irregolare del getto; il flutter ha battiti di forza e ritmo leggermente diversi. Livelli invariati.
+
 ## Da dove viene il suono
 
 Nessuna registrazione. Su GitHub i progetti con campioni di motori (per esempio `markeasting/engine-audio`)

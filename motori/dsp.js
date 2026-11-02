@@ -72,6 +72,12 @@ class EngineDSP {
 
     // turbo
     this.tph = 0; this.tph2 = 0; this.lfo = 0;
+    // turbo naturale: banda d'aria risonante alla frequenza della girante, deriva lenta di intonazione e volume
+    this.wBP = new BQ().set('bp', 4000, 18, sr); this.wBP2 = new BQ().set('bp', 6000, 12, sr); this.wLP = new BQ().set('lp', 6500, 0.6, sr);
+    this.wDrift = 0; this.wAmp = 0; this.wN = 0;
+    // valvola: strati con filtri propri, scatto d'apertura, tremolio dell'aria
+    this.bovAir = new BQ().set('hp', 3200, 0.6, sr); this.bovLow = new BQ().set('bp', 650, 1.1, sr); this.bovWob = 0; this.bovClick = new BQ().set('hp', 1800, 0.7, sr);
+    this.flAmp = 1;
     this.bov = { env: 0, t: 1, I: 0, len: 0.3, rate: 20 };
     this.bovBP = new BQ(); this.bovHP = new BQ().set('hp', 500, 0.7, sr);
     this.flBP = new BQ().set('bp', 520, 1.2, sr); this.flPh = 0;
@@ -370,28 +376,39 @@ class EngineDSP {
       // ---- turbo: fischio della girante, soffio, valvola --------------------------
       const tb = tn.tb, ft = tb.f0 + (tb.f1 - tb.f0) * S.turbo;
       this.lfo += (nz * 0.002 - this.lfo * 0.0005);
-      this.tph += ft * (1 + this.lfo) / sr; if (this.tph > 1) this.tph -= 1;
-      let whistle = Math.sin(TAU * this.tph) + 0.25 * Math.sin(2 * TAU * this.tph);
+      this.wDrift += (nz2 * 0.0006 - this.wDrift * 0.00025);            // deriva lenta (pochi Hz di variazione)
+      this.wAmp += (nz3 * 0.004 - this.wAmp * 0.0012);                   // respiro del volume
+      const ftv = ft * (1 + this.lfo + this.wDrift);
+      if ((this.wN = (this.wN + 1) & 31) === 0) { this.wBP.set('bp', ftv, 18, sr); this.wBP2.set('bp', ftv * 1.49, 12, sr); }
+      this.tph += ftv / sr; if (this.tph > 1) this.tph -= 1;
+      const band = this.wBP.p(nz) * 5.5 + this.wBP2.p(nz2) * 1.6;           // aria che fischia, non una sinusoide pura
+      let whistle = (0.42 * Math.sin(TAU * this.tph) + 0.08 * Math.sin(2 * TAU * this.tph) + band) * (1 + Math.max(-0.4, Math.min(0.4, this.wAmp * 6)));
       if (tb.twin) {
         this.tph2 += ft * 0.87 / sr; if (this.tph2 > 1) this.tph2 -= 1;
         whistle += S.sec * 0.8 * Math.sin(TAU * this.tph2);
       }
       const tAmp = Math.pow(S.turbo, 1.7) * (0.22 + 0.78 * S.thr) * tb.w * (0.6 + 0.4 * tn.intake.wh);
-      let turbo = whistle * tAmp + this.whooshBP.p(nz3) * S.turbo * S.air * tb.wh * tn.intake.wh;
+      let turbo = this.wLP.p(whistle * tAmp) + this.whooshBP.p(nz3) * S.turbo * S.air * tb.wh * tn.intake.wh;
 
       let bov = 0;
       if (this.bov.env > 0) {
         const B = this.bov; B.t += 1 / sr;
         const att = 0.004;
         const env = B.t < att ? B.t / att : Math.exp(-(B.t - att) / (B.len * 0.38));
+        this.bovWob += (nz3 - this.bovWob) * 0.004;                          // turbolenza: il getto non è mai liscio
+        const wob = 1 + this.bovWob * 1.8;
         const nb = this.bovHP.p(this.bovBP.p(nz));
+        const air = this.bovAir.p(nz2) * Math.exp(-B.t / (B.len * 0.18));    // sibilo alto, si spegne per primo
+        const low = this.bovLow.p(nz3) * Math.exp(-B.t / (B.len * 0.55));    // "pff" grave, dura di più
+        const click = B.t < 0.003 ? this.bovClick.p(nz) * (1 - B.t / 0.003) * 1.6 : 0;   // scatto della valvola che si apre
         const bv = tn.bov;
         if (bv.v === 2) {
-          this.flPh += B.rate / sr; if (this.flPh > 1) this.flPh -= 1;
-          const chop = Math.pow(0.5 + 0.5 * Math.cos(TAU * this.flPh), 5);
-          bov = (nb * 0.5 + this.flBP.p(nz2) * 1.4 + Math.sin(TAU * this.tph) * 0.12) * chop * env * B.I * bv.g;
+          this.flPh += B.rate / sr;
+          if (this.flPh > 1) { this.flPh -= 1; this.flAmp = 0.65 + 0.35 * Math.random(); B.rate *= 0.94 + 0.12 * Math.random(); }   // battiti irregolari
+          const chop = Math.pow(0.5 + 0.5 * Math.cos(TAU * this.flPh), 3) * this.flAmp;
+          bov = (nb * 0.45 + this.flBP.p(nz2) * 1.3 + low * 0.5 + Math.sin(TAU * this.tph) * 0.06) * chop * env * wob * B.I * bv.g + click * bv.g * B.I * 0.5;
         } else {
-          bov = nb * env * B.I * bv.g;
+          bov = (nb * 0.62 + air * 0.32 + low * 0.45) * env * wob * B.I * bv.g + click * bv.g * B.I;
           // sibilo tonale iniziale (tipo "trombetta") che scende di frequenza
           if (bv.chirp > 0 && B.t < 0.25) {
             this.chirpPh += (3400 - 5200 * B.t) / sr; if (this.chirpPh > 1) this.chirpPh -= 1;
