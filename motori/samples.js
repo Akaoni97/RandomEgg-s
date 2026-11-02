@@ -81,11 +81,13 @@ class SamplePlayer {
     this.out.gain.setTargetAtTime(rpm > 150 ? level : 0, t, 0.06);
     this.body.gain.setTargetAtTime(1 + 4 * load, t, 0.08);
     this.tone.frequency.setTargetAtTime(2600 + 7400 * load, t, 0.12);
-    const on = this.items.filter((i) => !i.off), off = this.items.filter((i) => i.off);
+    const live = this.items.filter((i) => !i.mute);
+    for (const it of this.items) if (it.mute) it.g.gain.setTargetAtTime(0, t, 0.03);
+    const on = live.filter((i) => !i.off), off = live.filter((i) => i.off);
     const wOn = SamplePlayer.weights(on.length ? on : off, rpm);
     const wOff = SamplePlayer.weights(off.length ? off : on, rpm);
     const kOn = on.length && off.length ? Math.sqrt(load) : 1, kOff = on.length && off.length ? Math.sqrt(1 - load) : 0;
-    for (const it of this.items) {
+    for (const it of live) {
       let w = 0;
       if (on.length) w += (wOn.get(it) || 0) * kOn;
       else w += (wOn.get(it) || 0);

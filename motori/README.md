@@ -234,6 +234,10 @@ telecamera d'inseguimento resta indietro in accelerazione e si avvicina in frena
 colpo di campo visivo a ogni cambiata; di notte si vedono i fasci dei fari nell'aria, più marcati sotto la pioggia
 e con gli abbaglianti.
 
+**Campioni tuoi.** Quelli che carichi (anche un'intera cartella) restano salvati nel browser (IndexedDB) e si
+ricaricano da soli; restano solo su quel computer e non finiscono nel progetto. "Supra di serie" spegne gli anelli di
+serie per sentire solo i propri, "Dimentica i miei campioni" li cancella.
+
 **Turbo e valvola più naturali.** Il fischio del turbo non è più una sinusoide pura: è una banda d'aria risonante
 alla frequenza della girante (più una sua armonica), con una componente tonale leggera, intonazione e volume che
 derivano lentamente e un filtro che toglie la parte stridula. La valvola si apre con uno scatto secco, poi suonano

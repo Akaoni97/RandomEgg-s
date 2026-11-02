@@ -503,6 +503,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 .replay-tag { position: absolute; left: 50%; top: 48px; transform: translateX(-50%); font: 400 22px/1 var(--f-display); letter-spacing: .14em; color: #ff3a3a; text-shadow: 0 0 12px rgba(255,40,40,.6); animation: rpBlink 1s steps(2) infinite; }
 .replay-tag small { font: 400 12px/1 var(--f-data); letter-spacing: .04em; color: var(--muted); margin-left: 8px; }
 @keyframes rpBlink { 50% { opacity: .55; } }
+.smp-tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 </style>
 </head>
 <body>
@@ -740,8 +741,11 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <label class="drop" id="drop">
         <input type="file" id="smpIn" accept="audio/*,.ogg,.wav,.mp3,.flac" multiple>
         <b>Carica i campioni audio</b>
-        <span>WAV, OGG, MP3 o FLAC in loop. Il regime si legge dal nome: <code>on_4000.ogg</code>, <code>off_2500.wav</code>.</span>
+        <span>WAV, OGG, MP3 o FLAC in loop. Il regime si legge dal nome: <code>on_4000.ogg</code>, <code>off_2500.wav</code>. Restano salvati in questo browser.</span>
       </label>
+      <div class="smp-tools"><label class="kbtn file">Carica una cartella<input type="file" id="smpDir" webkitdirectory multiple></label>
+        <label class="tg"><input type="checkbox" id="smpStock" checked>Supra di serie (banco CC0)</label>
+        <button class="kbtn" type="button" id="smpClear">Dimentica i miei campioni</button></div>
       <ul class="smp-list" id="smpList"></ul>
       <div class="field"><span>Miscela</span>
         <div class="vol"><small>Sintesi</small><input type="range" id="mix" min="0" max="100" value="55" aria-label="Miscela tra sintesi e campioni"><small>Campioni</small></div>
@@ -893,7 +897,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     comp.threshold.value = -8; comp.knee.value = 6; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.12;
     comp.connect(ctx.destination);
     player = new SamplePlayer(ctx, comp);
-    loadSupraSamples();
+    loadSupraSamples(); restoreUserSamples();
     const fallback = () => {
       const dsp = new EngineDSP(ctx.sampleRate);
       const node = ctx.createScriptProcessor(1024, 1, 2);
@@ -1660,7 +1664,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       li.querySelector('select').value = it.off ? 'off' : 'on';
       li.querySelector('input').addEventListener('change', (e) => { it.rpm = clamp(+e.target.value || 3000, 400, 12000); player.sort(); renderSamples(); });
       li.querySelector('select').addEventListener('change', (e) => { it.off = e.target.value === 'off'; });
-      li.querySelector('button').addEventListener('click', () => { player.remove(it); renderSamples(); applySettings(); });
+      li.querySelector('button').addEventListener('click', () => { player.remove(it); if (it.key) smpStore.del(it.key); renderSamples(); applySettings(); });
       it.meter = li.querySelector('.lv');
       ul.appendChild(li);
     });
@@ -1675,14 +1679,33 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     try {
       const list = await (await fetch('audio/supra/manifest.json')).json();
       const files = await Promise.all(list.map(async (n) => { const r = await fetch('audio/supra/' + n); if (!r.ok) throw new Error(n); const b = await r.arrayBuffer(); return { name: 'Supra dyno · ' + n, arrayBuffer: async () => b.slice(0) }; }));
-      for (const f of files) await player.add(f);
-      renderSamples(); applySettings();
+      for (const f of files) { const it = await player.add(f); it.stock = true; }
+      setStock(S.smpStock !== false); renderSamples(); applySettings();
     } catch (e) { supraLoaded = false; /* senza registrazioni resta la sintesi */ }
   }
+  // campioni dell'utente salvati in questo browser (IndexedDB): si caricano una volta sola
+  const smpStore = (() => {
+    let dbp = null;
+    const db = () => dbp || (dbp = new Promise((res, rej) => { try { const r = indexedDB.open('nightrun-samples', 1); r.onupgradeneeded = () => r.result.createObjectStore('s', { autoIncrement: true }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }));
+    const tx = (mode, fn) => db().then((d) => new Promise((res, rej) => { const t = d.transaction('s', mode), st = t.objectStore('s'); const r = fn(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }));
+    return {
+      put: (name, data) => tx('readwrite', (st) => st.add({ name, data })).catch(() => null),
+      del: (key) => tx('readwrite', (st) => st.delete(key)).catch(() => null),
+      clear: () => tx('readwrite', (st) => st.clear()).catch(() => null),
+      all: () => db().then((d) => new Promise((res) => { const out = [], t = d.transaction('s', 'readonly'); t.objectStore('s').openCursor().onsuccess = (e) => { const c = e.target.result; if (c) { out.push({ key: c.key, ...c.value }); c.continue(); } else res(out); }; })).catch(() => []),
+    };
+  })();
+  async function restoreUserSamples() {
+    const list = await smpStore.all(); if (!list.length || !player) return;
+    for (const r of list) { try { const it = await player.add({ name: r.name, arrayBuffer: async () => r.data.slice(0) }); it.user = true; it.key = r.key; } catch (e) { /* file illeggibile */ } }
+    renderSamples(); applySettings(); flash(list.length + ' campioni tuoi ricaricati', 1.8);
+  }
+  // i campioni di serie si spengono (non si cancellano) per sentire solo i propri
+  function setStock(on) { S.smpStock = on; if (!player) return; for (const it of player.items) if (it.stock) it.mute = !on; }
   async function addSamples(files) {
     await ensureAudio();
     let bad = 0;
-    for (const f of files) { try { await player.add(f); } catch (e) { bad++; } }
+    for (const f of files) { try { const it = await player.add(f); it.user = true; it.key = await smpStore.put(f.name, await f.arrayBuffer()); } catch (e) { bad++; } }
     renderSamples(); applySettings();
     if (bad) flash(bad + (bad === 1 ? ' file non decodificato' : ' file non decodificati') + ': il browser legge WAV, OGG, MP3, FLAC', 3);
     else if (files.length) flash('Campioni caricati: avvia il motore e dai gas', 2);
@@ -1692,6 +1715,10 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
   ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, () => drop.classList.remove('over')));
   drop.addEventListener('drop', (e) => { e.preventDefault(); addSamples(Array.from(e.dataTransfer.files).filter((f) => /^audio\/|\.(ogg|wav|mp3|flac)$/i.test(f.type || f.name))); });
+  $('smpDir').addEventListener('change', (e) => { const fs = Array.from(e.target.files).filter((f) => /\.(ogg|wav|mp3|flac)$/i.test(f.name)); e.target.value = ''; addSamples(fs); });
+  $('smpStock').checked = S.smpStock !== false;
+  $('smpStock').addEventListener('change', (e) => { setStock(e.target.checked); applySettings(); });
+  $('smpClear').addEventListener('click', async () => { await smpStore.clear(); if (player) for (const it of [...player.items]) if (it.user) player.remove(it); renderSamples(); applySettings(); flash('Campioni tuoi dimenticati', 1.6); });
   $('mix').value = S.mix;
   $('mix').addEventListener('input', (e) => { S.mix = +e.target.value; applySettings(); });
   renderSamples();
