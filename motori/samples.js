@@ -12,10 +12,12 @@ class SamplePlayer {
     // catena: corpo sui bassi sotto carico, filtro che si chiude in rilascio, saturazione morbida (calore)
     this.body = ctx.createBiquadFilter(); this.body.type = 'lowshelf'; this.body.frequency.value = 180; this.body.gain.value = 0;
     this.tone = ctx.createBiquadFilter(); this.tone.type = 'lowpass'; this.tone.frequency.value = 9000; this.tone.Q.value = 0.5;
+    this.bark = ctx.createBiquadFilter(); this.bark.type = 'peaking'; this.bark.frequency.value = 1000; this.bark.Q.value = 0.9; this.bark.gain.value = 0;
+    this.drive = ctx.createGain(); this.drive.gain.value = 1; this.post = ctx.createGain(); this.post.gain.value = 1; this.open = 0;
     this.warm = ctx.createWaveShaper(); const k = new Float32Array(1024);
     for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; k[i] = Math.tanh(x * 1.6) / Math.tanh(1.6); }
     this.warm.curve = k; this.warm.oversample = '2x';
-    this.out.connect(this.body); this.body.connect(this.tone); this.tone.connect(this.warm); this.warm.connect(dest);
+    this.out.connect(this.body); this.body.connect(this.tone); this.tone.connect(this.bark); this.bark.connect(this.drive); this.drive.connect(this.warm); this.warm.connect(this.post); this.post.connect(dest);
     // effetti registrati (valvola, turbo, scoppi): uscita a parte, senza il filtro di carico del motore
     this.fxOut = ctx.createGain(); this.fxOut.gain.value = 0; this.fxOut.connect(dest);
     this.items = []; this.voices = 0;
@@ -186,11 +188,20 @@ class SamplePlayer {
     return w;
   }
 
-  update(rpm, load, level) {
+  update(rpm, load, level, ex = {}) {
     const t = this.ctx.currentTime;
-    this.out.gain.setTargetAtTime(rpm > 150 ? level : 0, t, 0.06);
-    this.body.gain.setTargetAtTime(1 + 4 * load, t, 0.08);
-    this.tone.frequency.setTargetAtTime(2600 + 7400 * load, t, 0.12);
+    // apertura: giri, carico, pressione e secondo turbo; sale in fretta e ricade piano
+    const ss = (a, b, x) => { const k = Math.min(1, Math.max(0, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+    const oT = Math.min(1, load * (ss(2200, 6800, rpm) * 0.75 + 0.3 * (ex.sec || 0) + 0.2 * ss(0.15, 0.7, ex.boost || 0)));
+    this.open += (oT - this.open) * (oT > this.open ? 0.25 : 0.08);
+    const o = this.open;
+    this.out.gain.setTargetAtTime(rpm > 150 ? level * (0.85 + 0.35 * o) : 0, t, 0.06);
+    this.body.gain.setTargetAtTime((1 + 4 * load) * (1 - 0.35 * o), t, 0.08);
+    this.tone.frequency.setTargetAtTime(2200 + 3000 * load + 11000 * o, t, 0.08);
+    this.bark.frequency.setTargetAtTime(850 + 950 * o, t, 0.08);
+    this.bark.gain.setTargetAtTime(7 * o, t, 0.08);
+    this.drive.gain.setTargetAtTime(1 + 1.4 * o, t, 0.06);
+    this.post.gain.setTargetAtTime(1 / (1 + 0.55 * o), t, 0.06);
     const live = this.items.filter((i) => !i.mute && !i.fx);
     for (const it of this.items) if (it.mute && !it.fx) it.g.gain.setTargetAtTime(0, t, 0.03);
     const on = live.filter((i) => !i.off), off = live.filter((i) => i.off);

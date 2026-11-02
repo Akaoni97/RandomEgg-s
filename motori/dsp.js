@@ -58,7 +58,7 @@ class EngineDSP {
     this.muf = [new BQ(), new BQ(), new BQ(), new BQ()]; this.mufG = 1;
     this.jetBP = new BQ(); this.jetG = 0.2;
     this.radPrev = 0; this.dc1x = 0; this.dc1y = 0;
-    this.viewLP = new BQ(); this.viewLP2 = new BQ();
+    this.viewLP = new BQ(); this.viewLP2 = new BQ(); this.barkPK = new BQ().set('peak', 1100, 0.9, sr, 0); this.opHP = new BQ().set('hp', 650, 0.7, sr); this.opHP2 = new BQ().set('hp', 650, 0.7, sr); this.opLP = new BQ().set('lp', 6000, 0.6, sr); this.open = 0; this.openG = 1;
     this.boomBP = new BQ().set('bp', 78, 1.6, sr);
     this.crackHP = new BQ().set('hp', 700, 0.7, sr);
     this.turbHP = new BQ().set('hp', 2500, 0.7, sr);
@@ -269,8 +269,19 @@ class EngineDSP {
     S.rattle += (T.rattle - S.rattle) * f;
     const M = this.mix, MT = this.mixT;
     for (const k in MT) M[k] += (MT[k] - M[k]) * s;
-    this.viewLP.set('lp', M.lp, 0.6, this.sr);
-    this.viewLP2.set('lp', Math.min(16000, M.lp * 1.6), 0.6, this.sr);
+    // il suono "si apre": con giri e carico il filtro si spalanca, i medi abbaiano e il volume cresce;
+    // scalino quando entra il secondo turbo (biturbo sequenziale) — non una rampa lineare
+    const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const ld = Math.min(1, S.charge * 1.2) * Math.min(1, S.thr * 1.6);
+    const oT = Math.min(1, ss(2200, 6800, S.rpm) * (0.35 + 0.65 * ld) * 0.8 + 0.3 * S.sec * ld + 0.15 * ss(0.15, 0.7, S.boost) * ld);
+    this.open += (oT - this.open) * (oT > this.open ? 0.12 : 0.05);
+    const o = this.open;
+    // corpo che cambia coi giri: rimbombo verso i 3300, grinta oltre i 5000
+    const bell = Math.exp(-Math.pow((S.rpm - 3300) / 520, 2));
+    this.openG = (0.82 + 0.38 * o + 0.1 * bell * ld) * (1 + 0.12 * ss(5000, 6800, S.rpm) * ld);
+    this.viewLP.set('lp', Math.min(15000, M.lp * (0.55 + 1.75 * o)), 0.6, this.sr);
+    this.viewLP2.set('lp', Math.min(16000, M.lp * (0.9 + 2.2 * o)), 0.6, this.sr);
+    this.barkPK.set('peak', 900 + 900 * o, 0.9, this.sr, 7.5 * o);
     if (this.bov.env > 0) {
       const pr = Math.min(1, this.bov.t / this.bov.len);
       const b = this.tn.bov;
@@ -365,7 +376,14 @@ class EngineDSP {
       const crack = this.crackHP.p(pop) * 0.55;
       this.thumpPh = ((this.thumpPh || 0) + 88 / sr) % 1;
       const thump = Math.sin(TAU * this.thumpPh) * Math.min(1.6, this.popEnv) * 0.24;
-      let exh = this.viewLP2.p(this.viewLP.p(ex + crack)) + thump;
+      let exh = this.barkPK.p(this.viewLP2.p(this.viewLP.p(ex + crack)));
+      { const k = 0.9 + 2.6 * this.open; exh = Math.tanh(exh * k) / k * this.openG; }   // si sporca quando si apre (picchi smussati, non più forte)
+      // voce aperta: gli armonici alti degli impulsi (ruvidi, saturati) che il silenziatore lascia passare solo a gas spalancato
+      if (this.open > 0.02) {
+        const o = this.open, hv = this.opHP2.p(this.opHP.p(ex));
+        exh += this.opLP.p(Math.tanh(hv * (6 + 10 * o)) * 0.13) * o * o * this.openG * (M.lp < 4000 ? 1.5 : 1);   // in abitacolo arriva attraverso la scocca: più forte per compensare il filtro
+      }
+      exh += thump;
       const boom = this.boomBP.p(ex) * 1.6;
       // screamer pipe della wastegate: gas di scarico liberi, impulsi compresi
       if (tn.scream && S.wg > 0.005) exh += (this.scrBP.p(nz2) * 0.6 + this.scrHP.p(col) * 0.45) * S.wg * 0.4;

@@ -1945,7 +1945,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       const iev = intro.sim.events.splice(0);
       if (audio.ready) audio.send({ p: intro.sim.audioParams(), ev: iev });
       if (player) smpFx(intro.sim, iev, dt);
-      if (player && player.items.length) player.update(intro.sim.rpm, intro.sim.running && intro.sim.thr > 0.06 && intro.sim.cut === 0 ? 1 : 0, S.muted ? 0 : S.vol / 100 * S.mix / 100 * 1.3);
+      if (player && player.items.length) player.update(intro.sim.rpm, intro.sim.running && intro.sim.thr > 0.06 && intro.sim.cut === 0 ? 1 : 0, S.muted ? 0 : S.vol / 100 * S.mix / 100 * 1.3, { boost: intro.sim.pipeP, sec: intro.sim.sec });
       intro.render(dt, iev);
       requestAnimationFrame(frame); return;
     }
@@ -1982,7 +1982,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (player && player.items.length) {
       const onT = sim.running && sim.cut === 0 && sim.thr > 0.06 ? 1 : 0;
       smpLoad += (onT - smpLoad) * Math.min(1, dt * 10);
-      player.update(sim.rpm, smpLoad, S.muted ? 0 : S.vol / 100 * S.mix / 100 * 1.3);
+      player.update(sim.rpm, smpLoad, S.muted ? 0 : S.vol / 100 * S.mix / 100 * 1.3, { boost: sim.pipeP, sec: sim.sec });
       smpMeter(dt);
       smpFx(sim, ev, dt);
     }
