@@ -165,8 +165,13 @@ Senza three.js resta una versione in pixel art.
   (5 stelle, scende col tempo). Un avviso in alto segnala le pattuglie in arrivo.
 - Officina: i pezzi si pagano coi contanti e si montano solo da fermo. Le preparazioni pronte mostrano
   quanto manca per completarle.
-- Strumenti in gioco sopra la strada (tasto J per spegnerli): contagiri con la marcia al centro e la zona rossa
-  del limitatore, tachimetro in km/h, pressione del turbo, benzina, contachilometri della Supra e parziale.
+- Strumenti in gioco sopra la strada (tasto J per spegnerli), in stile anime e pixel art: contagiri a blocchi
+  con la marcia gigante, tachimetro a cifre pixel, turbo e benzina a tacche, contachilometri e parziale. Il quadro
+  professionale resta in alto.
+- Cambiata perfetta anche fuori dalle gare: cinque triangoli verdi si accendono salendo di giri e lampeggiano
+  tutti insieme (SHIFT!) nella zona giusta, da 420 a 30 giri sotto il limitatore. Cambiando lì esce la scritta
+  "PERFETTA!" con le linee di velocità, il cambio è più rapido, e più perfette di fila fanno combo; sul
+  limitatore esce "TROPPO TARDI".
 - Chilometri: ogni auto ha il suo contachilometri. I pezzi dell'officina si sbloccano anche con la strada fatta
   (più costano, più chilometri chiedono) e ci sono quattro traguardi che non si comprano: 25 km rodaggio finito
   (+3 % di potenza), 75 km cambiate più rapide, 150 km cliente fisso (−10 % in officina), 300 km leggenda della

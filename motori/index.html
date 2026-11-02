@@ -140,7 +140,7 @@ h1 span { color: var(--amber); }
 #g3d, #g2d { display: block; width: 100%; aspect-ratio: 16 / 7.4; max-width: 100%; touch-action: none; }
 #g2d { image-rendering: pixelated; }
 .g3d-msg { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; padding: 16px; text-align: center; color: var(--muted); }
-.hud { position: absolute; inset: 0; pointer-events: none; padding: 12px; }
+.hud { position: absolute; inset: 0; pointer-events: none; padding: 12px; overflow: hidden; }
 .hud > * { pointer-events: auto; }
 .hud-l { position: absolute; left: 12px; top: 12px; display: grid; gap: 6px; }
 .hud-tag { background: rgba(10,9,7,.72); border-left: 3px solid var(--amber); padding: 5px 10px; font: 400 13px/1.25 var(--f-data); letter-spacing: .04em; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
@@ -220,9 +220,25 @@ body.inplace .lanebtn { display: none; }
 .km-perks { display: flex; flex-wrap: wrap; gap: 6px; } .km-perks span { font: 400 12px/1.2 var(--f-data); padding: 4px 8px; color: var(--muted); box-shadow: inset 0 0 0 1px #2a251d; }
 .km-perks span b { font-weight: 400; margin-right: 6px; } .km-perks span.on { color: #141a04; background: var(--lime); box-shadow: none; }
 .kmbox p.hint { margin: 0; } .kmbox p.hint b { font-weight: 400; color: var(--fg); }
-#hudG { position: absolute; right: 12px; bottom: 74px; width: clamp(170px, 24%, 280px); aspect-ratio: 2 / 1; pointer-events: none; }
+#hudG { position: absolute; right: 12px; bottom: 70px; width: clamp(190px, 26%, 320px); aspect-ratio: 160 / 84; pointer-events: none; image-rendering: pixelated; filter: drop-shadow(0 0 10px rgba(255,46,136,.25)); }
+.anime-shift { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; opacity: 0; z-index: 4; overflow: hidden; }
+.anime-shift > * { grid-area: 1 / 1; }
+.anime-shift .as-lines { position: absolute; left: 50%; top: 50%; width: 220%; aspect-ratio: 1; translate: -50% -50%; background: repeating-conic-gradient(rgba(255,255,255,.55) 0 .6deg, transparent .6deg 7deg);
+  -webkit-mask: radial-gradient(circle, transparent 0 14%, #000 34%); mask: radial-gradient(circle, transparent 0 14%, #000 34%); opacity: .5; }
+.anime-shift .as-main { white-space: nowrap; transform: translateY(-30%) skewX(-12deg) rotate(-4deg);
+  font: 400 clamp(34px, 8vw, 86px)/1 var(--f-display); font-style: italic; letter-spacing: .04em;
+  color: #ffe14d; background: linear-gradient(180deg, #fff6a0 0 35%, #ffb000 60%, #ff2e88); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 3px #0a0d18; filter: drop-shadow(4px 4px 0 #0a0d18) drop-shadow(0 0 18px rgba(255,46,136,.6)); }
+.anime-shift .as-sub { white-space: nowrap; transform: translate(18%, 140%) rotate(-4deg); font: 700 clamp(14px, 2.6vw, 26px)/1 sans-serif; color: #fff; background: #ff2e88; padding: 3px 10px; box-shadow: 3px 3px 0 #0a0d18; }
+.anime-shift.tardi .as-main { background: linear-gradient(180deg, #ffd0c8, #ff3a3a); -webkit-background-clip: text; background-clip: text; }
+.anime-shift.tardi .as-sub { background: #3a0a12; }
+.anime-shift.as-go { animation: asPop 1.1s cubic-bezier(.2,1.6,.4,1) forwards; }
+.anime-shift.as-go .as-lines { animation: asLines .25s steps(3) infinite; }
+@keyframes asPop { 0% { opacity: 0; transform: scale(2.2); } 12% { opacity: 1; transform: scale(.92); } 20% { transform: scale(1.04) translateX(-3px); } 26% { transform: scale(1) translateX(3px); } 32% { transform: translateX(0); } 75% { opacity: 1; } 100% { opacity: 0; transform: scale(1.08) translateY(-10px); } }
+@keyframes asLines { 50% { rotate: 3deg; } }
+@media (prefers-reduced-motion: reduce) { .anime-shift.as-go, .anime-shift.as-go .as-lines { animation: none; opacity: 1; } }
 body.inplace #hudG { display: none; }
-@media (max-width: 600px) { #hudG { width: 156px; left: 6px; right: auto; top: 6px; bottom: auto; } .hud-l.hasg { display: none; } }
+@media (max-width: 600px) { #hudG { width: 170px; left: 6px; right: auto; top: 6px; bottom: auto; } .hud-l.hasg { display: none; } }
 .lanebtn { touch-action: none; user-select: none; -webkit-user-select: none; position: absolute; bottom: 12px; width: 52px; height: 52px; border: 0; background: rgba(12,11,9,.55); color: var(--amber); font: 400 22px/1 var(--f-display); box-shadow: inset 0 0 0 1px #4a4234; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); display: grid; place-items: center; }
 .lanebtn small { font: 400 10px/1 var(--f-data); color: var(--muted); margin-top: -10px; }
 .lanebtn.l { left: 12px; } .lanebtn.r { right: 12px; }
@@ -639,6 +655,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       </div>
       <div class="toasts" id="toasts" aria-live="polite"></div>
       <canvas id="hudG" aria-hidden="true"></canvas>
+      <div class="anime-shift" id="animeShift" aria-hidden="true"><i class="as-lines"></i><b class="as-main">PERFETTA!</b><span class="as-sub">シフト完璧!</span></div>
       <button class="enterbtn" type="button" id="enterBtn" hidden></button>
       <div class="minimap" id="miniMap" hidden aria-label="Mappa: luoghi lungo la strada">
         <div class="mm-track" id="mmTrack"><i class="mm-you" aria-hidden="true"></i></div>
@@ -1053,8 +1070,13 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     ensureAudio();
     const before = sim.gear;
     const grade = game.race && game.race.phase === 'run' && g > before && before > 0 && !sim.shiftSeq ? game.gradeShift() : null;
+    const free = grade ? null : freeShiftGrade(before, g);
+    if (free === 'perfetta') sim.fastShift = true;
     const ok = sim.shift(g);
-    if (grade) { if (ok) showGrade(grade); else { game.race.shifts.pop(); sim.fastShift = false; } }
+    if (grade) { if (ok) { showGrade(grade); if (grade === 'perfetta' || grade === 'tardi') animeShift(grade); else comboN = 0; } else { game.race.shifts.pop(); sim.fastShift = false; } }
+    else if (free && ok) animeShift(free);
+    else if (ok && g > before && before > 0) comboN = 0;
+    if (!ok) sim.fastShift = false;
     if (!ok && g !== before && !sim.shiftSeq) {
       if (g === -1 && Math.abs(sim.v) > 1.2) flash('Retromarcia solo da fermo');
       else if (!S.autoClutch) flash('Grattata! Premi la frizione (Spazio) per cambiare');
@@ -1866,57 +1888,108 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
 
   // ---------------------------------------------------------------- manometri in gioco (sopra la strada)
-  // contagiri con marcia al centro, tachimetro digitale, pressione turbo, benzina, contachilometri e parziale
-  const hudG = { c: $('hudG'), t: 0, col: null };
-  function hudColors() {
-    const cs = getComputedStyle(document.body), v = (n, d) => (cs.getPropertyValue(n) || '').trim() || d;
-    hudG.col = { acc: v('--amber', '#ffb347'), crit: v('--crit', '#ff5a3a'), lime: v('--lime', '#c9dd5a'), fg: v('--fg', '#f2eadb'), mut: v('--muted', '#8c826f'), dial: v('--dial', v('--fg', '#f2eadb')),
-      disp: v('--f-display', 'sans-serif'), data: v('--f-data', 'monospace') };
+  // Stile anime / cartoon in pixel art (quello professionale resta nel quadro in alto): contagiri a blocchi,
+  // marcia gigante, tachimetro a cifre pixel, 5 luci verdi della cambiata perfetta, turbo e benzina a tacche.
+  const hudG = { c: $('hudG'), W: 160, H: 84, t: 0 };
+  const HG = { ink: '#0a0d18', panel: '#141a33', panel2: '#1d2547', pink: '#ff2e88', cyan: '#2ee6ff', lime: '#b8ff3a', yel: '#ffe14d', org: '#ffb000', red: '#ff3a3a', white: '#f4f1e6', dim: '#2a3158' };
+  function pxText(g, str, x, y, col, sc = 1, shadow = null) {
+    if (typeof PX_FONT === 'undefined') return;
+    const draw = (ox, oy, c) => {
+      let cx = Math.round(x + ox); g.fillStyle = c;
+      for (const ch of String(str).toUpperCase()) {
+        const m = PX_FONT[ch] || PX_FONT[' '];
+        if (m) for (let i = 0; i < 15; i++) if (m[i] === '1') g.fillRect(cx + (i % 3) * sc, Math.round(y + oy) + Math.floor(i / 3) * sc, sc, sc);
+        cx += 4 * sc;
+      }
+    };
+    if (shadow) { draw(1, 1, shadow); if (sc > 2) draw(2, 2, shadow); }
+    draw(0, 0, col);
   }
+  const pxW = (str, sc = 1) => (String(str).length * 4 - 1) * sc;
+  // zona della cambiata perfetta (stessa regola delle gare): dai 420 giri sotto il limitatore fino a 30 sotto
+  function shiftZone() { const lim = sim.P.limiter || 7000; return { lim, lo: lim - 420, hi: lim - 30 }; }
   function drawHudG(dt) {
     const c = hudG.c, show = S.hudG !== false && S.look !== 'cockpit' && !game.inside && !rp.on;
     c.hidden = !show; document.querySelector('.hud-l').classList.toggle('hasg', show); if (!show) return;
-    hudG.t += dt; if (!hudG.col || hudG.t > 2) { hudG.t = 0; hudColors(); }
-    const dpr = Math.min(2, window.devicePixelRatio || 1), w = c.clientWidth, h = c.clientHeight;
-    if (!w) return;
-    if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
-    const g = c.getContext('2d'), K = c.width / 240, C = hudG.col, lit = sim.ign;
-    g.setTransform(K, 0, 0, K, 0, 0); g.clearRect(0, 0, 240, 120);
-    // fondo
-    g.fillStyle = 'rgba(10,9,7,.74)'; g.beginPath(); g.moveTo(10, 0); g.lineTo(240, 0); g.lineTo(230, 120); g.lineTo(0, 120); g.closePath(); g.fill();
-    g.fillStyle = C.acc; g.fillRect(232, 0, 3, 120);
-    // contagiri
-    const cx = 60, cy = 62, R = 48, a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, max = 8000, lim = sim.P.limiter || 7000;
-    const ang = (r) => a0 + (a1 - a0) * Math.min(1, Math.max(0, r / max));
-    g.lineWidth = 6; g.strokeStyle = '#26221b'; g.beginPath(); g.arc(cx, cy, R, a0, a1); g.stroke();
-    g.strokeStyle = C.crit; g.beginPath(); g.arc(cx, cy, R, ang(lim), a1); g.stroke();
-    if (lit) { g.strokeStyle = sim.rpm > lim - 350 ? C.crit : C.acc; g.beginPath(); g.arc(cx, cy, R, a0, ang(sim.rpm)); g.stroke(); }
-    g.lineWidth = 1.5; g.fillStyle = C.mut; g.font = `400 9px ${C.data}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    for (let r = 0; r <= 8; r++) { const a = ang(r * 1000); g.strokeStyle = r * 1000 >= lim ? C.crit : C.mut; g.beginPath(); g.moveTo(cx + Math.cos(a) * (R - 9), cy + Math.sin(a) * (R - 9)); g.lineTo(cx + Math.cos(a) * (R - 4), cy + Math.sin(a) * (R - 4)); g.stroke(); g.fillText(String(r), cx + Math.cos(a) * (R - 17), cy + Math.sin(a) * (R - 17)); }
-    if (lit) { const a = ang(sim.rpm); g.strokeStyle = C.fg; g.lineWidth = 2.5; g.beginPath(); g.moveTo(cx - Math.cos(a) * 6, cy - Math.sin(a) * 6); g.lineTo(cx + Math.cos(a) * (R - 6), cy + Math.sin(a) * (R - 6)); g.stroke(); }
-    const flash = lit && (sim.cut === 2 || sim.rpm > lim - 350) && Math.floor(performance.now() / 70) % 2 === 0;
-    g.fillStyle = flash ? C.crit : '#14110e'; g.beginPath(); g.arc(cx, cy, 17, 0, Math.PI * 2); g.fill();
-    g.fillStyle = flash ? '#fff' : lit ? C.dial : '#494033'; g.font = `400 24px ${C.disp}`; g.fillText(sim.gear === 0 ? 'N' : sim.gear === -1 ? 'R' : String(sim.gear), cx, cy + 1);
-    g.fillStyle = C.mut; g.font = `400 8px ${C.data}`; g.fillText('x1000', cx, cy + 30);
-    // tachimetro digitale
-    const kmh = Math.round(Math.abs(sim.v) * 3.6);
-    g.textAlign = 'right'; g.textBaseline = 'alphabetic';
-    g.fillStyle = '#2a251d'; g.font = `400 44px ${C.disp}`; g.fillText('888', 196, 50);
-    g.fillStyle = lit ? C.dial : '#494033'; g.fillText(String(kmh), 196, 50);
-    g.fillStyle = C.mut; g.font = `400 10px ${C.data}`; g.fillText('km/h', 226, 50);
-    // turbo e benzina
-    const bar = (y, label, f, txt, col) => {
-      g.textAlign = 'left'; g.fillStyle = C.mut; g.font = `400 9px ${C.data}`; g.fillText(label, 120, y + 6);
-      g.fillStyle = '#26221b'; g.fillRect(150, y, 52, 7); g.fillStyle = col; g.fillRect(150, y, 52 * Math.max(0, Math.min(1, f)), 7);
-      g.textAlign = 'right'; g.fillStyle = C.fg; g.fillText(txt, 228, y + 6);
+    hudG.t += dt;
+    if (c.width !== hudG.W) { c.width = hudG.W; c.height = hudG.H; }
+    const g = c.getContext('2d'), W = hudG.W, H = hudG.H, lit = sim.ign, t = hudG.t;
+    g.clearRect(0, 0, W, H);
+    // pannello inclinato con ombra a fumetto e retino
+    const poly = (ox, oy, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(8 + ox, 6 + oy); g.lineTo(W - 2 + ox, 6 + oy); g.lineTo(W - 8 + ox, H - 2 + oy); g.lineTo(2 + ox, H - 2 + oy); g.closePath(); g.fill(); };
+    poly(2, 2, HG.pink); poly(-1, -1, HG.ink); poly(0, 0, HG.panel);
+    g.fillStyle = HG.panel2; for (let y = 10; y < H - 4; y += 3) for (let x = 6 + (y % 2) * 2; x < W - 6; x += 4) if ((x + y) % 7 < 2) g.fillRect(x, y, 1, 1);
+    // ---- 5 luci della cambiata (in alto)
+    const z = shiftZone(), rpm = lit ? sim.rpm : 0;
+    const over = lit && (sim.cut === 2 || rpm >= z.hi), inZone = lit && !over && rpm >= z.lo && sim.gear > 0 && sim.gear < 6;
+    const blink = Math.floor(t * 14) % 2 === 0;
+    for (let i = 0; i < 5; i++) {
+      const thr = z.lo - (4 - i) * 260, on = lit && rpm >= thr;
+      const x = 46 + i * 15, y = 0;
+      let col = HG.dim;
+      if (over) col = blink ? HG.red : '#5a1020';
+      else if (inZone) col = blink ? HG.lime : '#e8ffb0';
+      else if (on) col = i < 4 ? '#4fbf2a' : HG.lime;
+      g.fillStyle = HG.ink; g.fillRect(x - 1, y, 13, 11);
+      g.fillStyle = col;                                                        // triangolo "▶" a pixel
+      for (let r = 0; r < 9; r++) { const w = 1 + (4 - Math.abs(r - 4)) * 2; g.fillRect(x + 1, y + 1 + r, w, 1); }
+      if (on || inZone || over) { g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(x + 2, y + 3, 2, 2); }
+    }
+    if (inZone && blink) pxText(g, 'SHIFT!', 124, 1, HG.lime, 1, HG.ink);
+    // ---- contagiri a blocchi (arco di 26 segmenti)
+    const cx = 30, cy = 50, n = 26, a0 = Math.PI * 0.8, a1 = Math.PI * 2.2, max = 8000;
+    for (let i = 0; i < n; i++) {
+      const f = i / (n - 1), a = a0 + (a1 - a0) * f, r1 = 17, r2 = 25, segR = f * max;
+      const onSeg = lit && rpm >= segR;
+      const col = segR >= z.lim - 30 ? HG.red : segR >= z.lo ? HG.lime : segR >= 4000 ? HG.yel : HG.cyan;
+      g.fillStyle = onSeg ? col : HG.dim;
+      for (let r = r1; r <= r2; r += 1) { const x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r); g.fillRect(x, y, 2, 2); }
+    }
+    // marcia gigante al centro
+    const gear = sim.gear === 0 ? 'N' : sim.gear === -1 ? 'R' : String(sim.gear);
+    g.fillStyle = HG.ink; g.fillRect(cx - 9, cy - 11, 19, 22);
+    pxText(g, gear, cx - 5, cy - 9, over && blink ? HG.red : inZone && blink ? HG.lime : lit ? HG.white : HG.dim, 4, lit ? HG.pink : null);
+    pxText(g, String(Math.round(rpm / 100) / 10).replace('.', ','), cx - 8, cy + 14, lit ? HG.cyan : HG.dim, 1);
+    // ---- tachimetro a cifre pixel con ombra rosa
+    const kmh = String(Math.round(Math.abs(sim.v) * 3.6));
+    pxText(g, '888', 66, 14, '#1f2648', 5);
+    pxText(g, kmh, 66 + pxW('888', 5) - pxW(kmh, 5), 14, lit ? HG.white : HG.dim, 5, lit ? HG.pink : null);
+    pxText(g, 'KM/H', 130, 34, HG.cyan, 1);
+    // linee di velocità quando si va forte
+    if (lit && Math.abs(sim.v) > 25) { g.fillStyle = 'rgba(244,241,230,.35)'; for (let k = 0; k < 4; k++) { const yy = 14 + ((k * 7 + Math.floor(t * 40)) % 26); g.fillRect(58 - ((k * 13) % 9), yy, 6 + (k % 3) * 3, 1); } }
+    // ---- turbo e benzina a tacche
+    const bars = (y, label, f, col, warn) => {
+      pxText(g, label, 64, y, HG.white, 1);
+      for (let i = 0; i < 12; i++) { const on = f > (i + 0.5) / 12; g.fillStyle = HG.ink; g.fillRect(84 + i * 6, y - 1, 5, 7); g.fillStyle = on ? (warn && i >= 9 ? HG.red : col) : HG.dim; g.fillRect(85 + i * 6, y, 3, 5); }
     };
     const bmax = Math.max(0.5, (TP.sim.turbo && TP.sim.turbo.max) || 1);
-    bar(62, 'TURBO', lit ? sim.pipeP / bmax : 0, lit ? fmt(Math.max(0, sim.pipeP), 2) : '—', sim.pipeP > bmax * 0.9 ? C.crit : C.acc);
-    bar(76, 'BENZ', sim.fuel, Math.round(sim.fuel * sim.P.tank) + ' L', sim.fuel < 0.15 ? C.crit : C.lime);
-    // contachilometri e parziale
-    g.textAlign = 'left'; g.fillStyle = C.mut; g.font = `400 9px ${C.data}`; g.fillText('ODO', 120, 100); g.fillText('TRIP', 120, 113);
-    g.fillStyle = C.fg; g.font = `400 11px ${C.data}`; g.textAlign = 'right';
-    g.fillText(fmt(game.odo, 1) + ' km', 228, 100); g.fillText(fmt(game.trip, 1) + ' km', 228, 113);
+    bars(46, 'TRB', lit ? Math.max(0, sim.pipeP) / bmax : 0, HG.org, true);
+    bars(56, 'BNZ', sim.fuel, sim.fuel < 0.15 ? HG.red : HG.lime, false);
+    // ---- contachilometri e parziale
+    pxText(g, 'ODO', 64, 68, HG.pink, 1); pxText(g, fmt(game.odo, 1), 80, 68, HG.white, 1);
+    pxText(g, 'TRIP', 112, 68, HG.pink, 1); pxText(g, fmt(game.trip, 1), 130, 68, HG.white, 1);
+    if (lit && sim.cut === 2 && blink) pxText(g, 'LIMIT', 64, 76, HG.red, 1);
+    else if (comboN > 1) pxText(g, 'COMBO ' + comboN, 64, 76, HG.lime, 1);
+  }
+
+  // ---------------------------------------------------------------- cambiata perfetta anche in guida normale
+  // In gara il voto conta per il risultato; fuori dalla gara la perfetta dà comunque il cambio rapido e la scritta.
+  let comboN = 0, animeT = null;
+  function freeShiftGrade(before, g) {
+    if (game.race || !(g > before && before > 0) || sim.shiftSeq || !sim.running) return null;
+    const z = shiftZone(), rpm = sim.rpm;
+    if (sim.cut === 2 || rpm >= z.hi) return 'tardi';
+    if (rpm >= z.lo) return 'perfetta';
+    return null;
+  }
+  const ANIME_SUB = ['シフト完璧!', 'パーフェクト!', 'すごい!', '最高!'];
+  function animeShift(kind) {
+    const el = $('animeShift'); if (!el) return;
+    if (kind === 'perfetta') comboN++; else comboN = 0;
+    el.querySelector('.as-main').textContent = kind === 'perfetta' ? (comboN >= 3 ? 'COMBO x' + comboN + '!' : 'PERFETTA!') : 'TROPPO TARDI';
+    el.querySelector('.as-sub').textContent = kind === 'perfetta' ? ANIME_SUB[comboN % ANIME_SUB.length] : 'リミッター…';
+    el.className = 'anime-shift ' + kind; void el.offsetWidth; el.classList.add('as-go');
+    clearTimeout(animeT); animeT = setTimeout(() => el.classList.remove('as-go'), 1100);
   }
 
   // ---------------------------------------------------------------- campioni della mod
