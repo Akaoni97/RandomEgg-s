@@ -216,6 +216,15 @@ qualche istante dopo, e gli scoppi grossi fanno tremare l'immagine.
 strada davanti, in accelerazione resta indietro, in frenata va avanti); oltre i 90 km/h compaiono linee di
 velocità; le ruote si sfocano in un disco quando girano forte; sotto la pioggia la Supra si specchia sull'asfalto.
 
+**Suono registrato di serie.** Sotto la sintesi suona una Supra turbo vera: *Import car revs on chassis dyno with
+turbo* di **editboy23** su [Freesound (496171)](https://freesound.org/people/editboy23/sounds/496171/), licenza
+[CC0](http://creativecommons.org/publicdomain/zero/1.0/). Dalla registrazione (35 s al banco a rulli) sono stati
+ricavati 19 anelli in `audio/supra/`: 11 sotto carico da 1830 a 7400 giri e 8 in rilascio da 1800 a 7000. Per ogni
+anello i giri sono stati tracciati sulle armoniche di mezzo ordine (giri/120 Hz), il pezzo è stato ricampionato per
+tenerli costanti (entro circa lo 0,5%) e chiuso su un numero intero di cicli motore con una dissolvenza, così gira
+senza scatti. Il lettore li intona sui giri e li miscela col carico; turbo, valvola e scoppiettii restano sintetici.
+Il cursore Sintesi/Campioni parte a metà; i campioni si possono togliere o sostituire dal pannello.
+
 ## Da dove viene il suono
 
 Nessuna registrazione. Su GitHub i progetti con campioni di motori (per esempio `markeasting/engine-audio`)
