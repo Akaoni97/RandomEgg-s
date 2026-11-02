@@ -380,6 +380,10 @@ class StreetGame {
           const to = e.lane + (e.lane === 1 ? 1 : e.lane === 3 ? -1 : Math.random() < 0.5 ? 1 : -1);
           if (!this.ents.some((o) => o !== e && o.kind === 'traffic' && (o.lane === to || o.to === to) && Math.abs(o.x - e.x) < 14)) { e.to = to; e.sig = 1.6; }
         }
+        // passaggio accanto: suono con effetto doppler
+        if (e.prevRel !== undefined && Math.sign(e.prevRel) !== Math.sign(rel) && Math.abs(GAME_LANE_Z[e.lane] - this.laneZ) < 5 && Math.abs(sim.v - (e.v || 0)) > 4)
+          this.fx.push({ k: 'pass', dv: sim.v - (e.v || 0), near: Math.abs(GAME_LANE_Z[e.lane] - this.laneZ) < 2.5 });
+        e.prevRel = rel;
         e.honk = Math.max(0, (e.honk || 0) - dt);
         if (rel > 3 && rel < 9 && Math.abs(GAME_LANE_Z[e.lane] - this.laneZ) < 1.4 && sim.v > (e.v || 0) + 2 && !e.honk) { e.honk = 4; this.fx.push({ k: 'honk', x: e.x }); }
       }

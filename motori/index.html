@@ -500,6 +500,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 .photo { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.88); display: grid; place-items: center; gap: 12px; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px)); align-content: center; }
 .photo img { max-width: 100%; max-height: 78vh; box-shadow: 0 0 0 6px #f4f1e6, 0 20px 60px #000; }
 .photo p { margin: 0; color: var(--muted); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.replay-tag { position: absolute; left: 50%; top: 48px; transform: translateX(-50%); font: 400 22px/1 var(--f-display); letter-spacing: .14em; color: #ff3a3a; text-shadow: 0 0 12px rgba(255,40,40,.6); animation: rpBlink 1s steps(2) infinite; }
+.replay-tag small { font: 400 12px/1 var(--f-data); letter-spacing: .04em; color: var(--muted); margin-left: 8px; }
+@keyframes rpBlink { 50% { opacity: .55; } }
 </style>
 </head>
 <body>
@@ -567,6 +570,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         <div class="hud-tag" id="hudJob" hidden></div>
       </div>
       <button class="radio-chip" type="button" id="radioBtn" aria-label="Autoradio: cambia stazione (P)"><i aria-hidden="true">▶</i><b id="radioFreq">FM 89.7</b><span id="radioName">Redline at Midnight</span><small>P</small></button>
+      <div class="replay-tag" id="replayTag" hidden>● REPLAY <small>un tasto per uscire</small></div>
       <div class="radar" id="radar" hidden>POLIZIA</div>
       <div class="racebox" id="raceBox" hidden><div class="big" id="raceBig"></div><div class="sub" id="raceSub"></div></div>
       <div class="tree" id="tree" hidden aria-hidden="true"><i class="a"></i><i class="a"></i><i class="a"></i><i class="gr"></i><i class="rd"></i></div>
@@ -615,6 +619,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <button class="kbtn only3d" type="button" id="camNext">Telecamera<small>C</small></button>
       <button class="kbtn" type="button" id="showBtn">Vetrina<small>G</small></button>
       <button class="kbtn" type="button" id="photoBtn">Foto<small>X</small></button>
+      <button class="kbtn" type="button" id="replayBtn">Replay<small>Y</small></button>
       <label class="kbtn qsel">Ora <select id="clockSel" aria-label="Ora del giorno"><option value="auto">dinamica</option><option value="giorno">giorno</option><option value="tramonto">tramonto</option><option value="notte">notte</option></select></label>
       <label class="kbtn qsel">Meteo <select id="meteoSel" aria-label="Meteo (tasto K)"><option value="auto">dinamico</option><option value="sereno">sereno</option><option value="pioggia">pioggia</option></select></label>
       <label class="kbtn qsel">Qualità <select id="q3d" aria-label="Qualità grafica 3D"><option value="alta">alta · bloom</option><option value="media">media</option><option value="bassa">bassa</option></select></label>
@@ -1028,6 +1033,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       else if (intro.state === 'wait') intro.start();
       return;
     }
+    if (rp.on && !e.repeat) { stopReplay(); return; }
     if (e.key === 'Escape' && (showOn || !$('photoBox').hidden)) { if (!$('photoBox').hidden) $('photoBox').hidden = true; else closeShowroom(); return; }
     let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
     if ([' ', 'w', 's', 'e', 'q'].includes(k) || e.key.startsWith('Arrow')) e.preventDefault();
@@ -1051,6 +1057,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'k') cycleMeteo();
     else if (k === 'g') openShowroom();
     else if (k === 'x') takePhoto();
+    else if (k === 'y') startReplay();
     else if ((k === 'a' || k === 'd') && game.race) flash('In gara si resta nella propria corsia', 1.4);
     else if (k === 'l') { S.launch = !S.launch; applySettings(); flash(S.launch ? 'Launch control inserito' : 'Launch control disinserito', 1.2); }
     else if (k === 'm') { S.muted = !S.muted; applySettings(); }
@@ -1856,6 +1863,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   let last = performance.now(), wasRunning = false, smpLoad = 0, flameT = 0, keyAxis = 0;
   function frame(now) {
     const dt = clamp((now - last) / 1000, 0, 0.1); last = now;
+    if (rp.on) { playReplay(dt); requestAnimationFrame(frame); return; }
     if (intro && intro.directing()) {         // durante la sigla il gioco è fermo e si sente la Supra della sigla
       intro.drive(dt);
       const iev = intro.sim.events.splice(0);
@@ -1904,11 +1912,13 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       const liftT = sim.cfg.pops ? 2.8 : 1.1;
       flameT = (sim.cut === 2 || sim.cut === 3) && TP.sim.sparkCut ? 1
         : sim.cut === 1 && sim.ovr < liftT && sim.rpm > 2200 ? (sim.cfg.pops ? 0.6 : 0.38) * (1 - sim.ovr / liftT) * Math.min(1, sim.rpm / 4500) * TP.dsp.cat.pop : 0;
-      garage.update(dt, { v: sim.v, ww: sim.ww, acc: sim.acc, rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
+      const vs = { v: sim.v, ww: sim.ww, acc: sim.acc, rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
         ign: sim.ign, brake: sim.in.brake, flame: flameT, spin: Math.min(1, Math.max(0, (Math.abs(sim.ww * sim.P.r - sim.v) - 1.5) / 5)),
-        thr: sim.thr, events: ev, skid: sim.skid, damage: sim.damage, tireT: sim.tireT, gear: sim.gear, signal: game.signal ? game.signal.dir : null, high: !!S.high }, game);
+        thr: sim.thr, events: ev, skid: sim.skid, damage: sim.damage, tireT: sim.tireT, gear: sim.gear, signal: game.signal ? game.signal.dir : null, high: !!S.high };
+      garage.update(dt, vs, game);
+      recordFrame(dt, vs);
     }
-    for (const f of game.fx) if (f.k === 'honk') carHorn();
+    for (const f of game.fx) { if (f.k === 'honk') carHorn(); else if (f.k === 'pass') passSound(f.dv, f.near); }
     game.fx.length = 0;
     if (msgT > 0) { msgT -= dt; if (msgT <= 0) $('msg').classList.remove('show'); }
     draw(); updateDom(dt);
@@ -1960,6 +1970,21 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const inCab = S.look === 'cockpit', lvl = rainSnd.on && !S.muted ? (S.vol / 100) * (inCab ? 0.16 : 0.1) * (1 + Math.min(1, sim.v / 40) * 0.6) : 0;
     rainSnd.g.gain.setTargetAtTime(lvl, audio.ctx.currentTime, 0.4);
     rainSnd.lp.frequency.setTargetAtTime(inCab ? 2600 : 5200, audio.ctx.currentTime, 0.3);
+  }
+  // auto che passa accanto: rumore di motore e gomme che sale e poi cala di tono (doppler)
+  function passSound(dv, near) {
+    if (!audio.ctx || S.muted) return;
+    const ctx = audio.ctx, t = ctx.currentTime, sp = Math.min(1, Math.abs(dv) / 30), dur = 0.9 - sp * 0.4, f0 = 140 + sp * 60;
+    const len = Math.ceil(ctx.sampleRate * dur), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const n = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), o = ctx.createOscillator(), og = ctx.createGain(), g = ctx.createGain(), pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    n.buffer = buf; bp.type = 'bandpass'; bp.Q.value = 0.9; bp.frequency.setValueAtTime(1400 + sp * 900, t); bp.frequency.exponentialRampToValueAtTime(500, t + dur);
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(f0 * 1.25, t); o.frequency.exponentialRampToValueAtTime(f0 * 0.75, t + dur); og.gain.value = 0.25;
+    const peak = (near ? 0.11 : 0.05) * (0.5 + sp) * S.vol / 100;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t + dur * 0.45); g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
+    n.connect(bp); bp.connect(g); o.connect(og); og.connect(g);
+    if (pan) { pan.pan.setValueAtTime(dv > 0 ? 0.6 : -0.6, t); pan.pan.linearRampToValueAtTime(dv > 0 ? -0.6 : 0.6, t + dur); g.connect(pan); pan.connect(ctx.destination); } else g.connect(ctx.destination);
+    n.start(t); o.start(t); n.stop(t + dur); o.stop(t + dur);
   }
   // clacson di un'altra auto: due toni più bassi e corti del nostro
   function carHorn() {
@@ -2078,6 +2103,41 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
   $('photoBtn').addEventListener('click', takePhoto); $('showPhoto').addEventListener('click', takePhoto);
   $('photoClose').addEventListener('click', () => { $('photoBox').hidden = true; });
+
+  // ---------------------------------------------------------------- replay: gli ultimi 20 secondi, al rallentatore, con il suono
+  const rp = { buf: [], acc: 0, on: false, i: 0, t: 0, shot: 0, savedView: null };
+  function recordFrame(dt, vs) {
+    if (rp.on) return;
+    rp.acc += dt; if (rp.acc < 1 / 30) return; rp.acc = 0;
+    rp.buf.push({ vs: Object.assign({}, vs, { events: [] }), ap: sim.audioParams(), dist: game.s.dist, laneZ: game.laneZ, relYaw: game.relYaw, steerAngle: game.steerAngle,
+      track: game.track, ents: game.ents.map((e) => Object.assign({}, e)), mtn: game.mtnCars ? game.mtnCars.map((c) => Object.assign({}, c)) : null, signal: game.signal });
+    if (rp.buf.length > 600) rp.buf.shift();
+  }
+  function startReplay() {
+    if (rp.on || rp.buf.length < 20) { if (!rp.on) flash('Guida ancora qualche secondo prima del replay', 1.8); return; }
+    rp.on = true; rp.i = 0; rp.t = 0; rp.shot = -1; rp.savedView = street3d ? street3d.view : null;
+    $('replayTag').hidden = false; game.prompt = null;
+  }
+  function stopReplay() {
+    if (!rp.on) return; rp.on = false; $('replayTag').hidden = true;
+    if (street3d && rp.savedView) street3d.setView(rp.savedView);
+    rp.buf.length = 0;
+  }
+  function playReplay(dt) {
+    rp.t += dt * 0.5;                                   // metà velocità
+    const i = Math.min(rp.buf.length - 1, Math.floor(rp.t * 30)), f = rp.buf[i];
+    if (i >= rp.buf.length - 1) { stopReplay(); return; }
+    // inquadrature che cambiano ogni ~3 secondi di replay (in 3D)
+    const shot = Math.floor(rp.t / 3) % 4;
+    if (street3d && garage === street3d && shot !== rp.shot) { rp.shot = shot; street3d.setView(['side', 'chase', 'hood', 'side'][shot]); }
+    const fake = { s: { dist: f.dist }, laneZ: f.laneZ, relYaw: f.relYaw, steerAngle: f.steerAngle, track: f.track, ents: f.ents, mtnCars: f.mtn, fx: [], signal: f.signal, race: null, free: true, steerIn: 0 };
+    const vs = Object.assign({}, f.vs, { events: [] });
+    if (Math.random() < 0.5 * dt * 60 && f.vs.flame) vs.flame = f.vs.flame;
+    if (audio.ready) audio.send({ p: f.ap, ev: [] });
+    if (garage && garageOn) garage.update(dt * 0.5, vs, fake);
+    draw();
+  }
+  $('replayBtn').addEventListener('click', () => { ensureAudio(); rp.on ? stopReplay() : startReplay(); });
 
   // pannello stili dell'interfaccia
   (function buildThemes() {

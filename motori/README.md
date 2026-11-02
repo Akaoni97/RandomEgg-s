@@ -195,6 +195,17 @@ pop & bang dura quasi tre secondi. Ogni scoppio si vede: fiammata a strati con n
 braci, sbuffo di fumo, lampo arancio sull'asfalto, un sobbalzo dell'auto e scritte BANG!, POP!, BRAP!, CRACK!.
 Il 2D ha anche bagliore sulle luci (neon, fari, fiamme), il fascio dei fari nell'aria di notte e una vignettatura.
 
+**Vetrina, foto e replay.** "Vetrina" (tasto G) mostra la Supra in uno studio con pavimento lucido su una piattaforma
+girevole: colore, assetto (di serie, ribassato, slammed) e luci (studio, neon, tramonto), con potenza, coppia, 400 m
+stimati e peso. "Foto" (tasto X) scatta un'immagine della vista attiva, da salvare tenendo premuto o col tasto destro.
+"Replay" (tasto Y) rivede gli ultimi 20 secondi a metà velocità, con il suono del motore registrato e inquadrature che
+cambiano in 3D; un tasto qualsiasi esce.
+
+**Gare e traffico nel 2D.** Durante le sfide compaiono un semaforo da drag grande (tre gialli e il verde), una barra di
+avanzamento con le due auto e un arco a scacchi con bandiere sul traguardo. Il traffico cambia corsia mettendo la
+freccia e suona il clacson se gli stai attaccato; i lampeggianti della polizia tingono di rosso e blu strada e palazzi.
+Le auto che passano accanto si sentono con l'effetto doppler, da un lato all'altro delle cuffie.
+
 **Colpi più forti e 2D a specchio.** Gli scoppi escono dal terminale con uno schiocco secco e un colpo sordo che
 non passano dal silenziatore: picco circa 3,5 dB più alto, saturazione leggera solo sui più grossi. Nel 2D la città
 si riflette capovolta e tremolante sull'asfalto (forte sotto la pioggia, appena accennata di notte sull'asciutto),
