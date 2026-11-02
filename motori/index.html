@@ -85,6 +85,9 @@ h1 span { color: var(--amber); }
 .heat { display: flex; gap: 3px; padding-top: 3px; }
 .heat i { width: 12px; height: 12px; background: #26221c; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
 .heat i.on { background: var(--crit); filter: drop-shadow(0 0 4px var(--crit)); }
+.carsel { display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line); padding: 3px 3px 3px 10px; }
+.carsel b { font: 400 11px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.carsel select { border: 0; background: var(--amber); color: #1a1206; font: 400 13px/1 var(--f-display); letter-spacing: .05em; text-transform: uppercase; padding: 7px 10px; cursor: pointer; }
 .modesw { display: flex; background: var(--panel); border: 1px solid var(--line); padding: 3px; gap: 3px; }
 .modesw button { border: 0; background: transparent; padding: 7px 12px; font: 400 13px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .modesw button[aria-pressed="true"] { background: var(--amber); color: #1a1206; }
@@ -610,10 +613,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="chip money" id="chipMoney"><b>Contanti</b><span id="hudMoney">€ 3.000</span></div>
       <div class="chip"><b>Reputazione</b><span id="hudRep">0</span></div>
       <div class="chip"><b>Ricercato</b><div class="heat" id="hudHeat"><i></i><i></i><i></i><i></i><i></i></div></div>
-      <div class="modesw carsw" id="carSw" role="group" aria-label="Auto in garage">
-        <button type="button" data-c="supra">Supra</button>
-        <button type="button" data-c="v40">Volvo V40</button>
-      </div>
+      <label class="carsel"><b>Auto</b><select id="carSw" aria-label="Auto in garage (si cambia da fermi)"></select></label>
       <div class="modesw" id="modeSw" role="group" aria-label="Modalità">
         <button type="button" data-m="career">Carriera</button>
         <button type="button" data-m="free">Libera</button>
@@ -988,6 +988,10 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     S.coss = S.coss || {};
     S.coss.supra = Object.assign({}, COS0, S.coss.supra || S.cos || {});
     S.coss.v40 = Object.assign({}, COS0, S.coss.v40 || leg.cos);
+    for (const id of CAR_IDS) if (id !== 'supra' && id !== 'v40') {                // tutte le altre auto del garage
+      S.tunes[id] = Object.assign({}, CARS[id].presets[0].sel, S.tunes[id] || {});
+      S.coss[id] = Object.assign({}, COS0, S.coss[id] || {});
+    }
     if (!S.v40mig) {                    // la vecchia scala della V40 diventa pezzi ed estetica posseduti
       S.v40mig = 1;
       for (const [k, id] of Object.entries(leg.sel)) if (id !== CARS.v40.presets[0].sel[k]) game.s.owned['v40|' + k + ':' + id] = true;
@@ -1085,7 +1089,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     TP.sim.maint = game.maint();                                  // olio, candele, pastiglie (da Niko)
     game.applyMass(TP.sim.dm || 0, TP.sim.rearOff);
     $('carTag').textContent = CARS[carId].tag;
-    $('carSw').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.c === carId)));
+    if (!$('carSw').options.length) for (const id of CAR_IDS) { const o = document.createElement('option'); o.value = id; o.textContent = CARS[id].name; $('carSw').appendChild(o); }
+    $('carSw').value = carId;
     TP.sim.pw = (TP.sim.pw || 1) * game.perkPow(); TP.sim.mu = (TP.sim.mu || sim.P.mu || 1.1) * game.perkGrip();   // traguardi di chilometri
     sim.quickShift = game.hasPerk('mano');
     sim.setTune(TP.sim);
@@ -1849,7 +1854,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   $('q3d').value = S.q || 'alta';
   $('q3d').addEventListener('change', (e) => { S.q = e.target.value; if (street3d) street3d.setQuality(S.q); if (street2d) street2d.quality = S.q; try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } });
   // vernice: ogni auto ha la sua (la Supra usa S.paint come prima)
-  function carPaint() { return game.car === 'supra' ? S.paint : ((S.paints || {})[game.car] || '#2a4b57'); }
+  function carPaint() { return game.car === 'supra' ? S.paint : ((S.paints || {})[game.car] || CARS[game.car].paint0 || '#2a4b57'); }
   function setCarPaint(hex) { if (game.car === 'supra') S.paint = hex; else { S.paints = S.paints || {}; S.paints[game.car] = hex; } }
   const sw = $('swatches');
   PAINTS.push(['model', 'Colore del modello']);
@@ -2011,7 +2016,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const section = (title, sub) => { const box = document.createElement('div'); box.className = 'cos'; box.innerHTML = `<h4>${title}</h4>${sub ? `<p class="hint">${sub}</p>` : ''}<div class="row"></div>`; body.appendChild(box); return box.querySelector('.row'); };
     for (const cat of keys) {
       const def = cats[cat], row = section(cat === 'paint' ? 'Vernice' : def.label);
-      const list = cat === 'paint' ? PAINTS.filter(([id]) => id !== 'model').map(([id, name]) => ({ id, name, price: 0 })).concat(def.items.filter((i) => i.id !== 'none')) : def.items;
+      const list = cat === 'paint' ? (CARS[game.car].paint0 === 'orig' ? [{ id: 'orig', name: 'Originale', price: 0 }] : []).concat(PAINTS.filter(([id]) => id !== 'model').map(([id, name]) => ({ id, name, price: 0 })), def.items.filter((i) => i.id !== 'none')) : def.items;
       for (const it of list) {
         const owned = it.price === 0 || game.cosOwned(cat, it.id);
         const cur = cat === 'paint' ? carPaint() === it.id : S.cos[cat] === it.id;
@@ -2442,13 +2447,13 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     el.addEventListener('pointerdown', (e) => { e.preventDefault(); ensureAudio(); btnSteer[key] = 1; if (game.race) flash('In gara si resta nella propria corsia', 1.4); try { el.setPointerCapture(e.pointerId); } catch (_) {} });
     for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) el.addEventListener(ev, () => { btnSteer[key] = 0; });
   }
-  $('carSw').addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b) return;
-    const r = game.switchCar(b.dataset.c);
-    if (!r.ok) { if (r.why) flash(r.why, 2.2); return; }
+  $('carSw').addEventListener('change', (e) => {
+    const r = game.switchCar(e.target.value);
+    if (!r.ok) { e.target.value = game.car; if (r.why) flash(r.why, 2.2); return; }
     applySettings(); renderServices(); renderTrunk(); saveGame();
     sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.title !== 'Colore del modello' && x.style.background && carPaint() === rgbHex(x.style.background))));
-    flash(game.car === 'v40' ? (S.look === '2d' ? 'Volvo V40 SW 2.0: 140 CV aspirati. Potenziala in officina!' : 'La V40 si vede nella vista 2D: nel 3D resta la Supra') : 'Toyota Supra RZ', 2.4);
+    const C = CARS[game.car];
+    flash(game.car === 'supra' || S.look === '2d' ? `${C.name}: ${C.engine}. Potenziala da Luca!` : `La ${C.short} si vede nella vista 2D: nel 3D resta la Supra`, 2.6);
   });
   const rgbHex = (c) => '#' + (c.match(/\d+/g) || []).slice(0, 3).map((n) => (+n).toString(16).padStart(2, '0')).join('');
   $('modeSw').addEventListener('click', (e) => {
@@ -2469,8 +2474,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const b = $('btnNew');
     if (Date.now() - newArm > 4000) { newArm = Date.now(); b.textContent = 'Sicuro? Clicca di nuovo per azzerare'; setTimeout(() => { b.textContent = 'Nuova carriera'; }, 4000); return; }
     game.reset(); sim.fuel = 0.72;
-    S.tunes = { supra: Object.assign({}, SUPRA_PRESETS[0].sel), v40: Object.assign({}, CARS.v40.presets[0].sel) };
-    S.coss = { supra: Object.assign({}, COS0), v40: Object.assign({}, COS0) }; S.v40mig = 1; useCar('supra');
+    S.tunes = {}; S.coss = {};
+    for (const id of CAR_IDS) { S.tunes[id] = Object.assign({}, CARS[id].presets[0].sel); S.coss[id] = Object.assign({}, COS0); }
+    S.v40mig = 1; useCar('supra');
     b.textContent = 'Nuova carriera'; newArm = 0;
     applySettings(); renderMode(); saveGame(); flash('Nuova carriera: € 3.000 e una Supra di serie', 2.4);
   });

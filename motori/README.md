@@ -157,6 +157,17 @@ manutenzione, pezzi, estetica e vernice. Tutte usano lo stesso sistema (`cars.js
 pronte, pezzi che costano soldi **e** chilometri, estetica a parte. Per aggiungere un'auto basta una voce in `CARS`.
 
 - **Toyota Supra RZ** (2JZ-GTE biturbo, trazione posteriore, 6 marce).
+- **Renault 5 Turbo 2** (1.4 turbo Garrett T3 a motore centrale, 160 CV, 970 kg, trazione posteriore, 5 marce).
+- **BMW 2002 Turbo** (M10 2.0 turbo KKK, 170 CV, 1080 kg, 4 marce; cambio Getrag a 5 marce da Luca).
+- **BMW M3 E30** (S14 2.3 16V a farfalle singole, 195 CV a 6750, 1200 kg, cambio "dogleg").
+- **BMW M3 E36** (S50 3.0 sei in linea, 286 CV, 1460 kg).
+- **BMW M5 E34** (S38 3.6 sei in linea a farfalle singole, 315 CV, 1670 kg).
+  Le cinque auto sono costruite dallo stesso schema (`genCar` in `cars.js`): motore e cambio veri, catalogo con
+  scarico, aspirazione, centralina, turbo o compressore (sulle aspirate), intercooler, gomme, assetto, autobloccante,
+  frizione e alleggerimento, quattro preparazioni pronte (Di serie, Street, Più pressione/Sovralimentata, Da gara).
+  I disegni del giocatore sono riportati alla scala del passo vero (`img/<auto>.png`), con la ruota a parte che gira
+  (`_wheel.png`, freno e pinza dietro le razze) e la maschera della vernice (`_paint.png`) per cambiare colore
+  mantenendo luci, ombre e strisce.
 - **Volvo V40 SW 2.0** (B4204S 2.0 16V aspirato, 140 CV, trazione anteriore, 5 marce, 1290 kg). Preparazioni pronte:
   Di serie (140 CV), Street aspirata (158 CV), Sleeper T4 (200 CV), Familiare cattiva (290 CV). Il disegno
   (`img/v40.png`) è l'illustrazione fornita dal giocatore.

@@ -116,11 +116,89 @@ class Street2D {
 
   carSprite(k) {
     if (this.carId === 'v40') return this.v40Sprite(k);
+    if (this.genDef()) return this.genSprite(k);
     return this.sReady ? this.supraSprite(this.paintHex, k) : this.vehicle('supra', this.paintHex, k);
+  }
+  wheelFn() { return (this.carId === 'v40' ? this.v40Wheel : this.genDef() ? this.genWheel : this.supraWheel).bind(this); }
+  // ---------------------------------------------------------------- auto da immagine (cars.js → sprite): corpo, ruota, maschera vernice
+  genDef() { const c = typeof CARS !== 'undefined' && this.carId !== 'supra' && this.carId !== 'v40' && CARS[this.carId]; return (c && c.sprite) || null; }
+  genImgs() {
+    Street2D.gen = Street2D.gen || {};
+    const id = this.carId, D = this.genDef();
+    if (Street2D.gen[id]) return Street2D.gen[id];
+    const G = { n: 0, ready: false, wcache: {} }, done = () => { if (++G.n === 3) { G.ready = true; this.spr = {}; } };
+    for (const k of ['img', 'wheel', 'paint']) { const im = new Image(); im.onload = done; im.onerror = done; im.src = D[k]; G[k] = im; }
+    return (Street2D.gen[id] = G);
+  }
+  genBase() {
+    const D = this.genDef(), G = this.genImgs(), C0 = this.cos || {}, L = this.carLook || {}, hex = this.v40Paint || 'orig';
+    const key = 'genb' + this.carId + hex + (this.cosKey || '') + JSON.stringify(L) + (G.ready ? 1 : 0);
+    if (this.spr[key]) return this.spr[key];
+    const W = D.w, H = D.h, c = document.createElement('canvas'); c.width = W; c.height = H;
+    if (!G.ready) return c;
+    const x = c.getContext('2d', { willReadFrequently: true }); x.imageSmoothingEnabled = false; x.drawImage(G.img, 0, 0);
+    if (hex !== 'orig' && G.paint.width) {
+      // vernice: i pixel della maschera prendono il nuovo colore conservando luci e ombre del disegno
+      const m = document.createElement('canvas'); m.width = W; m.height = H; const mx = m.getContext('2d', { willReadFrequently: true }); mx.drawImage(G.paint, 0, 0);
+      const d = x.getImageData(0, 0, W, H), p = d.data, mk = mx.getImageData(0, 0, W, H).data, n = parseInt(hex.slice(1), 16), R = n >> 16, Gc = (n >> 8) & 255, B = n & 255;
+      const tl = (R + Gc + B) / 3 || 1;
+      for (let i = 0; i < p.length; i += 4) {
+        if (mk[i + 3] < 128 || !p[i + 3]) continue;
+        const k = Math.max(0.15, Math.min(1.9, ((p[i] + p[i + 1] + p[i + 2]) / 3) / D.refL));
+        const lift = k > 1 ? (k - 1) * 0.6 : 0;               // riflessi: verso il bianco invece di saturare
+        p[i] = Math.min(255, R * Math.min(k, 1.1) + (255 - R) * lift); p[i + 1] = Math.min(255, Gc * Math.min(k, 1.1) + (255 - Gc) * lift); p[i + 2] = Math.min(255, B * Math.min(k, 1.1) + (255 - B) * lift);
+        void tl;
+      }
+      x.putImageData(d, 0, 0);
+    }
+    const ink = this.C.ink, px = (col, a, b, w = 1, h = 1) => { x.fillStyle = col; x.fillRect(Math.round(a), Math.round(b), w, h); };
+    if ((C0.dirt || 0) > 0.3) this.dirtLayer(x, W, H, Math.round(D.wy - D.wr * 0.9), Math.round(D.wy + D.wr * 0.6), (C0.dirt - 0.25) * 1.3, D.ax.map((a) => [a, D.wy]));
+    const ey = D.ex[1];
+    if (L.exhaust === 2) { px(ink, 0, ey - 2, 12, 6); px('#c9ced6', 1, ey - 1, 10, 4); px('#f4f1e6', 2, ey - 1, 7, 1); px('#1a1c22', 2, ey, 3, 2); }
+    else if (L.exhaust) { px(ink, 1, ey - 1, 10, 5); px('#c9ced6', 2, ey, 8, 3); px('#f4f1e6', 3, ey, 5, 1); }
+    if (L.badge) { const bx = Math.round(D.ax[0] + D.wr + 4), by = Math.round(D.wy - D.wr * 0.75); this.text(x, L.badge, bx + 1, by + 1, ink); this.text(x, L.badge, bx, by, '#e8ecf2'); }
+    this.drawStickers(x);
+    return (this.spr[key] = c);
+  }
+  genSprite(k) {
+    const key = 'gens' + k + this.carId + (this.carKey || '') + (this.cosKey || '') + ((this.genImgs().ready) ? 1 : 0);
+    if (this.spr[key]) return this.spr[key];
+    const D = this.genDef(), b = this.genBase(), c = document.createElement('canvas'); c.width = Math.ceil(D.w * k); c.height = Math.ceil(D.h * k);
+    const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(b, 0, 0, c.width, c.height);
+    c.geo = { w: D.w, ax: D.ax }; c.img = true;
+    return (this.spr[key] = c);
+  }
+  // ruota del disegno che gira: i vuoti scuri tra le razze diventano trasparenti (dietro c'è il freno), colore cerchi a scelta
+  genWheelImg() {
+    const G = this.genImgs(), D = this.genDef(), col = this.cos && this.cos.rims && this.cos.rims !== 'none' ? this.cos.rims : '';
+    if (!G.ready || !G.wheel.width) return null;
+    if (G.wcache[col]) return G.wcache[col];
+    const S = G.wheel.width, c = document.createElement('canvas'); c.width = S; c.height = S; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(G.wheel, 0, 0);
+    const d = x.getImageData(0, 0, S, S), p = d.data, R = D.wr, n = col ? parseInt(col.slice(1), 16) : 0;
+    for (let i = 0; i < p.length; i += 4) {
+      const xx = (i / 4) % S - S / 2 + 0.5, yy = Math.floor(i / 4 / S) - S / 2 + 0.5, rr = Math.hypot(xx, yy), l = (p[i] + p[i + 1] + p[i + 2]) / 3;
+      if (!p[i + 3]) continue;
+      if (rr > R * 0.22 && rr < R * 0.66 && l < 60) { p[i + 3] = 0; continue; }
+      if (col && rr < R * 0.7 && l > 80 && Math.max(p[i], p[i + 1], p[i + 2]) - Math.min(p[i], p[i + 1], p[i + 2]) < 45) { const k = Math.min(1.4, l / 150); p[i] = Math.min(255, (n >> 16) * k + 18); p[i + 1] = Math.min(255, ((n >> 8) & 255) * k + 18); p[i + 2] = Math.min(255, (n & 255) * k + 18); }
+    }
+    x.putImageData(d, 0, 0);
+    return (G.wcache[col] = c);
+  }
+  genWheel(g, cx, cy, k, ang, speed = 0, rear = false) {
+    const wi = this.genWheelImg(), D = this.genDef(); if (!wi) return;
+    this.brake(g, Math.round(cx), Math.round(cy), k * D.wr / 15, ang, rear);
+    const s2 = wi.width * k;
+    g.save(); g.imageSmoothingEnabled = false; g.translate(Math.round(cx), Math.round(cy));
+    if (speed > 9) { for (let i = 0; i < 4; i++) { g.save(); g.globalAlpha = i ? 0.35 : 1; g.rotate(ang + i * Math.PI / 10); g.drawImage(wi, -s2 / 2, -s2 / 2, s2, s2); g.restore(); } }
+    else { g.rotate(Math.round(ang / (Math.PI / 20)) * (Math.PI / 20)); g.drawImage(wi, -s2 / 2, -s2 / 2, s2, s2); }
+    g.restore();
   }
   // geometria dell'auto nello sprite (scala 1): ruote, pilota, luci, marmitta
   geo() {
     const low = ((this.carLook || {}).low || 0) * 0.75;
+    const D = this.genDef();
+    if (D) return { h: D.h, wy: D.wy, wr: D.wr, ax: D.ax, hx: D.hx, hy: D.hy, tail: D.tail, head: D.head, ex: D.ex, low, slots: D.slots,
+      blinkF: [D.head[0] - 6, D.head[1] + 5, 5, 2], blinkR: [D.tail[0] + 1, D.tail[1] + 6, 4, 2] };
     if (this.carId === 'v40') return this.v40Ready
       ? { h: 71, wy: 56, wr: 14.4, ax: [41, 156], hx: 112, hy: 3, tail: [2, 26, 6, 7], blinkF: [173, 46, 7, 2], blinkR: [19, 44, 6, 2], ex: [3, 54], head: [190, 40], low, slots: { st_door: [124, 42, 30, 12], st_rear: [30, 38, 22, 11], st_glass: [72, 21, 22, 7] } }
       : { h: 71, wy: 56, wr: 14.4, ax: [41, 156], hx: 110, hy: 6, tail: [1, 28, 5, 10], blinkF: [188, 47, 6, 2], blinkR: [1, 47, 4, 2], ex: [6, 64], head: [192, 39], low, slots: { st_door: [118, 40, 30, 12], st_rear: [26, 40, 20, 10], st_glass: [70, 20, 22, 7] } };
@@ -383,7 +461,7 @@ class Street2D {
     if (hot > 0.02) { g.fillStyle = `rgba(255,${110 - hot * 50 | 0},30,${Math.min(0.75, hot)})`; g.beginPath(); g.arc(0, 0, R * 0.93, 0, Math.PI * 2); g.arc(0, 0, R * 0.42, 0, Math.PI * 2, true); g.fill(); }
     g.fillStyle = '#1a1c22'; g.beginPath(); g.arc(0, 0, R * 0.4, 0, Math.PI * 2); g.fill();
     // pinza: settore curvo fermo in alto, dalla parte interna della ruota
-    const col = this.cos && this.cos.caliper && this.cos.caliper !== 'none' ? this.cos.caliper : this.carId === 'v40' ? '#d0141e' : '#d9a82e';
+    const col = this.cos && this.cos.caliper && this.cos.caliper !== 'none' ? this.cos.caliper : this.carId === 'supra' ? '#d9a82e' : '#d0141e';
     const mid = rear ? -Math.PI * 0.72 : -Math.PI * 0.28, span = 0.95, r0 = R * 0.42, r1 = R * 1.02;
     const sector = (ra, rb, a0, a1) => { g.beginPath(); g.arc(0, 0, rb, a0, a1); g.arc(0, 0, ra, a1, a0, true); g.closePath(); };
     g.fillStyle = this.C.ink; sector(r0 - k * 0.8, r1 + k * 0.8, mid - span / 2 - 0.08, mid + span / 2 + 0.08); g.fill();
@@ -1192,7 +1270,7 @@ class Street2D {
     this.shadow(g, cx, gy, 120, 6);
     if (glow) { this.light(g, cx, gy - 1, 170, 14, glow, 0.35, 4); g.fillStyle = glow; g.fillRect(cx - 84, gy - 5 - lift, 168, 1); }
     g.imageSmoothingEnabled = false; g.drawImage(spr, left, top);
-    if (spr.img) { const wf = this.carId === 'v40' ? this.v40Wheel.bind(this) : this.supraWheel.bind(this); const wyI = gy - lift - GI.wr * K; wf(g, left + GI.ax[0] * K, wyI, K, 0, 0, true); wf(g, left + GI.ax[1] * K, wyI, K, 0, 0, false); }
+    if (spr.img) { const wf = this.wheelFn(); const wyI = gy - lift - GI.wr * K; wf(g, left + GI.ax[0] * K, wyI, K, 0, 0, true); wf(g, left + GI.ax[1] * K, wyI, K, 0, 0, false); }
     if (I.id === 'style') this.light(g, cx + 20, top + 10, 60, 10, '#ffffff', 0.04 + 0.03 * Math.sin(t * 2), 3);   // riflesso che scorre
     if (I.id === 'shop' || I.id === 'niko') this.person(g, Math.max(14, cx - 100 * K - 40), gy, I.id, t);
     // titolo
@@ -1512,7 +1590,7 @@ class Street2D {
     if (spr.img) {
       // freni roventi dopo frenate forti da velocità alta
       this.brakeHot = Math.min(1, Math.max(0, (this.brakeHot || 0) - dt * 0.18) + (s.brake > 0.5 && Math.abs(s.v) > 15 ? dt * 0.25 * s.brake : 0));
-      const wfn = this.carId === 'v40' ? this.v40Wheel.bind(this) : this.supraWheel.bind(this);
+      const wfn = this.wheelFn();
       wfn(g, left + GE.ax[0] * k, y0 - wr - Math.max(0, bR * 0.4), k, st.spin, Math.abs(s.ww * 0.322), true);
       wfn(g, left + GE.ax[1] * k, y0 - wr - Math.max(0, bF * 0.4), k, st.front, Math.abs(s.v), false);
     } else {
