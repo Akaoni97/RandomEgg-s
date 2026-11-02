@@ -214,6 +214,14 @@ h1 span { color: var(--amber); }
 .place p.hint { margin: 0; }
 body.inplace .lanebtn { display: none; }
 @media (max-width: 600px) { .place { width: 100%; top: 30%; } .minimap { width: calc(100% - 140px); bottom: 20px; } .mm-next { display: none; } .enterbtn { bottom: auto; top: 46px; left: auto; right: 8px; transform: skewX(-8deg); font-size: 12px; padding: 6px 10px; } }
+.ups { display: grid; gap: 6px; }
+.ups .up { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; background: #0b0a08; box-shadow: inset 0 0 0 1px #2a251d; }
+.ups .up b { font: 400 15px/1.1 var(--f-display); letter-spacing: .04em; text-transform: uppercase; }
+.ups .up p { margin: 2px 0 0; font-size: 13.5px; color: var(--muted); }
+.ups .up i { font: 400 16px/1 var(--f-display); font-style: normal; color: var(--muted); text-align: center; }
+.ups .up.done { box-shadow: inset 3px 0 0 var(--lime), inset 0 0 0 1px #2a251d; } .ups .up.done i { color: var(--lime); }
+.ups .up.next { box-shadow: inset 3px 0 0 var(--amber), inset 0 0 0 1px #4a4234; } .ups .up.next i { color: var(--amber); }
+.ups .up.lock { opacity: .55; }
 .kmbox { display: grid; gap: 6px; padding: 10px 12px; background: #0b0a08; box-shadow: inset 0 0 0 1px #2a251d; }
 .km-head { display: flex; justify-content: space-between; gap: 10px; font: 400 14px/1.2 var(--f-data); } .km-head b { font: 400 15px/1 var(--f-display); letter-spacing: .05em; text-transform: uppercase; color: var(--amber); }
 .km-bar { height: 6px; background: #1e1b16; } .km-bar i { display: block; height: 100%; background: var(--lime); box-shadow: 0 0 8px var(--lime); }
@@ -573,13 +581,17 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <span class="badge">2JZ-GTE</span>
       <div>
         <h1>Night <span>Run</span></h1>
-        <p>Toyota Supra RZ · JZA80 · sei in linea biturbo · Getrag V160</p>
+        <p id="carTag">Toyota Supra RZ · JZA80 · sei in linea biturbo · Getrag V160</p>
       </div>
     </div>
     <div class="career" id="career">
       <div class="chip money" id="chipMoney"><b>Contanti</b><span id="hudMoney">€ 3.000</span></div>
       <div class="chip"><b>Reputazione</b><span id="hudRep">0</span></div>
       <div class="chip"><b>Ricercato</b><div class="heat" id="hudHeat"><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="modesw carsw" id="carSw" role="group" aria-label="Auto in garage">
+        <button type="button" data-c="supra">Supra</button>
+        <button type="button" data-c="v40">Volvo V40</button>
+      </div>
       <div class="modesw" id="modeSw" role="group" aria-label="Modalità">
         <button type="button" data-m="career">Carriera</button>
         <button type="button" data-m="free">Libera</button>
@@ -783,6 +795,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="svc"><b>Gomme posteriori</b><span id="svcTire">—</span><div class="bar"><i id="svcTireBar"></i></div><button class="kbtn" type="button" id="btnTires">Gomme nuove</button></div>
     </div>
     <div class="kmbox" id="kmBox"></div>
+    <div class="ups" id="carUps" hidden></div>
     <div class="presets" id="presets"></div>
     <div class="tgrid" id="tgrid"></div>
     <p class="hint" id="shopNote">I marchi indicano parti reali per JZA80 e 2JZ. Il carattere sonoro di ciascuna è una nostra modellazione fisica, non una registrazione del prodotto.</p>
@@ -909,6 +922,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 <script src="dsp.js"></script>
 <script src="sim.js"></script>
 <script src="tuning.js"></script>
+<script src="cars.js"></script>
 <script src="samples.js"></script>
 <script src="car3d.js"></script>
 <script src="street3d.js"></script>
@@ -958,9 +972,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   const audio = { ctx: null, send: () => {}, ready: false, starting: null };
   let player = null;
   function dspCfg() {
-    const eng = player ? player.items.filter((i) => !i.fx && !i.mute).length : 0;
+    const eng = player && game.car === 'supra' ? player.items.filter((i) => !i.fx && !i.mute).length : 0;
     const synth = eng ? 1 - S.mix / 100 : 1;
-    const has = (r) => (player && player.has(r) ? 1 : 0);
+    const has = (r) => (player && game.car === 'supra' && player.has(r) ? 1 : 0);
     return { tune: TP.dsp, pops: S.pops && TP.sim.ecuPops ? 1 : 0, view: +S.view, vol: S.muted ? 0 : S.vol / 100 * synth,
       fx: { bov: has('bov') | has('flutter'), pop: has('pop'), turbo: has('whine') } };
   }
@@ -1016,13 +1030,20 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 
   // ---------------------------------------------------------------- impostazioni
   function applySettings() {
-    TP = tuningParams(S.tune);
+    const carId = game.car;
+    if (carId === 'v40') { TP = v40Params(game.upLevel()); sim.setCar(Object.assign({}, CARS.v40.P)); }
+    else { TP = tuningParams(S.tune); sim.setCar(null); }
+    if (TP.sim.boostK === undefined) TP.sim.boostK = 1;          // la Supra a piena efficienza anche dopo la V40
+    game.applyMass();
+    $('carTag').textContent = CARS[carId].tag;
+    $('carSw').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.c === carId)));
     TP.sim.pw = (TP.sim.pw || 1) * game.perkPow(); TP.sim.mu = (TP.sim.mu || sim.P.mu || 1.1) * game.perkGrip();   // traguardi di chilometri
     sim.quickShift = game.hasPerk('mano');
     sim.setTune(TP.sim);
     Object.assign(sim.cfg, { pops: S.pops && TP.sim.ecuPops, launch: S.launch, autoClutch: S.autoClutch, revMatch: S.revMatch });
     if (garage) { garage.setTips(TP.dsp.ex.tips); garage.setPaint(S.paint); }
     if (street2d && S.cos) street2d.setCosmetics(S.cos);
+    if (street2d) street2d.setCar(carId, TP.look, carPaint());
     renderTuning();
     $('tPops').disabled = $('tLaunch').disabled = !TP.sim.ecuPops;
     $('ecuHint').textContent = TP.sim.ecuPops ? '' : 'Pop & bang e launch control richiedono una centralina programmabile: montala nel reparto tuning.';
@@ -1515,7 +1536,27 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
 
   // ---------------------------------------------------------------- reparto tuning
+  function renderUps() {
+    const ups = game.ups(), box = $('carUps');
+    const v40 = !!ups;
+    box.hidden = !v40; $('tgrid').hidden = v40; $('presets').hidden = v40; $('shopNote').hidden = v40;
+    if (!v40) return;
+    const lv = game.upLevel(), odo = game.odo;
+    const html = ups.map((u, i) => {
+      const done = i < lv, next = i === lv, lock = game.mode === 'career' && odo < u.km;
+      const btn = next ? `<button class="kbtn" type="button" data-up="1">${lock ? `da ${fmt(u.km)} km` : `Monta${game.upPrice(u) ? `<small>€ ${fmt(game.upPrice(u))}</small>` : ''}`}</button>` : '';
+      return `<div class="up ${done ? 'done' : next ? 'next' : 'lock'}"><i>${done ? '✓' : i + 1}</i><div><b>${u.name}</b><p>${u.note}</p></div>${btn}</div>`;
+    }).join('') + (lv >= ups.length ? '<p class="hint">Tutti i potenziamenti montati: la V40 è finita.</p>' : '');
+    if (box.dataset.h !== html) { box.innerHTML = html; box.dataset.h = html; const b = box.querySelector('[data-up]'); if (b) b.addEventListener('click', mountUp); }
+  }
+  function mountUp() {
+    if (!game.canMount()) { flash('I pezzi si montano da fermo: accosta e frena', 2.4); return; }
+    if (game.needsShop()) { flash('I pezzi si montano in officina: la trovi sulla mappa (O)', 2.8); return; }
+    const r = game.buyUp(); if (!r.ok) { flash(r.why, 2.6); return; }
+    applySettings(); saveGame(); flash('Montato: ' + CARS[game.car].ups[game.upLevel() - 1].name, 1.8);
+  }
   function renderTuning() {
+    renderUps();
     const grid = $('tgrid');
     if (!grid.childElementCount) {
       for (const [k, cat] of Object.entries(TUNING)) {
@@ -1720,12 +1761,15 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   $('camNext').addEventListener('click', nextCam);
   $('q3d').value = S.q || 'alta';
   $('q3d').addEventListener('change', (e) => { S.q = e.target.value; if (street3d) street3d.setQuality(S.q); if (street2d) street2d.quality = S.q; try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } });
+  // vernice: ogni auto ha la sua (la Supra usa S.paint come prima)
+  function carPaint() { return game.car === 'supra' ? S.paint : ((S.paints || {})[game.car] || '#2a4b57'); }
+  function setCarPaint(hex) { if (game.car === 'supra') S.paint = hex; else { S.paints = S.paints || {}; S.paints[game.car] = hex; } }
   const sw = $('swatches');
   PAINTS.push(['model', 'Colore del modello']);
   PAINTS.forEach(([hex, name]) => {
     const b = document.createElement('button'); b.type = 'button'; b.title = name; b.setAttribute('aria-label', name === 'Colore del modello' ? name : 'Colore ' + name);
     if (hex === 'model') { b.textContent = 'M'; b.className = 'sw-model'; b.hidden = true; } else b.style.background = hex;
-    b.addEventListener('click', () => { S.paint = hex; applySettings(); sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); });
+    b.addEventListener('click', () => { if (hex === 'model' && game.car !== 'supra') return; setCarPaint(hex); applySettings(); sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); });
     b.setAttribute('aria-pressed', String(hex === S.paint));
     sw.appendChild(b);
   });
@@ -1829,7 +1873,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       move($('shop')); renderTrunk();
     } else {
       note('Tocca per provare: la Supra mostra subito il ritocco. Tocca di nuovo per comprarlo. Quello che compri resta tuo e puoi rimetterlo gratis.');
-      cosPrev = Object.assign({ paint: S.paint }, S.cos);
+      cosPrev = Object.assign({ paint: carPaint() }, S.cos);
       renderCos();
     }
     box.hidden = false;
@@ -1848,8 +1892,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
   function applyCos(c) {
     if (!street2d) return;
-    const cc = Object.assign({}, c || S.cos), paint = cc.paint || S.paint; delete cc.paint;
-    street2d.setCosmetics(cc); street2d.setPaint(paint);
+    const cc = Object.assign({}, c || S.cos), paint = cc.paint || carPaint(); delete cc.paint;
+    street2d.setCosmetics(cc);
+    if (game.car === 'supra') street2d.setPaint(paint); else street2d.setCar(game.car, TP.look, paint);
   }
   function renderCos() {
     const body = $('placeBody');
@@ -1861,7 +1906,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       const list = cat === 'paint' ? PAINTS.map(([id, name]) => ({ id, name, price: 0 })).concat(def.items.filter((i) => i.id !== 'none')) : def.items;
       for (const it of list) {
         const owned = it.price === 0 || game.cosOwned(cat, it.id);
-        const cur = cat === 'paint' ? S.paint === it.id : S.cos[cat] === it.id;
+        const cur = cat === 'paint' ? carPaint() === it.id : S.cos[cat] === it.id;
         const pv = cosPrev[cat] === it.id && !cur;
         const b = document.createElement('button'); b.type = 'button'; b.className = 'kbtn opt';
         b.setAttribute('aria-pressed', String(cur || pv));
@@ -1870,7 +1915,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         b.addEventListener('click', () => {
           if (owned || pv) {
             if (!owned) { const r = game.buyCos(cat, it.id); if (!r.ok) { flash(r.why, 2.2); return; } flash(`${it.name}: montato`, 1.4); }
-            if (cat === 'paint') S.paint = it.id; else S.cos[cat] = it.id;
+            if (cat === 'paint') setCarPaint(it.id); else S.cos[cat] = it.id;
             cosPrev[cat] = it.id; applySettings(); saveGame();
           } else cosPrev[cat] = it.id;            // prova: si vede subito, si compra col secondo tocco
           applyCos(cosPrev); renderCos(); renderPlaceCash();
@@ -1923,7 +1968,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     g.fillStyle = HG.panel2; for (let y = 10; y < H - 4; y += 3) for (let x = 6 + (y % 2) * 2; x < W - 6; x += 4) if ((x + y) % 7 < 2) g.fillRect(x, y, 1, 1);
     // ---- 5 luci della cambiata (in alto)
     const z = shiftZone(), rpm = lit ? sim.rpm : 0;
-    const over = lit && (sim.cut === 2 || rpm >= z.hi), inZone = lit && !over && rpm >= z.lo && sim.gear > 0 && sim.gear < 6;
+    const over = lit && (sim.cut === 2 || rpm >= z.hi), inZone = lit && !over && rpm >= z.lo && sim.gear > 0 && sim.gear < sim.topGear();
     const blink = Math.floor(t * 14) % 2 === 0;
     for (let i = 0; i < 5; i++) {
       const thr = z.lo - (4 - i) * 260, on = lit && rpm >= thr;
@@ -2024,6 +2069,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   // effetti registrati (valvola, flutter, turbo, scoppi): guidati dagli stessi eventi della sintesi
   function smpFx(sm, events, dt) {
     if (!player || !player.items.some((i) => i.fx)) return;
+    if (sm === sim && game.car !== 'supra') { player.updateFx({ boost: 0, turbo: 0, thr: 0, cut: 0, rpm: 0, running: 0 }, 0); return; }   // registrazioni della Supra: tacciono con la V40
     const lv = S.muted ? 0 : S.vol / 100;
     player.updateFx({ boost: sm.pipeP, turbo: sm.tur, thr: sm.thr, cut: sm.cut, rpm: sm.rpm, running: sm.running }, lv);
     for (const e of events) if (e.type === 'bov') {
@@ -2117,7 +2163,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (j) jb.innerHTML = `<b>CONSEGNA</b>${fmt(Math.max(0, j.to - s.dist) / 1000, 1)} km · ${Math.max(0, Math.ceil((j.deadline - j.t) / 60))} min per il bonus`;
     const rd = game.mode === 'career' ? game.radar() : null;
     $('radar').hidden = rd === null || !!game.race;
-    if (rd !== null) $('radar').textContent = `POLIZIA ${Math.round(rd / 10) * 10} m${sim.gear === 6 ? ' · ESCI DALLA SESTA' : ''}`;
+    if (rd !== null) $('radar').textContent = `POLIZIA ${Math.round(rd / 10) * 10} m${sim.gear === sim.topGear() && sim.gear >= 5 ? ' · SCALA UNA MARCIA' : ''}`;
     // sfida: semaforo, zona verde dei giri, indicatore di cambiata
     const R = game.race, rb = $('raceBox'), tree = $('tree'), rv = $('revBar');
     const lamps = tree.children;
@@ -2250,6 +2296,15 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     el.addEventListener('pointerdown', (e) => { e.preventDefault(); ensureAudio(); btnSteer[key] = 1; if (game.race) flash('In gara si resta nella propria corsia', 1.4); try { el.setPointerCapture(e.pointerId); } catch (_) {} });
     for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) el.addEventListener(ev, () => { btnSteer[key] = 0; });
   }
+  $('carSw').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    const r = game.switchCar(b.dataset.c);
+    if (!r.ok) { if (r.why) flash(r.why, 2.2); return; }
+    applySettings(); renderServices(); renderTrunk(); saveGame();
+    sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.title !== 'Colore del modello' && x.style.background && carPaint() === rgbHex(x.style.background))));
+    flash(game.car === 'v40' ? (S.look === '2d' ? 'Volvo V40 SW 2.0: 140 CV aspirati. Potenziala in officina!' : 'La V40 si vede nella vista 2D: nel 3D resta la Supra') : 'Toyota Supra RZ', 2.4);
+  });
+  const rgbHex = (c) => '#' + (c.match(/\d+/g) || []).slice(0, 3).map((n) => (+n).toString(16).padStart(2, '0')).join('');
   $('modeSw').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     // "Montagna" è la modalità libera sulla strada di montagna (solo vista 3D: in 2D le curve non si vedono)
@@ -2325,7 +2380,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (player && player.items.length) {
       const onT = sim.running && sim.cut === 0 && sim.thr > 0.06 ? 1 : 0;
       smpLoad += (onT - smpLoad) * Math.min(1, dt * 10);
-      player.update(sim.rpm, smpLoad, S.muted ? 0 : S.vol / 100 * S.mix / 100 * 1.3, { boost: sim.pipeP, sec: sim.sec });
+      player.update(sim.rpm, smpLoad, S.muted || game.car !== 'supra' ? 0 : S.vol / 100 * S.mix / 100 * 1.3, { boost: sim.pipeP, sec: sim.sec });
       smpMeter(dt);
       smpFx(sim, ev, dt);
     }
@@ -2333,7 +2388,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       // fiammate: limitatore a taglio d'accensione, e al rilascio del gas (più a lungo con la mappa pop & bang)
       const liftT = sim.cfg.pops ? 2.8 : 1.1;
       flameT = (sim.cut === 2 || sim.cut === 3) && TP.sim.sparkCut ? 1
-        : sim.cut === 1 && sim.ovr < liftT && sim.rpm > 2200 ? (sim.cfg.pops ? 0.6 : 0.38) * (1 - sim.ovr / liftT) * Math.min(1, sim.rpm / 4500) * TP.dsp.cat.pop : 0;
+        : sim.cut === 1 && sim.ovr < liftT && sim.rpm > 2200 && (game.car === 'supra' || TP.sim.ecuPops) ? (sim.cfg.pops ? 0.6 : 0.38) * (1 - sim.ovr / liftT) * Math.min(1, sim.rpm / 4500) * TP.dsp.cat.pop : 0;
       const vs = { v: sim.v, ww: sim.ww, acc: sim.acc, rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
         ign: sim.ign, brake: sim.in.brake, flame: flameT, spin: Math.min(1, Math.max(0, (Math.abs(sim.ww * sim.P.r - sim.v) - 1.5) / 5)),
         thr: sim.thr, events: ev, skid: sim.skid, damage: sim.damage, tireT: sim.tireT, gear: sim.gear, signal: game.signal ? game.signal.dir : null, high: !!S.high };

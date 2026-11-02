@@ -35,6 +35,13 @@ class SupraSim {
     });
   }
 
+  // cambio d'auto: parametri della scocca, del motore e del cambio (null = Supra di serie)
+  setCar(over) {
+    if (!this.P0) this.P0 = JSON.parse(JSON.stringify(this.P));
+    this.P = Object.assign(JSON.parse(JSON.stringify(this.P0)), over || {});
+    if (this.gear > this.P.gears.length - 1) this.gear = this.P.gears.length - 1;
+  }
+  topGear() { return this.P.gears.length - 1; }
   setTune(t) {
     Object.assign(this.tune, t);
     this.P.limiter = this.tune.limiter; this.P.idle = this.tune.idle; this.P.Ie = this.tune.Ie;
@@ -49,7 +56,7 @@ class SupraSim {
       const frac = tc.twin ? SIM_SS(tc.a, tc.b, rpm) * 0.6 + 0.4 * SIM_SS(3800, 4400, rpm) : Math.pow(SIM_SS(tc.a, tc.b, rpm), 1.3);
       const boost = tc.max * Math.min(1, frac * 1.18);
       const camK = SIM_SS(3000, 5500, rpm), camF = tn.camLow * (1 - camK) + tn.camHigh * camK;
-      const T = this.tqAt(rpm) * tn.pw * camF * Math.max(0, (1 + 0.78 * boost) - 0.1) / 0.9 - (16 + 0.0035 * rpm + 0.9e-6 * rpm * rpm);
+      const T = this.tqAt(rpm) * tn.pw * camF * Math.max(0, (1 + 0.78 * (tn.boostK || 1) * boost) - 0.1) / 0.9 - (16 + 0.0035 * rpm + 0.9e-6 * rpm * rpm);
       const cv = T * rpm / 7023;
       if (cv > best.cv) { best.cv = cv; best.rpmCv = rpm; }
       if (T > best.nm) { best.nm = T; best.rpmNm = rpm; }
@@ -87,7 +94,7 @@ class SupraSim {
   }
 
   shift(target) {
-    target = SIM_CLAMP(target, -1, 6);
+    target = SIM_CLAMP(target, -1, this.P.gears.length - 1);
     if (target === this.gear || this.shiftSeq) return false;
     if (target === -1 && Math.abs(this.v) > 1.2) { this.events.push({ type: 'grind' }); return false; }
     if (this.gear === -1 && target > 0 && this.v < -1.2) { this.events.push({ type: 'grind' }); return false; }
@@ -254,7 +261,7 @@ class SupraSim {
     const camK = SIM_SS(3000, 5500, rpm), camF = tn.camLow * (1 - camK) + tn.camHigh * camK;
     // cilindri non perfettamente uguali: con camme lunghe al minimo uno "zoppica" (mezzo ordine)
     const lopeF = 1 + tn.lope * 0.22 * Math.sin(this.theta * 0.5) * (1 - SIM_SS(1200, 2600, rpm));
-    const Tcomb = burning ? Tind * tn.pw * camF * lopeF * Math.max(0, this.air * (1 + 0.78 * this.pipeP) - 0.1) / 0.9 : 0;
+    const Tcomb = burning ? Tind * tn.pw * camF * lopeF * Math.max(0, this.air * (1 + 0.78 * (tn.boostK || 1) * this.pipeP) - 0.1) / 0.9 : 0;
     const Tfric = rpm > 0 ? 16 + 0.0035 * rpm + 0.9e-6 * rpm * rpm + 9 * (1 - this.air) * (rpm / 3000) : 0;
     let Tcomp = 0;
     if (!this.running && rpm > 0.5) Tcomp = -38 * Math.sin(3 * this.theta) * SIM_CLAMP(1 - rpm / 700, 0, 1);
@@ -266,7 +273,8 @@ class SupraSim {
     const vw = this.ww * P.r;
     const slip = (vw - this.v) / Math.max(Math.abs(this.v), 2.5);
     // gomme: carico (con trasferimento in accelerazione), sensibilità al carico, temperatura e usura
-    const Nr = SIM_CLAMP(P.mass * 9.81 * P.rearW + P.mass * this.acc * P.cgH / P.wb, 2500, 12000);
+    // carico sull'asse motore: in accelerazione il peso va dietro (aiuta la trazione posteriore, toglie a quella anteriore)
+    const Nr = SIM_CLAMP(P.mass * 9.81 * P.rearW + (P.fwd ? -1 : 1) * P.mass * this.acc * P.cgH / P.wb, 2500, 12000);
     const Fmax = P.mu * Nr * (1 - 0.08 * (Nr / 7260 - 1)) * this.tireGrip();
     const Ft = Fmax * Math.sin(1.3 * Math.atan(18 * slip));
     this.slipPow = Math.abs(Ft * (vw - this.v));                          // potenza dissipata nello slittamento (W)

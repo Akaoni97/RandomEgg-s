@@ -152,6 +152,30 @@ quasi quadrata. Senza la vista 2D resta una versione in prospettiva.
 
 ## La carriera
 
+**Garage: due auto.** In alto si sceglie l'auto (da ferma). Ognuna ha i suoi chilometri, traguardi, benzina,
+danni e vernice.
+
+- **Toyota Supra RZ** (2JZ-GTE biturbo, trazione posteriore, 6 marce): reparto tuning completo.
+- **Volvo V40 SW 2.0** (B4204S 2.0 16V aspirato, 140 CV a 6000 giri, quattro cilindri con scoppi ogni 180°,
+  trazione anteriore, 5 marce, 1290 kg, serbatoio da 60 litri). Si potenzia in officina con una scala
+  progressiva: ogni passo richiede il precedente, costa soldi e chiede chilometri, e si vede sull'auto.
+
+| # | Potenziamento | Cosa cambia | Si vede |
+| --- | --- | --- | --- |
+| 1 | Lavaggio e lucidatura | — | via il fango dalle fiancate, riflessi |
+| 2 | Cerchi in lega 16" | più presa | cinque razze, pinze rosse e disco dietro |
+| 3 | Assetto ribassato | più presa | 3 cm più bassa |
+| 4 | Scarico sportivo | +4 %, voce ruvida | terminale cromato |
+| 5 | Filtro aperto e centralina | +5 %, limitatore 6900 | — |
+| 6 | Kit estetico | — | labbro, minigonne, diffusore, paraurti in tinta |
+| 7 | Spoiler | — | alettone sul portellone |
+| 8 | Kit turbo T4 (0,7 bar) | circa 213 CV, fischio e valvola | intercooler nel paraurti, sigla T4 |
+| 9 | Turbo maggiorato (1,3 bar) | circa 261 CV, scoppi e fiammate | sigla T5, scritta TURBO |
+
+Il disegno della V40 è un segnaposto in pixel art: se c'è `img/v40.png` (200×71, ruote centrate a x 41 e 156,
+y 56) si usa quello. La V40 per ora si vede solo nella vista 2D; i campioni registrati sono della Supra e con la
+V40 tacciono (si sente la sintesi del quattro cilindri).
+
 - Si parte con € 3.000, una Supra di serie e 50 litri di benzina (serbatoio da 70, consumo reale).
 - L'auto resta in prima corsia; se davanti c'è traffico più lento sorpassa da sola e poi rientra.
 - Lungo la strada arrivano proposte a tempo (pulsanti o tasti 1-2-3; senza risposta vale l'ultima):

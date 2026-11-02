@@ -103,8 +103,8 @@ class StreetGame {
     this.s = { money: 3000, rep: 0, heat: 0, dist: 0, owned: {}, wins: 0, losses: 0, fines: 0, jobs: 0, ladder: 0,
       trunk: [{ kind: 'scorta', kg: 14 }, { kind: 'kit', kg: 7, uses: 3 }, { kind: 'tanica', kg: 9 }] };
     this.ents = [];
-    this.car = 'supra'; this.trip = 0;
-    this.s.cars = { supra: { km: 0 } }; this.s.perks = [];
+    this.trip = 0;
+    this.s.carId = 'supra'; this.s.cars = { supra: { km: 0, perks: [] }, v40: { km: 0, perks: [], up: 0, fuel: 0.55 } }; this.s.perks = [];
     this.prompt = null;
     this.ap = null;                        // pilota automatico (fermate)
     this.race = null;
@@ -210,6 +210,10 @@ class StreetGame {
     // contachilometri per auto (i salvataggi vecchi partono dalla distanza già percorsa)
     if (!this.s.cars || !this.s.cars.supra) this.s.cars = { supra: { km: Math.max(0, (this.s.dist || 0) / 1000) } };
     if (!Array.isArray(this.s.perks)) this.s.perks = GAME_KM_PERKS.filter((p) => this.s.cars.supra.km >= p.km).map((p) => p.id);
+    // ogni auto ha i suoi traguardi; la Volvo arriva nel garage con i salvataggi vecchi
+    if (!Array.isArray(this.s.cars.supra.perks)) this.s.cars.supra.perks = this.s.perks.slice();
+    if (!this.s.cars.v40) this.s.cars.v40 = { km: 0, perks: [], up: 0, fuel: 0.55 };
+    if (!CARS[this.s.carId]) this.s.carId = 'supra';
     this.applyMass();
   }
   reset() { const m = this.mode; Object.assign(this, new StreetGame(this.sim, this.rnd)); this.mode = m; }
@@ -219,10 +223,39 @@ class StreetGame {
   trunkKg() { return (this.s.trunk || []).reduce((a, it) => a + it.kg, 0); }
   trunkFits(kg) { return (this.s.trunk || []).length < TRUNK_SLOTS && this.trunkKg() + kg <= TRUNK_KG; }
   applyMass() {
-    // il peso nel bagagliaio pesa sul posteriore: più massa e un filo di carico in più sulle ruote motrici
-    const kg = this.trunkKg(), P = this.sim.P;
-    P.mass = CAR_MASS + kg;
-    P.rearW = (0.47 * CAR_MASS + kg * 0.95) / (CAR_MASS + kg);
+    // il peso nel bagagliaio va sul posteriore: aiuta la trazione posteriore (Supra), toglie un filo a quella anteriore (V40)
+    const kg = this.trunkKg(), P = this.sim.P, car = CARS[this.car] || CARS.supra, m = car.mass;
+    P.mass = m + kg; P.fwd = car.fwd;
+    P.rearW = (car.driveW * m + kg * (car.fwd ? 0.05 : 0.95)) / (m + kg);
+  }
+  // ------------------------------------------------------------ garage: più auto, ognuna con i suoi chilometri e potenziamenti
+  get car() { return (this.s && CARS[this.s.carId] && this.s.carId) || 'supra'; }
+  carState(id = this.car) { return this.s.cars[id] || (this.s.cars[id] = { km: 0, perks: [] }); }
+  switchCar(id) {
+    if (!CARS[id] || id === this.car) return { ok: false };
+    if (Math.abs(this.sim.v) > 0.5 || this.race || this.inside || this.ap) return { ok: false, why: 'Per cambiare auto fermati (e non in gara)' };
+    const sim = this.sim, cur = this.carState();
+    Object.assign(cur, { fuel: sim.fuel, damage: sim.damage, tireWear: sim.tireWear });
+    this.s.carId = id;
+    const nx = this.carState();
+    sim.fuel = nx.fuel ?? 0.6; sim.damage = nx.damage || 0; sim.tireWear = nx.tireWear || 0; sim.dry = false;
+    this.applyMass();
+    this.say(`In garage: ${CARS[id].name}`, 'buy');
+    return { ok: true };
+  }
+  // potenziamenti progressivi (V40): si montano in ordine
+  ups() { return (CARS[this.car] && CARS[this.car].ups) || null; }
+  upLevel() { return this.carState().up || 0; }
+  nextUp() { const u = this.ups(); return u ? u[this.upLevel()] || null : null; }
+  upPrice(u) { return this.mode === 'career' ? Math.round(u.price * this.disc() / 10) * 10 : 0; }
+  buyUp() {
+    const u = this.nextUp(); if (!u) return { ok: false, why: 'Tutto montato' };
+    if (this.mode === 'career' && this.odo < u.km) return { ok: false, why: `Si sblocca a ${u.km} km: la ${CARS[this.car].short} ne ha ${Math.floor(this.odo)}` };
+    const p = this.upPrice(u);
+    if (p > this.s.money) return { ok: false, why: `Servono € ${p}, ne hai ${Math.floor(this.s.money)}` };
+    this.s.money -= p; this.carState().up = this.upLevel() + 1;
+    this.say(`${u.name}${p ? `: − € ${p}` : ''}`, 'buy');
+    return { ok: true };
   }
   addItem(kind, extra = {}) {
     const it = Object.assign({ kind, kg: INV[kind].kg }, INV[kind].uses ? { uses: INV[kind].uses } : {}, extra);
@@ -274,7 +307,7 @@ class StreetGame {
   }
   // ------------------------------------------------------------ chilometri
   get odo() { return (this.s.cars[this.car] || { km: 0 }).km; }
-  hasPerk(id) { return this.s.perks.includes(id); }
+  hasPerk(id) { return (this.carState().perks || []).includes(id); }
   perkPow() { return 1 + (this.hasPerk('rodaggio') ? 0.03 : 0) + (this.hasPerk('leggenda') ? 0.03 : 0); }
   perkGrip() { return this.hasPerk('leggenda') ? 1.04 : 1; }
   disc() { return this.hasPerk('cliente') ? 0.9 : 1; }
@@ -465,7 +498,7 @@ class StreetGame {
       const km = (d - d0) / 1000, car = this.s.cars[this.car] || (this.s.cars[this.car] = { km: 0 });
       car.km += km; this.trip += km;
       const np = this.nextPerk();
-      if (np && car.km >= np.km) { this.s.perks.push(np.id); this.perkUp = np; this.say(`${np.km} km: ${np.name}! ${np.note}`, 'money'); }
+      if (np && car.km >= np.km) { (car.perks || (car.perks = [])).push(np.id); this.perkUp = np; this.say(`${np.km} km: ${np.name}! ${np.note}`, 'money'); }
     }
     if (this.prompt) {
       this.prompt.t -= dt;
@@ -527,7 +560,7 @@ class StreetGame {
       }
       if (e.kind === 'police' && !e.checked && rel < 3 && rel > -8 && this.mode === 'career') {
         e.checked = true;
-        if (sim.gear === 6 && sim.v > 4 && !this.ap) this.busted(e);
+        if (sim.gear === sim.topGear() && sim.gear >= 5 && sim.v > 4 && !this.ap) this.busted(e);
       }
       if (e.kind === 'station' && !e.asked && rel < 620 && rel > 120) {
         e.asked = true;

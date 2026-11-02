@@ -47,6 +47,7 @@ class EngineDSP {
         bias: 1 + this.r() * 0.05, buf: new Float32Array(2048), wi: 0, D: 30, lp: 0, rf: -0.3 });
     }
     order.forEach((c, k) => { this.cyl[c].off = k * 120; });
+    this.nCyl = 6;
 
     // tubo principale (guida d'onda a quarto d'onda)
     this.pipe = new Float32Array(16384); this.pw = 0; this.pD = 400; this.pLp = 0; this.pR = -0.5;
@@ -147,7 +148,10 @@ class EngineDSP {
     this.tn = t;
     // collettori: ghisa originale 3+3 (biturbo) oppure tubolare 6-1 a lunghezze quasi uguali (single)
     const twin = t.tb.mani === 0;
-    const L = twin ? [0.44, 0.35, 0.30, 0.32, 0.37, 0.47] : [0.88, 0.86, 0.84, 0.84, 0.86, 0.88];
+    // quattro cilindri (Volvo B4204S): ordine 1-3-4-2, uno scoppio ogni 180°; sei cilindri: 1-5-3-6-2-4 ogni 120°
+    if ((t.cyl || 6) === 4) { this.nCyl = 4; [0, 2, 3, 1].forEach((c, k) => { this.cyl[c].off = k * 180; }); }
+    else { this.nCyl = 6; [0, 4, 2, 5, 1, 3].forEach((c, k) => { this.cyl[c].off = k * 120; }); }
+    const L = this.nCyl === 4 ? [0.62, 0.58, 0.58, 0.62, 0.6, 0.6] : twin ? [0.44, 0.35, 0.30, 0.32, 0.37, 0.47] : [0.88, 0.86, 0.84, 0.84, 0.86, 0.88];
     this.cyl.forEach((cy, i) => {
       cy.D = Math.max(2, Math.round((L[i] + (twin && i >= 3 ? 0.22 : 0)) / 610 * sr));
       cy.rf = twin ? -0.28 : -0.38;
@@ -309,7 +313,7 @@ class EngineDSP {
 
       // ---- 6 cilindri: impulsi di scarico (blowdown) e aspirazione ------------
       let col = 0, inn = 0;
-      for (let j = 0; j < 6; j++) {
+      for (let j = 0; j < this.nCyl; j++) {
         const c = cyl[j];
         let a = th - c.off; if (a < 0) a += 720;
         if (a < c.prevA) this.cycle(c);
