@@ -22,6 +22,34 @@ const MOUNTAIN = {
   slope: (s) => 9 / 170 * Math.cos(s / 170) + 4 / 53 * Math.cos(s / 53 + 0.7),
   kappa: (s) => 0.55 / 140 * Math.cos(s / 140) + 0.35 / 61 * Math.cos(s / 61 + 1.3) + 0.2 / 29 * Math.cos(s / 29 + 0.4),
 };
+// luoghi fissi lungo la strada di città (vista 2D): si ripetono ogni GAME_PLACE_CYCLE metri
+const GAME_PLACE_CYCLE = 2400;
+const GAME_PLACES = [
+  { id: 'fuel', at: 420, name: 'Benzina 24H', what: 'benzinaio', col: '#2ee6ff' },
+  { id: 'shop', at: 1150, name: 'Officina 2JZ', what: 'officina', col: '#ffb000' },
+  { id: 'style', at: 1820, name: 'Neon Kustom', what: 'ricambi estetici', col: '#ff2e88' },
+];
+// ricambi estetici: si comprano dal Neon Kustom e si vedono sulla Supra in 2D
+const GAME_COSMETICS = {
+  glow: { label: 'Neon sottoscocca', items: [
+    { id: 'none', name: 'Nessuno', price: 0 },
+    { id: '#2ee6ff', name: 'Ciano', price: 450 }, { id: '#ff2e88', name: 'Rosa', price: 450 },
+    { id: '#b8ff3a', name: 'Verde acido', price: 450 }, { id: '#b07bff', name: 'Viola', price: 450 } ] },
+  rims: { label: 'Cerchi', items: [
+    { id: 'none', name: 'Argento di serie', price: 0 },
+    { id: '#1c1d22', name: 'Neri opachi', price: 600 }, { id: '#d9a82e', name: 'Oro', price: 800 },
+    { id: '#9a6a3a', name: 'Bronzo', price: 750 }, { id: '#ff2e88', name: 'Rosa', price: 700 } ] },
+  stripe: { label: 'Strisce laterali', items: [
+    { id: 'none', name: 'Nessuna', price: 0 },
+    { id: '#f2f2ee', name: 'Bianche', price: 350 }, { id: '#0d0e10', name: 'Nere', price: 350 }, { id: '#d9a82e', name: 'Oro', price: 420 } ] },
+  tint: { label: 'Vetri', items: [ { id: 'none', name: 'Chiari', price: 0 }, { id: 'dark', name: 'Oscurati', price: 250 } ] },
+  decal: { label: 'Adesivo sulla portiera', items: [
+    { id: 'none', name: 'Nessuno', price: 0 }, { id: '2JZ', name: '2JZ', price: 120 }, { id: 'JDM', name: 'JDM', price: 120 }, { id: 'NIGHT RUN', name: 'Night Run', price: 180 } ] },
+  paint: { label: 'Vernice speciale', items: [
+    { id: 'none', name: 'Tinte di serie', price: 0 },
+    { id: '#6d2bd9', name: 'Viola perlato', price: 900 }, { id: '#1f8f4e', name: 'Verde Kawasaki', price: 900 },
+    { id: '#f2c200', name: 'Giallo Lancia', price: 900 }, { id: '#36c5d6', name: 'Azzurro Midnight', price: 1100 } ] },
+};
 // bagagliaio: 12 posti, 150 kg; il peso si somma alla massa della Supra
 const TRUNK_SLOTS = 12, TRUNK_KG = 150, CAR_MASS = 1570;
 const INV = {
@@ -106,6 +134,61 @@ class StreetGame {
     this.say(`Tamponamento a ${Math.round(dv * 3.6)} km/h di differenza: carrozzeria al ${Math.round(sim.damage * 100)} % di danni`, 'police');
   }
 
+  // ------------------------------------------------------------ luoghi (benzinaio, officina, estetica)
+  placesBetween(a, b) {
+    const out = [];
+    for (let c = Math.floor(a / GAME_PLACE_CYCLE) - 1; c * GAME_PLACE_CYCLE <= b; c++)
+      for (const p of GAME_PLACES) { const x = c * GAME_PLACE_CYCLE + p.at; if (x >= a && x <= b && x > 60) out.push(Object.assign({ x, kind: 'place' }, p)); }
+    return out;
+  }
+  // il luogo davanti a cui ci si può fermare adesso (null se troppo lontano, o se a questa velocità non si riesce a frenare)
+  nearPlace() {
+    if (!this.placesOn || this.race || this.ap || this.inside) return null;
+    const d = this.s.dist, v = Math.max(0, this.sim.v);
+    const p = this.placesBetween(d - 12, d + 160)[0];
+    if (!p) return null;
+    const rel = p.x - d, stop = v * v / (2 * 4.5);
+    return Object.assign(p, { rel, ok: rel > -12 && stop < rel + 8 });
+  }
+  // entra: accosta sul lato dei negozi, si ferma davanti all'ingresso e ci entra
+  enterPlace(p) {
+    if (!p || !p.ok) return false;
+    this.prompt = null; this.lane = 3; this.manualT = 0; this.free = false;
+    const go = () => { this.inside = { id: p.id, x: p.x, name: p.name, col: p.col, phase: 'in', t: 0 }; this.laneZ = GAME_LANE_Z[3]; };
+    if (p.rel < 4) { this.stopAt(null, go); } else this.stopAt(p.x, go);
+    this.say(`Accosto: ${p.name}`, p.id === 'fuel' ? 'fuel' : 'buy');
+    return true;
+  }
+  exitPlace() {
+    const I = this.inside; if (!I || I.phase !== 'shop') return;
+    if (I.fill && I.fill.got > 0.05) {       // pistola staccata a metà: si paga quello che è entrato
+      const c = Math.round(I.fill.cost * 100) / 100; if (this.mode === 'career') this.s.money -= c;
+      this.say(`Rifornimento interrotto: ${I.fill.got.toFixed(1).replace('.', ',')} litri, − € ${c.toFixed(2).replace('.', ',')}`, 'fuel');
+    }
+    I.fill = null; I.phase = 'out'; I.t = 0;
+  }
+  // rifornimento alla pompa: litri che entrano un po' alla volta
+  startFill(liters) {
+    const I = this.inside; if (!I || I.id !== 'fuel' || I.fill) return { ok: false };
+    const miss = (1 - this.sim.fuel) * this.sim.P.tank;
+    liters = Math.max(0, Math.min(liters, miss));
+    if (liters < 0.5) return { ok: false, why: 'Il serbatoio è già pieno' };
+    const cost = liters * GAME_FUEL_PRICE;
+    if (this.mode === 'career' && cost > this.s.money + 0.5) liters = Math.max(0, this.s.money / GAME_FUEL_PRICE);
+    if (liters < 0.5) return { ok: false, why: 'Non hai abbastanza soldi' };
+    I.fill = { liters, got: 0, cost: 0 };
+    return { ok: true };
+  }
+  cosOwned(cat, id) { return this.mode === 'free' || id === 'none' || !!this.s.owned['cos:' + cat + ':' + id]; }
+  buyCos(cat, id) {
+    const it = GAME_COSMETICS[cat].items.find((x) => x.id === id); if (!it) return { ok: false };
+    if (this.cosOwned(cat, id)) return { ok: true, paid: 0 };
+    if (it.price > this.s.money) return { ok: false, why: `Servono € ${it.price}, ne hai ${Math.floor(this.s.money)}` };
+    this.s.money -= it.price; this.s.owned['cos:' + cat + ':' + id] = true;
+    this.say(`${GAME_COSMETICS[cat].label}: ${it.name} − € ${it.price}`, 'buy');
+    return { ok: true, paid: it.price };
+  }
+
   // ------------------------------------------------------------ salvataggio
   save() { return JSON.stringify({ mode: this.mode, s: this.s }); }
   load(json) {
@@ -176,6 +259,9 @@ class StreetGame {
   owns(cat, id) { return this.mode === 'free' || TUNING[cat].items[0].id === id || tuningItem(cat, id).price === 0 || !!this.s.owned[cat + ':' + id]; }
   price(cat, id) { return this.owns(cat, id) ? 0 : tuningItem(cat, id).price; }
   canMount() { return this.mode === 'free' || (Math.abs(this.sim.v) < 0.5 && !this.race); }
+  // con i luoghi in città (2D, carriera) i pezzi si montano solo dentro l'officina
+  inShop() { return !!(this.inside && this.inside.id === 'shop' && this.inside.phase === 'shop'); }
+  needsShop() { return this.mode === 'career' && this.placesOn && !this.inShop(); }
   buy(cat, id) {
     const p = this.price(cat, id);
     if (p > this.s.money) return { ok: false, why: `Servono € ${p}, ne hai ${Math.floor(this.s.money)}` };
@@ -201,7 +287,7 @@ class StreetGame {
   spawn() {
     const sim = this.sim, d = this.s.dist, r = this.rnd;
     const w = [
-      ['traffic', 40], ['police', 16], ['station', sim.fuel < 0.35 ? 34 : sim.fuel < 0.6 ? 12 : 4],
+      ['traffic', 40], ['police', 16], ['station', this.placesOn ? 0 : sim.fuel < 0.35 ? 34 : sim.fuel < 0.6 ? 12 : 4],
       ['race', this.kmh > 15 && !this.job ? 14 : 0], ['job', !this.job ? 10 : 0],
     ];
     let k = r() * w.reduce((a, x) => a + x[1], 0), kind = 'traffic';
@@ -355,6 +441,24 @@ class StreetGame {
       }
     }
     this.s.heat = Math.max(0, this.s.heat - dt * 0.004);
+    const I = this.inside;
+    if (I) {
+      I.t += dt;
+      if (I.phase === 'in' && I.t > 1.3) { I.phase = 'shop'; I.t = 0; }
+      if (I.phase === 'out' && I.t > 1.1) { this.inside = null; this.ap = null; this.lane = 3; this.laneZ = GAME_LANE_Z[3]; this.manualT = 4; }
+      if (I.fill) {
+        const F = I.fill, step = Math.min(F.liters - F.got, dt * 8);
+        F.got += step; sim.fuel = Math.min(1, sim.fuel + step / sim.P.tank); sim.dry = false;
+        F.cost = F.got * GAME_FUEL_PRICE;
+        if (F.got >= F.liters - 1e-6) {
+          const c = Math.round(F.cost * 100) / 100;
+          if (this.mode === 'career') this.s.money -= c;
+          this.say(`Rifornimento: ${F.got.toFixed(1).replace('.', ',')} litri, − € ${c.toFixed(2).replace('.', ',')}`, 'fuel');
+          I.fill = null; I.filled = true;
+        }
+      }
+      return;
+    }
 
     if (this.mode === 'career' && sim.running && !this.race && !this.ap && d > this.nextSpawn) {
       this.spawn(); this.nextSpawn = d + 220 + this.rnd() * 380;

@@ -119,13 +119,25 @@ class Street2D {
     if (this.paintBase[hex]) return this.paintBase[hex];
     const c = document.createElement('canvas'); c.width = 200; c.height = 58; const x = c.getContext('2d');
     x.drawImage(this.sImg, 0, 0);
-    if (hex && hex.toLowerCase() !== '#c81d11') {
+    const cos = this.cos || {}, stripe = cos.stripe && cos.stripe !== 'none' ? parseInt(cos.stripe.slice(1), 16) : null;
+    if ((hex && hex.toLowerCase() !== '#c81d11') || stripe !== null || cos.tint === 'dark') {
       const d = x.getImageData(0, 0, 200, 58), p = d.data, P = parseInt(hex.slice(1), 16), R = P >> 16, G = (P >> 8) & 255, B = P & 255;
       for (let i = 0; i < p.length; i += 4) {
-        const r = p[i], g = p[i + 1], b = p[i + 2];
-        if (p[i + 3] && r > 70 && r > g * 2.2 && r > b * 2.2) { const k = r / 205; p[i] = Math.min(255, R * k); p[i + 1] = Math.min(255, G * k); p[i + 2] = Math.min(255, B * k); }
+        const r = p[i], g = p[i + 1], b = p[i + 2], px = (i / 4) % 200, py = Math.floor(i / 800);
+        if (p[i + 3] && r > 70 && r > g * 2.2 && r > b * 2.2) {
+          const k = r / 205;
+          // striscia lungo la fiancata, solo sulla vernice
+          if (stripe !== null && ((py >= 30 && py <= 31) || (py >= 33 && py <= 33)) && px > 10 && px < 190) { p[i] = Math.min(255, (stripe >> 16) * k * 1.05); p[i + 1] = Math.min(255, ((stripe >> 8) & 255) * k * 1.05); p[i + 2] = Math.min(255, (stripe & 255) * k * 1.05); }
+          else { p[i] = Math.min(255, R * k); p[i + 1] = Math.min(255, G * k); p[i + 2] = Math.min(255, B * k); }
+        } else if (cos.tint === 'dark' && p[i + 3] && py < 20 && px > 56 && px < 132 && Math.abs(r - b) < 40 && r < 150 && g < 150) {
+          const k = (r + g + b) / 3 > 110 ? 0.55 : 0.32; p[i] = r * k; p[i + 1] = g * k; p[i + 2] = b * k * 1.1;
+        }
       }
       x.putImageData(d, 0, 0);
+    }
+    if (cos.decal && cos.decal !== 'none') {
+      const w = this.textW(cos.decal), cx = 100 - Math.round(w / 2) + 4;
+      this.text(x, cos.decal, cx + 1, 25, 'rgba(0,0,0,.45)'); this.text(x, cos.decal, cx, 24, hex === '#f2f2ee' ? '#14161c' : '#f4f1e6');
     }
     return (this.paintBase[hex] = c);
   }
@@ -138,13 +150,26 @@ class Street2D {
     return (this.spr[key] = c);
   }
   // ruota dell'illustrazione che gira; la pinza rossa resta ferma sopra
+  rims() {
+    const col = this.cos && this.cos.rims && this.cos.rims !== 'none' ? this.cos.rims : null;
+    if (!col) return this.wImg;
+    if (this.rimImg && this.rimImg.col === col) return this.rimImg;
+    const c = document.createElement('canvas'); c.width = 32; c.height = 32; const x = c.getContext('2d'); x.drawImage(this.wImg, 0, 0);
+    const d = x.getImageData(0, 0, 32, 32), p = d.data, n = parseInt(col.slice(1), 16), R = n >> 16, G = (n >> 8) & 255, B = n & 255;
+    for (let i = 0; i < p.length; i += 4) {
+      const px = (i / 4) % 32 - 15.5, py = Math.floor(i / 128) - 15.5, r = p[i], gg = p[i + 1], b = p[i + 2], l = (r + gg + b) / 3;
+      if (p[i + 3] && Math.hypot(px, py) < 11.5 && l > 70 && Math.max(r, gg, b) - Math.min(r, gg, b) < 45) { const k = Math.min(1.4, l / 150); p[i] = Math.min(255, R * k + 18); p[i + 1] = Math.min(255, G * k + 18); p[i + 2] = Math.min(255, B * k + 18); }
+    }
+    x.putImageData(d, 0, 0); c.col = col;
+    return (this.rimImg = c);
+  }
   supraWheel(g, cx, cy, k, ang, speed = 0) {
-    const s = 32 * k;
+    const s = 32 * k, wi = this.rims();
     g.save(); g.imageSmoothingEnabled = false; g.translate(Math.round(cx), Math.round(cy));
     if (speed > 9) {                      // in velocità i raggi si sfocano in un disco (niente effetto ruota che gira all'indietro)
       const n = 4, a0 = ang;
-      for (let i = 0; i < n; i++) { g.save(); g.globalAlpha = i ? 0.35 : 1; g.rotate(a0 + i * Math.PI / 10); g.drawImage(this.wImg, -s / 2, -s / 2, s, s); g.restore(); }
-    } else { g.rotate(Math.round(ang / (Math.PI / 20)) * (Math.PI / 20)); g.drawImage(this.wImg, -s / 2, -s / 2, s, s); }
+      for (let i = 0; i < n; i++) { g.save(); g.globalAlpha = i ? 0.35 : 1; g.rotate(a0 + i * Math.PI / 10); g.drawImage(wi, -s / 2, -s / 2, s, s); g.restore(); }
+    } else { g.rotate(Math.round(ang / (Math.PI / 20)) * (Math.PI / 20)); g.drawImage(wi, -s / 2, -s / 2, s, s); }
     g.restore();
     g.fillStyle = '#b3141c'; g.fillRect(Math.round(cx - 7 * k), Math.round(cy - 6 * k), Math.max(2, Math.round(3 * k)), Math.max(3, Math.round(6 * k)));
   }
@@ -231,6 +256,11 @@ class Street2D {
   }
 
   setPaint(hex) { if (hex && hex !== 'model') this.paintHex = hex; }
+  // ricambi estetici: neon, cerchi, strisce, vetri, adesivo (si rigenerano gli sprite)
+  setCosmetics(c) {
+    const k = JSON.stringify(c || {}); if (k === this.cosKey) return;
+    this.cosKey = k; this.cos = Object.assign({}, c); this.spr = {}; this.paintBase = {}; this.rimImg = null;
+  }
   setTips(n) { this.dual = n > 1; }
   setRain(on) { this.rainOn = on; }
   setDaylight(d, ss) { this.day = d; this.sunset = ss; }
@@ -537,6 +567,179 @@ class Street2D {
   }
 
   // ---------------------------------------------------------------- aggiornamento
+  drawStation(g, x) {
+    const C = this.C;
+    this.light(g, x, 232, 130, 16, '#e8f0ff', 0.08, 4);
+    g.fillStyle = C.ink; g.fillRect(x - 120, 150, 244, 16); g.fillStyle = '#e8ecf5'; g.fillRect(x - 119, 151, 242, 13);
+    g.fillStyle = '#2ee6ff'; g.fillRect(x - 119, 162, 242, 2); g.fillStyle = '#b8c0d0'; g.fillRect(x - 119, 151, 242, 2);
+    this.text(g, 'BENZINA 24H', x - 43, 153, '#163a8c', 2);
+    for (let k = -110; k < 110; k += 22) { g.fillStyle = '#fff6e0'; g.fillRect(x + k, 165, 10, 2); }
+    for (const p of [-104, 96]) { g.fillStyle = C.ink; g.fillRect(x + p - 2, 166, 8, 50); g.fillStyle = '#9aa3b2'; g.fillRect(x + p, 166, 4, 50); g.fillStyle = '#c9ced6'; g.fillRect(x + p, 166, 1, 50); }
+    for (const p of [-44, 24]) {
+      g.fillStyle = C.ink; g.fillRect(x + p - 2, 184, 20, 32); g.fillStyle = '#b8ff3a'; g.fillRect(x + p, 186, 16, 28); g.fillStyle = '#7ab82a'; g.fillRect(x + p + 12, 186, 4, 28);
+      g.fillStyle = '#0b0f16'; g.fillRect(x + p + 2, 190, 10, 6); this.text(g, '88', x + p + 3, 191, '#b8ff3a');
+      g.fillStyle = C.ink; g.fillRect(x + p + 16, 196, 4, 2); g.fillRect(x + p + 18, 198, 2, 12); g.fillRect(x + p + 14, 208, 6, 3);
+    }
+    g.fillStyle = C.ink; g.fillRect(x - 170, 108, 44, 62); g.fillStyle = '#0b0f16'; g.fillRect(x - 168, 110, 40, 58);
+    this.text(g, 'BENZ', x - 164, 114, '#2ee6ff', 2); this.text(g, '1,95', x - 164, 132, '#b8ff3a', 2); this.text(g, 'GPL', x - 164, 150, '#ffb000', 2);
+    this.light(g, x - 148, 139, 30, 36, '#2ee6ff', 0.04, 2);
+    g.fillStyle = C.ink; g.fillRect(x - 151, 170, 6, 46);
+  }
+
+  // ---------------------------------------------------------------- luoghi in cui entrare
+  // facciate sul lato dei negozi (dietro il marciapiede lontano); la porta si apre quando la Supra è vicina
+  drawPlace(g, e, x, st, game, dist) {
+    const C = this.C, I = game && game.inside, mine = I && Math.abs(I.x - e.x) < 1;
+    const near = Math.abs(e.x - dist) < 45;
+    st.doors = st.doors || {}; const key = e.id + Math.round(e.x);
+    const want = mine || (near && game && game.nearPlace() && Math.abs(game.sim.v) < 9) ? 1 : 0;
+    st.doors[key] = (st.doors[key] || 0) + (want - (st.doors[key] || 0)) * 0.08;
+    const open = st.doors[key];
+    if (e.id === 'fuel') { this.drawStation(g, x); this.placeTag(g, x, 96, 'BENZINA', '#2ee6ff', near); return; }
+    const L = x - 132, R = x + 132, top = 104;
+    // passo carrabile sul marciapiede
+    g.fillStyle = '#23263a'; g.fillRect(x - 56, 216, 112, 16); g.fillStyle = '#4a5070'; g.fillRect(x - 56, 216, 112, 1);
+    for (let k = -50; k < 50; k += 10) { g.fillStyle = '#2f3450'; g.fillRect(x + k, 224, 6, 1); }
+    if (e.id === 'shop') {
+      g.fillStyle = C.ink; g.fillRect(L - 2, top - 2, R - L + 4, 216 - top + 2);
+      g.fillStyle = '#2b2f3e'; g.fillRect(L, top, R - L, 216 - top);
+      for (let yy = top + 6; yy < 216; yy += 6) { g.fillStyle = '#252836'; g.fillRect(L, yy, R - L, 1); for (let xx = L + ((yy / 6) % 2 ? 0 : 6); xx < R; xx += 12) g.fillRect(xx, yy - 6, 1, 6); }   // mattoni
+      // insegna sul tetto
+      g.fillStyle = C.ink; g.fillRect(x - 78, top - 26, 156, 22); g.fillStyle = '#16120a'; g.fillRect(x - 76, top - 24, 152, 18);
+      this.text(g, 'OFFICINA 2JZ', x - 47, top - 20, '#ffb000', 2);
+      this.light(g, x, top - 15, 90, 16, '#ffb000', 0.07, 3);
+      // portone sezionale
+      const dL = x - 50, dW = 100, dT = 140, dH = 216 - dT, oh = Math.round(dH * open);
+      g.fillStyle = C.ink; g.fillRect(dL - 3, dT - 3, dW + 6, dH + 3);
+      const gr = g.createLinearGradient(0, dT, 0, 216); gr.addColorStop(0, '#d8e4f0'); gr.addColorStop(1, '#7c8696');
+      g.fillStyle = gr; g.fillRect(dL, dT, dW, dH);                                                            // interno illuminato
+      g.fillStyle = '#ffd23f'; g.fillRect(dL + 14, dT + 20, 4, dH - 20); g.fillRect(dL + dW - 18, dT + 20, 4, dH - 20);   // colonne del ponte
+      g.fillStyle = '#596273'; g.fillRect(dL + 30, dT + 12, 40, 4);
+      g.fillStyle = '#5a6070'; g.fillRect(dL, dT, dW, dH - oh);
+      for (let yy = dT + 5; yy < dT + dH - oh; yy += 6) { g.fillStyle = '#454b5a'; g.fillRect(dL, yy, dW, 1); }
+      if (oh > 2) this.light(g, x, 214, 90, 10, '#e8f0ff', 0.12 * open, 3);
+      // vetrina laterale: gomme e cartello
+      g.fillStyle = C.ink; g.fillRect(L + 10, 150, 54, 44); g.fillStyle = '#0d1018'; g.fillRect(L + 12, 152, 50, 40);
+      for (let q = 0; q < 3; q++) { g.fillStyle = '#121216'; this.span(g, L + 37, 186 - q * 10, 18, 5); g.fillStyle = '#2a2a30'; this.span(g, L + 37, 186 - q * 10, 9, 2); }
+      this.text(g, 'GOMME', L + 18, 155, '#ffb000');
+      g.fillStyle = C.ink; g.fillRect(R - 62, 150, 52, 44); g.fillStyle = '#0d1018'; g.fillRect(R - 60, 152, 48, 40);
+      this.text(g, 'TUNING', R - 56, 156, '#2ee6ff'); this.text(g, 'MOTORI', R - 56, 166, '#2ee6ff'); this.text(g, 'FRENI', R - 56, 176, '#2ee6ff');
+      this.light(g, R - 36, 172, 30, 22, '#2ee6ff', 0.05, 2);
+      // pila di gomme fuori
+      for (let q = 0; q < 4; q++) { g.fillStyle = C.ink; g.fillRect(R + 4, 204 - q * 7, 22, 7); g.fillStyle = '#1b1b20'; g.fillRect(R + 5, 205 - q * 7, 20, 5); }
+      this.placeTag(g, x, top - 40, 'OFFICINA', '#ffb000', near);
+    } else {
+      g.fillStyle = C.ink; g.fillRect(L - 2, top - 2, R - L + 4, 216 - top + 2);
+      g.fillStyle = '#1d1530'; g.fillRect(L, top, R - L, 216 - top);
+      const ph = Math.floor(st.t * 2) % 2;
+      // insegna al neon
+      this.light(g, x, top + 12, 120, 22, '#ff2e88', 0.09, 3);
+      g.fillStyle = C.ink; g.fillRect(x - 70, top + 2, 140, 22);
+      this.text(g, 'NEON', x - 64, top + 6, '#ff2e88', 3); this.text(g, 'KUSTOM', x - 8, top + 6, ph ? '#2ee6ff' : '#9af6ff', 2);
+      this.text(g, 'CERCHI - VERNICI - NEON', x - 46, top + 18, '#f4f1e6');
+      // vetrina con i cerchi
+      const vL = L + 8, vT = 136;
+      g.fillStyle = '#ff2e88'; g.fillRect(vL - 2, vT - 2, 104, 64); g.fillStyle = '#0a0612'; g.fillRect(vL, vT, 100, 60);
+      const rimCols = ['#d9a82e', '#1c1d22', '#c9ced6', '#ff2e88'];
+      for (let q = 0; q < 4; q++) { const cx = vL + 14 + q * 24, cy = vT + 22 + (q % 2) * 16; g.fillStyle = '#08080a'; this.span(g, cx, cy, 10, 10); g.fillStyle = rimCols[q]; this.span(g, cx, cy, 6, 6); g.fillStyle = '#08080a'; this.span(g, cx, cy, 2, 2); }
+      this.light(g, vL + 50, vT + 30, 60, 30, '#ff2e88', 0.06, 2);
+      // ingresso con cornice al neon
+      const dL = x + 4, dW = 104, dT = 132, dH = 216 - dT, oh = Math.round(dH * open);
+      g.fillStyle = ph ? '#2ee6ff' : '#1aa8c0'; g.fillRect(dL - 3, dT - 3, dW + 6, dH + 3);
+      g.fillStyle = '#120b20'; g.fillRect(dL, dT, dW, dH);
+      for (let q = 0; q < 8; q++) { g.fillStyle = q % 2 ? '#2a1d44' : '#0e0a18'; g.fillRect(dL + q * 13, 200, 13, 16); }    // pavimento a scacchi
+      this.light(g, dL + dW / 2, 190, 50, 22, '#b07bff', 0.12, 3);
+      g.fillStyle = '#2a2140'; g.fillRect(dL, dT, dW, dH - oh);
+      for (let yy = dT + 5; yy < dT + dH - oh; yy += 6) { g.fillStyle = '#1d1630'; g.fillRect(dL, yy, dW, 1); }
+      this.light(g, dL + dW / 2, 214, 80, 9, '#2ee6ff', 0.1, 3);
+      this.placeTag(g, x, top - 16, 'ESTETICA', '#ff2e88', near);
+    }
+  }
+  // cartello che pulsa quando il luogo è a portata
+  placeTag(g, x, y, label, col, near) {
+    if (!near) return;
+    const w = this.textW(label, 1) + 10, b = Math.floor(this.st.t * 3) % 2 ? 0 : 2;
+    g.fillStyle = this.C.ink; g.fillRect(Math.round(x - w / 2) - 1, y - 1 - b, w + 2, 11);
+    g.fillStyle = col; g.fillRect(Math.round(x - w / 2), y - b, w, 9);
+    this.text(g, label, Math.round(x - w / 2) + 5, y + 2 - b, this.C.ink);
+    g.fillStyle = col; g.fillRect(Math.round(x) - 2, y + 9 - b, 5, 2); g.fillRect(Math.round(x) - 1, y + 11 - b, 3, 2);
+  }
+
+  // interni: officina, distributore, carrozzeria estetica; la Supra al centro con vernice e ricambi montati
+  drawInterior(g, game, s, dt) {
+    const W = this.LW, C = this.C, I = game.inside, st = this.st, t = st.t;
+    const K = 1.3, cx = Math.round(W * (this.inFrac || 0.4)), gy = 300;
+    let lift = 0;
+    if (I.id === 'shop') {
+      g.fillStyle = '#1e212c'; g.fillRect(0, 0, W, 360);
+      for (let xx = 0; xx < W; xx += 48) { g.fillStyle = '#252937'; g.fillRect(xx, 40, 46, 200); g.fillStyle = '#181a24'; g.fillRect(xx + 46, 40, 2, 200); }
+      // neon e tubi fluorescenti
+      for (let xx = 30; xx < W; xx += 110) { g.fillStyle = C.ink; g.fillRect(xx, 18, 70, 6); g.fillStyle = '#eef6ff'; g.fillRect(xx + 2, 19, 66, 3); this.light(g, xx + 35, 24, 90, 40, '#dfeaff', 0.06, 3); }
+      g.fillStyle = C.ink; g.fillRect(W - 230, 54, 200, 30); this.text(g, 'OFFICINA 2JZ', W - 218, 60, '#ffb000', 3); this.light(g, W - 130, 70, 120, 30, '#ffb000', 0.07, 3);
+      // pannello forato con attrezzi
+      g.fillStyle = '#3b3326'; g.fillRect(24, 70, 150, 90);
+      for (let yy = 76; yy < 156; yy += 8) for (let xx = 30; xx < 170; xx += 8) { g.fillStyle = '#2a2419'; g.fillRect(xx, yy, 1, 1); }
+      const tools = [[40, 82, 4, 30, '#c9ced6'], [52, 80, 6, 24, '#d0141e'], [66, 84, 3, 34, '#c9ced6'], [80, 80, 18, 6, '#ffb000'], [104, 86, 4, 28, '#c9ced6'], [116, 82, 10, 10, '#2e6bff'], [136, 80, 4, 36, '#c9ced6'], [148, 86, 14, 6, '#d0141e']];
+      for (const [x1, y1, w1, h1, c1] of tools) { g.fillStyle = C.ink; g.fillRect(x1 - 1, y1 - 1, w1 + 2, h1 + 2); g.fillStyle = c1; g.fillRect(x1, y1, w1, h1); }
+      // pavimento
+      g.fillStyle = '#3a3f4a'; g.fillRect(0, 240, W, 120); g.fillStyle = '#444a57'; for (let xx = 0; xx < W; xx += 64) g.fillRect(xx, 240, 1, 120);
+      g.fillStyle = '#ffd23f'; g.fillRect(0, 300, W, 2);
+      g.fillStyle = 'rgba(10,10,14,.35)'; this.span(g, cx + 140, 330, 26, 4); this.span(g, cx - 160, 320, 18, 3);   // macchie d'olio
+      // ponte sollevatore
+      lift = 8 + Math.round(Math.sin(Math.min(1, I.t / 1.2) * Math.PI / 2) * 10);
+      for (const px of [cx - 146, cx + 138]) { g.fillStyle = C.ink; g.fillRect(px - 1, 150, 10, gy - 150 + 2); g.fillStyle = '#ffd23f'; g.fillRect(px, 151, 8, gy - 151); g.fillStyle = '#d9a800'; g.fillRect(px + 6, 151, 2, gy - 151); }
+      g.fillStyle = '#596273'; g.fillRect(cx - 138, gy - lift - 2, 276, 3);
+      // carrello rosso e gomme
+      g.fillStyle = C.ink; g.fillRect(W - 120, 236, 64, 66); g.fillStyle = '#c0141c'; g.fillRect(W - 118, 238, 60, 62);
+      for (let q = 0; q < 5; q++) { g.fillStyle = '#8a0e14'; g.fillRect(W - 116, 244 + q * 11, 56, 2); g.fillStyle = '#c9ced6'; g.fillRect(W - 92, 248 + q * 11, 10, 2); }
+      for (let q = 0; q < 4; q++) { g.fillStyle = C.ink; g.fillRect(W - 44, 278 - q * 8, 30, 8); g.fillStyle = '#1b1b20'; g.fillRect(W - 43, 279 - q * 8, 28, 6); }
+    } else if (I.id === 'style') {
+      g.fillStyle = '#0d0818'; g.fillRect(0, 0, W, 360);
+      const ph = Math.floor(t * 2) % 2;
+      for (let yy = 30; yy < 230; yy += 50) { g.fillStyle = yy % 100 ? '#ff2e88' : '#2ee6ff'; g.fillRect(0, yy, W, 2); this.light(g, W / 2, yy, W * 0.6, 8, yy % 100 ? '#ff2e88' : '#2ee6ff', 0.05, 2); }
+      g.fillStyle = C.ink; g.fillRect(W - 250, 46, 220, 36); this.text(g, 'NEON', W - 238, 54, '#ff2e88', 4); this.text(g, 'KUSTOM', W - 166, 58, ph ? '#2ee6ff' : '#9af6ff', 3);
+      // espositore di cerchi
+      const rc = ['#d9a82e', '#1c1d22', '#9a6a3a', '#ff2e88', '#c9ced6'];
+      for (let q = 0; q < 5; q++) { const rx = 40 + q * 44, ry = 120 + (q % 2) * 26; g.fillStyle = '#050407'; this.span(g, rx, ry, 18, 18); g.fillStyle = rc[q]; this.span(g, rx, ry, 11, 11); g.fillStyle = '#050407'; this.span(g, rx, ry, 3, 3); for (let a = 0; a < 5; a++) { g.fillStyle = '#050407'; g.fillRect(Math.round(rx + Math.cos(a * 1.257 + t * 0.4) * 7), Math.round(ry + Math.sin(a * 1.257 + t * 0.4) * 7), 2, 2); } }
+      // pavimento a scacchi lucido
+      for (let r = 0; r < 6; r++) { const yy = 240 + r * 20, sz = 20 + r * 4; for (let xx = -((r * 7) % sz); xx < W; xx += sz) { g.fillStyle = ((xx / sz + r) | 0) % 2 ? '#1a1030' : '#08060f'; g.fillRect(Math.round(xx), yy, Math.ceil(sz), 20); } }
+      this.light(g, cx, 120, 140, 150, '#fff2e0', 0.05, 4);                                        // faro sulla macchina
+      this.light(g, cx, gy, 170, 16, '#b07bff', 0.12, 4);
+    } else {
+      // distributore: pensilina di notte, colonnina accanto alla Supra
+      const gr = g.createLinearGradient(0, 0, 0, 240); gr.addColorStop(0, '#0a0922'); gr.addColorStop(1, '#2e2662'); g.fillStyle = gr; g.fillRect(0, 0, W, 240);
+      g.fillStyle = C.ink; g.fillRect(0, 20, W, 34); g.fillStyle = '#e8ecf5'; g.fillRect(0, 22, W, 28); g.fillStyle = '#2ee6ff'; g.fillRect(0, 46, W, 4);
+      this.text(g, 'BENZINA 24H', 24, 28, '#163a8c', 3);
+      for (let xx = 20; xx < W; xx += 60) { g.fillStyle = '#fff6e0'; g.fillRect(xx, 54, 30, 3); this.light(g, xx + 15, 60, 50, 40, '#fff6e0', 0.05, 3); }
+      g.fillStyle = C.ink; g.fillRect(20, 120, 120, 120); g.fillStyle = '#1a2a3a'; g.fillRect(22, 122, 116, 80); this.text(g, 'MARKET', 46, 128, '#b8ff3a', 2);
+      g.fillStyle = '#ffd36b'; for (let q = 0; q < 6; q++) g.fillRect(30 + q * 18, 150, 10, 30);
+      g.fillStyle = '#2a2f40'; g.fillRect(0, 240, W, 120); g.fillStyle = '#e8e4d6'; g.fillRect(0, 316, W, 2);
+      // colonnina con display
+      const px = cx + 160, F = I.fill, lt = F ? F.got : I.filled ? (I.lastL || 0) : 0, eu = F ? F.cost : 0;
+      g.fillStyle = C.ink; g.fillRect(px - 2, 160, 50, gy - 160 + 2); g.fillStyle = '#b8ff3a'; g.fillRect(px, 162, 46, gy - 162); g.fillStyle = '#7ab82a'; g.fillRect(px + 38, 162, 8, gy - 162);
+      g.fillStyle = '#0b0f16'; g.fillRect(px + 4, 170, 32, 36);
+      this.text(g, (F ? lt : 0).toFixed(1).replace('.', ','), px + 6, 174, '#b8ff3a'); this.text(g, 'LT', px + 26, 174, '#7ab82a');
+      this.text(g, eu.toFixed(2).replace('.', ','), px + 6, 186, '#ffb000'); this.text(g, '€', px + 30, 186, '#ffb000');
+      this.text(g, '1,95', px + 6, 198, '#2ee6ff');
+      // tubo della pistola fino al tappo (dietro, lato guida)
+      g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.moveTo(px, 220);
+      const tx = cx - 100 * K + 30 * K, ty = gy - 58 * K + 22 * K;
+      if (F) { g.quadraticCurveTo(px - 60, gy - 10, tx, ty); } else { g.lineTo(px - 4, 240); }
+      g.stroke(); g.lineWidth = 1;
+    }
+    // la Supra (vernice, cerchi, neon, strisce)
+    const spr = this.carSprite(K), left = Math.round(cx - 100 * K), top = Math.round(gy - 58 * K - lift);
+    const glow = this.cos && this.cos.glow && this.cos.glow !== 'none' ? this.cos.glow : null;
+    this.shadow(g, cx, gy, 120, 6);
+    if (glow) { this.light(g, cx, gy - 1, 170, 14, glow, 0.35, 4); g.fillStyle = glow; g.fillRect(cx - 84, gy - 5 - lift, 168, 1); }
+    g.imageSmoothingEnabled = false; g.drawImage(spr, left, top);
+    if (spr.img) { this.supraWheel(g, left + 48 * K, top + 43 * K, K, 0, 0); this.supraWheel(g, left + 158 * K, top + 43 * K, K, 0, 0); }
+    if (I.id === 'style') this.light(g, cx + 20, top + 10, 60, 10, '#ffffff', 0.04 + 0.03 * Math.sin(t * 2), 3);   // riflesso che scorre
+    // titolo
+    const title = I.name.toUpperCase(), tw = this.textW(title, 2);
+    g.fillStyle = 'rgba(8,8,14,.7)'; g.fillRect(cx - tw / 2 - 8, 330, tw + 16, 18); this.text(g, title, cx - tw / 2, 334, I.col, 2);
+  }
+
   update(dt, s, game) {
     const st = this.st, g = this.g, W = this.LW, C = this.C;
     st.t += dt;
@@ -563,6 +766,7 @@ class Street2D {
     st.spin += s.ww * dt; st.front += s.v / 0.322 * dt;
     const idleShake = s.running ? Math.sin(st.t * Math.max(s.rpm, 120) / 60 * 3 * Math.PI * 2) * (s.rpm < 1600 ? 1.2 + 2.4 * (s.lope || 0) : 0.5) : 0;
 
+    if (game && game.inside && game.inside.phase === 'shop') { this.drawInterior(g, game, s, dt); this.present(0, 0); return; }
     // ---- sfondo: cielo, tre piani di città, foschia
     this.drawSky(g, st.t, dist);
     // temporale: con la pioggia ogni tanto un fulmine (saetta nel cielo, lampo su tutta la scena, poi il tuono)
@@ -675,8 +879,9 @@ class Street2D {
 
     // ---- entità (dalla più lontana)
     const items = game ? game.ents.slice() : [];
+    if (game && game.placesOn) for (const p of game.placesBetween(visFrom - 160, visTo + 160)) items.push(p);
     const zOf = (e) => {
-      if (e.kind === 'station' || e.lane === 0) return 9;
+      if (e.kind === 'station' || e.kind === 'place' || e.lane === 0) return 9;
       if (e.kind === 'line' || e.kind === 'drop') return 1.75;
       e._z = e._z === undefined ? GAME_LANE_Z[e.lane] : e._z + (GAME_LANE_Z[e.lane] - e._z) * Math.min(1, dt * 1.8);   // cambio corsia morbido
       return e._z;
@@ -686,24 +891,8 @@ class Street2D {
     const drawEnt = (e) => {
       const x = wx(e.x);
       if (x < -300 || x > W + 300) return;
-      if (e.kind === 'station') {
-        this.light(g, x, 232, 130, 16, '#e8f0ff', 0.08, 4);
-        g.fillStyle = C.ink; g.fillRect(x - 120, 150, 244, 16); g.fillStyle = '#e8ecf5'; g.fillRect(x - 119, 151, 242, 13);
-        g.fillStyle = '#2ee6ff'; g.fillRect(x - 119, 162, 242, 2); g.fillStyle = '#b8c0d0'; g.fillRect(x - 119, 151, 242, 2);
-        this.text(g, 'BENZINA 24H', x - 43, 153, '#163a8c', 2);
-        for (let k = -110; k < 110; k += 22) { g.fillStyle = '#fff6e0'; g.fillRect(x + k, 165, 10, 2); }
-        for (const p of [-104, 96]) { g.fillStyle = C.ink; g.fillRect(x + p - 2, 166, 8, 50); g.fillStyle = '#9aa3b2'; g.fillRect(x + p, 166, 4, 50); g.fillStyle = '#c9ced6'; g.fillRect(x + p, 166, 1, 50); }
-        for (const p of [-44, 24]) {
-          g.fillStyle = C.ink; g.fillRect(x + p - 2, 184, 20, 32); g.fillStyle = '#b8ff3a'; g.fillRect(x + p, 186, 16, 28); g.fillStyle = '#7ab82a'; g.fillRect(x + p + 12, 186, 4, 28);
-          g.fillStyle = '#0b0f16'; g.fillRect(x + p + 2, 190, 10, 6); this.text(g, '88', x + p + 3, 191, '#b8ff3a');
-          g.fillStyle = C.ink; g.fillRect(x + p + 16, 196, 4, 2); g.fillRect(x + p + 18, 198, 2, 12); g.fillRect(x + p + 14, 208, 6, 3);
-        }
-        g.fillStyle = C.ink; g.fillRect(x - 170, 108, 44, 62); g.fillStyle = '#0b0f16'; g.fillRect(x - 168, 110, 40, 58);
-        this.text(g, 'BENZ', x - 164, 114, '#2ee6ff', 2); this.text(g, '1,95', x - 164, 132, '#b8ff3a', 2); this.text(g, 'GPL', x - 164, 150, '#ffb000', 2);
-        this.light(g, x - 148, 139, 30, 36, '#2ee6ff', 0.04, 2);
-        g.fillStyle = C.ink; g.fillRect(x - 151, 170, 6, 46);
-        return;
-      }
+      if (e.kind === 'place') { this.drawPlace(g, e, x, st, game, dist); return; }
+      if (e.kind === 'station') { this.drawStation(g, x); return; }
       if (e.kind === 'drop') {
         for (const p of [-36, 32]) { g.fillStyle = C.ink; g.fillRect(x + p - 2, 184, 9, 148); g.fillStyle = '#b8ff3a'; g.fillRect(x + p, 186, 5, 144); g.fillStyle = '#e8ffb0'; g.fillRect(x + p, 186, 1, 144); }
         g.fillStyle = C.ink; g.fillRect(x - 44, 168, 92, 22); g.fillStyle = '#b8ff3a'; g.fillRect(x - 42, 170, 88, 18);
@@ -753,8 +942,15 @@ class Street2D {
     for (const e of items) if (zOf(e) > myZ + 0.01) drawEnt(e); else front.push(e);
 
     // ---- la Supra
-    const y0 = Math.round(this.laneY(myZ)), k = kq(y0), sc = k;
-    const spr = this.carSprite(k), SW = spr.width, left = Math.round(carX - SW / 2);
+    const IN = game && game.inside;
+    let entE = 0;
+    if (IN) { const ez = (t) => t * t * (3 - 2 * Math.min(1, Math.max(0, t))); entE = IN.phase === 'in' ? ez(Math.min(1, IN.t / 1.3)) : IN.phase === 'out' ? 1 - ez(Math.min(1, IN.t / 1.1)) : 1; }
+    const entLift = IN ? (IN.id === 'fuel' ? 12 : 30) * entE : 0;
+    const entA = IN && IN.id !== 'fuel' ? 1 - Math.max(0, (entE - 0.5) / 0.5) : 1;
+    const entDX = IN ? Math.round((wx(IN.x) - carX) * Math.min(1, entE * 1.6)) : 0;
+    const y0 = Math.round(this.laneY(myZ) - entLift), k = kq(y0), sc = k;
+    const spr = this.carSprite(k), SW = spr.width, left = Math.round(carX + entDX - SW / 2);
+    g.globalAlpha = entA;
     if (s.ign) this.light(g, left + SW + (s.high ? 110 : 60) * k, y0 - 2, s.high ? 150 : 80, s.high ? 9 : 7, '#fff2c4', s.high ? 0.1 : 0.08, 4);   // pozza dei fari (più lunga con gli abbaglianti)
     if (s.brake > 0.05) this.light(g, left - 30 * k, y0 - 1, 40, 5, '#ff2a2a', 0.1, 3);             // pozza degli stop
     // fascio dei fari nell'aria, di notte e sotto la pioggia
@@ -767,7 +963,9 @@ class Street2D {
       }
       g.restore();
     }
-    this.shadow(g, carX, y0, SW * 0.46, 5);
+    this.shadow(g, carX + entDX, y0, SW * 0.46, 5);
+    const glow = this.cos && this.cos.glow && this.cos.glow !== 'none' ? this.cos.glow : null;
+    if (glow && s.ign) { this.light(g, left + SW / 2, y0 - 1, SW * 0.62, 9, glow, 0.3 * entA, 4); g.fillStyle = glow; g.fillRect(left + Math.round(SW * 0.18), y0 - 4, Math.round(SW * 0.64), 1); }
     // asfalto bagnato: la Supra si specchia sulla strada, sbiadita
     if (this.rainOn && spr.img) {
       const hgt = spr.height;
@@ -824,6 +1022,7 @@ class Street2D {
       this.wheel(g, left + 1 + 158 * k, y0 - wr - Math.max(0, bF * 0.4), wr, -st.front, Math.abs(s.v));
     }
 
+    g.globalAlpha = 1;
     // ---- effetti
     const rx = left, exY = y0 - 9 * k;
     if (((s.skid || 0) > 0.18 && Math.abs(s.v) > 0.3) || (s.brake > 0.9 && Math.abs(s.v) > 8)) {
@@ -980,6 +1179,11 @@ class Street2D {
     if (!this.visible) return;
     const shake = Math.round((bF + bR) * 0.05 + (st.popJolt > 0.8 ? (Math.random() < 0.5 ? -1 : 1) : 0));
     const shakeX = st.popJolt > 0.8 ? Math.round((Math.random() - 0.5) * 3) : 0;
+    this.present(shake, shakeX);
+  }
+
+  present(shake, shakeX) {
+    if (!this.visible) return;
     const c = this.ctx; c.imageSmoothingEnabled = false;
     c.fillStyle = '#04060b'; c.fillRect(0, 0, this.canvas.width, this.canvas.height);
     c.drawImage(this.lo, shakeX * (this.canvas.height / this.LH), shake * (this.canvas.height / this.LH), this.canvas.width, this.canvas.height);

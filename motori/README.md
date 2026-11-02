@@ -165,6 +165,15 @@ Senza three.js resta una versione in pixel art.
   (5 stelle, scende col tempo). Un avviso in alto segnala le pattuglie in arrivo.
 - Officina: i pezzi si pagano coi contanti e si montano solo da fermo. Le preparazioni pronte mostrano
   quanto manca per completarle.
+- Città in 2D: lungo la strada ci sono tre luoghi fissi, che si ripetono ogni 2,4 km: **Benzina 24H**, **Officina 2JZ**
+  e **Neon Kustom** (ricambi estetici). Una mappa a barra in basso scorre mentre guidi e mostra i luoghi nei
+  prossimi 2,7 km, la consegna in corso e le pattuglie vicine. Quando sei davanti a un ingresso compare
+  **Entra** (tasto U): la Supra accosta, entra e si apre l'interno. U o Esc per uscire.
+  - Benzinaio: pieno, € 20 o € 50 alla pompa (i litri salgono sul display), e il market per il bagagliaio.
+  - Officina: la Supra sale sul ponte; qui si montano i pezzi, il carrozziere e le gomme. In carriera, nella
+    vista 2D, i pezzi si montano solo qui.
+  - Neon Kustom: neon sottoscocca, cerchi colorati, strisce laterali, vetri oscurati, adesivo sulla portiera e
+    vernici speciali. Un tocco li prova sulla Supra, il secondo li compra; quello che hai comprato si rimette gratis.
 - Gare di accelerazione sui 400 m: semaforo con tre gialli e verde, zona verde dei giri in partenza
   (freno + colpetti di gas, si molla il freno al verde), tempo di reazione, indicatore di cambiata
   (perfetta / buona / anticipata / tardi; la perfetta è più rapida), telecamera bassa di lato e

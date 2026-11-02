@@ -182,6 +182,38 @@ h1 span { color: var(--amber); }
 .prompt .opts button:first-child { background: var(--lime); color: #141a04; }
 .prompt .opts button kbd { margin-left: 6px; }
 .prompt .timer { height: 3px; background: #24201a; } .prompt .timer i { display: block; height: 100%; background: var(--amber); }
+.minimap { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); width: min(560px, calc(100% - 150px)); display: grid; gap: 3px; pointer-events: none; }
+.mm-track { position: relative; height: 22px; background: rgba(10,9,7,.72); box-shadow: inset 0 0 0 1px #4a4234; overflow: hidden; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.mm-track::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: repeating-linear-gradient(90deg, #6b5f4a 0 10px, transparent 10px 18px); background-position: var(--mm-off, 0) 0; }
+.mm-you { position: absolute; left: 10%; top: 3px; width: 6px; height: 16px; margin-left: -3px; background: var(--fg); box-shadow: 0 0 0 1px #000, 0 0 8px var(--amber); z-index: 1; }
+.mm-pin { position: absolute; top: 2px; transform: translateX(-50%); min-width: 18px; height: 18px; padding: 0 3px; display: grid; place-items: center; font: 400 11px/1 var(--f-display); font-style: normal; color: #0a0d18; box-shadow: 0 0 0 1px #000; }
+.mm-pin.far { opacity: .55; }
+.mm-pin.police { color: #fff; background: linear-gradient(90deg, #c4001f, #1c3cff); }
+.mm-next { font: 400 12px/1.2 var(--f-data); color: #f7d9ad; text-align: center; text-shadow: 0 1px 0 #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mm-next b { font-weight: 400; }
+.enterbtn { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%) skewX(-8deg); border: 0; padding: 9px 16px; cursor: pointer; white-space: nowrap;
+  font: 400 15px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: #0a0d18; background: var(--amber); box-shadow: 0 0 0 2px #000, 0 0 18px rgba(255,179,71,.5); animation: enterPulse 1s steps(2) infinite; }
+.enterbtn small { font: 400 11px/1 var(--f-data); margin-left: 8px; opacity: .8; }
+.enterbtn[disabled] { background: #4a4234; color: #d8ccb4; animation: none; cursor: default; box-shadow: 0 0 0 2px #000; }
+@keyframes enterPulse { 50% { box-shadow: 0 0 0 2px #000, 0 0 4px rgba(255,179,71,.2); } }
+.place { position: fixed; z-index: 40; top: 0; right: 0; bottom: 0; width: min(560px, 100%); overflow: auto; background: linear-gradient(180deg, rgba(22,20,16,.97), rgba(12,11,9,.98)); box-shadow: -18px 0 40px rgba(0,0,0,.6), inset 3px 0 0 var(--place-col, var(--amber)); padding: 14px 16px 24px; display: grid; align-content: start; gap: 12px; }
+.place[hidden] { display: none; }
+.place-head { display: flex; align-items: center; gap: 10px; position: sticky; top: -14px; padding: 8px 0; background: #16140f; z-index: 1; }
+.place-head h3 { margin: 0; flex: 1; font: 400 22px/1 var(--f-display); letter-spacing: .05em; text-transform: uppercase; font-style: italic; color: var(--place-col, var(--amber)); }
+.place-cash { font: 400 14px/1 var(--f-data); color: var(--lime); }
+.place-body { display: grid; gap: 12px; }
+.place-body > .panel { margin: 0; }
+.place .fuelbox { display: grid; gap: 10px; }
+.place .fuelgauge { height: 14px; background: #1a1712; box-shadow: inset 0 0 0 1px #4a4234; } .place .fuelgauge i { display: block; height: 100%; background: linear-gradient(90deg, #ff5a3a, #ffb347 30%, #c9dd5a); }
+.place .row { display: flex; flex-wrap: wrap; gap: 8px; }
+.place .cos { display: grid; gap: 6px; } .place .cos h4 { margin: 0; font: 400 14px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.place .cos .opt { display: inline-flex; align-items: center; gap: 6px; }
+.place .cos .opt i { width: 12px; height: 12px; display: inline-block; box-shadow: 0 0 0 1px #000; }
+.place .cos .opt[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--place-col, var(--amber)); }
+.place .cos .opt small { opacity: .75; }
+.place p.hint { margin: 0; }
+body.inplace .lanebtn { display: none; }
+@media (max-width: 600px) { .place { width: 100%; top: 30%; } .minimap { width: calc(100% - 140px); bottom: 20px; } .mm-next { display: none; } .enterbtn { bottom: 48px; font-size: 12px; padding: 6px 10px; } }
 .lanebtn { touch-action: none; user-select: none; -webkit-user-select: none; position: absolute; bottom: 12px; width: 52px; height: 52px; border: 0; background: rgba(12,11,9,.55); color: var(--amber); font: 400 22px/1 var(--f-display); box-shadow: inset 0 0 0 1px #4a4234; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); display: grid; place-items: center; }
 .lanebtn small { font: 400 10px/1 var(--f-data); color: var(--muted); margin-top: -10px; }
 .lanebtn.l { left: 12px; } .lanebtn.r { right: 12px; }
@@ -597,6 +629,11 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         <button class="go" type="button" id="resOk">Continua <kbd>Invio</kbd></button>
       </div>
       <div class="toasts" id="toasts" aria-live="polite"></div>
+      <button class="enterbtn" type="button" id="enterBtn" hidden></button>
+      <div class="minimap" id="miniMap" hidden aria-label="Mappa: luoghi lungo la strada">
+        <div class="mm-track" id="mmTrack"><i class="mm-you" aria-hidden="true"></i></div>
+        <div class="mm-next" id="mmNext"></div>
+      </div>
       <div class="prompt" id="promptBox" hidden>
         <h3 id="promptTitle"></h3>
         <p id="promptText"></p>
@@ -604,6 +641,11 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         <div class="timer"><i id="promptTimer"></i></div>
       </div>
     </div>
+    </div>
+    <div class="place" id="placeBox" hidden role="dialog" aria-labelledby="placeTitle">
+      <div class="place-head"><h3 id="placeTitle">Officina</h3><span class="place-cash" id="placeCash"></span>
+        <button class="go small" type="button" id="placeExit">Esci <kbd>U</kbd></button></div>
+      <div class="place-body" id="placeBody"></div>
     </div>
     <div class="roadbar">
       <div class="seg look" id="lookSeg" role="group" aria-label="Stile grafico">
@@ -948,6 +990,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     sim.setTune(TP.sim);
     Object.assign(sim.cfg, { pops: S.pops && TP.sim.ecuPops, launch: S.launch, autoClutch: S.autoClutch, revMatch: S.revMatch });
     if (garage) { garage.setTips(TP.dsp.ex.tips); garage.setPaint(S.paint); }
+    if (street2d && S.cos) street2d.setCosmetics(S.cos);
     renderTuning();
     $('tPops').disabled = $('tLaunch').disabled = !TP.sim.ecuPops;
     $('ecuHint').textContent = TP.sim.ecuPops ? '' : 'Pop & bang e launch control richiedono una centralina programmabile: montala nel reparto tuning.';
@@ -1045,6 +1088,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       return;
     }
     if (rp.on && !e.repeat) { stopReplay(); return; }
+    if (e.key === 'Escape' && placeOpen) { game.exitPlace(); return; }
     if (e.key === 'Escape' && (showOn || !$('photoBox').hidden)) { if (!$('photoBox').hidden) $('photoBox').hidden = true; else closeShowroom(); return; }
     let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
     if ([' ', 'w', 's', 'e', 'q'].includes(k) || e.key.startsWith('Arrow')) e.preventDefault();
@@ -1065,6 +1109,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'h') hornOn();
     else if (k === 'b') openTrunk();
     else if (k === 'p') radioNext();
+    else if (k === 'u') placeKey();
     else if (k === 'k') cycleMeteo();
     else if (k === 'g') openShowroom();
     else if (k === 'x') takePhoto();
@@ -1488,8 +1533,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     $('svcTireBar').style.width = ((1 - w) * 100) + '%';
     $('btnTires').innerHTML = 'Gomme nuove' + (game.mode === 'career' ? `<small>€ ${fmt(game.tireCost())}</small>` : '');
   }
-  $('btnRepair').addEventListener('click', () => { if (!game.canMount()) { flash('Dal carrozziere si va da fermi', 2); return; } const r = game.repair(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
-  $('btnTires').addEventListener('click', () => { if (!game.canMount()) { flash('Le gomme si cambiano da fermi', 2); return; } game.tireId = S.tune.tires; const r = game.newTires(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
+  $('btnRepair').addEventListener('click', () => { if (!game.canMount()) { flash('Dal carrozziere si va da fermi', 2); return; } if (game.needsShop()) { flash('Il carrozziere è in officina: la trovi sulla mappa (O)', 2.6); return; } const r = game.repair(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
+  $('btnTires').addEventListener('click', () => { if (!game.canMount()) { flash('Le gomme si cambiano da fermi', 2); return; } if (game.needsShop()) { flash('Le gomme si cambiano in officina: la trovi sulla mappa (O)', 2.6); return; } game.tireId = S.tune.tires; const r = game.newTires(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
   // ---------------------------------------------------------------- bagagliaio
   const ICON_CACHE = {};
   function itemIcon(kind) {
@@ -1531,7 +1576,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       shop.dataset.ready = '1';
       for (const k of ['tanica', 'kit', 'scorta', 'zavorra']) {
         const b = document.createElement('button'); b.className = 'kbtn'; b.type = 'button'; b.dataset.k = k;
-        b.addEventListener('click', () => { if (!game.canMount()) { flash('Al negozio si va da fermi', 2); return; } const r = game.buyItem(k); if (!r.ok) flash(r.why, 2); renderTrunk(); saveGame(); });
+        b.addEventListener('click', () => { if (!game.canMount()) { flash('Al negozio si va da fermi', 2); return; } if (game.mode === 'career' && game.placesOn && !(game.inside && game.inside.id === 'fuel')) { flash('Il negozio è nel market del benzinaio (B sulla mappa)', 2.6); return; } const r = game.buyItem(k); if (!r.ok) flash(r.why, 2); renderTrunk(); saveGame(); });
         shop.append(b);
       }
     }
@@ -1548,6 +1593,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   function mountPart(k, id, selEl) {
     const revert = () => { if (selEl) selEl.value = S.tune[k]; };
     if (!game.canMount()) { revert(); flash(game.race ? 'Non durante una sfida' : 'Le parti si montano da fermo: accosta e frena', 2.4); return; }
+    if (game.needsShop()) { revert(); flash('I pezzi si montano in officina: la trovi sulla mappa (O)', 2.8); return; }
     if (!game.owns(k, id)) {
       const r = game.buy(k, id);
       if (!r.ok) { revert(); flash(r.why, 2.4); return; }
@@ -1556,6 +1602,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
   function mountPreset(p) {
     if (!game.canMount()) { flash('Le parti si montano da fermo: accosta e frena', 2.4); return; }
+    if (game.needsShop()) { flash('I pezzi si montano in officina: la trovi sulla mappa (O)', 2.8); return; }
     const cost = presetCost(p);
     if (cost > game.s.money) { flash(`Mancano € ${fmt(cost - Math.floor(game.s.money))} per questa preparazione`, 2.6); return; }
     for (const [k, id] of Object.entries(p.sel)) if (!game.owns(k, id)) game.buy(k, id);
@@ -1604,7 +1651,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const is2d = S.look === '2d';
     $('g2d').hidden = !is2d; $('g3d').hidden = is2d;
     document.querySelectorAll('.only3d').forEach((el) => { el.hidden = is2d; });
-    if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); street2d.setRain(!!S.rain); street2d.quality = S.q || 'alta'; }
+    if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); street2d.setRain(!!S.rain); street2d.quality = S.q || 'alta'; street2d.setCosmetics(S.cos); }
     else {
       garage = make3D();
       if (garage) garage.setView(S.look === 'cockpit' ? 'cockpit' : (S.cam && S.cam !== 'cockpit' ? S.cam : 'chase'));
@@ -1653,6 +1700,142 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     sw.querySelector('.sw-model').hidden = true;
     if (S.paint === 'model') { S.paint = PAINTS[0][0]; applySettings(); sw.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x.title === PAINTS[0][1]))); }
   });
+
+  // ---------------------------------------------------------------- luoghi in città (2D): mappa, ingresso, interni
+  // Benzinaio, officina e ricambi estetici sono edifici veri lungo la strada: ci si ferma davanti e si entra con la Supra.
+  S.cos = Object.assign({ glow: 'none', rims: 'none', stripe: 'none', tint: 'none', decal: 'none' }, S.cos || {});
+  const PLACE_ICON = { fuel: 'B', shop: 'O', style: 'E' };
+  let mmT = 0, placeOpen = null, cosPrev = null;
+  const moved = [];
+  const fmtDist = (m) => (m < 1000 ? Math.max(0, Math.round(m / 10) * 10) + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km');
+  function placesTick(dt) {
+    game.placesOn = S.look === '2d' && game.track === 'city';
+    const mm = $('miniMap'), eb = $('enterBtn'), I = game.inside;
+    mm.hidden = !game.placesOn || !!I;
+    const p = game.placesOn && !I ? game.nearPlace() : null;
+    eb.hidden = !p;
+    if (p) {
+      const h = (p.ok ? 'Entra · ' : 'Rallenta per entrare · ') + p.name + '<small>U</small>';
+      if (eb.dataset.h !== h) { eb.innerHTML = h; eb.dataset.h = h; }
+      eb.disabled = !p.ok;
+    }
+    if (!mm.hidden) { mmT -= dt; if (mmT <= 0) { mmT = 0.1; renderMiniMap(); } }
+    document.body.classList.toggle('inplace', !!I);
+    if (I && I.phase === 'shop' && placeOpen !== I) openPlace(I);
+    if ((!I || I.phase !== 'shop') && placeOpen) closePlace();
+    if (placeOpen && placeOpen.id === 'fuel') renderFuel();
+  }
+  function placeKey() {
+    if (game.inside) { if (game.inside.phase === 'shop') game.exitPlace(); return; }
+    const p = game.placesOn ? game.nearPlace() : null;
+    if (!p) { if (game.placesOn) flash('Nessun ingresso qui: guarda la mappa in basso', 1.6); return; }
+    if (!p.ok) { flash('Troppo veloce: rallenta per entrare', 1.6); return; }
+    game.enterPlace(p);
+  }
+  document.body.appendChild($('placeBox'));       // fuori dai riquadri ritagliati: il pannello copre davvero lo schermo
+  $('enterBtn').addEventListener('click', placeKey);
+  $('placeExit').addEventListener('click', () => game.exitPlace());
+  // mappa a barra: 300 m dietro, 2,7 km davanti; scorre mentre si guida
+  function renderMiniMap() {
+    const tr = $('mmTrack'), d = game.s.dist, back = 300, ahead = 2700, span = back + ahead;
+    const pos = (x) => ((x - d + back) / span * 100).toFixed(2) + '%';
+    tr.style.setProperty('--mm-off', (-(d * 0.6) % 18).toFixed(1) + 'px');
+    tr.querySelectorAll('.mm-pin').forEach((n) => n.remove());
+    const add = (x, txt, bg, cls = '', title = '') => { const i = document.createElement('i'); i.className = 'mm-pin ' + cls; i.textContent = txt; i.style.left = pos(x); if (bg) i.style.background = bg; if (title) i.title = title; tr.appendChild(i); };
+    const next = {};
+    for (const p of game.placesBetween(d - back, d + ahead)) { add(p.x, PLACE_ICON[p.id], p.col, p.x - d > 1500 ? 'far' : '', p.name); if (p.x - d > -5 && !next[p.id]) next[p.id] = p; }
+    for (const e of game.ents) {
+      if (e.kind === 'drop' && e.x - d > -back) add(Math.min(e.x, d + ahead - 30), 'C', '#b8ff3a', '', 'Consegna');
+      if (e.kind === 'police' && !e.chase && e.x - d > -back && e.x - d < 450) add(e.x, '!', null, 'police', 'Polizia');
+    }
+    const low = sim.fuel * sim.P.tank < 15;
+    const parts = ['fuel', 'shop', 'style'].filter((k) => next[k]).map((k) => `<b style="color:${next[k].col}">${PLACE_ICON[k]}</b> ${next[k].what} ${fmtDist(next[k].x - d)}`);
+    const html = (low ? '<b style="color:var(--warn)">Riserva!</b> ' : '') + parts.join(' · ');
+    if ($('mmNext').innerHTML !== html) $('mmNext').innerHTML = html;
+  }
+  function renderPlaceCash() { $('placeCash').textContent = game.mode === 'career' ? '€ ' + fmt(Math.floor(game.s.money)) : 'modalità libera'; }
+  function openPlace(I) {
+    placeOpen = I;
+    const box = $('placeBox'), body = $('placeBody');
+    box.style.setProperty('--place-col', I.col); $('placeTitle').textContent = I.name;
+    body.innerHTML = '';
+    const note = (t) => { const p = document.createElement('p'); p.className = 'hint'; p.textContent = t; body.appendChild(p); };
+    const move = (el) => { if (!el) return; moved.push({ el, parent: el.parentNode, next: el.nextSibling }); body.appendChild(el); };
+    if (I.id === 'shop') {
+      note('Sei sul ponte: scegli i pezzi e il meccanico li monta subito. Qui ci sono anche il carrozziere e le gomme.');
+      move(document.querySelector('section.panel.tuning'));
+      renderTuning(); renderServices();
+    } else if (I.id === 'fuel') {
+      const f = document.createElement('div'); f.className = 'fuelbox'; f.id = 'fuelBox';
+      f.innerHTML = '<div><b id="fuelL">—</b> <span class="hint" id="fuelSt"></span></div><div class="fuelgauge"><i id="fuelBar"></i></div>'
+        + '<div class="row"><button class="kbtn" type="button" data-l="full">Pieno</button><button class="kbtn" type="button" data-e="20">€ 20</button><button class="kbtn" type="button" data-e="50">€ 50</button></div>';
+      body.appendChild(f);
+      f.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+        const r = game.startFill(b.dataset.l ? 999 : +b.dataset.e / GAME_FUEL_PRICE); if (!r.ok && r.why) flash(r.why, 2);
+      }));
+      note('Nel market: taniche, attrezzi e altro per il bagagliaio.');
+      move($('shop')); renderTrunk();
+    } else {
+      note('Tocca per provare: la Supra mostra subito il ritocco. Tocca di nuovo per comprarlo. Quello che compri resta tuo e puoi rimetterlo gratis.');
+      cosPrev = Object.assign({ paint: S.paint }, S.cos);
+      renderCos();
+    }
+    box.hidden = false;
+    if (street2d) {
+      const r = $('g2d').getBoundingClientRect(), pl = box.getBoundingClientRect();
+      const vis = pl.top > r.top + r.height * 0.5 ? 1 : Math.min(1, Math.max(0.35, (pl.left - r.left) / Math.max(1, r.width)));
+      street2d.inFrac = Math.max(0.3, vis * 0.5);
+    }
+    try { $('placeExit').focus({ preventScroll: true }); } catch (e) { /* ignora */ }
+    renderPlaceCash();
+  }
+  function closePlace() {
+    while (moved.length) { const m = moved.pop(); m.parent.insertBefore(m.el, m.next); }
+    $('placeBox').hidden = true; placeOpen = null; cosPrev = null;
+    applyCos(null); renderTuning(); renderServices(); renderTrunk(); saveGame();
+  }
+  function applyCos(c) {
+    if (!street2d) return;
+    const cc = Object.assign({}, c || S.cos), paint = cc.paint || S.paint; delete cc.paint;
+    street2d.setCosmetics(cc); street2d.setPaint(paint);
+  }
+  function renderCos() {
+    const body = $('placeBody');
+    body.querySelectorAll('.cos').forEach((n) => n.remove());
+    for (const [cat, def] of Object.entries(GAME_COSMETICS)) {
+      const box = document.createElement('div'); box.className = 'cos';
+      box.innerHTML = `<h4>${cat === 'paint' ? 'Vernice' : def.label}</h4><div class="row"></div>`;
+      const row = box.querySelector('.row');
+      const list = cat === 'paint' ? PAINTS.map(([id, name]) => ({ id, name, price: 0 })).concat(def.items.filter((i) => i.id !== 'none')) : def.items;
+      for (const it of list) {
+        const owned = it.price === 0 || game.cosOwned(cat, it.id);
+        const cur = cat === 'paint' ? S.paint === it.id : S.cos[cat] === it.id;
+        const pv = cosPrev[cat] === it.id && !cur;
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'kbtn opt';
+        b.setAttribute('aria-pressed', String(cur || pv));
+        b.innerHTML = (it.id.startsWith('#') ? `<i style="background:${it.id}"></i>` : '') + it.name
+          + (cur ? ' <small>montato</small>' : owned ? '' : pv ? ` <small>compra € ${fmt(it.price)}</small>` : ` <small>€ ${fmt(it.price)}</small>`);
+        b.addEventListener('click', () => {
+          if (owned || pv) {
+            if (!owned) { const r = game.buyCos(cat, it.id); if (!r.ok) { flash(r.why, 2.2); return; } flash(`${it.name}: montato`, 1.4); }
+            if (cat === 'paint') S.paint = it.id; else S.cos[cat] = it.id;
+            cosPrev[cat] = it.id; applySettings(); saveGame();
+          } else cosPrev[cat] = it.id;            // prova: si vede subito, si compra col secondo tocco
+          applyCos(cosPrev); renderCos(); renderPlaceCash();
+        });
+        row.appendChild(b);
+      }
+      body.appendChild(box);
+    }
+  }
+  function renderFuel() {
+    const I = game.inside; if (!I || !$('fuelL')) return;
+    $('fuelL').textContent = `${(sim.fuel * sim.P.tank).toFixed(1).replace('.', ',')} / ${sim.P.tank} litri`;
+    $('fuelBar').style.width = (sim.fuel * 100).toFixed(1) + '%';
+    $('fuelSt').textContent = I.fill ? `erogazione… ${I.fill.got.toFixed(1).replace('.', ',')} L · € ${I.fill.cost.toFixed(2).replace('.', ',')}` : `€ ${GAME_FUEL_PRICE.toFixed(2).replace('.', ',')} al litro`;
+    $('fuelBox').querySelectorAll('button').forEach((b) => { b.disabled = !!I.fill; });
+    renderPlaceCash();
+  }
 
   // ---------------------------------------------------------------- campioni della mod
   function renderSamples() {
@@ -1963,6 +2146,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (Math.abs(keyAxis) < 0.01 && keyT === 0) keyAxis = 0;
     game.steerHold(clamp(keyAxis + (inp.pad.steer || 0), -1, 1));
     game.update(dt);
+    placesTick(dt);
     renderGame(dt);
     const ev = sim.events.splice(0);
     // giunti dell'asfalto ogni 47 m: prima l'asse anteriore, poi il posteriore ("ta-dum")
