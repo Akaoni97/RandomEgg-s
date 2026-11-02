@@ -255,6 +255,18 @@ body.inplace .lanebtn { display: none; }
 @media (prefers-reduced-motion: reduce) { .anime-shift.as-go, .anime-shift.as-go .as-lines { animation: none; opacity: 1; } }
 body.inplace #hudG { display: none; }
 @media (max-width: 600px) { #hudG { width: 170px; left: 6px; right: auto; top: 6px; bottom: auto; } .hud-l.hasg { display: none; } }
+.fsbtn { position: absolute; right: 12px; top: 50px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; padding: 0; cursor: pointer;
+  background: rgba(10,9,7,.72); color: var(--amber); box-shadow: inset 0 0 0 1px #4a4234; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.fsbtn svg { width: 16px; height: 16px; }
+.fsbtn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+/* schermo intero: la strada occupa tutto lo schermo (anche dove il browser non ha il fullscreen vero, come su iPhone) */
+body.fs { overflow: hidden; }
+body.fs .road, body.fs #cluster { clip-path: none; }
+body.fs #roadStage { position: fixed; inset: 0; z-index: 30; background: #000; }
+body.fs #g2d, body.fs #g3d { width: 100vw; height: 100vh; height: 100dvh; aspect-ratio: auto; }
+body.fs .fsbtn svg path { d: path("M5 1v4H1M15 5h-4V1M11 15v-4h4M1 11h4v4"); }
+body.fs .msg { position: fixed; top: 14px; z-index: 45; }
+body.fs .hud { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
 .lanebtn { touch-action: none; user-select: none; -webkit-user-select: none; position: absolute; bottom: 12px; width: 52px; height: 52px; border: 0; background: rgba(12,11,9,.55); color: var(--amber); font: 400 22px/1 var(--f-display); box-shadow: inset 0 0 0 1px #4a4234; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); display: grid; place-items: center; }
 .lanebtn small { font: 400 10px/1 var(--f-data); color: var(--muted); margin-top: -10px; }
 .lanebtn.l { left: 12px; } .lanebtn.r { right: 12px; }
@@ -678,6 +690,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="toasts" id="toasts" aria-live="polite"></div>
       <canvas id="hudG" aria-hidden="true"></canvas>
       <div class="anime-shift" id="animeShift" aria-hidden="true"><i class="as-lines"></i><b class="as-main">PERFETTA!</b><span class="as-sub">シフト完璧!</span></div>
+      <button class="fsbtn" type="button" id="fsBtn" aria-label="Schermo intero (tasto Z)" title="Schermo intero (Z)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 5V1h4M11 1h4v4M15 11v4h-4M5 15H1v-4" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
       <button class="enterbtn" type="button" id="enterBtn" hidden></button>
       <div class="minimap" id="miniMap" hidden aria-label="Mappa: luoghi lungo la strada">
         <div class="mm-track" id="mmTrack"><i class="mm-you" aria-hidden="true"></i></div>
@@ -710,6 +723,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <button class="kbtn only3d" type="button" id="glbReset">Modello di base</button>
       <button class="kbtn only3d" type="button" id="camReset">Inquadratura</button>
       <button class="kbtn only3d" type="button" id="camNext">Telecamera<small>C</small></button>
+      <button class="kbtn" type="button" id="fsBtn2">Schermo intero<small>Z</small></button>
       <button class="kbtn" type="button" id="showBtn">Vetrina<small>G</small></button>
       <button class="kbtn" type="button" id="photoBtn">Foto<small>X</small></button>
       <button class="kbtn" type="button" id="replayBtn">Replay<small>Y</small></button>
@@ -1158,6 +1172,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     }
     if (rp.on && !e.repeat) { stopReplay(); return; }
     if (e.key === 'Escape' && placeOpen) { game.exitPlace(); return; }
+    if (e.key === 'Escape' && document.body.classList.contains('fs') && !document.fullscreenElement) { setFs(false); return; }
     if (e.key === 'Escape' && (showOn || !$('photoBox').hidden)) { if (!$('photoBox').hidden) $('photoBox').hidden = true; else closeShowroom(); return; }
     let k = e.key.toLowerCase(); k = KEYMAP[k] || k;
     if ([' ', 'w', 's', 'e', 'q'].includes(k) || e.key.startsWith('Arrow')) e.preventDefault();
@@ -1179,6 +1194,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'b') openTrunk();
     else if (k === 'p') radioNext();
     else if (k === 'u') placeKey();
+    else if (k === 'z') toggleFs();
     else if (k === 'j') { S.hudG = S.hudG === false; flash(S.hudG ? 'Strumenti in gioco: accesi' : 'Strumenti in gioco: spenti', 1.2); try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } }
     else if (k === 'k') cycleMeteo();
     else if (k === 'g') openShowroom();
@@ -2066,6 +2082,26 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     el.className = 'anime-shift ' + kind; void el.offsetWidth; el.classList.add('as-go');
     clearTimeout(animeT); animeT = setTimeout(() => el.classList.remove('as-go'), 1100);
   }
+
+  // ---------------------------------------------------------------- schermo intero
+  // Fullscreen vero sulla pagina (così restano visibili anche i pannelli dei negozi) e la strada stesa su tutto lo schermo;
+  // dove il browser non lo permette resta comunque la strada a tutto schermo.
+  function setFs(on) {
+    document.body.classList.toggle('fs', on);
+    const d = document, el = d.documentElement;
+    if (on) {
+      const rq = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (rq && !(d.fullscreenElement || d.webkitFullscreenElement)) { try { const pr = rq.call(el, { navigationUI: 'hide' }); if (pr && pr.catch) pr.catch(() => {}); } catch (e) { /* non supportato */ } }
+      try { if (screen.orientation && screen.orientation.lock && matchMedia('(pointer: coarse)').matches) screen.orientation.lock('landscape').catch(() => {}); } catch (e) { /* ignora */ }
+    } else if (d.fullscreenElement || d.webkitFullscreenElement) { try { (d.exitFullscreen || d.webkitExitFullscreen).call(d); } catch (e) { /* ignora */ } }
+    setTimeout(() => { if (garage && garage.resize) garage.resize(); }, 60);
+  }
+  const toggleFs = () => setFs(!document.body.classList.contains('fs'));
+  $('fsBtn').addEventListener('click', toggleFs);
+  $('fsBtn2').addEventListener('click', toggleFs);
+  ['fullscreenchange', 'webkitfullscreenchange'].forEach((ev) => document.addEventListener(ev, () => {
+    if (!(document.fullscreenElement || document.webkitFullscreenElement) && document.body.classList.contains('fs')) setFs(false);   // uscita con Esc
+  }));
 
   // ---------------------------------------------------------------- campioni della mod
   function renderSamples() {
