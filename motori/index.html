@@ -205,6 +205,7 @@ h1 span { color: var(--amber); }
 .place-body > .panel { margin: 0; }
 .place .fuelbox { display: grid; gap: 10px; }
 .place .fuelgauge { height: 14px; background: #1a1712; box-shadow: inset 0 0 0 1px #4a4234; } .place .fuelgauge i { display: block; height: 100%; background: linear-gradient(90deg, #ff5a3a, #ffb347 30%, #c9dd5a); }
+.place .tuning .services { display: none; }
 .place .row { display: flex; flex-wrap: wrap; gap: 8px; }
 .place .cos { display: grid; gap: 6px; } .place .cos h4 { margin: 0; font: 400 14px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .place .cos .opt { display: inline-flex; align-items: center; gap: 6px; }
@@ -411,6 +412,7 @@ kbd { font: 400 11px/1 var(--f-data); color: var(--muted); border: 1px solid var
 .presets button[aria-pressed="true"] { background: var(--amber); color: #1a1206; }
 .presets button[aria-pressed="true"] small { color: #1a1206; }
 .services { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.maint { display: contents; }
 .svc { background: #0e0d0b; border: 1px solid var(--line); padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; min-width: 0; }
 .svc b { font: 400 11px/1 var(--f-data); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); grid-column: 1; }
 .svc span { font-size: 15px; grid-column: 1; }
@@ -815,7 +817,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     <div class="stats" id="stats"></div>
     <div class="services">
       <div class="svc"><b>Carrozzeria</b><span id="svcBody">nessun danno</span><div class="bar"><i id="svcBodyBar"></i></div><button class="kbtn" type="button" id="btnRepair">Carrozziere</button></div>
-      <div class="svc"><b>Gomme posteriori</b><span id="svcTire">—</span><div class="bar"><i id="svcTireBar"></i></div><button class="kbtn" type="button" id="btnTires">Gomme nuove</button></div>
+      <div class="svc"><b>Gomme</b><span id="svcTire">—</span><div class="bar"><i id="svcTireBar"></i></div><button class="kbtn" type="button" id="btnTires">Gomme nuove</button></div>
+      <div class="maint" id="maintSvc"></div>
     </div>
     <div class="gearbox" id="gearBox"></div>
     <div class="kmbox" id="kmBox"></div>
@@ -975,6 +978,25 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   } catch (e) { /* storage non disponibile */ }
   if (!S.realSnd) { S.realSnd = 1; S.mix = 55; }
   if (!S.flut) { S.flut = 1; if (S.tune.bov === 'oem') S.tune.bov = 'none'; }   // stu-tu-tu di serie
+  // ogni auto ha la sua selezione di pezzi (S.tunes) e la sua estetica (S.coss); S.tune e S.cos sono quelle dell'auto in uso
+  const COS0 = { glow: 'none', rims: 'none', caliper: 'none', stripe: 'none', tint: 'none', decal: 'none', wheels: 'none', kit: 'none', spoiler: 'none', st_door: 'none', st_rear: 'none', st_glass: 'none' };
+  {
+    const leg = v40FromLegacy((game.s.cars.v40 || {}).up || 0);
+    S.tunes = S.tunes || {};
+    S.tunes.supra = Object.assign({}, SUPRA_PRESETS[0].sel, S.tunes.supra || S.tune || {});
+    S.tunes.v40 = Object.assign({}, CARS.v40.presets[0].sel, S.tunes.v40 || leg.sel);
+    S.coss = S.coss || {};
+    S.coss.supra = Object.assign({}, COS0, S.coss.supra || S.cos || {});
+    S.coss.v40 = Object.assign({}, COS0, S.coss.v40 || leg.cos);
+    if (!S.v40mig) {                    // la vecchia scala della V40 diventa pezzi ed estetica posseduti
+      S.v40mig = 1;
+      for (const [k, id] of Object.entries(leg.sel)) if (id !== CARS.v40.presets[0].sel[k]) game.s.owned['v40|' + k + ':' + id] = true;
+      for (const [k, id] of Object.entries(leg.cos)) if (id !== 'none') game.s.owned['v40|cos:' + k + ':' + id] = true;
+      const v = game.s.cars.v40; if (v) { v.maint = v.maint || { oil: 1, plugs: 1, pads: 1, dirt: leg.clean ? 0.1 : 0.8 }; }
+    }
+  }
+  function useCar(id) { setActiveCar(id); S.tune = S.tunes[ACTIVE_CAR]; S.cos = S.coss[ACTIVE_CAR]; }
+  useCar(game.car);
   let TP = tuningParams(S.tune);
 
   // ---------------------------------------------------------------- autoradio (musica bassa mentre si guida)
@@ -1055,10 +1077,13 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   // ---------------------------------------------------------------- impostazioni
   function applySettings() {
     const carId = game.car;
-    if (carId === 'v40') { TP = v40Params(game.upLevel()); sim.setCar(Object.assign({}, CARS.v40.P)); }
-    else { TP = tuningParams(S.tune); sim.setCar(null); }
+    useCar(carId);
+    TP = tuningParams(S.tune);
+    sim.setCar(carId === 'supra' ? null : Object.assign({}, CARS[carId].P));
     if (TP.sim.boostK === undefined) TP.sim.boostK = 1;          // la Supra a piena efficienza anche dopo la V40
-    game.applyMass();
+    if (!TP.sim.clutchMax) TP.sim.clutchMax = sim.P.clutchMax;
+    TP.sim.maint = game.maint();                                  // olio, candele, pastiglie (da Niko)
+    game.applyMass(TP.sim.dm || 0, TP.sim.rearOff);
     $('carTag').textContent = CARS[carId].tag;
     $('carSw').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.c === carId)));
     TP.sim.pw = (TP.sim.pw || 1) * game.perkPow(); TP.sim.mu = (TP.sim.mu || sim.P.mu || 1.1) * game.perkGrip();   // traguardi di chilometri
@@ -1066,8 +1091,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     sim.setTune(TP.sim);
     Object.assign(sim.cfg, { pops: S.pops && TP.sim.ecuPops, launch: S.launch, autoClutch: S.autoClutch, revMatch: S.revMatch, tc: S.tc !== false });
     if (garage) { garage.setTips(TP.dsp.ex.tips); garage.setPaint(S.paint); }
-    if (street2d && S.cos) street2d.setCosmetics(S.cos);
-    if (street2d) street2d.setCar(carId, TP.look, carPaint());
+    if (street2d) { street2d.setCosmetics(cosView()); street2d.setCar(carId, TP.look, carPaint()); }
     renderTuning();
     $('tPops').disabled = $('tLaunch').disabled = !TP.sim.ecuPops;
     $('ecuHint').textContent = TP.sim.ecuPops ? '' : 'Pop & bang e launch control richiedono una centralina programmabile: montala nel reparto tuning.';
@@ -1578,7 +1602,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
   function mountUp() {
     if (!game.canMount()) { flash('I pezzi si montano da fermo: accosta e frena', 2.4); return; }
-    if (game.needsShop()) { flash('I pezzi si montano in officina: la trovi sulla mappa (O)', 2.8); return; }
+    if (game.needsShop()) { flash('I pezzi li monta Luca: Da Luca Tuning è sulla mappa (L)', 2.8); return; }
     const r = game.buyUp(); if (!r.ok) { flash(r.why, 2.6); return; }
     applySettings(); saveGame(); flash('Montato: ' + CARS[game.car].ups[game.upLevel() - 1].name, 1.8);
   }
@@ -1595,8 +1619,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if ($('gearBox').innerHTML !== html) $('gearBox').innerHTML = html;
   }
   function renderTuning() {
-    renderUps(); renderGears();
+    renderGears(); $('carUps').hidden = true;
     const grid = $('tgrid');
+    if (grid.dataset.car !== ACTIVE_CAR) { grid.innerHTML = ''; $('presets').innerHTML = ''; grid.dataset.car = ACTIVE_CAR; }
     if (!grid.childElementCount) {
       for (const [k, cat] of Object.entries(TUNING)) {
         const box = document.createElement('label'); box.className = 'part'; box.dataset.k = k;
@@ -1662,9 +1687,32 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     $('svcTire').textContent = `${fmt(sim.tireT)} °C · battistrada ${fmt(Math.round((1 - w) * 100))} % · presa ${fmt(Math.round(sim.tireGrip() * 100))} %`;
     $('svcTireBar').style.width = ((1 - w) * 100) + '%';
     $('btnTires').innerHTML = 'Gomme nuove' + (game.mode === 'career' ? `<small>€ ${fmt(game.tireCost())}</small>` : '');
+    renderMaint();
   }
-  $('btnRepair').addEventListener('click', () => { if (!game.canMount()) { flash('Dal carrozziere si va da fermi', 2); return; } if (game.needsShop()) { flash('Il carrozziere è in officina: la trovi sulla mappa (O)', 2.6); return; } const r = game.repair(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
-  $('btnTires').addEventListener('click', () => { if (!game.canMount()) { flash('Le gomme si cambiano da fermi', 2); return; } if (game.needsShop()) { flash('Le gomme si cambiano in officina: la trovi sulla mappa (O)', 2.6); return; } game.tireId = S.tune.tires; const r = game.newTires(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
+  // manutenzione: olio, candele, pastiglie, lavaggio (si consumano coi chilometri di ogni auto)
+  function renderMaint() {
+    const box = $('maintSvc'), m = game.maint();
+    if (!box.childElementCount) for (const s of GAME_SERVICES) {
+      const d = document.createElement('div'); d.className = 'svc'; d.dataset.s = s.id;
+      d.innerHTML = `<b>${s.name}</b><span></span><div class="bar"><i></i></div><button class="kbtn" type="button">${s.id === 'wash' ? 'Lava' : 'Fai'}</button>`;
+      d.querySelector('button').addEventListener('click', () => {
+        if (!game.canMount()) { flash('Da Niko si va da fermi', 2); return; }
+        if (game.needsNiko()) { flash('Questo lo fa Niko: la sua officina è sulla mappa (N)', 2.6); return; }
+        const r = game.service(s.id); if (!r.ok) flash(r.why, 2.2); applySettings(); renderServices(); saveGame();
+      });
+      box.appendChild(d);
+    }
+    for (const d of box.children) {
+      const s = GAME_SERVICES.find((x) => x.id === d.dataset.s), lv = s.id === 'wash' ? 1 - m.dirt : m[s.id];
+      const txt = s.id === 'wash' ? (m.dirt < 0.15 ? 'pulita e lucida' : m.dirt < 0.5 ? 'un po\' di polvere' : 'sporca di fango') : `${Math.round(lv * 100)} % · ${lv < 0.25 ? s.note : 'a posto'}`;
+      const sp = d.querySelector('span'); if (sp.textContent !== txt) sp.textContent = txt;
+      const bar = d.querySelector('i'); bar.style.width = (lv * 100).toFixed(0) + '%'; bar.style.background = lv < 0.25 ? 'var(--crit)' : lv < 0.5 ? 'var(--warn)' : '';
+      const c = game.serviceCost(s.id), bt = d.querySelector('button'), h = (s.id === 'wash' ? 'Lava' : 'Fai') + (c ? `<small>€ ${fmt(c)}</small>` : '');
+      if (bt.innerHTML !== h) bt.innerHTML = h; bt.disabled = lv > 0.97;
+    }
+  }
+  $('btnRepair').addEventListener('click', () => { if (!game.canMount()) { flash('Dal carrozziere si va da fermi', 2); return; } if (game.needsNiko()) { flash('Il carrozziere è da Niko: la sua officina è sulla mappa (N)', 2.6); return; } const r = game.repair(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
+  $('btnTires').addEventListener('click', () => { if (!game.canMount()) { flash('Le gomme si cambiano da fermi', 2); return; } if (game.needsNiko()) { flash('Le gomme le cambia Niko: la sua officina è sulla mappa (N)', 2.6); return; } game.tireId = S.tune.tires; const r = game.newTires(); if (!r.ok) flash(r.why, 2.4); renderServices(); saveGame(); });
   // ---------------------------------------------------------------- bagagliaio
   const ICON_CACHE = {};
   function itemIcon(kind) {
@@ -1724,7 +1772,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   function mountPart(k, id, selEl) {
     const revert = () => { if (selEl) selEl.value = S.tune[k]; };
     if (!game.canMount()) { revert(); flash(game.race ? 'Non durante una sfida' : 'Le parti si montano da fermo: accosta e frena', 2.4); return; }
-    if (game.needsShop()) { revert(); flash('I pezzi si montano in officina: la trovi sulla mappa (O)', 2.8); return; }
+    if (game.needsShop()) { revert(); flash('I pezzi li monta Luca: Da Luca Tuning è sulla mappa (L)', 2.8); return; }
     if (!game.owns(k, id)) {
       const r = game.buy(k, id);
       if (!r.ok) { revert(); flash(r.why, 2.4); return; }
@@ -1733,12 +1781,12 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
   function mountPreset(p) {
     if (!game.canMount()) { flash('Le parti si montano da fermo: accosta e frena', 2.4); return; }
-    if (game.needsShop()) { flash('I pezzi si montano in officina: la trovi sulla mappa (O)', 2.8); return; }
+    if (game.needsShop()) { flash('I pezzi li monta Luca: Da Luca Tuning è sulla mappa (L)', 2.8); return; }
     const cost = presetCost(p), need = presetKm(p);
     if (need > game.odo) { flash(`Questa preparazione si sblocca a ${fmt(need)} km: la Supra ne ha ${fmt(Math.floor(game.odo))}`, 2.8); return; }
     if (cost > game.s.money) { flash(`Mancano € ${fmt(cost - Math.floor(game.s.money))} per questa preparazione`, 2.6); return; }
     for (const [k, id] of Object.entries(p.sel)) if (!game.owns(k, id)) game.buy(k, id);
-    S.tune = Object.assign({}, p.sel); applySettings(); saveGame();
+    Object.assign(S.tune, p.sel); applySettings(); saveGame();
     flash('Preparazione montata: ' + p.name, 1.6);
   }
 
@@ -1783,7 +1831,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const is2d = S.look === '2d';
     $('g2d').hidden = !is2d; $('g3d').hidden = is2d;
     document.querySelectorAll('.only3d').forEach((el) => { el.hidden = is2d; });
-    if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); street2d.setRain(!!S.rain); street2d.quality = S.q || 'alta'; street2d.setCosmetics(S.cos); }
+    if (is2d) { $('g3dMsg').hidden = true; garage = street2d || (street2d = new Street2D($('g2d'))); street2d.setRain(!!S.rain); street2d.quality = S.q || 'alta'; street2d.camFx = true; street2d.setCosmetics(cosView()); }
     else {
       garage = make3D();
       if (garage) garage.setView(S.look === 'cockpit' ? 'cockpit' : (S.cam && S.cam !== 'cockpit' ? S.cam : 'chase'));
@@ -1838,8 +1886,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 
   // ---------------------------------------------------------------- luoghi in città (2D): mappa, ingresso, interni
   // Benzinaio, officina e ricambi estetici sono edifici veri lungo la strada: ci si ferma davanti e si entra con la Supra.
-  S.cos = Object.assign({ glow: 'none', rims: 'none', caliper: 'none', stripe: 'none', tint: 'none', decal: 'none' }, S.cos || {});
-  const PLACE_ICON = { fuel: 'B', shop: 'O', style: 'E' };
+  // estetica mostrata: quella scelta più lo sporco (si accumula coi chilometri, si lava da Niko)
+  function cosView(c) { return Object.assign({}, c || S.cos, { dirt: Math.round(game.maint().dirt * 10) / 10 }); }
+  const PLACE_ICON = { fuel: 'B', shop: 'L', niko: 'N', style: 'E' };
   let mmT = 0, placeOpen = null, cosPrev = null;
   const moved = [];
   const fmtDist = (m) => (m < 1000 ? Math.max(0, Math.round(m / 10) * 10) + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km');
@@ -1884,7 +1933,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       if (e.kind === 'police' && !e.chase && e.x - d > -back && e.x - d < 450) add(e.x, '!', null, 'police', 'Polizia');
     }
     const low = sim.fuel * sim.P.tank < 15;
-    const parts = ['fuel', 'shop', 'style'].filter((k) => next[k]).map((k) => `<b style="color:${next[k].col}">${PLACE_ICON[k]}</b> ${next[k].what} ${fmtDist(next[k].x - d)}`);
+    const parts = ['fuel', 'shop', 'niko', 'style'].filter((k) => next[k]).map((k) => `<b style="color:${next[k].col}">${PLACE_ICON[k]}</b> ${next[k].what} ${fmtDist(next[k].x - d)}`);
     const html = (low ? '<b style="color:var(--warn)">Riserva!</b> ' : '') + parts.join(' · ');
     if ($('mmNext').innerHTML !== html) $('mmNext').innerHTML = html;
   }
@@ -1897,9 +1946,14 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const note = (t) => { const p = document.createElement('p'); p.className = 'hint'; p.textContent = t; body.appendChild(p); };
     const move = (el) => { if (!el) return; moved.push({ el, parent: el.parentNode, next: el.nextSibling }); body.appendChild(el); };
     if (I.id === 'shop') {
-      note('Sei sul ponte: scegli i pezzi e il meccanico li monta subito. Qui ci sono anche il carrozziere e le gomme.');
+      note('Luca: «Dimmi cosa vuoi tirare fuori da questa macchina.» Scegli i pezzi dalle tendine: li monta subito. Alcuni si sbloccano solo dopo un po\' di chilometri.');
       move(document.querySelector('section.panel.tuning'));
       renderTuning(); renderServices();
+    } else if (I.id === 'niko') {
+      const m = game.maint(), worst = Math.min(m.oil, m.plugs, m.pads);
+      note(sim.damage > 0.2 ? 'Niko: «Eh, qui hai preso una bella botta. Te la raddrizzo io.»' : worst < 0.25 ? 'Niko: «Si sente da fuori che qualcosa non va: guardiamo olio, candele e freni.»' : m.dirt > 0.6 ? 'Niko: «Meccanica a posto. Ma una lavata gliela diamo?»' : 'Niko: «Tutto in ordine. Controllo veloce e vai.»');
+      move(document.querySelector('section.panel.tuning .services'));
+      renderServices();
     } else if (I.id === 'fuel') {
       const f = document.createElement('div'); f.className = 'fuelbox'; f.id = 'fuelBox';
       f.innerHTML = '<div><b id="fuelL">—</b> <span class="hint" id="fuelSt"></span></div><div class="fuelgauge"><i id="fuelBar"></i></div>'
@@ -1911,14 +1965,15 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       note('Nel market: taniche, attrezzi e altro per il bagagliaio.');
       move($('shop')); renderTrunk();
     } else {
-      note('Tocca per provare: la Supra mostra subito il ritocco. Tocca di nuovo per comprarlo. Quello che compri resta tuo e puoi rimetterlo gratis.');
+      note(`Tocca per provare: la ${CARS[game.car].short} mostra subito il ritocco. Tocca di nuovo per comprarlo. Quello che compri resta tuo e puoi rimetterlo gratis.`);
       cosPrev = Object.assign({ paint: carPaint() }, S.cos);
       renderCos();
     }
     box.hidden = false;
     if (street2d) {
       const r = $('g2d').getBoundingClientRect(), pl = box.getBoundingClientRect();
-      const vis = pl.top > r.top + r.height * 0.5 ? 1 : Math.min(1, Math.max(0.35, (pl.left - r.left) / Math.max(1, r.width)));
+      const side = pl.width < window.innerWidth * 0.9;      // pannello di lato (computer) o sotto (telefono)
+      const vis = !side ? 1 : Math.min(1, Math.max(0.35, (pl.left - r.left) / Math.max(1, r.width)));
       street2d.inFrac = Math.max(0.3, vis * 0.5);
     }
     try { $('placeExit').focus({ preventScroll: true }); } catch (e) { /* ignora */ }
@@ -1931,39 +1986,66 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   }
   function applyCos(c) {
     if (!street2d) return;
-    const cc = Object.assign({}, c || S.cos), paint = cc.paint || carPaint(); delete cc.paint;
+    const cc = cosView(c), paint = cc.paint || carPaint(); delete cc.paint;
     street2d.setCosmetics(cc);
     if (game.car === 'supra') street2d.setPaint(paint); else street2d.setCar(game.car, TP.look, paint);
   }
   function renderCos() {
     const body = $('placeBody');
     body.querySelectorAll('.cos').forEach((n) => n.remove());
-    for (const [cat, def] of Object.entries(GAME_COSMETICS)) {
-      const box = document.createElement('div'); box.className = 'cos';
-      box.innerHTML = `<h4>${cat === 'paint' ? 'Vernice' : def.label}</h4><div class="row"></div>`;
-      const row = box.querySelector('.row');
-      const list = cat === 'paint' ? PAINTS.map(([id, name]) => ({ id, name, price: 0 })).concat(def.items.filter((i) => i.id !== 'none')) : def.items;
+    const cats = game.cosCats(), order = ['paint', 'wheels', 'kit', 'spoiler', 'rims', 'caliper', 'glow', 'stripe', 'tint', 'decal'];
+    const keys = order.filter((k) => cats[k]).concat(Object.keys(cats).filter((k) => !order.includes(k)));
+    const optBtn = (cat, it, cur, owned, onPick) => {
+      const pv = cosPrev[cat] === it.id && !cur;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'kbtn opt';
+      b.setAttribute('aria-pressed', String(cur || pv));
+      b.innerHTML = (it.icon || (it.id.startsWith('#') ? `<i style="background:${it.id}"></i>` : '')) + it.name
+        + (cur ? ' <small>montato</small>' : owned ? '' : pv ? ` <small>compra € ${fmt(it.price)}</small>` : ` <small>€ ${fmt(it.price)}</small>`);
+      b.addEventListener('click', () => {
+        if (owned || pv) { if (!onPick()) return; cosPrev[cat] = it.id; applySettings(); saveGame(); }
+        else cosPrev[cat] = it.id;            // prova: si vede subito, si compra col secondo tocco
+        applyCos(cosPrev); renderCos(); renderPlaceCash();
+      });
+      return b;
+    };
+    const section = (title, sub) => { const box = document.createElement('div'); box.className = 'cos'; box.innerHTML = `<h4>${title}</h4>${sub ? `<p class="hint">${sub}</p>` : ''}<div class="row"></div>`; body.appendChild(box); return box.querySelector('.row'); };
+    for (const cat of keys) {
+      const def = cats[cat], row = section(cat === 'paint' ? 'Vernice' : def.label);
+      const list = cat === 'paint' ? PAINTS.filter(([id]) => id !== 'model').map(([id, name]) => ({ id, name, price: 0 })).concat(def.items.filter((i) => i.id !== 'none')) : def.items;
       for (const it of list) {
         const owned = it.price === 0 || game.cosOwned(cat, it.id);
         const cur = cat === 'paint' ? carPaint() === it.id : S.cos[cat] === it.id;
-        const pv = cosPrev[cat] === it.id && !cur;
-        const b = document.createElement('button'); b.type = 'button'; b.className = 'kbtn opt';
-        b.setAttribute('aria-pressed', String(cur || pv));
-        b.innerHTML = (it.id.startsWith('#') ? `<i style="background:${it.id}"></i>` : '') + it.name
-          + (cur ? ' <small>montato</small>' : owned ? '' : pv ? ` <small>compra € ${fmt(it.price)}</small>` : ` <small>€ ${fmt(it.price)}</small>`);
-        b.addEventListener('click', () => {
-          if (owned || pv) {
-            if (!owned) { const r = game.buyCos(cat, it.id); if (!r.ok) { flash(r.why, 2.2); return; } flash(`${it.name}: montato`, 1.4); }
-            if (cat === 'paint') setCarPaint(it.id); else S.cos[cat] = it.id;
-            cosPrev[cat] = it.id; applySettings(); saveGame();
-          } else cosPrev[cat] = it.id;            // prova: si vede subito, si compra col secondo tocco
-          applyCos(cosPrev); renderCos(); renderPlaceCash();
-        });
-        row.appendChild(b);
+        row.appendChild(optBtn(cat, it, cur, owned, () => {
+          if (!owned) { const r = game.buyCos(cat, it.id); if (!r.ok) { flash(r.why, 2.2); return false; } flash(`${it.name}: montato`, 1.4); }
+          if (cat === 'paint') setCarPaint(it.id); else S.cos[cat] = it.id; return true;
+        }));
       }
-      body.appendChild(box);
+    }
+    // sticker: uno per posizione; comprato una volta, si mette dove vuoi
+    const stk = allStickers();
+    for (const [slot, label] of GAME_STICKER_SLOTS) {
+      const row = section('Sticker · ' + label, slot === 'st_door' ? 'Sticker e decalcomanie: si vedono sulla carrozzeria (o sul vetro) e seguono la vernice.' : '');
+      for (const it of [{ id: 'none', name: 'Nessuno', price: 0 }].concat(stk)) {
+        const owned = it.id === 'none' || game.mode === 'free' || !!game.s.owned[game.ownKey('stk:' + it.id)];
+        const cur = S.cos[slot] === it.id;
+        const icon = it.id !== 'none' && street2d && street2d.stickerIcon ? `<img alt="" src="${street2d.stickerIcon(it.id)}" style="width:24px;height:14px;image-rendering:pixelated;object-fit:contain">` : '';
+        row.appendChild(optBtn(slot, Object.assign({ icon }, it), cur, owned, () => {
+          if (!owned) {
+            if (it.price > game.s.money) { flash(`Servono € ${it.price}`, 2); return false; }
+            game.s.money -= it.price; game.s.owned[game.ownKey('stk:' + it.id)] = true; game.say(`Sticker ${it.name}: − € ${it.price}`, 'buy');
+          }
+          S.cos[slot] = it.id; return true;
+        }));
+      }
     }
   }
+  // sticker del gioco più quelli aggiunti dal giocatore (img/stickers/manifest.json: [{ id, name, file, price }])
+  let userStickers = [];
+  function allStickers() { return GAME_STICKERS.concat(userStickers); }
+  fetch('img/stickers/manifest.json').then((r) => (r.ok ? r.json() : [])).then((list) => {
+    userStickers = (list || []).map((x) => ({ id: 'u_' + x.id, name: x.name || x.id, price: x.price ?? 150, file: 'img/stickers/' + x.file }));
+    if (window.Street2D) Street2D.userStickers = userStickers;
+  }).catch(() => {});
   function renderFuel() {
     const I = game.inside; if (!I || !$('fuelL')) return;
     $('fuelL').textContent = `${(sim.fuel * sim.P.tank).toFixed(1).replace('.', ',')} / ${sim.P.tank} litri`;
@@ -2293,7 +2375,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       if (on) siren.osc.frequency.setTargetAtTime(Math.floor(sirenT * 1.6) % 2 ? 660 : 494, audio.ctx.currentTime, 0.01);
     }
     saveT += dt; if (saveT > 3) { saveT = 0; saveGame(); }
-    svcT += dt; if (svcT > 0.5) { svcT = 0; game.tireId = S.tune.tires; renderServices();
+    svcT += dt; if (svcT > 0.5) { svcT = 0; game.tireId = S.tune.tires; renderServices(); if (street2d) street2d.setCosmetics(cosView()); TP.sim.maint = game.maint(); sim.tune.maint = TP.sim.maint;
       const sig = JSON.stringify(game.s.trunk) + game.mode + Math.floor(game.s.money); if (sig !== trunkSig) { trunkSig = sig; renderTrunk(); } }
   }
   // ---------------------------------------------------------------- gara: giudizi e risultato
@@ -2386,7 +2468,9 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   $('btnNew').addEventListener('click', () => {
     const b = $('btnNew');
     if (Date.now() - newArm > 4000) { newArm = Date.now(); b.textContent = 'Sicuro? Clicca di nuovo per azzerare'; setTimeout(() => { b.textContent = 'Nuova carriera'; }, 4000); return; }
-    game.reset(); sim.fuel = 0.72; S.tune = Object.assign({}, TUNING_PRESETS[0].sel);
+    game.reset(); sim.fuel = 0.72;
+    S.tunes = { supra: Object.assign({}, SUPRA_PRESETS[0].sel), v40: Object.assign({}, CARS.v40.presets[0].sel) };
+    S.coss = { supra: Object.assign({}, COS0), v40: Object.assign({}, COS0) }; S.v40mig = 1; useCar('supra');
     b.textContent = 'Nuova carriera'; newArm = 0;
     applySettings(); renderMode(); saveGame(); flash('Nuova carriera: € 3.000 e una Supra di serie', 2.4);
   });

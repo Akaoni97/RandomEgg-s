@@ -531,7 +531,8 @@ class EngineDSP {
       }
       // ---- mix per punto d'ascolto ---------------------------------------------------------
       const side = exhR * M.exh - exh * M.exh;   // differenza tra i terminali → immagine stereo
-      let out = exh * M.exh + boom * M.boom + intake * M.intake + mech * M.mech + turbo * M.turbo * this.fxT + surge * (M.turbo + M.bov) * this.fxS + bov * M.bov * this.fxB
+      const cabK = this.cfg.view === 0 ? (tn.cabin || 1) : 1;   // abitacolo alleggerito: rimbomba di più
+      let out = exh * M.exh * cabK + boom * M.boom * cabK + intake * M.intake + mech * M.mech + turbo * M.turbo * this.fxT + surge * (M.turbo + M.bov) * this.fxS + bov * M.bov * this.fxB
         + road * M.road + wind * M.wind + tire * M.tire + gear * M.gear + starter * M.starter + pump * M.pump;
       out += 1e-18;
 

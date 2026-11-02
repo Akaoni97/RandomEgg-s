@@ -3,7 +3,9 @@
 //  I marchi identificano parti reali per la JZA80/2JZ; il carattere sonoro è
 //  una nostra modellazione fisica, non una registrazione del prodotto.
 // ============================================================================
-const TUNING = {
+// Ogni auto ha il suo catalogo con la stessa forma (categorie → tendine, pezzi con prezzo e chilometri).
+// TUNING e TUNING_PRESETS puntano sempre al catalogo dell'auto in uso (vedi setActiveCar in cars.js).
+const TUNING_SUPRA = {
   exhaust: {
     label: 'Scarico (catback)',
     items: [
@@ -108,6 +110,30 @@ const TUNING = {
       { id: 'close', price: 4200, brand: 'Quaife', name: 'Ravvicinato a 6 marce', note: 'Prima più corta, marce vicine: a ogni cambiata i giri calano poco e il turbo resta in pressione.', sim: { gears: [0, 3.25, 2.25, 1.72, 1.38, 1.13, 0.94] } },
     ],
   },
+  intercooler: {
+    label: 'Intercooler',
+    items: [
+      { id: 'oem', price: 0, brand: 'Toyota', name: 'Originale (frontale piccolo)', note: 'Basta per la pressione di serie; in un allungo lungo o a 1 bar l\'aria scalda e la potenza cala anche del 7-8 %.', sim: { ic: { heat: 1.0 } } },
+      { id: 'hks', price: 1300, brand: 'HKS', name: 'R-type frontale maggiorato', note: 'Massa radiante tripla: l\'aria resta fresca anche a 2 bar, la potenza non cala più tirando le marce. Un filo di ritardo in più del turbo.', sim: { ic: { heat: 0.35, lag: 1.06 } } },
+    ],
+  },
+  suspension: {
+    label: 'Assetto',
+    items: [
+      { id: 'oem', price: 0, brand: 'Toyota', name: 'Originale', note: 'Comodo: in partenza la coda si siede e il muso si alza molto, in frenata si tuffa.', sim: { susp: { pitch: 1, grip: 1, launch: 1 } }, look: { low: 0 } },
+      { id: 'tein', price: 1600, brand: 'Tein', name: 'Flex Z regolabile', note: 'Coilover da strada, 30 mm più bassa: la cassa si muove la metà, più precisa in ingresso. Un filo meno di trazione in partenza (il posteriore non si "siede").', sim: { susp: { pitch: 0.55, grip: 1.03, launch: 0.98 } }, look: { low: 2 } },
+      { id: 'drag', price: 1400, brand: 'Su misura', name: 'Assetto da drag', note: 'Posteriore morbido ed estensione libera davanti: in partenza il peso va tutto sulle ruote dietro (+6 % di trazione al via). In curva è goffa.', sim: { susp: { pitch: 1.35, grip: 0.97, launch: 1.06 } }, look: { low: 0 } },
+    ],
+  },
+  weight: {
+    label: 'Alleggerimento',
+    items: [
+      { id: 'oem', price: 0, brand: '—', name: 'Di serie', note: '1570 kg con il pieno a metà.', sim: { dm: 0, cabin: 1 } },
+      { id: 's1', price: 900, brand: 'Bride', name: 'Sedili racing, via i posteriori', note: '−45 kg: un decimo sui 400 m. L\'abitacolo rimbomba un po\' di più.', sim: { dm: -45, cabin: 1.12 } },
+      { id: 's2', price: 3200, brand: 'Seibon', name: 'Cofano e portellone in carbonio, batteria al litio', note: '−95 kg in tutto, e meno peso davanti: inserimento più pronto.', sim: { dm: -95, cabin: 1.2 } },
+      { id: 's3', price: 6500, brand: 'Su misura', name: 'Interni smontati e vetri in policarbonato', note: '−160 kg: abitacolo nudo, si sente ogni sassolino e ogni scoppio. Solo per chi fa gare.', sim: { dm: -160, cabin: 1.45 } },
+    ],
+  },
   clutch: {
     label: 'Frizione e volano',
     items: [
@@ -117,21 +143,34 @@ const TUNING = {
   },
 };
 
-const TUNING_PRESETS = [
-  { id: 'stock', name: 'Originale', sel: { exhaust: 'oem', cat: 'oem', turbo: 'ct12b', bov: 'oem', wastegate: 'int', intake: 'oem', cams: 'oem', ecu: 'oem', clutch: 'oem', tires: 'oem', final: 'oem', gearbox: 'oem' } },
-  { id: 'street', name: 'Street biturbo', sel: { exhaust: 'hks', cat: 'sport', turbo: 'ct12b', bov: 'ssqv', wastegate: 'int', intake: 'pf', cams: 'oem', ecu: 'link', clutch: 'oem', tires: 'r888r', final: 'oem', gearbox: 'oem' } },
-  { id: 'single', name: 'Big single', sel: { exhaust: 'tomei', cat: 'sport', turbo: 'pte6466', bov: 'raceport', wastegate: 'tial', intake: 'pf', cams: 'hks264', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet', final: 'f3769', gearbox: 'close' } },
-  { id: 'drag', name: 'Drag anni 90', sel: { exhaust: 'straight', cat: 'decat', turbo: 't51r', bov: 'none', wastegate: 'tial', intake: 'pf', cams: 'hks272', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet', final: 'osg4083', gearbox: 'close' } },
+let TUNING = TUNING_SUPRA;
+const SUPRA_PRESETS = [
+  { id: 'stock', name: 'Originale', sel: { exhaust: 'oem', cat: 'oem', turbo: 'ct12b', bov: 'oem', wastegate: 'int', intake: 'oem', cams: 'oem', ecu: 'oem', clutch: 'oem', tires: 'oem', final: 'oem', gearbox: 'oem', intercooler: 'oem', suspension: 'oem', weight: 'oem' } },
+  { id: 'street', name: 'Street biturbo', sel: { exhaust: 'hks', cat: 'sport', turbo: 'ct12b', bov: 'ssqv', wastegate: 'int', intake: 'pf', cams: 'oem', ecu: 'link', clutch: 'oem', tires: 'r888r', final: 'oem', gearbox: 'oem', intercooler: 'oem', suspension: 'tein', weight: 's1' } },
+  { id: 'single', name: 'Big single', sel: { exhaust: 'tomei', cat: 'sport', turbo: 'pte6466', bov: 'raceport', wastegate: 'tial', intake: 'pf', cams: 'hks264', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet', final: 'f3769', gearbox: 'close', intercooler: 'hks', suspension: 'tein', weight: 's2' } },
+  { id: 'drag', name: 'Drag anni 90', sel: { exhaust: 'straight', cat: 'decat', turbo: 't51r', bov: 'none', wastegate: 'tial', intake: 'pf', cams: 'hks272', ecu: 'haltech', clutch: 'osgiken', tires: 'etstreet', final: 'osg4083', gearbox: 'close', intercooler: 'hks', suspension: 'drag', weight: 's3' } },
 ];
+let TUNING_PRESETS = SUPRA_PRESETS;
 
+function tuningItemOf(catalog, cat, id) {
+  const c = catalog[cat]; if (!c) return { id: 'oem', price: 0, name: '', sim: {}, dsp: {} };
+  return c.items.find((i) => i.id === id) || c.items[0];
+}
 function tuningItem(cat, id) {
   const c = TUNING[cat];
+  if (!c) return { id: 'oem', price: 0, name: '', sim: {}, dsp: {} };
   return c.items.find((i) => i.id === id) || c.items[0];
 }
 
-// trasforma la selezione in parametri per la fisica e per il DSP
+// parametri dell'auto in uso (le altre auto registrano la loro funzione in cars.js)
 function tuningParams(sel) {
-  const g = (k) => tuningItem(k, sel[k]);
+  const car = typeof ACTIVE_CAR !== 'undefined' ? ACTIVE_CAR : 'supra';
+  const fn = typeof CARS !== 'undefined' && CARS[car] && CARS[car].params;
+  return fn ? fn(sel) : supraParams(sel);
+}
+// trasforma la selezione in parametri per la fisica e per il DSP (Supra)
+function supraParams(sel) {
+  const g = (k) => tuningItemOf(TUNING_SUPRA, k, sel[k]);
   const tb = g('turbo'), ecu = g('ecu'), cams = g('cams'), cl = g('clutch');
   // con una centralina programmabile i turbo di serie reggono circa 1 bar
   const turbo = tb.sim.twin && ecu.id !== 'oem' ? Object.assign({}, tb.sim, { max: 1.0 }) : tb.sim;
@@ -140,13 +179,15 @@ function tuningParams(sel) {
     sim: {
       turbo, pw, limiter: ecu.sim.lim, sparkCut: ecu.sim.spark, ecuLaunch: ecu.sim.launch, ecuPops: ecu.sim.pops,
       idle: cams.sim.idle, camLow: cams.sim.low, camHigh: cams.sim.high, lope: cams.sim.lope, Ie: cl.sim.Ie,
-      mu: g('tires').sim.mu, tyre: g('tires').sim.tyre, fd: g('final').sim.fd, diff: g('final').sim.diff, gears: g('gearbox').sim.gears,
+      mu: g('tires').sim.mu * g('suspension').sim.susp.grip, tyre: g('tires').sim.tyre,
+      ic: g('intercooler').sim.ic, susp: g('suspension').sim.susp, dm: g('weight').sim.dm, fd: g('final').sim.fd, diff: g('final').sim.diff, gears: g('gearbox').sim.gears,
       valve: g('bov').dsp.v === 2 ? 'flutter' : g('bov').dsp.v === 1 ? 'bov' : 'recirc',
     },
     dsp: {
       ex: g('exhaust').dsp, cat: g('cat').dsp, tb: tb.dsp, bov: g('bov').dsp,
       scream: tb.sim.twin ? 0 : g('wastegate').dsp.scream, intake: g('intake').dsp, lope: cams.dsp.lope,
-      rattle: cl.dsp.rattle, spark: ecu.sim.spark ? 1 : 0,
+      rattle: cl.dsp.rattle, spark: ecu.sim.spark ? 1 : 0, cabin: g('weight').sim.cabin,
     },
+    look: { low: (g('suspension').look || {}).low || 0, susp: g('suspension').sim.susp.pitch },
   };
 }

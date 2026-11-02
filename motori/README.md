@@ -152,156 +152,48 @@ quasi quadrata. Senza la vista 2D resta una versione in prospettiva.
 
 ## La carriera
 
-**Garage: due auto.** In alto si sceglie l'auto (da ferma). Ognuna ha i suoi chilometri, traguardi, benzina,
-danni e vernice.
+**Garage.** In alto si sceglie l'auto (da ferma). Ogni auto ha i suoi chilometri, traguardi, benzina, danni,
+manutenzione, pezzi, estetica e vernice. Tutte usano lo stesso sistema (`cars.js`): catalogo a tendine, preparazioni
+pronte, pezzi che costano soldi **e** chilometri, estetica a parte. Per aggiungere un'auto basta una voce in `CARS`.
 
-- **Toyota Supra RZ** (2JZ-GTE biturbo, trazione posteriore, 6 marce): reparto tuning completo.
-- **Volvo V40 SW 2.0** (B4204S 2.0 16V aspirato, 140 CV a 6000 giri, quattro cilindri con scoppi ogni 180°,
-  trazione anteriore, 5 marce, 1290 kg, serbatoio da 60 litri). Si potenzia in officina con una scala
-  progressiva: ogni passo richiede il precedente, costa soldi e chiede chilometri, e si vede sull'auto.
+- **Toyota Supra RZ** (2JZ-GTE biturbo, trazione posteriore, 6 marce).
+- **Volvo V40 SW 2.0** (B4204S 2.0 16V aspirato, 140 CV, trazione anteriore, 5 marce, 1290 kg). Preparazioni pronte:
+  Di serie (140 CV), Street aspirata (158 CV), Sleeper T4 (200 CV), Familiare cattiva (290 CV). Il disegno
+  (`img/v40.png`) è l'illustrazione fornita dal giocatore.
 
-| # | Potenziamento | Cosa cambia | Si vede |
-| --- | --- | --- | --- |
-| 1 | Lavaggio e lucidatura | — | via il fango dalle fiancate, riflessi |
-| 2 | Cerchi in lega 16" | più presa | cinque razze, pinze rosse e disco dietro |
-| 3 | Assetto ribassato | più presa | 3 cm più bassa |
-| 4 | Scarico sportivo | +4 %, voce ruvida | terminale cromato |
-| 5 | Filtro aperto e centralina | +5 %, limitatore 6900 | — |
-| 6 | Kit estetico | — | labbro, minigonne, diffusore, paraurti in tinta |
-| 7 | Spoiler | — | alettone sul portellone |
-| 8 | Kit turbo T4 (0,7 bar) | circa 213 CV, fischio e valvola | intercooler nel paraurti, sigla T4 |
-| 9 | Turbo maggiorato (1,3 bar) | circa 261 CV, scoppi e fiammate | sigla T5, scritta TURBO |
-| 10 | Autobloccante Quaife e finale 4,45 | trazione e spinta | — |
+**I luoghi della città (2D).** Ogni 2,4 km: **Benzina 24H** (B), **Da Luca Tuning** (L, i pezzi delle prestazioni),
+**Officina Niko** (N, manutenzione e riparazioni) e **Neon Kustom** (E, estetica e sticker). In carriera i pezzi li
+monta solo Luca e la manutenzione la fa solo Niko.
 
-Il disegno della V40 (`img/v40.png`, 200×71) è l'illustrazione fornita dal giocatore, riportata sulla sua griglia
-di pixel e scontornata; ruote centrate a x 41 e 156, y 56. Il lavaggio toglie lo sporco dai pixel del disegno, la
-vernice del Neon Kustom ricolora solo la carrozzeria; senza l'immagine resta un segnaposto disegnato in codice. La V40 per ora si vede solo nella vista 2D; i campioni registrati sono della Supra e con la
-V40 tacciono (si sente la sintesi del quattro cilindri).
+- **Niko:** carrozziere, gomme, tagliando (olio e filtro), candele, pastiglie, lavaggio. Tutto si consuma coi
+  chilometri di ogni auto: olio vecchio = pressione bassa e fino al 6 % in meno; candele consumate = accensioni
+  perse a scatti; pastiglie finite = frenate lunghe e poi ferro su ferro; lo sporco si accumula (di più sotto la
+  pioggia) e si vede sulle fiancate.
+- **Neon Kustom:** vernice, cerchi (modello e colore), pinze, neon, kit e spoiler (V40), strisce, vetri e scritta
+  (Supra), e **sticker** in tre posizioni (portiera, parafango posteriore, vetro). Sticker inclusi: Wakaba,
+  Fiore di ciliegio, JDM, Maschera Oni, Numero 27, Night Run, Fiamme. Per aggiungerne di propri: le immagini in
+  `img/stickers/` e una riga per ciascuna in `img/stickers/manifest.json`, per esempio
+  `[{ "id": "drago", "name": "Drago", "file": "drago.png", "price": 200 }]`.
 
-- Si parte con € 3.000, una Supra di serie e 50 litri di benzina (serbatoio da 70, consumo reale).
-- L'auto resta in prima corsia; se davanti c'è traffico più lento sorpassa da sola e poi rientra.
-- Lungo la strada arrivano proposte a tempo (pulsanti o tasti 1-2-3; senza risposta vale l'ultima):
-  distributore (pieno, € 20 o tiri dritto), sfide da semaforo sui 400 m con posta, lavoretti di consegna
-  con bonus di puntualità.
-- Sterzo libero: tieni premuto A o D (o i pulsanti ◀ ▶, o la levetta del pad) e la Supra va dove vuoi sulla
-  carreggiata, anche fra le corsie, fino al cordolo; mollato lo sterzo resta lì. Il volante gira con le mani
-  del pilota anche da fermo (antiorario a sinistra). Con il sorpasso automatico
-  la Supra si sposta da sola dietro al traffico lento; senza, chi tampona paga il carrozziere.
-- Polizia: se le passi accanto in sesta ti ferma, multa in base alla velocità e al livello di ricercato
-  (5 stelle, scende col tempo). Un avviso in alto segnala le pattuglie in arrivo.
-- Officina: i pezzi si pagano coi contanti e si montano solo da fermo. Le preparazioni pronte mostrano
-  quanto manca per completarle.
-- Strumenti in gioco sopra la strada (tasto J per spegnerli), in stile anime e pixel art: contagiri a blocchi
-  con la marcia gigante, tachimetro a cifre pixel, turbo e benzina a tacche, contachilometri e parziale. Il quadro
-  professionale resta in alto.
-- Cambiata perfetta anche fuori dalle gare: cinque triangoli verdi si accendono salendo di giri e lampeggiano
-  tutti insieme (SHIFT!) nella zona giusta, da 420 a 30 giri sotto il limitatore. Cambiando lì esce la scritta
-  "PERFETTA!" con le linee di velocità, il cambio è più rapido, e più perfette di fila fanno combo; sul
-  limitatore esce "TROPPO TARDI".
-- Chilometri: ogni auto ha il suo contachilometri. I pezzi dell'officina si sbloccano anche con la strada fatta
-  (più costano, più chilometri chiedono) e ci sono quattro traguardi che non si comprano: 25 km rodaggio finito
-  (+3 % di potenza), 75 km cambiate più rapide, 150 km cliente fisso (−10 % in officina), 300 km leggenda della
-  notte (+3 % di potenza e +4 % di aderenza).
-- Supra in 2D più dettagliata: riflessi morbidi sulla carrozzeria, filo di luce sulla fiancata, ombra sotto le
-  porte, riflessi sui vetri e ombre di contatto delle gomme. Dietro le razze si vedono il disco forato, che gira
-  con la ruota e si arroventa nelle frenate forti, e la pinza dorata ferma (il colore si cambia al Neon Kustom).
-- Cielo vivo: fari della città che spazzano il cielo, un elicottero col faro di ricerca, stelle cadenti.
-- Fiamme dalla marmitta: escono dalla punta cromata (seguono beccheggio e molleggio), a tre strati con nucleo
-  azzurro, tremolano e salgono verso la coda lasciando palline di fuoco che finiscono in fumo; negli scoppi grossi
-  palla di fuoco, anello d'urto e punta della marmitta che si arroventa.
-- Treno sopraelevato illuminato che passa sul viadotto dietro le case; incroci ogni 260 m con strisce pedonali,
-  linea d'arresto, semafori a ciclo con riflesso sull'asfalto e omino pedonale.
-- La città in 2D è un quartiere vario: condomini, case giapponesi col tetto a falde e le finestre di carta,
-  konbini illuminati con i distributori automatici, torri di uffici in vetro, santuari col torii rosso e le
-  lanterne, giardinetti con panchina e lampione, magazzini con la saracinesca numerata, banchi di ramen con le
-  tende noren e parcheggi a piani; dietro, sagome a gradoni e guglie.
-- Città in 2D: lungo la strada ci sono tre luoghi fissi, che si ripetono ogni 2,4 km: **Benzina 24H**, **Officina 2JZ**
-  e **Neon Kustom** (ricambi estetici). Una mappa a barra in basso scorre mentre guidi e mostra i luoghi nei
-  prossimi 2,7 km, la consegna in corso e le pattuglie vicine. Quando sei davanti a un ingresso compare
-  **Entra** (tasto U): la Supra accosta, entra e si apre l'interno. U o Esc per uscire.
-  - Benzinaio: pieno, € 20 o € 50 alla pompa (i litri salgono sul display), e il market per il bagagliaio.
-  - Officina: la Supra sale sul ponte; qui si montano i pezzi, il carrozziere e le gomme. In carriera, nella
-    vista 2D, i pezzi si montano solo qui.
-  - Neon Kustom: neon sottoscocca, cerchi colorati, strisce laterali, vetri oscurati, adesivo sulla portiera e
-    vernici speciali. Un tocco li prova sulla Supra, il secondo li compra; quello che hai comprato si rimette gratis.
-- Gare di accelerazione sui 400 m: semaforo con tre gialli e verde, zona verde dei giri in partenza
-  (freno + colpetti di gas, si molla il freno al verde), tempo di reazione, indicatore di cambiata
-  (perfetta / buona / anticipata / tardi; la perfetta è più rapida), telecamera bassa di lato e
-  schermata del risultato.
-- Scala dei rivali: quattro quartieri con tre rivali e un capo ciascuno, da battere in ordine.
-  Le sfide della scala non costano: se vinci incassi il premio.
-- Officina con barre delle prestazioni (potenza, coppia, trazione, peso/potenza, 400 m stimati) e gomme
-  (Toyo R888R, Mickey Thompson ET Street R) che cambiano l'aderenza.
-- Modalità libera: tutto sbloccato, nessun evento, benzina infinita (il vecchio banco suono).
-- La carriera si salva nel browser. `window.nightRun` espone simulazione e gioco dalla console.
+### Note da preparatore: cosa fanno davvero i pezzi
 
+| Pezzo | Accelerazione | Suono |
+| --- | --- | --- |
+| Scarico | Su un turbo libera i gas: +3-5 %, spool più pronto; su un aspirato piccolo quasi niente | Il cambio più grande di voce: più basso, ruvido, rimbombo a medi giri |
+| Downpipe/cat | Il collo di bottiglia vero sul turbo (+2-3 %) | Più alti, scoppiettii più vivi |
+| Aspirazione | +2 % (l'aria del vano è calda) | Risucchio e fischio del turbo molto più presenti |
+| Centralina | Limitatore più alto, più pressione; con taglio d'accensione arrivano launch e pop & bang | Scoppi e fiammate |
+| Turbo | Il salto vero: più grosso = più potenza ma arriva più tardi | Fischio più basso e pieno, valvola |
+| Intercooler | Non dà potenza: evita di perderla. Con l'originale a 2 bar si perde fino al 12 % tirando le marce, col maggiorato il 4 % | — |
+| Gomme e assetto | Mettono a terra la potenza; l'assetto morbido "siede" la coda e aiuta la trazione posteriore, quello rigido tiene la cassa ferma | Stridio diverso |
+| Differenziale e finale | Autobloccante = meno ruota che pattina; finale corto = più spinta, meno velocità massima | — |
+| Alleggerimento | −10 % di peso vale circa 0,15-0,3 s sui 400 m | Abitacolo più rumoroso |
 
-Simulatore del suono del motore di una **Toyota Supra RZ (JZA80)** con 2JZ-GTE e cambio Getrag V160:
-plancia completa, acceleratore, freno, frizione, cambio a 6 marce. Funziona nel browser, senza dipendenze.
-
-Apri `motori/index.html` (doppio clic va bene; la vista 3D scarica three.js da jsDelivr) e premi **Accendi l'audio**. Poi `I` per il quadro e
-`Invio` tenuto premuto per l'avviamento. Meglio con le cuffie.
-
-**Motore meno meccanico.** Ogni scoppio è un po' diverso dal precedente (forza, durata e un leggero anticipo o
-ritardo), con un "respiro" lento della combustione più evidente al minimo; il ticchettio delle valvole è più basso
-e irregolare, la distorsione dello scarico in tirata è morbida e un brontolio di mezzo ordine dà corpo ai bassi
-giri. La variazione dell'energia fra un ciclo motore e l'altro passa circa dall'1% al 3% al minimo e ai medi, e dal
-3,7% al 5% in tirata, a parità di volume.
-
-**Scoppiettii.** Al rilascio del gas sopra i 2200 giri lo scarico scoppietta anche con la centralina di serie: una
-raffica subito dopo il rilascio, più fitta ai giri alti e più forte con catalizzatore sportivo o decat; con la mappa
-pop & bang dura quasi tre secondi. Ogni scoppio si vede: fiammata a strati con nucleo azzurro e palla di fuoco,
-braci, sbuffo di fumo, lampo arancio sull'asfalto, un sobbalzo dell'auto e scritte BANG!, POP!, BRAP!, CRACK!.
-Il 2D ha anche bagliore sulle luci (neon, fari, fiamme), il fascio dei fari nell'aria di notte e una vignettatura.
-
-**Vetrina, foto e replay.** "Vetrina" (tasto G) mostra la Supra in uno studio con pavimento lucido su una piattaforma
-girevole: colore, assetto (di serie, ribassato, slammed) e luci (studio, neon, tramonto), con potenza, coppia, 400 m
-stimati e peso. "Foto" (tasto X) scatta un'immagine della vista attiva, da salvare tenendo premuto o col tasto destro.
-"Replay" (tasto Y) rivede gli ultimi 20 secondi a metà velocità, con il suono del motore registrato e inquadrature che
-cambiano in 3D; un tasto qualsiasi esce.
-
-**Gare e traffico nel 2D.** Durante le sfide compaiono un semaforo da drag grande (tre gialli e il verde), una barra di
-avanzamento con le due auto e un arco a scacchi con bandiere sul traguardo. Il traffico cambia corsia mettendo la
-freccia e suona il clacson se gli stai attaccato; i lampeggianti della polizia tingono di rosso e blu strada e palazzi.
-Le auto che passano accanto si sentono con l'effetto doppler, da un lato all'altro delle cuffie.
-
-**Colpi più forti e 2D a specchio.** Gli scoppi escono dal terminale con uno schiocco secco e un colpo sordo che
-non passano dal silenziatore: picco circa 3,5 dB più alto, saturazione leggera solo sui più grossi. Nel 2D la città
-si riflette capovolta e tremolante sull'asfalto (forte sotto la pioggia, appena accennata di notte sull'asciutto),
-la luce dei lampioni scorre sulla carrozzeria, sotto la pioggia arrivano fulmini con lampo sulla scena e tuono
-qualche istante dopo, e gli scoppi grossi fanno tremare l'immagine.
-
-**2D più vivo.** La telecamera segue la guida (in velocità la Supra scivola indietro sullo schermo e si vede più
-strada davanti, in accelerazione resta indietro, in frenata va avanti); oltre i 90 km/h compaiono linee di
-velocità; le ruote si sfocano in un disco quando girano forte; sotto la pioggia la Supra si specchia sull'asfalto.
-
-**Suono registrato di serie.** Sotto la sintesi suona una Supra turbo vera: *Import car revs on chassis dyno with
-turbo* di **editboy23** su [Freesound (496171)](https://freesound.org/people/editboy23/sounds/496171/), licenza
-[CC0](http://creativecommons.org/publicdomain/zero/1.0/). Dalla registrazione (35 s al banco a rulli) sono stati
-ricavati 19 anelli in `audio/supra/`: 11 sotto carico da 1830 a 7400 giri e 8 in rilascio da 1800 a 7000. Per ogni
-anello i giri sono stati tracciati sulle armoniche di mezzo ordine (giri/120 Hz), il pezzo è stato ricampionato per
-tenerli costanti (entro circa lo 0,5%) e chiuso su un numero intero di cicli motore con una dissolvenza, così gira
-senza scatti. Il lettore li intona sui giri e li miscela col carico; turbo, valvola e scoppiettii restano sintetici.
-Il minimo (`on_760.wav` e `off_760.wav`, 760 giri) viene da *BMW 320 (1988) engine* di **ninebilly** su
-[Freesound (173005)](https://freesound.org/people/ninebilly/sounds/173005/), CC0: un sei cilindri in linea come il 2JZ,
-perché nella registrazione al banco il minimo è coperto dai rulli. Il cursore Sintesi/Campioni parte a metà; i campioni si possono togliere o sostituire dal pannello.
-
-**Registrazioni suonate meglio e telecamera viva.** Gli anelli registrati si sovrappongono solo nella fascia centrale
-fra due regimi (vicino al proprio regime ognuno suona da solo, niente effetto "due motori"), passano da un filtro che
-dà corpo ai bassi sotto carico e si scurisce in rilascio, e da una saturazione morbida che li scalda. In 3D la
-telecamera d'inseguimento resta indietro in accelerazione e si avvicina in frenata, vibra con la velocità e dà un
-colpo di campo visivo a ogni cambiata; di notte si vedono i fasci dei fari nell'aria, più marcati sotto la pioggia
-e con gli abbaglianti.
-
-**Campioni tuoi.** Quelli che carichi (anche un'intera cartella) restano salvati nel browser (IndexedDB) e si
-ricaricano da soli; restano solo su quel computer e non finiscono nel progetto. "Supra di serie" spegne gli anelli di
-serie per sentire solo i propri, "Dimentica i miei campioni" li cancella.
-
-**Turbo e valvola più naturali.** Il fischio del turbo non è più una sinusoide pura: è una banda d'aria risonante
-alla frequenza della girante (più una sua armonica), con una componente tonale leggera, intonazione e volume che
-derivano lentamente e un filtro che toglie la parte stridula. La valvola si apre con uno scatto secco, poi suonano
-tre strati con tempi propri (sibilo alto che si spegne per primo, getto che scende di tono, "pff" grave che dura di
-più) e un tremolio irregolare del getto; il flutter ha battiti di forza e ritmo leggermente diversi. Livelli invariati.
+**Resa grafica (2D).** Cassa solida e smorzata (beccheggio dall'accelerazione vera e dalla rigidità dell'assetto,
+niente rimbalzi); in partenza la ripresa stringe sull'auto, linee di concentrazione stile manga, polvere dietro le
+ruote; in velocità lo sfondo lascia una scia e arrivano le linee di velocità. Luci in stile anime: contorno
+magenta/ciano dei neon sull'auto, striscia anamorfica dei fari, scie rosse dei fanali, stelle sui lampioni, bagliore
+più forte e colori con ombre ciano e luci magenta.
 
 ## Gomme, rapporti e trazione
 

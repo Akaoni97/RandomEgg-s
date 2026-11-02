@@ -47,6 +47,7 @@ class SupraSim {
     this.P.limiter = this.tune.limiter; this.P.idle = this.tune.idle; this.P.Ie = this.tune.Ie;
     if (this.tune.mu) this.P.mu = this.tune.mu;
     if (this.tune.fd) this.P.fd = this.tune.fd;
+    if (this.tune.clutchMax) this.P.clutchMax = this.tune.clutchMax;
     if (Array.isArray(this.tune.gears)) this.P.gears = this.tune.gears.slice();
     if (this.tune.tyre && this.tune.tyre.crr) this.P.crr = this.tune.tyre.crr;
     this.cfg.valve = this.tune.valve;
@@ -121,7 +122,8 @@ class SupraSim {
     const load = this.running ? SIM_CLAMP(this.charge, 0, 2.4) * this.rpm / 7000 : 0;
     this.waterT += ((this.running ? 86 + 5 * load : this.waterT > 40 ? 60 : this.waterT) - this.waterT) * dt * 0.012;
     this.oilT += ((this.running ? 90 + 14 * load : 60) - this.oilT) * dt * 0.006;
-    const oilTarget = this.running ? (this.oilT > 85 ? 0.9 : 1.4) + 4.0 * Math.min(1, this.rpm / 5500) : (this.starter ? 0.35 : 0);
+    const mt = this.tune.maint || {}, oilK = 0.35 + 0.65 * Math.min(1, (mt.oil ?? 1) / 0.25);
+    const oilTarget = (this.running ? (this.oilT > 85 ? 0.9 : 1.4) + 4.0 * Math.min(1, this.rpm / 5500) : (this.starter ? 0.35 : 0)) * oilK;
     this.oilP += (oilTarget - this.oilP) * Math.min(1, dt * 4);
     // temperatura delle gomme: scaldano con lo slittamento e con la frenata, raffreddano con l'aria
     const heatIn = this.slipPow * 0.00028 + (this.in.brake || 0) * Math.abs(this.v) * 0.12 + Math.abs(this.v) * 0.035;
@@ -254,7 +256,7 @@ class SupraSim {
     const closed = this.thr < 0.12;
     const tgtT = Math.min(1, Math.sqrt(SIM_CLAMP(drive, 0, 1))) * 0.92 + 0.08 * Math.min(1, rpm / 7000) * (0.3 + this.air);
     this.wg = SIM_CLAMP((drive - 1) * 3, 0, 1);
-    const tau = tgtT > this.tur ? tc.up : (closed && cfg.valve === 'flutter' ? 0.5 : tc.down * (closed ? 1.6 : 1));
+    const tau = tgtT > this.tur ? tc.up * ((tn.ic && tn.ic.lag) || 1) : (closed && cfg.valve === 'flutter' ? 0.5 : tc.down * (closed ? 1.6 : 1));
     this.tur += (tgtT - this.tur) * Math.min(1, h / tau);
     if (!closed) this.pipeP += (tc.max * Math.min(1, this.tur * this.tur) * SIM_SS(0.12, 0.6, this.thr) - this.pipeP) * Math.min(1, h / 0.08);
     else this.pipeP += (0 - this.pipeP) * Math.min(1, h / (cfg.valve === 'flutter' ? 0.45 : 0.07));
@@ -270,7 +272,15 @@ class SupraSim {
     const camK = SIM_SS(3000, 5500, rpm), camF = tn.camLow * (1 - camK) + tn.camHigh * camK;
     // cilindri non perfettamente uguali: con camme lunghe al minimo uno "zoppica" (mezzo ordine)
     const lopeF = 1 + tn.lope * 0.22 * Math.sin(this.theta * 0.5) * (1 - SIM_SS(1200, 2600, rpm));
-    const Tcomb = burning ? Tind * tn.pw * camF * lopeF * Math.max(0, this.air * (1 + 0.78 * (tn.boostK || 1) * this.pipeP) - 0.1) / 0.9 : 0;
+    // intercooler: con la pressione l'aria si scalda, il flusso d'aria la raffredda; aria calda = meno coppia
+    const icH = tn.ic ? tn.ic.heat : 0;
+    this.iat = Math.max(0, (this.iat || 0) + (Math.pow(Math.max(0, this.pipeP), 1.5) * this.air * 0.075 * icH - (this.iat || 0) * (0.05 + Math.abs(this.v) * 0.004)) * h);
+    // manutenzione: olio vecchio (attriti, −6 %), candele consumate (accensioni perse a scatti)
+    const mt = tn.maint || {};
+    const maintK = 1 - Math.max(0, 0.25 - (mt.oil ?? 1)) * 0.25;
+    if (burning && (mt.plugs ?? 1) < 0.4 && Math.random() < (0.4 - mt.plugs) * h * 30) this.misT = 0.04 + Math.random() * 0.05;
+    this.misT = Math.max(0, (this.misT || 0) - h);
+    const Tcomb = burning ? Tind * tn.pw * camF * lopeF * maintK * (1 - 0.18 * this.iat) * (this.misT > 0 ? 0.4 : 1) * Math.max(0, this.air * (1 + 0.78 * (tn.boostK || 1) * this.pipeP) - 0.1) / 0.9 : 0;
     const Tfric = rpm > 0 ? 16 + 0.0035 * rpm + 0.9e-6 * rpm * rpm + 9 * (1 - this.air) * (rpm / 3000) : 0;
     let Tcomp = 0;
     if (!this.running && rpm > 0.5) Tcomp = -38 * Math.sin(3 * this.theta) * SIM_CLAMP(1 - rpm / 700, 0, 1);
@@ -286,7 +296,9 @@ class SupraSim {
     const Nr = SIM_CLAMP(P.mass * 9.81 * P.rearW + (P.fwd ? -1 : 1) * P.mass * this.acc * P.cgH / P.wb, 2500, 12000);
     // differenziale: aperto (la ruota scarica gira a vuoto), Torsen (ripartisce), autobloccante (blocca)
     const dk = tn.diff === 'lsd' ? 1 : tn.diff === 'torsen' ? 0.96 : 0.87;
-    const Fmax = P.mu * Nr * (1 - 0.08 * (Nr / 7260 - 1)) * this.tireGrip() * dk;
+    // assetto: in partenza un posteriore che si "siede" (o un anteriore che non si alza) carica le ruote motrici
+    const launchK = 1 + (((tn.susp || {}).launch || 1) - 1) * (1 - SIM_SS(4, 22, Math.abs(this.v)));
+    const Fmax = P.mu * Nr * (1 - 0.08 * (Nr / 7260 - 1)) * this.tireGrip() * dk * launchK;
     // gomma: lo slittamento "visto" dal battistrada segue quello reale con un ritardo (lunghezza di rilassamento ~0,3 m),
     // poi curva di Pacejka della mescola: picco, e oltre la forza cala più o meno in fretta
     const ty = tn.tyre || { B: 20, C: 1.42, E: 0.1 };
@@ -323,7 +335,9 @@ class SupraSim {
     const drag = 0.5 * 1.2 * P.cd * (1 + this.damage * 0.25) * P.A * this.v * Math.abs(this.v);
     // freni: chiedono fino a 1,1 g, ma più di quanto tengono le quattro gomme non danno; l'ABS lavora a impulsi al limite
     const ty2 = tn.tyre || {}, gripAll = (P.mu * 0.92 + 0.08) * this.tireGrip() * (ty2.brake || 1) * P.mass * 9.81;
-    let Fb = I.brake * P.mass * 9.81 * 1.1;
+    const pads = (tn.maint || {}).pads ?? 1;
+    let Fb = I.brake * P.mass * 9.81 * 1.1 * (0.7 + 0.3 * Math.min(1, pads / 0.3));
+    if (pads < 0.1 && I.brake > 0.3 && Math.abs(this.v) > 3 && Math.random() < h * 3) this.events.push({ type: 'grind' });   // ferro su ferro
     this.abs = Fb > gripAll * 0.97 && Math.abs(this.v) > 1.5;
     if (this.abs) { this.absPh = ((this.absPh || 0) + h * 14) % 1; Fb = gripAll * (this.absPh < 0.7 ? 0.97 : 0.8); }
     const Froll = P.crr * (1 + Math.abs(this.v) / 120) * P.mass * 9.81;
@@ -355,7 +369,7 @@ class SupraSim {
     return {
       rpm: this.rpm, charge: this.charge, air: this.air, thr: this.thr, boost: this.pipeP, turbo: this.tur,
       cut: this.cut, ovr: this.ovr, running: this.running ? 1 : 0, starter: this.starter ? 1 : 0,
-      speed: Math.abs(this.v), spin: SIM_CLAMP((Math.abs(vw - this.v) - 1.5) / 5, 0, 1), abs: this.abs ? 1 : 0, tc: this.tcAct ? 1 : 0,
+      speed: Math.abs(this.v), spin: SIM_CLAMP((Math.abs(vw - this.v) - 1.5) / 5, 0, 1), abs: this.abs ? 1 : 0, tc: this.tcAct ? 1 : 0, iat: this.iat || 0,
       drive: Math.abs(this.Tc * this.ratio(this.gear)) / 3000, gearRpm: this.ww * this.ratio(this.gear) * 9.5493,
       rev: this.gear === -1 ? 1 : 0, wg: this.wg, sec: this.tune.turbo.twin ? this.sec : 0,
       rattle: this.running && (this.gear === 0 || this.shiftSeq) && this.clutch < 0.3 ? 1 - SIM_SS(900, 1600, this.rpm) : 0,
