@@ -194,7 +194,9 @@ class EngineDSP {
     if (this.pops.length > 8) return;
     const d = Math.round((0.002 + this.r() * 0.5 * 0.03 + 0.015) * this.sr);
     let a = big ? 1.3 + 0.9 * Math.abs(this.r()) : 0.45 + 0.55 * Math.abs(this.r());
-    if (this.cfg.fx && this.cfg.fx.pop) a *= 0.3;        // scoppi registrati caricati: qui resta solo il crepitio
+    if (this.cfg.fx && this.cfg.fx.pop) a *= 0.3;
+    if (this.bov.env > 0 && this.tn.bov.v === 2) a *= 0.35;   // lascia sentire lo stu-tu-tu
+    if (this.T.cut === 1) a *= 0.7;        // scoppi registrati caricati: qui resta solo il crepitio
     this.pops.push({ d: Math.max(1, d), a });
   }
 
@@ -234,8 +236,8 @@ class EngineDSP {
       // rilascio del gas: raffica di scoppiettii subito dopo il rilascio, più fitta ai giri alti;
       // con la mappa pop & bang durano di più e sono più forti
       const hi = Math.min(1, (S.rpm - 1600) / 4000);
-      if (T.cut === 1) ch = (this.cfg.pops ? 0.2 * Math.exp(-T.ovr / 2.6) + 0.03 : (0.13 * Math.exp(-T.ovr / 0.9) + 0.006) * (0.4 + 0.6 * hi)) * pm;
-      if (T.cut === 1 && Math.abs(this.r()) < ch * 0.35) big = true;
+      if (T.cut === 1) ch = (this.cfg.pops ? 0.12 * Math.exp(-T.ovr / 2.2) + 0.015 : (0.06 * Math.exp(-T.ovr / 0.8) + 0.003) * (0.4 + 0.6 * hi)) * pm;
+      if (T.cut === 1 && Math.abs(this.r()) < ch * 0.2) big = true;
       else if (T.cut === 2) { ch = sp ? (this.cfg.pops ? 0.34 : 0.16) * pm : 0.02; big = true; }
       else if (T.cut === 3) { ch = (this.cfg.pops ? 0.55 : 0.3) * pm; big = true; }
       if (Math.abs(this.r()) < ch) this.addPop(big || Math.abs(this.r()) < 0.15);

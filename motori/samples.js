@@ -110,6 +110,8 @@ class SamplePlayer {
     return true;
   }
 
+  surging() { const t = this.ctx.currentTime; return this.items.some((i) => i.hold && t < i.hold); }
+
   has(role) { return this.items.some((i) => i.fx === role && !i.mute); }
 
   // effetto singolo: un file a caso del suo tipo, con piccole variazioni di tono
