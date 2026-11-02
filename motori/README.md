@@ -290,6 +290,20 @@ Nel riquadro **Suoni della mod** si caricano campioni in loop (WAV, OGG, MP3, FL
 dal nome del file (`on_4000.ogg`, `off_2500.wav`) e si può correggere; i campioni vengono intonati sui giri
 e sfumati tra loro, e si possono miscelare con la sintesi.
 
+Si possono caricare anche gli effetti. Il tipo si riconosce dal nome del file e il suono registrato prende
+il posto di quello sintetico:
+
+| Nome del file contiene | Effetto | Quando suona |
+| --- | --- | --- |
+| `dump`, `bov`, `blowoff` | valvola | al rilascio del gas con il turbo in pressione |
+| `flutter` | flutter del compressore | al rilascio, con la valvola impostata su flutter |
+| `turbo`, `whine`, `spool` | fischio del turbo (in loop) | volume e tono seguono la pressione |
+| `hiss` | sibilo del turbo (in loop) | con la pressione |
+| `bang`, `backfire`, `rumble`, `pop`, `bf_` | scoppio | al rilascio dai giri alti e sul limitatore a taglio d'accensione |
+| `limiter` | limitatore (in loop) | quando il motore batte sul limitatore |
+
+Un nome come `on_4000` o `off_2500` resta sempre un anello del motore.
+
 Modelli e suoni delle mod non sono inclusi nel repository: spesso sono estratti da giochi commerciali e
 non si possono ridistribuire. I file caricati restano nel browser di chi li apre.
 

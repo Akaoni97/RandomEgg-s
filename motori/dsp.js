@@ -34,7 +34,7 @@ class EngineDSP {
     this.T = { rpm: 0, charge: 0, air: 0, thr: 0, boost: 0, turbo: 0, cut: 0, ovr: 9, running: 0, starter: 0,
       speed: 0, spin: 0, drive: 0, gearRpm: 0, rev: 0, wg: 0, sec: 0, pump: 0, rattle: 0 };
     this.S = Object.assign({}, this.T);
-    this.cfg = { tune: EngineDSP.stock(), pops: 0, view: 0, vol: 0.8 };
+    this.cfg = { tune: EngineDSP.stock(), pops: 0, view: 0, vol: 0.8, fx: { bov: 0, pop: 0, turbo: 0 } };
     this.rpmI = 0; this.rpmStep = 0; this.fluM = 0;      // giri interpolati campione per campione
     this.flu = 0;                          // fluttuazione istantanea della velocità d'albero
     this.mix = null; this.mixT = null;
@@ -77,7 +77,7 @@ class EngineDSP {
     this.wDrift = 0; this.wAmp = 0; this.wN = 0;
     // valvola: strati con filtri propri, scatto d'apertura, tremolio dell'aria
     this.bovAir = new BQ().set('hp', 3200, 0.6, sr); this.bovLow = new BQ().set('bp', 650, 1.1, sr); this.bovWob = 0; this.bovClick = new BQ().set('hp', 1800, 0.7, sr);
-    this.flAmp = 1;
+    this.flAmp = 1; this.fxB = 1; this.fxT = 1;
     this.bov = { env: 0, t: 1, I: 0, len: 0.3, rate: 20 };
     this.bovBP = new BQ(); this.bovHP = new BQ().set('hp', 500, 0.7, sr);
     this.flBP = new BQ().set('bp', 520, 1.2, sr); this.flPh = 0;
@@ -137,6 +137,7 @@ class EngineDSP {
   msg(m) {
     if (m.p) Object.assign(this.T, m.p);
     if (m.cfg) this.configure(Object.assign(this.cfg, m.cfg));
+    const fx = this.cfg.fx || {}; this.fxB = fx.bov ? 0 : 1; this.fxT = fx.turbo ? 0.25 : 1;
     if (m.ev) for (const e of m.ev) this.event(e);
   }
 
@@ -192,7 +193,8 @@ class EngineDSP {
   addPop(big) {
     if (this.pops.length > 8) return;
     const d = Math.round((0.002 + this.r() * 0.5 * 0.03 + 0.015) * this.sr);
-    const a = big ? 1.3 + 0.9 * Math.abs(this.r()) : 0.45 + 0.55 * Math.abs(this.r());
+    let a = big ? 1.3 + 0.9 * Math.abs(this.r()) : 0.45 + 0.55 * Math.abs(this.r());
+    if (this.cfg.fx && this.cfg.fx.pop) a *= 0.3;        // scoppi registrati caricati: qui resta solo il crepitio
     this.pops.push({ d: Math.max(1, d), a });
   }
 
@@ -488,7 +490,7 @@ class EngineDSP {
 
       // ---- mix per punto d'ascolto ---------------------------------------------------------
       const side = exhR * M.exh - exh * M.exh;   // differenza tra i terminali → immagine stereo
-      let out = exh * M.exh + boom * M.boom + intake * M.intake + mech * M.mech + turbo * M.turbo + bov * M.bov
+      let out = exh * M.exh + boom * M.boom + intake * M.intake + mech * M.mech + turbo * M.turbo * this.fxT + bov * M.bov * this.fxB
         + road * M.road + wind * M.wind + tire * M.tire + gear * M.gear + starter * M.starter + pump * M.pump;
       out += 1e-18;
 
