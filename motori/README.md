@@ -223,7 +223,9 @@ ricavati 19 anelli in `audio/supra/`: 11 sotto carico da 1830 a 7400 giri e 8 in
 anello i giri sono stati tracciati sulle armoniche di mezzo ordine (giri/120 Hz), il pezzo è stato ricampionato per
 tenerli costanti (entro circa lo 0,5%) e chiuso su un numero intero di cicli motore con una dissolvenza, così gira
 senza scatti. Il lettore li intona sui giri e li miscela col carico; turbo, valvola e scoppiettii restano sintetici.
-Il cursore Sintesi/Campioni parte a metà; i campioni si possono togliere o sostituire dal pannello.
+Il minimo (`on_760.wav` e `off_760.wav`, 760 giri) viene da *BMW 320 (1988) engine* di **ninebilly** su
+[Freesound (173005)](https://freesound.org/people/ninebilly/sounds/173005/), CC0: un sei cilindri in linea come il 2JZ,
+perché nella registrazione al banco il minimo è coperto dai rulli. Il cursore Sintesi/Campioni parte a metà; i campioni si possono togliere o sostituire dal pannello.
 
 ## Da dove viene il suono
 
