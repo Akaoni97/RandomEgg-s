@@ -102,6 +102,8 @@ class SupraSim {
     if (target === this.gear || this.shiftSeq) return false;
     if (target === -1 && Math.abs(this.v) > 1.2) { this.events.push({ type: 'grind' }); return false; }
     if (this.gear === -1 && target > 0 && this.v < -1.2) { this.events.push({ type: 'grind' }); return false; }
+    // scalata che manderebbe il motore fuori giri ("money shift"): il sincronizzatore non entra, gratta
+    if (target > 0 && this.gear > 0 && target < this.gear && Math.abs(this.wo * this.ratio(target)) * 9.5493 > this.P.limiter + 900) { this.events.push({ type: 'grind' }); return false; }
     if (this.cfg.autoClutch) {
       const down = target > 0 && this.gear > 0 && target < this.gear;
       this.shiftSeq = { t: 0, target, down, done: false, fast: !!this.fastShift && !down, quick: !!this.quickShift };
@@ -167,22 +169,25 @@ class SupraSim {
     if (cfg.autoClutch) {
       if (this.shiftSeq) {
         const s = this.shiftSeq; s.t += h;
-        const f = s.fast ? 0.55 : s.quick ? 0.75 : 1;                       // cambiata perfetta: frizione aperta per meno tempo
-        if (s.t < 0.07 * f) { this.clutch = Math.min(1, this.clutch + h / (0.045 * f)); if (!s.down) thrCmd = 0; }
+        // 3-step (flat shift): in salita col gas a fondo non si alza il piede, la centralina taglia l'accensione
+        if (s.flat === undefined) s.flat = !!tn.flatShift && !s.down && I.thr > 0.8 && this.running;
+        const f = (s.fast ? 0.55 : s.quick ? 0.75 : 1) * (s.flat ? 0.7 : 1) * (P.shiftK || 1);   // cambiata perfetta: frizione aperta per meno tempo
+        if (s.t < 0.07 * f) { this.clutch = Math.min(1, this.clutch + h / (0.045 * f)); if (!s.down && !s.flat) thrCmd = 0; }
         else {
           if (!s.done) { s.done = true; this.gear = s.target; this.lock = false; if (s.target !== 0) this.events.push({ type: 'clunk' }); }
           if (this.gear !== 0) {
             const floor = wheelRpm(this.gear) < 1100 ? 1 - SIM_SS(1050, 2700, rpm) : 0;
             this.clutch = Math.max(floor, this.clutch - h / (0.2 * f));
           }
-          if (!s.down && s.t < 0.15 * f) thrCmd = 0;
+          if (!s.down && s.t < 0.15 * f && !s.flat) thrCmd = 0;
         }
+        this.flatCut = s.flat && s.t < 0.16 * f;
         if (s.down && cfg.revMatch && s.t < 0.27) {
           const tg = wheelRpm(s.target);
           thrCmd = Math.max(thrCmd, SIM_CLAMP((tg - rpm) / 650, 0, 1));
         }
         if (s.t > 0.3 * f) {
-          this.shiftSeq = null;
+          this.shiftSeq = null; this.flatCut = false;
           if (this.gear !== 0 && Math.abs(rpm - wheelRpm(this.gear)) < 250 && rpm > 950) this.lock = true;
         }
       } else if (this.gear !== 0) {
@@ -215,6 +220,10 @@ class SupraSim {
       (cfg.autoClutch ? I.brake > 0.25 : clutchPos > 0.5);
 
     // ---- farfalla e aria ------------------------------------------------------------
+    // esitazione: gas spalancato di colpo ai bassi giri, la miscela si smagrisce per un attimo e il motore "si siede"
+    const dThr = thrCmd - this.thr;
+    if (dThr > 0.02 && rpm < 3400 && this.running) this.hes = Math.min(0.6, (this.hes || 0) + dThr * 0.05 * (P.hesK ?? 0.3) * (1 - rpm / 3400) * 4);
+    this.hes = (this.hes || 0) * Math.exp(-h / 0.16);
     this.thr += (thrCmd - this.thr) * Math.min(1, h / 0.018);
     const rk = Math.max(rpm / 3000, 0.35), k = 4.2 / rk;
     const aThr = (1 - Math.exp(-k * this.thr)) / (1 - Math.exp(-k));
@@ -229,14 +238,28 @@ class SupraSim {
     this.air += (airT - this.air) * Math.min(1, h / 0.035);
 
     // ---- tagli d'iniezione/accensione -------------------------------------------------
+    // tipi di limitatore: taglio d'iniezione (di serie), soft cut a ritardo d'accensione, hard cut d'accensione (MSD),
+    // stutter box ritmato; il 2-step è un secondo limitatore per la partenza, il 3-step taglia durante le cambiate
+    const lt = tn.limType || (tn.sparkCut ? 'spark' : 'fuel');
+    this.softK = 1;
     if (this.running) {
-      if (this.cutLim) { if (rpm < P.limiter - P.limHyst) this.cutLim = false; } else if (rpm > P.limiter) this.cutLim = true;
-      if (this.launchArmed) { if (this.cutLaunch) { if (rpm < P.launchRpm - 150) this.cutLaunch = false; } else if (rpm > P.launchRpm) this.cutLaunch = true; }
+      const lim = P.limiter, hyst = lt === 'spark' || lt === 'stutter' ? 240 : lt === 'soft' ? 60 : P.limHyst;
+      if (lt === 'soft') {
+        // toglie anticipo negli ultimi 300 giri: la coppia sparisce senza strappi e il motore "galleggia" vibrando
+        this.softK = 1 - 0.95 * SIM_SS(lim - 300, lim + 40, rpm);
+        if (this.softK < 0.9 && Math.random() < h * 60 * (1 - this.softK)) this.misT = Math.max(this.misT || 0, 0.012);
+        const hard = lim + 140;
+        if (this.cutLim) { if (rpm < hard - 100) this.cutLim = false; } else if (rpm > hard) this.cutLim = true;
+      } else if (this.cutLim) { if (rpm < lim - hyst) this.cutLim = false; } else if (rpm > lim) this.cutLim = true;
+      // stutter box: da fermo (o in folle) limita ai giri di launch con un taglio a tempo, regolare come una mitragliatrice
+      this.stutter = lt === 'stutter' && Math.abs(this.v) < 1.5 && (this.gear === 0 || this.launchArmed) && I.thr > 0.5;
+      if (this.stutter) { this.stuT = ((this.stuT || 0) + h) % 0.13; this.cutLaunch = rpm > P.launchRpm - 350 && (this.stuT < 0.065 || rpm > P.launchRpm); }
+      else if (this.launchArmed) { if (this.cutLaunch) { if (rpm < P.launchRpm - 150) this.cutLaunch = false; } else if (rpm > P.launchRpm) this.cutLaunch = true; }
       else this.cutLaunch = false;
       if (this.thr < 0.02 && rpm > 1700 && !this.shiftSeq) this.dfco = true;
       if (this.thr > 0.03 || rpm < 1250) this.dfco = false;
     } else { this.cutLim = this.cutLaunch = this.dfco = false; }
-    this.cut = !this.running ? 0 : this.cutLaunch ? 3 : this.cutLim ? 2 : this.dfco ? 1 : 0;
+    this.cut = !this.running ? 0 : this.cutLaunch || this.flatCut ? 3 : this.cutLim ? 2 : this.dfco ? 1 : 0;
     this.ovr = this.cut === 1 ? this.ovr + h : 0;
     if (this.running && this.fuel <= 0) { this.running = false; this.stalled = true; this.dry = true; }
     const burning = this.running && this.cut === 0;
@@ -251,9 +274,9 @@ class SupraSim {
       frac = Math.pow(SIM_SS(tc.a, tc.b, rpm), 1.3); this.sec = 0;
     }
     let drive = frac * Math.pow(this.air, 1.3) * 1.18;
-    if (this.cut === 3) drive += 0.45 * SIM_SS(3000, 4300, rpm);      // anti-lag del 2-step
+    if (this.cut === 3) drive += (this.flatCut ? 0.8 : 0.45) * SIM_SS(3000, 4300, rpm);      // anti-lag del 2-step; nel flat shift la pressione resta
     else if (!burning) drive *= 0.15;
-    const closed = this.thr < 0.12;
+    const closed = this.thr < 0.12 && !this.flatCut;
     const tgtT = Math.min(1, Math.sqrt(SIM_CLAMP(drive, 0, 1))) * 0.92 + 0.08 * Math.min(1, rpm / 7000) * (0.3 + this.air);
     this.wg = SIM_CLAMP((drive - 1) * 3, 0, 1);
     const tau = tgtT > this.tur ? tc.up * ((tn.ic && tn.ic.lag) || 1) : (closed && cfg.valve === 'flutter' ? 0.5 : tc.down * (closed ? 1.6 : 1));
@@ -280,7 +303,7 @@ class SupraSim {
     const maintK = 1 - Math.max(0, 0.25 - (mt.oil ?? 1)) * 0.25;
     if (burning && (mt.plugs ?? 1) < 0.4 && Math.random() < (0.4 - mt.plugs) * h * 30) this.misT = 0.04 + Math.random() * 0.05;
     this.misT = Math.max(0, (this.misT || 0) - h);
-    const Tcomb = burning ? Tind * tn.pw * camF * lopeF * maintK * (1 - 0.18 * this.iat) * (this.misT > 0 ? 0.4 : 1) * Math.max(0, this.air * (1 + 0.78 * (tn.boostK || 1) * this.pipeP) - 0.1) / 0.9 : 0;
+    const Tcomb = burning ? Tind * tn.pw * camF * lopeF * maintK * (1 - 0.18 * this.iat) * (this.misT > 0 ? 0.4 : 1) * this.softK * (1 - (this.hes || 0)) * Math.max(0, this.air * (1 + 0.78 * (tn.boostK || 1) * this.pipeP) - 0.1) / 0.9 : 0;
     const Tfric = rpm > 0 ? 16 + 0.0035 * rpm + 0.9e-6 * rpm * rpm + 9 * (1 - this.air) * (rpm / 3000) : 0;
     let Tcomp = 0;
     if (!this.running && rpm > 0.5) Tcomp = -38 * Math.sin(3 * this.theta) * SIM_CLAMP(1 - rpm / 700, 0, 1);
@@ -293,7 +316,18 @@ class SupraSim {
     const slip = (vw - this.v) / Math.max(Math.abs(this.v), 2.5);
     // gomme: carico (con trasferimento in accelerazione), sensibilità al carico, temperatura e usura
     // carico sull'asse motore: in accelerazione il peso va dietro (aiuta la trazione posteriore, toglie a quella anteriore)
-    const Nr = SIM_CLAMP(P.mass * 9.81 * P.rearW + (P.fwd ? -1 : 1) * P.mass * this.acc * P.cgH / P.wb, 2500, 12000);
+    // la cassa è una massa sulle molle: il trasferimento di carico segue il beccheggio (si siede, sorpassa un po' e si assesta)
+    const pk = (tn.susp || {}).pitch || 1, wn = 2 * Math.PI * (1.25 / Math.sqrt(pk)), zeta = 0.42 + 0.28 * (1 - Math.min(1, pk));
+    this.pzV = (this.pzV || 0) + h * (wn * wn * (this.acc - (this.pz || 0)) - 2 * zeta * wn * (this.pzV || 0));
+    this.pz = (this.pz || 0) + h * this.pzV;
+    // saltellamento dell'assale (wheel hop): gomma che aggrappa e molla oltre il picco, a bassa velocità e con tanta coppia
+    const hopOn = this.gear > 0 && Math.abs(this.v) < 16 && Math.abs(this.kap || 0) > 0.08 && Math.abs(this.kap || 0) < 0.3 && this.Tc > 150;
+    const hopK = (((tn.tyre || {}).C || 1.42) > 1.5 ? 1.4 : 1) * (tn.diff === 'open' ? 0.8 : 1.1) * (((tn.susp || {}).launch || 1) > 1.06 ? 0.3 : 1);
+    this.hopE = SIM_CLAMP((this.hopE || 0) + h * (hopOn ? 1.1 * hopK : -4), 0, 0.8);
+    this.hopPh = ((this.hopPh || 0) + h * 10.5) % 1;
+    const hopF = 1 + 0.26 * this.hopE * Math.sin(this.hopPh * 6.2832);
+    if (this.hopE > 0.3 && this.hopPh < h * 10.5) this.events.push({ type: 'bump', I: 0.25 * this.hopE });
+    const Nr = SIM_CLAMP((P.mass * 9.81 * P.rearW + (P.fwd ? -1 : 1) * P.mass * this.pz * P.cgH / P.wb) * hopF, 2500, 12000);
     // differenziale: aperto (la ruota scarica gira a vuoto), Torsen (ripartisce), autobloccante (blocca)
     const dk = tn.diff === 'lsd' ? 1 : tn.diff === 'torsen' ? 0.96 : 0.87;
     // assetto: in partenza un posteriore che si "siede" (o un anteriore che non si alza) carica le ruote motrici
@@ -367,7 +401,7 @@ class SupraSim {
   audioParams() {
     const P = this.P, vw = this.ww * P.r;
     return {
-      rpm: this.rpm, charge: this.charge, air: this.air, thr: this.thr, boost: this.pipeP, turbo: this.tur,
+      rpm: this.rpm, charge: this.charge * (0.35 + 0.65 * (this.softK ?? 1)), soft: 1 - (this.softK ?? 1), air: this.air, thr: this.thr, boost: this.pipeP, turbo: this.tur,
       cut: this.cut, ovr: this.ovr, running: this.running ? 1 : 0, starter: this.starter ? 1 : 0,
       speed: Math.abs(this.v), spin: SIM_CLAMP((Math.abs(vw - this.v) - 1.5) / 5, 0, 1), abs: this.abs ? 1 : 0, tc: this.tcAct ? 1 : 0, iat: this.iat || 0,
       drive: Math.abs(this.Tc * this.ratio(this.gear)) / 3000, gearRpm: this.ww * this.ratio(this.gear) * 9.5493,

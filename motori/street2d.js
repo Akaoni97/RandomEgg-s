@@ -1300,7 +1300,7 @@ class Street2D {
     // assetto: cassa solida, quasi criticamente smorzata (niente rimbalzi), beccheggio dalla vera accelerazione
     // e dalla rigidità dell'assetto montato; in partenza la coda si siede e il muso si alza
     const susp = (this.carLook && this.carLook.susp) || 1, kP = 300 / (0.55 + 0.45 * susp), cP = 2 * 0.92 * Math.sqrt(kP);
-    const tgtP = Math.max(-0.1, Math.min(0.1, (s.acc || 0) * 0.0105 * susp)) + (bF - bR) * 0.0035;
+    const tgtP = Math.max(-0.1, Math.min(0.1, (s.pz ?? s.acc ?? 0) * 0.0105 * susp)) + (bF - bR) * 0.0035;
     st.pv += ((tgtP - st.pitch) * kP - st.pv * cP) * dt; st.pitch += st.pv * dt;
     st.hv += (((bF + bR) / 2 * 0.7 - st.heave) * 340 - st.hv * 2 * 0.9 * Math.sqrt(340)) * dt; st.heave += st.hv * dt;
     // partenza e velocità: lancio (spinta forte da quasi fermi), zoom della ripresa
@@ -1537,7 +1537,7 @@ class Street2D {
       g.setTransform(1, 0, 0, -0.55, left, y0 + hgt * 0.55 + 2); g.drawImage(spr, 0, 0); g.restore();
     }
     st.popJolt = Math.max(0, (st.popJolt || 0) - dt * 10);
-    const heave = Math.round(-st.heave + idleShake * 0.6 - (st.popJolt > 0.3 ? 1 : 0));
+    const heave = Math.round(-st.heave + idleShake * 0.6 - (st.popJolt > 0.3 ? 1 : 0) + (s.hop || 0) * 1.6);   // saltellamento dell'assale
     const skew = -st.pitch * 0.8;
     const squash = Math.max(-0.06, Math.min(0.08, -st.pitch * 0.35));
     const GE = this.geo(), archY = GE.wy * k + 1, top = y0 - GE.wr * k - archY * (1 - squash) + heave + GE.low * k;

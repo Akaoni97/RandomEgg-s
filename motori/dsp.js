@@ -228,6 +228,8 @@ class EngineDSP {
       // camme lunghe: incrocio delle valvole, qualche ciclo debole e "sporco"
       if (lope > 0 && Math.abs(this.r()) < 0.09 * lope) jitter *= 0.35 + 0.3 * Math.abs(this.r());
       comb = Math.pow(ch, 0.9) * jitter;
+      // soft cut: anticipo tolto a caso cilindro per cilindro, il motore ronza e sputacchia contro il limite
+      if (T.soft > 0.04 && Math.abs(this.r()) < T.soft * 0.7) { comb *= 0.12 + 0.2 * Math.abs(this.r()); if (Math.abs(this.r()) < T.soft * 0.25) this.addPop(false); }
       // ogni scoppio dà una piccola spinta all'albero: la velocità oscilla dentro il ciclo
       this.flu += (0.03 + 0.05 * lope) * comb * Math.min(1, 1100 / Math.max(S.rpm, 300));
       if (S.rattle > 0.01) this.rattle += S.rattle * (0.6 + 0.4 * Math.abs(this.r()));

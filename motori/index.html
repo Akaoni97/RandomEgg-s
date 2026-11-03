@@ -792,7 +792,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
         <label class="tg"><input type="checkbox" id="tAuto">Frizione automatica</label>
         <label class="tg"><input type="checkbox" id="tRev">Doppietta in scalata</label>
         <label class="tg"><input type="checkbox" id="tPops">Mappa pop &amp; bang</label>
-        <label class="tg"><input type="checkbox" id="tLaunch">Launch control 4300</label>
+        <label class="tg"><input type="checkbox" id="tLaunch"><span id="tLaunchL">Launch control 4300</span></label>
         <label class="tg"><input type="checkbox" id="tLane">Sorpasso automatico</label>
         <label class="tg"><input type="checkbox" id="tTc">Controllo di trazione</label>
       </div>
@@ -802,6 +802,13 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <div class="field"><span>Radio</span>
         <div class="vol"><input type="range" id="radioVol" min="0" max="100" value="30" aria-label="Volume della radio"><output id="radioVolOut">30</output></div>
       </div>
+      <div class="field"><span>Limitatore</span>
+        <div class="vol"><input type="range" id="limRpm" min="4500" max="9000" step="100" value="7000" aria-label="Giri del limitatore"><output id="limOut">7000</output></div>
+      </div>
+      <div class="field"><span>Giri del launch</span>
+        <div class="vol"><input type="range" id="lchRpm" min="2500" max="6500" step="100" value="4300" aria-label="Giri del 2-step e dello stutter box"><output id="lchOut">4300</output></div>
+      </div>
+      <p class="hint" id="limHint"></p>
       <p class="hint" id="ecuHint"></p>
     </div>
   </section>
@@ -1093,13 +1100,22 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     $('carSw').value = carId;
     TP.sim.pw = (TP.sim.pw || 1) * game.perkPow(); TP.sim.mu = (TP.sim.mu || sim.P.mu || 1.1) * game.perkGrip();   // traguardi di chilometri
     sim.quickShift = game.hasPerk('mano');
+    // limitatore regolabile dal pilota (fino al massimo della centralina) e giri del launch, per auto
+    S.limRpm = S.limRpm || {}; S.lchRpm = S.lchRpm || {};
+    const limMax = TP.sim.limiter, limR = Math.min(limMax, S.limRpm[carId] || limMax);
+    TP.sim.limiter = limR;
     sim.setTune(TP.sim);
+    sim.P.launchRpm = clamp(S.lchRpm[carId] || (CARS[carId].P || {}).launchRpm || 4300, 2500, limR - 400);
+    { const li = tuningItemOf(TUNING, 'limiter', S.tune.limiter), lt = TP.sim.limType;
+      $('limRpm').max = limMax; $('limRpm').value = limR; $('limOut').textContent = limR; $('lchRpm').max = limR - 400; $('lchRpm').value = sim.P.launchRpm; $('lchOut').textContent = sim.P.launchRpm;
+      $('tLaunchL').textContent = `${lt === 'stutter' ? 'Stutter box' : 'Launch control'} ${sim.P.launchRpm}`;
+      $('limHint').textContent = `Limitatore montato: ${li.brand} ${li.name}${lt === 'spark' && li.id === 'oem' ? ' (la centralina taglia l’accensione)' : ''}.` + (TP.sim.flatShift ? ' 3-step: in salita tieni il gas a fondo mentre cambi.' : '') + (lt === 'stutter' ? ' Da fermo, in folle, gas a fondo.' : ''); }
     Object.assign(sim.cfg, { pops: S.pops && TP.sim.ecuPops, launch: S.launch, autoClutch: S.autoClutch, revMatch: S.revMatch, tc: S.tc !== false });
     if (garage) { garage.setTips(TP.dsp.ex.tips); garage.setPaint(S.paint); }
     if (street2d) { street2d.setCosmetics(cosView()); street2d.setCar(carId, TP.look, carPaint()); }
     renderTuning();
-    $('tPops').disabled = $('tLaunch').disabled = !TP.sim.ecuPops;
-    $('ecuHint').textContent = TP.sim.ecuPops ? '' : 'Pop & bang e launch control richiedono una centralina programmabile: montala nel reparto tuning.';
+    $('tPops').disabled = !TP.sim.ecuPops; $('tLaunch').disabled = !TP.sim.ecuLaunch;
+    $('ecuHint').textContent = (TP.sim.ecuPops ? '' : 'La mappa pop & bang richiede una centralina programmabile. ') + (TP.sim.ecuLaunch ? '' : 'Per il launch serve un limitatore 2-step (reparto Limitatore) o una centralina programmabile.');
     if (!S.autoClutch) sim.lock = false;
     audio.send({ cfg: dspCfg() });
     document.querySelectorAll('.seg[data-k]').forEach((seg) => {
@@ -1131,6 +1147,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   $('tPops').addEventListener('change', (e) => { S.pops = e.target.checked; applySettings(); });
   $('tLane').addEventListener('change', (e) => { S.autoLane = e.target.checked; game.manualT = 0; applySettings(); flash(S.autoLane ? 'Sorpasso automatico: la Supra cambia corsia da sola' : 'Guida a mano: tieni premuto A o D e sterzi dove vuoi. Occhio ai tamponamenti', 2.4); });
   $('tLaunch').addEventListener('change', (e) => { S.launch = e.target.checked; applySettings(); if (S.launch) flash(S.autoClutch ? 'Launch: in 1ª tieni il freno, gas a fondo, poi molla il freno' : 'Launch: frizione giù, gas a fondo, poi rilascia la frizione'); });
+  $('limRpm').addEventListener('input', (e) => { S.limRpm = S.limRpm || {}; S.limRpm[game.car] = +e.target.value; applySettings(); });
+  $('lchRpm').addEventListener('input', (e) => { S.lchRpm = S.lchRpm || {}; S.lchRpm[game.car] = +e.target.value; applySettings(); });
   $('vol').addEventListener('input', (e) => { S.vol = +e.target.value; S.muted = false; applySettings(); });
   if (radio) {
     $('radioVol').value = Math.round(radio.vol * 100); $('radioVolOut').textContent = $('radioVol').value;
@@ -2543,7 +2561,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       const liftT = sim.cfg.pops ? 2.8 : 1.1;
       flameT = (sim.cut === 2 || sim.cut === 3) && TP.sim.sparkCut ? 1
         : sim.cut === 1 && sim.ovr < liftT && sim.rpm > 2200 && (game.car === 'supra' || TP.sim.ecuPops) ? (sim.cfg.pops ? 0.6 : 0.38) * (1 - sim.ovr / liftT) * Math.min(1, sim.rpm / 4500) * TP.dsp.cat.pop : 0;
-      const vs = { v: sim.v, ww: sim.ww, acc: sim.acc, rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
+      const vs = { v: sim.v, ww: sim.ww, acc: sim.acc, pz: sim.pz, hop: (sim.hopE || 0) * Math.sin((sim.hopPh || 0) * 6.2832), rpm: sim.rpm, running: sim.running, lope: TP.sim.lope, torque: sim.Tc,
         ign: sim.ign, brake: sim.in.brake, flame: flameT, spin: Math.min(1, Math.max(0, (Math.abs(sim.ww * sim.P.r - sim.v) - 1.5) / 5)),
         thr: sim.thr, events: ev, skid: sim.skid, damage: sim.damage, tireT: sim.tireT, gear: sim.gear, signal: game.signal ? game.signal.dir : null, high: !!S.high };
       garage.update(dt, vs, game);

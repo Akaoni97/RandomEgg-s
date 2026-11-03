@@ -85,7 +85,8 @@ const TUNING_SUPRA = {
       { id: 'haltech', price: 2600, brand: 'Haltech', name: 'Elite 2500', note: 'Taglio d’accensione a 7600, launch control, mappa pop & bang.', sim: { lim: 7600, spark: true, launch: true, pops: true } },
       { id: 'link', price: 2100, brand: 'Link', name: 'G4X', note: 'Taglio d’accensione a 7500, launch control, mappa pop & bang.', sim: { lim: 7500, spark: true, launch: true, pops: true } },
     ],
-  },
+  },  limiter: null,
+
   tires: {
     label: 'Gomme posteriori',
     items: [
@@ -162,6 +163,29 @@ function tuningItem(cat, id) {
   return c.items.find((i) => i.id === id) || c.items[0];
 }
 
+// limitatore: stesso reparto per tutte le auto, scatole e centraline della scena drag/street americana
+const LIMITER_CAT = {
+  label: 'Limitatore',
+  items: [
+    { id: 'oem', price: 0, km: 0, brand: 'Di serie', name: 'Taglio d’iniezione', note: 'Al limite chiude gli iniettori: i giri rimbalzano piano, niente scoppi.', sim: { lt: 'fuel' } },
+    { id: 'soft', price: 450, km: 6, brand: 'Holley', name: 'Soft cut a ritardo d’accensione', note: 'Come le centraline da strada americane: negli ultimi 300 giri toglie anticipo, il motore galleggia contro il limite ronzando e sputacchiando, senza strappi.', sim: { lt: 'soft' } },
+    { id: 'msd', price: 600, km: 10, brand: 'MSD', name: '6AL hard cut (taglio d’accensione)', note: 'La scatola rossa dei drag: taglia le scintille, la benzina arriva incombusta nello scarico ed esplode. Al limite bang e fiamme.', sim: { lt: 'spark' } },
+    { id: '2step', price: 850, km: 16, brand: 'MSD', name: '6AL-2 con 2-step', note: 'Secondo limitatore per la partenza: da fermo, launch inserito (L), freno o frizione e gas a fondo, il motore resta ai giri di launch sparando e il turbo si carica.', sim: { lt: 'spark', twoStep: true } },
+    { id: '3step', price: 1300, km: 28, brand: 'Holley', name: 'EFI 2-step + 3-step (flat shift)', note: 'In più il terzo stadio: cambi senza alzare il piede, la centralina taglia per un attimo, la pressione resta e la marcia entra prima. Ogni cambiata è un colpo di fucile.', sim: { lt: 'spark', twoStep: true, flat: true } },
+    { id: 'stutter', price: 700, km: 20, brand: 'Stutter box', name: 'Limitatore ritmato “brap-brap”', note: 'La moda dei muscle e dei pick-up americani: da fermo (in folle o col launch) taglia a tempo, regolare come una mitragliatrice, ai giri di launch.', sim: { lt: 'stutter', twoStep: true } },
+  ],
+};
+TUNING_SUPRA.limiter = LIMITER_CAT;
+// applica il limitatore scelto ai parametri della fisica e del suono
+function applyLimiter(out, item, ecuSim) {
+  const L = (item && item.sim) || { lt: 'fuel' };
+  const spark = L.lt === 'spark' || L.lt === 'stutter' || (L.lt === 'fuel' && !!ecuSim.spark);
+  out.sim.limType = L.lt === 'fuel' && ecuSim.spark ? 'spark' : L.lt;
+  out.sim.sparkCut = spark; out.sim.ecuLaunch = !!(ecuSim.launch ?? ecuSim.spark) || !!L.twoStep; out.sim.flatShift = !!L.flat;
+  out.dsp.spark = spark ? 1 : 0;
+  return out;
+}
+
 // parametri dell'auto in uso (le altre auto registrano la loro funzione in cars.js)
 function tuningParams(sel) {
   const car = typeof ACTIVE_CAR !== 'undefined' ? ACTIVE_CAR : 'supra';
@@ -171,6 +195,9 @@ function tuningParams(sel) {
 // trasforma la selezione in parametri per la fisica e per il DSP (Supra)
 function supraParams(sel) {
   const g = (k) => tuningItemOf(TUNING_SUPRA, k, sel[k]);
+  return applyLimiter(supraParamsBase(sel, g), g('limiter'), g('ecu').sim);
+}
+function supraParamsBase(sel, g) {
   const tb = g('turbo'), ecu = g('ecu'), cams = g('cams'), cl = g('clutch');
   // con una centralina programmabile i turbo di serie reggono circa 1 bar
   const turbo = tb.sim.twin && ecu.id !== 'oem' ? Object.assign({}, tb.sim, { max: 1.0 }) : tb.sim;
