@@ -974,6 +974,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 
   const sim = new SupraSim();
   const game = new StreetGame(sim);
+  let themeReady = false;
   try { const g = localStorage.getItem('nightrun'); if (g) { game.load(g); if (typeof game.s.fuel === 'number') sim.fuel = game.s.fuel; if (game.s.car) { sim.damage = game.s.car.damage || 0; sim.tireWear = game.s.car.tireWear || 0; } } } catch (e) { /* storage non disponibile */ }
   const saveGame = () => { game.s.fuel = sim.fuel; game.s.car = { damage: sim.damage, tireWear: sim.tireWear }; try { localStorage.setItem('nightrun', game.save()); } catch (e) { /* ignora */ } };
   const S = { tune: Object.assign({}, TUNING_PRESETS[0].sel), pops: false, launch: false, autoClutch: true, revMatch: true, view: 0, vol: 80, muted: false, mix: 70, paint: '#c81d11', look: '2d' };
@@ -1117,6 +1118,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     $('tPops').disabled = !TP.sim.ecuPops; $('tLaunch').disabled = !TP.sim.ecuLaunch;
     $('ecuHint').textContent = (TP.sim.ecuPops ? '' : 'La mappa pop & bang richiede una centralina programmabile. ') + (TP.sim.ecuLaunch ? '' : 'Per il launch serve un limitatore 2-step (reparto Limitatore) o una centralina programmabile.');
     if (!S.autoClutch) sim.lock = false;
+    if (themeReady && S.ui === 'orig' && TH.name !== 'Originale ' + carId) applyTheme('orig');   // quadro dell'auto appena scelta
     audio.send({ cfg: dspCfg() });
     document.querySelectorAll('.seg[data-k]').forEach((seg) => {
       const k = seg.dataset.k;
@@ -1242,7 +1244,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'p') radioNext();
     else if (k === 'u') placeKey();
     else if (k === 'z') toggleFs();
-    else if (k === 'j') { S.hudG = S.hudG === false; flash(S.hudG ? 'Strumenti in gioco: accesi' : 'Strumenti in gioco: spenti', 1.2); try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } }
+    else if (k === 'j') { const st = S.hudG === false ? 0 : S.hudStyle === 'anime' ? 2 : 1, nx = (st + 1) % 3; S.hudG = nx !== 0; S.hudStyle = nx === 2 ? 'anime' : 'orig';
+      flash(nx === 0 ? 'Strumenti in gioco: spenti' : nx === 1 ? 'Strumenti in gioco: quadro originale dell\'auto' : 'Strumenti in gioco: stile anime', 1.4); try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } }
     else if (k === 'k') cycleMeteo();
     else if (k === 'g') openShowroom();
     else if (k === 'x') takePhoto();
@@ -1319,10 +1322,16 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   let FD = C('--f-display'); const FM = C('--f-data');
 
   function gaugeDefs(compact) {
-    const tach = { id: 'tach', min: 0, max: 9, major: 1, minor: 0.25, red: 7, label: (v) => v, title: 'x1000 r/min' };
-    const speed = { id: 'speed', min: 0, max: 320, major: 20, minor: 10, labelEvery: 40, label: (v) => v, title: 'km/h' };
+    const cl = TH.g.cl;   // quadro originale dell'auto (stile "Originale")
+    const tach = { id: 'tach', min: 0, max: cl ? cl.tach : 9, major: 1, minor: 0.25, red: cl ? cl.red : 7, label: (v) => v, title: 'x1000 r/min' };
+    const spMax = cl ? cl.speed : 320;
+    const speed = { id: 'speed', min: 0, max: spMax, major: 20, minor: 10, labelEvery: spMax <= 200 ? 20 : 40, label: (v) => v, title: 'km/h' };
     const boost = { id: 'boost', min: -1, max: 2.5, major: 0.5, minor: 0.1, red: 2.1, label: (v) => fmt(v, v % 1 ? 1 : 0), title: 'turbo · bar', zero: 0 };
     if (!compact) {
+      if (cl && !cl.tachMid) {   // BMW, Volvo, Jaeger: tachimetro e contagiri grandi affiancati, strumento piccolo a destra
+        const R2 = H * 0.43, Ra = H * 0.27, gap2 = H * 0.04;
+        return [Object.assign(speed, { x: W / 2 - R2 - gap2 / 2 - Ra * 0.6, y: H * 0.5, R: R2 }), Object.assign(tach, { x: W / 2 + R2 + gap2 / 2 - Ra * 0.6, y: H * 0.5, R: R2 }), Object.assign(boost, { x: W / 2 + 2 * R2 + gap2 + Ra * 0.55, y: H * 0.6, R: Ra })];
+      }
       const Rt = H * 0.46, Rs = H * 0.37, gap = H * 0.05, off = Rt + Rs + gap;
       return [Object.assign(speed, { x: W / 2 - off, y: H * 0.53, R: Rs }), Object.assign(tach, { x: W / 2, y: H * 0.5, R: Rt }), Object.assign(boost, { x: W / 2 + off, y: H * 0.53, R: Rs })];
     }
@@ -1364,10 +1373,18 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       vars: { '--bg': '#07060f', '--bg-2': '#0d0b18', '--panel': '#110e20', '--panel-2': '#191430', '--line': '#2ee6ff', '--fg': '#ffffff', '--muted': '#9fe8ff', '--dial': '#e9f9ff', '--amber': '#2ee6ff', '--lime': '#b8ff3a', '--needle': '#ffe14d', '--ok': '#b8ff3a', '--crit': '#ff2e88', '--pink': '#ff2e88', '--f-display': '"Permanent Marker", "Comic Sans MS", cursive', '--panel-bg': 'radial-gradient(rgba(255,46,136,.16) 1.2px, transparent 1.4px) 0 0 / 9px 9px, #0d0b18' },
       g: { bez: ['#0d0b18', '#0d0b18', '#0d0b18'], face: ['#120f22', '#0a0814'], halftone: true, ring: '#2ee6ff', ringStrong: true, glow: null, tickGlow: 'rgba(46,230,255,.8)', redTick: '#ff2e88', redNum: '#ff2e88', needleGlow: 'rgba(255,225,77,.9)', hub: ['#ffe14d', '#b89a10'], lcd: ['#0d0b18', '#ff2e88'], gearGlow: true } },
   };
-  let TH = UI_THEMES[S.ui] || UI_THEMES.garage;
+  UI_THEMES.orig = { name: 'Originale dell\'auto', note: 'il quadro vero di ogni auto', vars: UI_THEMES.garage.vars, g: { face: ['#101114', '#050506'], bez: ['#3a3b40', '#121316', '#26272c'] } };
+  // stile "Originale": materiali del quadro presi dalla scheda dell'auto (CLUSTERS in cars.js)
+  function origTheme() {
+    const cl = (CARS[game.car] || CARS.supra).cluster || CLUSTERS.supra;
+    return Object.assign({}, UI_THEMES.orig, { name: 'Originale ' + game.car, g: {
+      cl, bez: cl.bez, face: cl.face, ring: cl.chrome ? 'rgba(230,236,245,.55)' : null, glow: cl.glow, tickGlow: cl.glow, redTick: '#ff3a24', redNum: '#ff3a24',
+      needleGlow: cl.glow, hub: ['#3a3b3e', '#080809'], lcd: ['#060607', '#2a2b2e'], lcdText: cl.lcd, gearGlow: false, dial: cl.num, needle: cl.needle, title: cl.num, unlit: '#3a3d42', screws: !!cl.chrome } });
+  }
+  let TH = UI_THEMES[S.ui === 'orig' ? 'garage' : S.ui] || UI_THEMES.garage;
 
   function drawFace(g, lit) {
-    const key = TH.name + g.id + lit + Math.round(g.R);
+    const key = TH.name + g.id + lit + Math.round(g.R) + g.red;
     if (faceCache.has(key)) return faceCache.get(key);
     const T = TH.g, R = g.R, pad = R * 0.12, size = Math.ceil((R + pad) * 2 * DPR);
     const oc = document.createElement('canvas'); oc.width = oc.height = size;
@@ -1390,7 +1407,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (lit && T.glow) { const gl = c.createRadialGradient(0, R * 0.45, R * 0.05, 0, R * 0.45, R); gl.addColorStop(0, T.glow); gl.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gl; c.fillRect(-R, -R, R * 2, R * 2); }
     c.restore();
     if (T.outline) { c.lineWidth = R * 0.05; c.strokeStyle = '#111'; c.beginPath(); c.arc(0, 0, R * 1.0, 0, Math.PI * 2); c.stroke(); }
-    const fg = lit || T.outline ? COL.dial : (T.unlit || '#4a4f57');
+    const fg = lit || T.outline ? (T.dial || COL.dial) : (T.unlit || '#4a4f57');
+    if (lit && T.cl) { c.shadowColor = T.glow; c.shadowBlur = R * 0.05; }
     // zona rossa
     if (g.red !== undefined) {
       if (T.stripes) {
@@ -1418,7 +1436,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       c.stroke();
     }
     c.fillStyle = fg; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = `400 ${Math.round(R * (g.id === 'tach' ? 0.18 : 0.14))}px ${FD}`;
+    c.font = `400 ${Math.round(R * (g.id === 'tach' ? 0.18 : 0.14))}px ${T.cl ? T.cl.font : FD}`;
     const every = g.labelEvery || g.major, m = Math.round((g.max - g.min) / every);
     for (let i = 0; i <= m; i++) {
       const v = +(g.min + i * every).toFixed(3), a = ang(g, v), rr = R * (g.id === 'tach' ? 0.64 : 0.63);
@@ -1430,7 +1448,14 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     c.fillStyle = lit ? (T.title || COL.muted) : '#3a3f46';
     c.font = `600 ${Math.round(R * 0.075)}px ${FM}`;
     c.fillText(g.title.toUpperCase(), 0, -R * 0.3);
-    if (g.id === 'tach') { c.font = `400 ${Math.round(R * 0.07)}px ${FD}`; c.fillText('TOYOTA 2JZ-GTE · 24V DOHC', 0, R * 0.2); }
+    if (g.id === 'tach') {
+      const cl = T.cl;
+      if (cl) { c.font = `500 ${Math.round(R * 0.052)}px ${cl.font}`; c.fillText(cl.model, 0, -R * 0.19); } else { c.font = `400 ${Math.round(R * 0.07)}px ${FD}`; c.fillText('TOYOTA 2JZ-GTE · 24V DOHC', 0, R * 0.2); }
+      if (cl) { c.font = `700 ${Math.round(R * 0.11)}px ${cl.font}`; c.fillText(cl.brand, 0, -R * 0.45); }
+      if (cl && cl.m) for (const [k, col] of [[-1, '#5bc0ff'], [0, '#1a3d9a'], [1, '#e8282b']]) { c.fillStyle = col; c.fillRect(k * R * 0.07 - R * 0.032, -R * 0.36, R * 0.064, R * 0.035); }
+    }
+    if (g.id === 'speed' && T.cl) { c.font = `700 ${Math.round(R * 0.1)}px ${T.cl.font}`; c.fillText(T.cl.brand.split(' ')[0], 0, -R * 0.45); }
+    if (g.id === 'boost' && T.cl) { c.font = `600 ${Math.round(R * 0.09)}px ${FM}`; c.fillText(T.cl.aux === 'BOOST' || T.cl.aux === 'TURBO' || T.cl.aux === 'LADEDRUCK' ? T.cl.aux : 'BOOST · RETROFIT', 0, R * 0.25); }
     if (T.screws) for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4, x = Math.cos(a) * R * 1.03, y = Math.sin(a) * R * 1.03;
       c.fillStyle = '#5c564b'; c.beginPath(); c.arc(x, y, R * 0.028, 0, Math.PI * 2); c.fill();
       c.strokeStyle = '#1c1a16'; c.lineWidth = R * 0.008; c.beginPath(); c.moveTo(x - R * 0.018, y - R * 0.006); c.lineTo(x + R * 0.018, y + R * 0.006); c.stroke(); }
@@ -1447,7 +1472,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     const w = T.needleOutline ? 1.8 : 1;
     ctx.beginPath();
     ctx.moveTo(-R * 0.16, -R * 0.022 * w); ctx.lineTo(R * 0.86, -R * 0.007 * w); ctx.lineTo(R * 0.9, 0); ctx.lineTo(R * 0.86, R * 0.007 * w); ctx.lineTo(-R * 0.16, R * 0.022 * w);
-    ctx.closePath(); ctx.fillStyle = lit ? COL.needle : '#8a3a1e'; ctx.fill();
+    ctx.closePath(); ctx.fillStyle = lit ? (T.needle || COL.needle) : '#8a3a1e'; ctx.fill();
     if (T.needleOutline) { ctx.shadowBlur = 0; ctx.lineWidth = R * 0.014; ctx.strokeStyle = '#111'; ctx.stroke(); }
     if (T.needleTip && lit) { ctx.shadowBlur = 0; ctx.fillStyle = T.needleTip; ctx.fillRect(R * 0.62, -R * 0.012, R * 0.2, R * 0.024); }
     ctx.restore();
@@ -1467,14 +1492,14 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
 
   // applica uno stile: variabili CSS, classe sul body, colori del quadro, quadro dell'abitacolo
   function applyTheme(id) {
-    TH = UI_THEMES[id] || UI_THEMES.garage; S.ui = UI_THEMES[id] ? id : 'garage';
+    TH = id === 'orig' ? origTheme() : UI_THEMES[id] || UI_THEMES.garage; S.ui = UI_THEMES[id] ? id : 'garage';
     const root = document.documentElement;
     for (const [k, v] of Object.entries(TH.vars)) root.style.setProperty(k, v);
     document.body.className = document.body.className.replace(/\bui-\S+/g, '').trim() + ' ui-' + S.ui;
     const css2 = getComputedStyle(root), C2 = (n) => css2.getPropertyValue(n).trim();
     Object.assign(COL, { dial: C2('--dial'), needle: C2('--needle'), crit: C2('--crit'), amber: C2('--amber'), muted: C2('--muted'), ok: C2('--ok') });
     FD = C2('--f-display');
-    faceCache.clear();
+    faceCache.clear(); if (W) G = gaugeDefs(W < 640);
     document.querySelectorAll('#uiThemes button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ui === S.ui)));
     try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (e) { /* ignora */ }
   }
@@ -1488,6 +1513,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     disp.rpm += (sim.rpm - disp.rpm) * 0.55;
     disp.kmh += (sim.kmh - disp.kmh) * 0.25;
     disp.boost += (boostVal - disp.boost) * 0.3;
+    const cl0 = TH.g.cl;
+    if (cl0 && cl0.varRed) { const tg = G.find((q) => q.id === 'tach'); if (tg) tg.red = sim.oilT < 50 ? 4.5 : sim.oilT < 65 ? 5.5 : sim.oilT < 78 ? 6.5 : cl0.red; }   // E36: zona rossa che si sposta col motore freddo
     for (const g of G) {
       const f = drawFace(g, lit), pad = g.R * 0.12;
       ctx.drawImage(f, g.x - g.R - pad, g.y - g.R - pad, (g.R + pad) * 2, (g.R + pad) * 2);
@@ -2106,6 +2133,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     if (c.width !== hudG.W) { c.width = hudG.W; c.height = hudG.H; }
     const g = c.getContext('2d'), W = hudG.W, H = hudG.H, lit = sim.ign, t = hudG.t;
     g.clearRect(0, 0, W, H);
+    if (S.hudStyle !== 'anime') { drawHudOrig(g, W, H, lit, t); return; }
     // pannello inclinato con ombra a fumetto e retino
     const poly = (ox, oy, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(8 + ox, 6 + oy); g.lineTo(W - 2 + ox, 6 + oy); g.lineTo(W - 8 + ox, H - 2 + oy); g.lineTo(2 + ox, H - 2 + oy); g.closePath(); g.fill(); };
     poly(2, 2, HG.pink); poly(-1, -1, HG.ink); poly(0, 0, HG.panel);
@@ -2168,6 +2196,69 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (comboN > 1) pxText(g, 'COMBO ' + comboN, 64, 76, HG.lime, 1);
   }
 
+
+  // ---------------------------------------------------------------- strumenti in gioco nello stile del quadro originale dell'auto
+  function drawHudOrig(g, W, H, lit, t) {
+    const cl = (CARS[game.car] || CARS.supra).cluster || CLUSTERS.supra, rpm = lit ? sim.rpm : 0, kmh = Math.abs(sim.v) * 3.6;
+    const blink = Math.floor(t * 14) % 2 === 0, z = shiftZone();
+    const over = lit && (sim.cut === 2 || rpm >= z.hi), inZone = lit && !over && rpm >= z.lo && sim.gear > 0 && sim.gear < sim.topGear();
+    // cruscotto: palpebra scura con il bordo del colore del quadro
+    g.fillStyle = 'rgba(0,0,0,.55)'; g.beginPath(); g.roundRect ? g.roundRect(1, 12, W - 2, H - 13, 10) : g.rect(1, 12, W - 2, H - 13); g.fill();
+    g.strokeStyle = cl.bez[0]; g.lineWidth = 1; g.stroke();
+    const red = cl.varRed ? (sim.oilT < 50 ? 4.5 : sim.oilT < 65 ? 5.5 : sim.oilT < 78 ? 6.5 : cl.red) : cl.red;
+    const dial = (cx, cy, R, max, redAt, val, labels, every, title) => {
+      const a0 = Math.PI * 0.75, sw = Math.PI * 1.5, A = (v) => a0 + sw * Math.min(1, Math.max(0, v / max));
+      g.fillStyle = cl.bez[2]; g.beginPath(); g.arc(cx, cy, R + 2, 0, 7); g.fill();
+      g.fillStyle = cl.chrome ? '#b8bec8' : cl.bez[0]; g.beginPath(); g.arc(cx, cy, R + 1, 0, 7); g.fill();
+      g.fillStyle = cl.face[0]; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fill();
+      if (lit) { const gl = g.createRadialGradient(cx, cy + R * 0.4, 1, cx, cy, R); gl.addColorStop(0, cl.glow); gl.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gl; g.fillRect(cx - R, cy - R, R * 2, R * 2); }
+      const num = lit ? cl.num : '#3a3d42';
+      if (redAt) for (let v = redAt; v <= max; v += max / 80) { const a = A(v); g.fillStyle = lit ? '#ff3a24' : '#4a1612'; g.fillRect(Math.round(cx + Math.cos(a) * (R - 2)), Math.round(cy + Math.sin(a) * (R - 2)), 2, 2); }
+      for (let v = 0; v <= max + 1e-6; v += every / 2) {
+        const a = A(v), maj = Math.abs(v / every - Math.round(v / every)) < 1e-6, r0 = R - (maj ? 4 : 2);
+        g.fillStyle = redAt && v >= redAt ? (lit ? '#ff5a3a' : '#4a1612') : num;
+        for (let r = r0; r < R - 0.5; r++) g.fillRect(Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r), 1, 1);
+        if (maj && labels && (R > 24 || Math.round(v / every) % 2 === 0)) { const l = String(Math.round(v / labels)), rr = R - 9; pxText(g, l, Math.round(cx + Math.cos(a) * rr - pxW(l, 1) / 2), Math.round(cy + Math.sin(a) * rr - 2), redAt && v >= redAt ? (lit ? '#ff5a3a' : '#4a1612') : num, 1); }
+      }
+      if (title) pxText(g, title, Math.round(cx - pxW(title, 1) / 2), R > 24 ? cy - Math.round(R * 0.36) : cy + 5, lit ? cl.num : '#3a3d42', 1);
+      // lancetta a pixel con alone
+      const a = A(val), L = R - 3;
+      for (let r = -3; r < L; r += 0.5) { const x = Math.round(cx + Math.cos(a) * r), y = Math.round(cy + Math.sin(a) * r); g.fillStyle = lit ? cl.needle : '#6a2a14'; g.fillRect(x, y, r < L * 0.7 ? 2 : 1, r < L * 0.7 ? 2 : 1); }
+      g.fillStyle = '#2a2b2e'; g.fillRect(cx - 2, cy - 2, 4, 4); g.fillStyle = '#0a0a0b'; g.fillRect(cx - 1, cy - 1, 2, 2);
+    };
+    const lcdBox = (x, y, w, txt, col) => { g.fillStyle = '#050506'; g.fillRect(x, y, w, 8); g.fillStyle = '#2a2b2e'; g.fillRect(x, y + 8, w, 1); pxText(g, txt, x + w - 1 - pxW(txt, 1), y + 2, lit ? col : '#2a2b2e', 1); };
+    const spEvery = cl.speed <= 200 ? 20 : 40, gearTxt = sim.gear === 0 ? 'N' : sim.gear === -1 ? 'R' : String(sim.gear);
+    let tachC;
+    if (cl.tachMid) {
+      dial(30, 54, 21, cl.speed, 0, kmh, 1, 30, 'KM/H');
+      tachC = { x: 80, y: 50, R: 30 }; dial(tachC.x, tachC.y, tachC.R, cl.tach * 1000, red * 1000, rpm, 1000, 1000, cl.brand.split(' ')[0]);
+      const bmax = Math.max(0.5, (TP.sim.turbo && TP.sim.turbo.max) || 1);
+      dial(130, 54, 21, bmax * 1.4, bmax * 1.2, lit ? Math.max(0, sim.pipeP) : 0, 0, bmax * 0.35, 'BAR');
+      lcdBox(4, 70, 22, String(Math.round(kmh)), cl.lcd);
+    } else {
+      dial(42, 50, 30, cl.speed, 0, kmh, 1, spEvery, cl.brand.split(' ')[0]);
+      tachC = { x: 118, y: 50, R: 30 }; dial(tachC.x, tachC.y, tachC.R, cl.tach * 1000, red * 1000, rpm, 1000, 1000, 'X1000');
+      lcdBox(30, 64, 24, String(Math.round(kmh)), cl.lcd);
+      if (cl.m) for (const [k, col] of [[-1, '#5bc0ff'], [0, '#1a3d9a'], [1, '#e8282b']]) { g.fillStyle = col; g.fillRect(tachC.x - 1 + k * 4, tachC.y + 5, 3, 2); }
+    }
+    // marcia nel contagiri e chilometri sotto
+    g.fillStyle = '#050506'; g.fillRect(tachC.x - 6, tachC.y + 9, 12, 12);
+    pxText(g, gearTxt, tachC.x - 3, tachC.y + 11, over && blink ? '#ff3a24' : inZone && blink ? '#b8ff3a' : lit ? cl.lcd : '#2a2b2e', 2);
+    pxText(g, 'ODO ' + Math.floor(game.odo), Math.round(W / 2 - pxW('ODO ' + Math.floor(game.odo), 1) / 2), H - 7, lit ? cl.lcd : '#2a2b2e', 1);
+    // le 5 luci della cambiata, in alto
+    for (let i = 0; i < 5; i++) {
+      const thr = z.lo - (4 - i) * 260, on = lit && rpm >= thr, x = W / 2 - 37 + i * 15;
+      let col = '#1a1c20';
+      if (over) col = blink ? '#ff3a3a' : '#5a1020'; else if (inZone) col = blink ? '#b8ff3a' : '#e8ffb0'; else if (on) col = i < 4 ? '#4fbf2a' : '#b8ff3a';
+      g.fillStyle = '#050506'; g.fillRect(x - 1, 0, 13, 11); g.fillStyle = col;
+      for (let r = 0; r < 9; r++) { const w = 1 + (4 - Math.abs(r - 4)) * 2; g.fillRect(x + 1, 1 + r, w, 1); }
+    }
+    // spie
+    if (sim.tcAct) pxText(g, 'TRC', 4, 14, blink ? '#ffe14d' : '#ffb000', 1);
+    else if (sim.abs && blink) pxText(g, 'ABS', 4, 14, '#ffb000', 1);
+    if (lit && sim.cut === 2 && blink) pxText(g, 'LIMIT', W - 26, 14, '#ff3a24', 1);
+    else if (lit && sim.cut === 3 && blink) pxText(g, sim.flatCut ? '3STEP' : '2STEP', W - 26, 14, '#2ee6ff', 1);
+  }
   // ---------------------------------------------------------------- cambiata perfetta anche in guida normale
   // In gara il voto conta per il risultato; fuori dalla gara la perfetta dà comunque il cambio rapido e la scritta.
   let comboN = 0, animeT = null;
@@ -2796,7 +2887,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   // pannello stili dell'interfaccia
   (function buildThemes() {
     const box = $('uiThemes'); if (!box) return;
-    const groups = [['Realistici', ['garage', 'bianco', 'carbonio']], ['Cartoon', ['sticker', 'spray', 'fumetto']]];
+    const groups = [['Realistici', ['orig', 'garage', 'bianco', 'carbonio']], ['Cartoon', ['sticker', 'spray', 'fumetto']]];
     for (const [label, ids] of groups) {
       const h = document.createElement('h3'); h.textContent = label; box.appendChild(h);
       for (const id of ids) {
@@ -2810,7 +2901,8 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     }
   })();
   applyRain(); applyMeteo();
-  applyTheme(S.ui || 'garage'); $('uiName').textContent = TH.name.toLowerCase();
+  if (!S.origSeen) { S.ui = 'orig'; S.origSeen = 1; }     // da questa versione si parte col quadro originale dell'auto
+  applyTheme(S.ui || 'garage'); $('uiName').textContent = UI_THEMES[S.ui].name.toLowerCase(); themeReady = true;
   applySettings();
   renderMode();
   renderRadio(false);

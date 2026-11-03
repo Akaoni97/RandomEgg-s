@@ -341,6 +341,20 @@ const CARS = {
 CARS.supra.tuning = TUNING_SUPRA; CARS.supra.presets = SUPRA_PRESETS; CARS.supra.params = supraParams;
 for (const c of GEN_CARS) CARS[c.id] = genCar(c);
 const CAR_IDS = Object.keys(CARS);
+// quadro strumenti originale di ogni auto (banner in alto e strumenti in gioco)
+// speed: fondo scala km/h · tach: fondo scala ×1000 · red: inizio zona rossa · face/num/needle: quadrante, numeri, lancette
+// glow: luce notturna dei numeri · lcd: colore dei display · tachMid: contagiri al centro (Toyota) · m: strisce M · varRed: zona rossa che segue l'olio (E36)
+const CLUSTERS = {
+  supra: { brand: 'TOYOTA', model: '2JZ-GTE · 24V DOHC TWIN TURBO', speed: 180, tach: 9, red: 7, tachMid: true, face: ['#101114', '#050506'], num: '#f2f2ee', needle: '#ff5a1e', glow: 'rgba(255,255,255,.18)', lcd: '#ff7a3a', bez: ['#3a3b40', '#121316', '#26272c'], aux: 'BOOST', font: '"Russo One", "Arial Black", sans-serif' },
+  v40: { brand: 'VOLVO', model: 'B4204S · 16V', speed: 240, tach: 7, red: 6.5, face: ['#121417', '#07080a'], num: '#eef3f0', needle: '#ff3b1f', glow: 'rgba(160,255,200,.12)', lcd: '#9fffc8', bez: ['#4a4c52', '#16171a', '#2c2e33'], aux: 'TEMP', font: '"Barlow Semi Condensed", "Arial Narrow", sans-serif' },
+  r5: { brand: 'JAEGER', model: 'RENAULT 5 TURBO', speed: 240, tach: 8, red: 6.5, face: ['#0c0d0f', '#040405'], num: '#f4f1e4', needle: '#ff8a1a', glow: 'rgba(120,255,150,.22)', lcd: '#7dff9a', bez: ['#26272a', '#0c0c0d', '#1a1a1c'], aux: 'TURBO', font: '"Saira Stencil One", "Arial Black", sans-serif' },
+  b2002: { brand: 'BMW', model: '2002 TURBO · KUGELFISCHER', speed: 240, tach: 8, red: 6.4, face: ['#0e0e0f', '#050505'], num: '#f4efe0', needle: '#f4efe0', glow: 'rgba(255,170,90,.2)', lcd: '#ffb060', bez: ['#9aa0a8', '#2a2c30', '#5a5e66'], aux: 'LADEDRUCK', font: '"Barlow Semi Condensed", "Arial Narrow", sans-serif', chrome: true },
+  e30: { brand: 'BMW M TECHNIC', model: 'S14 · 2.3 16V', speed: 260, tach: 8, red: 7.3, m: true, face: ['#0d0d0e', '#040404'], num: '#ff8a2a', needle: '#ff5a14', glow: 'rgba(255,120,30,.3)', lcd: '#ff8a2a', bez: ['#2c2c2e', '#0b0b0c', '#1c1c1e'], aux: 'ÖL', font: '"Barlow Semi Condensed", "Arial Narrow", sans-serif' },
+  e36: { brand: 'BMW M', model: 'S50B30 · VANOS', speed: 280, tach: 8, red: 7.0, m: true, varRed: true, face: ['#17181b', '#08090a'], num: '#ff8f3a', needle: '#ff3a1a', glow: 'rgba(255,130,40,.3)', lcd: '#ff8f3a', bez: ['#34353a', '#0e0f11', '#222327'], aux: 'ÖL', font: '"Barlow Semi Condensed", "Arial Narrow", sans-serif' },
+  e34: { brand: 'BMW M', model: 'S38B36 · M POWER', speed: 280, tach: 8, red: 7.0, m: true, face: ['#121214', '#060607'], num: '#ff8a2a', needle: '#ff4a1a', glow: 'rgba(255,120,30,.3)', lcd: '#ff8a2a', bez: ['#303034', '#0c0c0e', '#202024'], aux: 'ÖL', font: '"Barlow Semi Condensed", "Arial Narrow", sans-serif' },
+};
+for (const id in CLUSTERS) if (CARS[id]) CARS[id].cluster = CLUSTERS[id];
+
 
 // rende attivo il catalogo dell'auto: TUNING e TUNING_PRESETS (usati dall'officina) puntano a quelli dell'auto
 function setActiveCar(id) {
