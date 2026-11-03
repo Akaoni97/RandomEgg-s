@@ -168,6 +168,13 @@ pronte, pezzi che costano soldi **e** chilometri, estetica a parte. Per aggiunge
   I disegni del giocatore sono riportati alla scala del passo vero (`img/<auto>.png`), con la ruota a parte che gira
   (`_wheel.png`, freno e pinza dietro le razze) e la maschera della vernice (`_paint.png`) per cambiare colore
   mantenendo luci, ombre e strisce.
+  Ogni auto ha anche una **voce** propria (`voice` nella scheda, letta da `dsp.js`): lunghezze dei collettori,
+  durata degli impulsi di scarico, cilindri un po' diversi tra loro, minimo irregolare (`lope`), ululato delle
+  farfalle singole (`howl`, risonanza dei cornetti che sale coi giri) e urlo metallico in alto (`metal`).
+  R5: quattro da rally ruvido, collettore corto, fischio e soffio del T3 marcati, valvola secca con trombetta.
+  2002: voce cupa anni '70, iniezione meccanica col minimo che balla, il KKK senza valvola fa stu-tu-tu al rilascio.
+  M3 E30: S14 che graffia e ulula dalle farfalle fino a 7250. M3 E36: sei in linea BMW con l'urlo metallico in alto.
+  M5 E34: più profonda e piena, l'ululato delle sei farfalle domina sopra i 4500.
 - **Volvo V40 SW 2.0** (B4204S 2.0 16V aspirato, 140 CV, trazione anteriore, 5 marce, 1290 kg). Preparazioni pronte:
   Di serie (140 CV), Street aspirata (158 CV), Sleeper T4 (200 CV), Familiare cattiva (290 CV). Il disegno
   (`img/v40.png`) è l'illustrazione fornita dal giocatore.

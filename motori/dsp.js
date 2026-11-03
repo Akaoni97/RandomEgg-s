@@ -61,6 +61,7 @@ class EngineDSP {
     this.radPrev = 0; this.dc1x = 0; this.dc1y = 0;
     this.viewLP = new BQ(); this.viewLP2 = new BQ(); this.barkPK = new BQ().set('peak', 1100, 0.9, sr, 0); this.opHP = new BQ().set('hp', 650, 0.7, sr); this.opHP2 = new BQ().set('hp', 650, 0.7, sr); this.opLP = new BQ().set('lp', 6000, 0.6, sr); this.open = 0; this.openG = 1;
     this.boomBP = new BQ().set('bp', 78, 1.6, sr);
+    this.howlBP = new BQ(); this.howlBP2 = new BQ(); this.metBP = new BQ(); this.metBP2 = new BQ(); this.metK = 0; this.howlK = 0;
     this.crackHP = new BQ().set('hp', 700, 0.7, sr);
     this.turbHP = new BQ().set('hp', 2500, 0.7, sr);
 
@@ -151,11 +152,18 @@ class EngineDSP {
     // quattro cilindri (Volvo B4204S): ordine 1-3-4-2, uno scoppio ogni 180°; sei cilindri: 1-5-3-6-2-4 ogni 120°
     if ((t.cyl || 6) === 4) { this.nCyl = 4; [0, 2, 3, 1].forEach((c, k) => { this.cyl[c].off = k * 180; }); }
     else { this.nCyl = 6; [0, 4, 2, 5, 1, 3].forEach((c, k) => { this.cyl[c].off = k * 120; }); }
-    const L = this.nCyl === 4 ? [0.62, 0.58, 0.58, 0.62, 0.6, 0.6] : twin ? [0.44, 0.35, 0.30, 0.32, 0.37, 0.47] : [0.88, 0.86, 0.84, 0.84, 0.86, 0.88];
+    // carattere del singolo motore (auto da disegno): collettori, durata degli impulsi, farfalle singole, urlo metallico
+    const v = t.voice || {};
+    this.vc = { pulse: v.pulse || 1, rough: v.rough || 0, howl: v.howl || 0, metal: v.metal || 0, boomRpm: v.boomRpm || 3300, hiRpm: v.hiRpm || 6800 };
+    const L = v.mani || (this.nCyl === 4 ? [0.62, 0.58, 0.58, 0.62, 0.6, 0.6] : twin ? [0.44, 0.35, 0.30, 0.32, 0.37, 0.47] : [0.88, 0.86, 0.84, 0.84, 0.86, 0.88]);
+    const split = v.split != null ? v.split : twin ? 0.22 : 0;
     this.cyl.forEach((cy, i) => {
-      cy.D = Math.max(2, Math.round((L[i] + (twin && i >= 3 ? 0.22 : 0)) / 610 * sr));
-      cy.rf = twin ? -0.28 : -0.38;
+      cy.D = Math.max(2, Math.round(((L[i] != null ? L[i] : 0.6) + (i >= 3 ? split : 0)) / 610 * sr));
+      cy.rf = v.rf != null ? v.rf : twin ? -0.28 : -0.38;
+      cy.vb = v.bias ? v.bias[i] || 1 : 1;                          // cilindri un po' diversi tra loro (motori vecchi)
     });
+    this.howlBP.set('bp', v.howlF || 800, 3.2, sr); this.howlBP2.set('bp', (v.howlF || 800) * 2.02, 5, sr);
+    this.metBP.set('bp', v.metalF || 3000, 1.6, sr); this.metBP2.set('bp', (v.metalF || 3000) * 1.62, 2.4, sr);
     this.tbA = 1 - Math.exp(-2 * Math.PI * t.tb.damp / sr);
     // catalizzatore
     this.catA = t.cat.lp > 0 ? 1 - Math.exp(-2 * Math.PI * t.cat.lp / sr) : 1;
@@ -216,21 +224,21 @@ class EngineDSP {
       const low = Math.max(0, 1 - S.rpm / 1600), lope = this.tn.lope * Math.max(0, 1 - S.rpm / 2600);
       // variazione da ciclo a ciclo (un motore vero non fa mai due scoppi uguali) più un "respiro" lento comune
       this.breath = (this.breath || 0) * 0.985 + this.g() * 0.01;
-      let jitter = (1 + this.g() * (0.045 + 0.3 * low + 0.12 * lope)) * (1 + this.breath * (1 + 2 * low));
+      let jitter = (1 + this.g() * (0.045 + 0.3 * low + 0.12 * lope + 0.12 * this.vc.rough)) * (1 + this.breath * (1 + 2 * low));
       // camme lunghe: incrocio delle valvole, qualche ciclo debole e "sporco"
       if (lope > 0 && Math.abs(this.r()) < 0.09 * lope) jitter *= 0.35 + 0.3 * Math.abs(this.r());
       comb = Math.pow(ch, 0.9) * jitter;
       // ogni scoppio dà una piccola spinta all'albero: la velocità oscilla dentro il ciclo
       this.flu += (0.03 + 0.05 * lope) * comb * Math.min(1, 1100 / Math.max(S.rpm, 300));
       if (S.rattle > 0.01) this.rattle += S.rattle * (0.6 + 0.4 * Math.abs(this.r()));
-      c.tp = (11 + 15 * Math.max(0, 1 - Math.min(ch, 1))) * (1 + this.g() * 0.035);
+      c.tp = (11 + 15 * Math.max(0, 1 - Math.min(ch, 1))) * (1 + this.g() * 0.035) * this.vc.pulse;
       c.j = this.g() * (0.5 + 2.8 * low);                                   // scoppio un po' in anticipo o in ritardo
       c.nz = 0.22 + 0.32 * Math.min(ch, 1.6);
       this.knock += comb * 0.5;
     } else {
       c.tp = 28; c.nz = 0.12;
     }
-    c.amp = (0.045 + 0.055 * rn) * (0.4 + S.air) + comb * c.bias;
+    c.amp = (0.045 + 0.055 * rn) * (0.4 + S.air) + comb * c.bias * (c.vb || 1);
     if (!run) c.amp = S.rpm > 20 ? 0.06 * Math.min(1, S.rpm / 180) : 0;
     c.disp = 0.06 * rn * (0.3 + S.air);
     c.ain = S.air * (0.25 + rn) * (1 - 0.55 * S.turbo);
@@ -277,12 +285,16 @@ class EngineDSP {
     // scalino quando entra il secondo turbo (biturbo sequenziale) — non una rampa lineare
     const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     const ld = Math.min(1, S.charge * 1.2) * Math.min(1, S.thr * 1.6);
-    const oT = Math.min(1, ss(2200, 6800, S.rpm) * (0.35 + 0.65 * ld) * 0.8 + 0.3 * S.sec * ld + 0.15 * ss(0.15, 0.7, S.boost) * ld);
+    const vc = this.vc, hi = vc.hiRpm;
+    // urlo metallico in alto (sei in linea BMW, collettori in acciaio) e ululato delle farfalle singole
+    this.metK = vc.metal * ss(hi - 3200, hi - 200, S.rpm) * (0.25 + 0.75 * ld);
+    this.howlK = vc.howl * ss(2500, hi - 500, S.rpm) * (0.2 + 0.8 * Math.min(1, S.thr * 1.4)) * (1 - 0.6 * S.turbo);
+    const oT = Math.min(1, ss(2200, hi, S.rpm) * (0.35 + 0.65 * ld) * 0.8 + 0.3 * S.sec * ld + 0.15 * ss(0.15, 0.7, S.boost) * ld);
     this.open += (oT - this.open) * (oT > this.open ? 0.12 : 0.05);
     const o = this.open;
     // corpo che cambia coi giri: rimbombo verso i 3300, grinta oltre i 5000
-    const bell = Math.exp(-Math.pow((S.rpm - 3300) / 520, 2));
-    this.openG = (0.82 + 0.38 * o + 0.1 * bell * ld) * (1 + 0.12 * ss(5000, 6800, S.rpm) * ld);
+    const bell = Math.exp(-Math.pow((S.rpm - vc.boomRpm) / 520, 2));
+    this.openG = (0.82 + 0.38 * o + 0.1 * bell * ld) * (1 + 0.12 * ss(hi - 1800, hi, S.rpm) * ld);
     this.viewLP.set('lp', Math.min(15000, M.lp * (0.55 + 1.75 * o)), 0.6, this.sr);
     this.viewLP2.set('lp', Math.min(16000, M.lp * (0.9 + 2.2 * o)), 0.6, this.sr);
     this.barkPK.set('peak', 900 + 900 * o, 0.9, this.sr, 7.5 * o);
@@ -380,7 +392,9 @@ class EngineDSP {
       const crack = this.crackHP.p(pop) * 0.55;
       this.thumpPh = ((this.thumpPh || 0) + 88 / sr) % 1;
       const thump = Math.sin(TAU * this.thumpPh) * Math.min(1.6, this.popEnv) * 0.24;
-      let exh = this.barkPK.p(this.viewLP2.p(this.viewLP.p(ex + crack)));
+      let met = 0;
+      if (this.metK > 1e-3) { const q = this.metBP.p(ex) * 30; met = (Math.tanh(q) * 0.7 + this.metBP2.p(Math.tanh(q * 2)) * 0.25) * 0.13 * this.metK * this.openG; }
+      let exh = this.barkPK.p(this.viewLP2.p(this.viewLP.p(ex + crack + met)));
       { const k = 0.9 + 2.6 * this.open; exh = Math.tanh(exh * k) / k * this.openG; }   // si sporca quando si apre (picchi smussati, non più forte)
       // voce aperta: gli armonici alti degli impulsi (ruvidi, saturati) che il silenziatore lascia passare solo a gas spalancato
       if (this.open > 0.02) {
@@ -399,6 +413,8 @@ class EngineDSP {
       // ---- aspirazione -------------------------------------------------------------
       let intake = this.inLP.p(this.inPK.p(this.inHP.p(inn))) * 1.1 * tn.intake.in;
       intake += this.roarBP.p(nz2) * S.air * Math.pow(rn, 1.5) * 0.12 * (1 - 0.5 * S.turbo) * tn.intake.roar;
+      // farfalle singole: ogni cornetto risuona, a gas aperto un ululato tonale che sale coi giri
+      if (this.howlK > 1e-3) { const hq = Math.tanh(inn * 1.6) * 0.3 + nz3 * Math.abs(inn) * 0.6; intake += (this.howlBP.p(hq) * 0.8 + this.howlBP2.p(hq) * 0.35) * this.howlK * (0.6 + 0.6 * tn.intake.in) * 0.85 * (1 + 0.3 / Math.max(0.1, M.intake)); }   // fuori dall'auto l'ululato si sente comunque
 
       // ---- turbo: fischio della girante, soffio, valvola --------------------------
       const tb = tn.tb, ft = tb.f0 + (tb.f1 - tb.f0) * S.turbo;
