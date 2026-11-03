@@ -1026,6 +1026,242 @@ class Street2D {
     return { c, ...meta };
   }
 
+  // ---------------------------------------------------------------- luoghi della mappa del mondo: sfondi oltre la carreggiata (y < 232)
+  // ogni tipo ha i suoi piani in parallasse; wx(m) porta i metri della strada sullo schermo (oggetti a bordo strada)
+  ridge(g, off, base, amp, per, col, seed, step = 2) {
+    const W = this.LW; g.fillStyle = col;
+    for (let x = 0; x < W; x += step) {
+      const u = (x + off) / per;
+      const h = amp * (0.55 + 0.25 * Math.sin(u * 1.7 + seed) + 0.15 * Math.sin(u * 4.3 + seed * 2) + 0.05 * Math.sin(u * 11 + seed * 3));
+      g.fillRect(x, Math.round(base - h), step, Math.round(h) + 1);
+    }
+  }
+  ridgeH(off, x, amp, per, seed) { const u = (x + off) / per; return amp * (0.55 + 0.25 * Math.sin(u * 1.7 + seed) + 0.15 * Math.sin(u * 4.3 + seed * 2) + 0.05 * Math.sin(u * 11 + seed * 3)); }
+  tileRun(off, tileW, fn) { const i0 = Math.floor(off / tileW) - 1, n = Math.ceil(this.LW / tileW) + 3; for (let i = i0; i < i0 + n; i++) fn(i, Math.round(i * tileW - off)); }
+
+  drawScenery(g, dist, t, bg, R) {
+    const W = this.LW, C = this.C, rnd = Street2D.rnd, { wx, visFrom, visTo } = R;
+    const night = 1 - 0.6 * (this.day || 0);
+    const win = (x, y, w, h, lit) => { g.fillStyle = lit ? '#ffcf7a' : '#1a1a2a'; g.fillRect(x, y, w, h); if (lit) this.light(g, x + w / 2, y + h / 2, w + 4, h + 4, '#ffcf7a', 0.05 * night, 2); };
+    if (bg === 'highway') {
+      // Wangan: la città dall'altra parte della baia, l'acqua con i riflessi, un ponte strallato, la barriera antirumore
+      this.drawCity(g, dist, t, 'haze', 0.025, 172, 50);
+      { const hz = g.createLinearGradient(0, 60, 0, 174); hz.addColorStop(0, 'rgba(40,30,80,0)'); hz.addColorStop(0.35, 'rgba(40,30,80,.5)'); hz.addColorStop(1, 'rgba(40,30,80,.62)'); g.fillStyle = hz; g.fillRect(0, 60, W, 114); }   // la città è lontana, dall'altra parte della baia: quasi solo luci
+      this.tileRun(dist * 0.06, 1100, (i, x) => {
+        if (rnd(i * 7.1) < 0.45) return;
+        const bx = x + 200, top = 96, deck = 166;
+        g.fillStyle = '#1c2040';
+        for (const tx of [bx, bx + 300]) { g.fillRect(tx - 3, top, 3, deck - top + 10); g.fillRect(tx + 9, top, 3, deck - top + 10); g.fillRect(tx - 3, top + 18, 15, 2); }
+        g.fillStyle = 'rgba(120,130,190,.35)';
+        for (const tx of [bx + 4, bx + 304]) for (let k = 1; k <= 7; k++) { const d = k * 20; for (let s = 0; s <= 20; s++) { const f = s / 20; g.fillRect(Math.round(tx + d * f), Math.round(top + 4 + (deck - top - 4) * f), 1, 1); g.fillRect(Math.round(tx - d * f), Math.round(top + 4 + (deck - top - 4) * f), 1, 1); } }
+        g.fillStyle = '#141830'; g.fillRect(bx - 160, deck, 620, 4);
+        for (let k = 0; k < 62; k++) { g.fillStyle = k % 2 ? '#fff2c4' : '#ff4a4a'; g.fillRect(bx - 160 + k * 10, deck - 1, 1, 1); }
+        g.fillStyle = '#ff3b3b'; if (Math.floor(t * 1.5 + i) % 2) { g.fillRect(bx + 4, top - 2, 2, 2); g.fillRect(bx + 304, top - 2, 2, 2); }
+      });
+      // acqua della baia
+      g.fillStyle = '#0a1230'; g.fillRect(0, 172, W, 26);
+      for (let k = 0; k < 70; k++) {
+        const x = Math.round(((rnd(k) * W * 1.4 - dist * 0.06) % W + W) % W), y = 174 + Math.floor(rnd(k + 9) * 22), w = 3 + Math.floor(rnd(k + 3) * 10);
+        g.fillStyle = C.neon[k % 5]; g.globalAlpha = (0.15 + 0.2 * Math.sin(t * 2 + k)) * night; g.fillRect(x + Math.round(Math.sin(t * 1.3 + k) * 2), y, w, 1); g.globalAlpha = 1;
+      }
+      // barriera antirumore della sopraelevata (pannelli di cemento, fascia trasparente in alto)
+      g.fillStyle = '#202538'; g.fillRect(0, 198, W, 34);
+      g.fillStyle = 'rgba(110,140,190,.18)'; g.fillRect(0, 190, W, 9); g.fillStyle = '#4a5070'; g.fillRect(0, 189, W, 1); g.fillRect(0, 198, W, 1);
+      for (let m = Math.floor(visFrom / 3) * 3; m < visTo; m += 3) { const x = wx(m); g.fillStyle = '#171b2a'; g.fillRect(x, 199, 1, 33); g.fillStyle = '#3a4058'; g.fillRect(x, 189, 1, 10); }
+      g.fillStyle = '#2c3250'; g.fillRect(0, 224, W, 8); g.fillStyle = '#4a5070'; g.fillRect(0, 230, W, 2);
+      // cartello a bandiera ogni 700 m
+      for (let m = Math.floor(visFrom / 700) * 700 + 320; m < visTo + 40; m += 700) {
+        const x = wx(m); g.fillStyle = C.ink; g.fillRect(x - 2, 112, 5, 120); g.fillRect(x, 112, 150, 4);
+        g.fillStyle = '#0d5a3a'; g.fillRect(x + 20, 116, 130, 30); g.fillStyle = '#e8f0e8'; g.fillRect(x + 21, 117, 128, 1); g.fillRect(x + 21, 144, 128, 1);
+        this.text(g, 'B  WANGAN', x + 28, 121, '#f4f1e6'); this.text(g, 'DAIKOKU 3KM', x + 28, 133, '#f4f1e6');
+        g.fillStyle = '#1a4aa8'; g.fillRect(x + 25, 119, 9, 9); this.text(g, 'B', x + 27, 121, '#f4f1e6');
+        this.light(g, x + 85, 131, 70, 20, '#dfffe8', 0.05, 3);
+      }
+      return;
+    }
+    if (bg === 'mountain') {
+      // Hakone: il Fuji lontano, creste di montagna e cedri, bosco scuro e guardrail a bordo strada
+      const fx = Math.round(W * 0.62 - ((dist * 0.01) % (W + 700))) + (dist * 0.01 % (W + 700) > W * 0.62 + 260 ? W + 700 : 0);
+      g.fillStyle = '#1a2248';
+      for (let y = 0; y < 100; y++) { const half = Math.round(18 + y * 1.55 + (y > 70 ? (y - 70) * 1.4 : 0)); g.fillRect(fx - half, 92 + y, half * 2, 1); }
+      g.fillStyle = '#c8d2ec'; for (let y = 0; y < 26; y++) { const half = Math.round(18 + y * 1.55), j = (y > 14 ? Math.round(Math.sin(y * 3 + 1) * 4) : 0); g.fillRect(fx - half + Math.abs(j), 92 + y, half * 2 - Math.abs(j) * 2, 1); }
+      g.fillStyle = '#e8eeff'; g.fillRect(fx - 14, 92, 28, 2);
+      g.fillStyle = 'rgba(70,50,114,.25)'; g.fillRect(0, 150, W, 50);
+      this.ridge(g, dist * 0.03, 206, 46, 140, '#141a38', 1.3);
+      const off2 = dist * 0.09;
+      this.ridge(g, off2, 214, 34, 90, '#0e1826', 4.1);
+      for (let x = (-Math.round(off2) % 6 + 6) % 6; x < W; x += 6) {   // cedri sulla cresta
+        const top = Math.round(214 - this.ridgeH(off2, x, 34, 90, 4.1)), hh = 8 + Math.floor(rnd(Math.round((x + off2) / 6)) * 10);
+        g.fillStyle = '#0b1420'; for (let r = 0; r < hh; r++) { const w = 1 + Math.floor(r / 2.5); g.fillRect(x - w, top - hh + r, w * 2 + 1, 1); }
+      }
+      g.fillStyle = '#0a111c'; g.fillRect(0, 206, W, 26);
+      for (let m = Math.floor(visFrom / 2.2) * 2.2; m < visTo; m += 2.2) {   // bosco a ridosso della strada
+        const x = wx(m), k = Math.round(m / 2.2), hh = 14 + Math.floor(rnd(k + 40) * 22);
+        g.fillStyle = k % 3 ? '#0c1622' : '#101c2a'; for (let r = 0; r < hh; r++) { const w = 1 + Math.floor(r / 2); g.fillRect(x - w, 222 - hh + r, w * 2 + 1, 1); }
+      }
+      // guardrail a nastro e paletti con catarifrangente
+      g.fillStyle = '#5c6386'; g.fillRect(0, 220, W, 3); g.fillStyle = '#8a93b0'; g.fillRect(0, 220, W, 1); g.fillStyle = '#2a2f45'; g.fillRect(0, 223, W, 2);
+      for (let m = Math.floor(visFrom / 4) * 4; m < visTo; m += 4) { const x = wx(m); g.fillStyle = '#3a3f58'; g.fillRect(x, 219, 2, 13); }
+      for (let m = Math.floor(visFrom / 25) * 25; m < visTo; m += 25) { const x = wx(m); g.fillStyle = '#d8d8d0'; g.fillRect(x, 212, 3, 20); g.fillStyle = '#ff9a1a'; g.fillRect(x, 214, 3, 3); this.light(g, x + 1, 215, 5, 4, '#ffb04a', 0.25, 2); }
+      g.fillStyle = '#1a1d2c'; g.fillRect(0, 230, W, 2);
+      return;
+    }
+    if (bg === 'sea') {
+      // Positano: il mare sotto la luna, le lampare, il paese a cascata sulla roccia, il muretto bianco della statale
+      g.fillStyle = '#0d1636'; g.fillRect(0, 166, W, 66); g.fillStyle = '#0a1030'; g.fillRect(0, 196, W, 36);
+      g.fillStyle = 'rgba(150,170,230,.35)'; g.fillRect(0, 166, W, 1);
+      const mx = W - 90;
+      for (let y = 168; y < 220; y += 2) { const w = Math.round(3 + (y - 168) * 0.35 + Math.sin(y * 0.9 + t * 3) * 2); g.fillStyle = `rgba(255,245,210,${0.42 - (y - 168) * 0.006})`; g.fillRect(Math.round(mx - w / 2 + Math.sin(y * 0.5 + t * 2) * 3), y, w, 1); }
+      for (let k = 0; k < 7; k++) {   // lampare
+        const x = Math.round(((rnd(k + 70) * W * 1.6 - dist * 0.02) % (W * 1.2) + W * 1.2) % (W * 1.2) - W * 0.1), y = 170 + Math.floor(rnd(k + 71) * 10);
+        g.fillStyle = '#ffe9a0'; g.fillRect(x, y, 2, 1); this.light(g, x, y, 8, 5, '#ffd27a', 0.18, 2);
+        g.fillStyle = 'rgba(255,220,150,.25)'; for (let r = 1; r < 8; r++) g.fillRect(x + Math.round(Math.sin(t * 3 + r + k) * 1), y + r * 2, 1, 1);
+      }
+      this.tileRun(dist * 0.05, 820, (i, x) => {
+        if (rnd(i * 5.3) < 0.35) return;
+        // scogliera con le case una sopra l'altra e la cupola di maiolica
+        const cx = x + 380, wC = 320;
+        g.fillStyle = '#1c1426'; for (let c = 0; c < wC; c += 2) { const u = c / wC, h = Math.round(120 * Math.sin(Math.PI * u) * (0.8 + 0.2 * Math.sin(u * 13 + i))); g.fillRect(cx - wC / 2 + c, 196 - h, 2, h + 2); }
+        const pal = ['#d8a0a0', '#e8d08a', '#e8e4d8', '#d89a5a', '#c8b0d8', '#f0c8a0'];
+        const hs = [];
+        for (let q = 0; q < 90; q++) {
+          const u = rnd(q * 12.9898 + i * 78.233), hx = Math.round(cx - wC * 0.44 + u * wC * 0.88), hmax = 120 * Math.sin(Math.PI * Math.max(0, Math.min(1, (hx - cx + wC / 2) / wC))) * 0.92;
+          hs.push({ hx, hy: Math.round(196 - rnd(q * 39.346 + i * 11.135) * hmax), w: 8 + Math.floor(rnd(q * 7.77 + i) * 9), q });
+        }
+        hs.sort((a, b) => a.hy - b.hy);   // dall'alto in basso: le case più in basso coprono quelle dietro
+        for (const { hx, hy, w, q } of hs) {
+          const col = pal[q % pal.length];
+          g.fillStyle = Street2D.shade(col, -0.42 * night); g.fillRect(hx, hy - 8, w, 8); g.fillStyle = Street2D.shade(col, -0.62 * night); g.fillRect(hx, hy - 8, w, 1); g.fillRect(hx + w - 1, hy - 8, 1, 8);
+          if (rnd(q * 3.3 + i) < 0.6) win(hx + 2, hy - 5, 2, 2, true); if (rnd(q * 5.1 + i) < 0.45) win(hx + w - 4, hy - 5, 2, 2, true);
+        }
+        g.fillStyle = '#2a6a4a'; for (let r = 0; r < 8; r++) { const w = Math.round(Math.sqrt(64 - r * r) * 1.3); g.fillRect(cx - 20 - w, 120 - r, w * 2, 1); }
+        g.fillStyle = '#d8b040'; g.fillRect(cx - 21, 112, 2, 2); g.fillRect(cx - 21, 108, 2, 4);
+      });
+      // muretto bianco a bordo strada, lato mare
+      g.fillStyle = '#9a968a'; g.fillRect(0, 216, W, 16); g.fillStyle = '#c8c4b8'; g.fillRect(0, 214, W, 3); g.fillStyle = '#6a675e'; g.fillRect(0, 217, W, 1);
+      for (let m = Math.floor(visFrom / 1.6) * 1.6; m < visTo; m += 1.6) { const x = wx(m); g.fillStyle = '#86827a'; g.fillRect(x, 218, 1, 14); }
+      g.fillStyle = '#4a5070'; g.fillRect(0, 230, W, 2);
+      return;
+    }
+    if (bg === 'plain') {
+      // Bassa Reggiana: Alpi lontanissime, campi piatti, tralicci, filari di pioppi, cascine, nebbia, il fosso
+      this.ridge(g, dist * 0.008, 188, 16, 60, '#1a2046', 2.2);
+      g.fillStyle = '#131a24'; g.fillRect(0, 186, W, 46);
+      for (let y = 188; y < 214; y += 3) { g.fillStyle = y % 2 ? '#151e26' : '#111820'; g.fillRect(0, y, W, 1); }
+      // tralicci dell'alta tensione con i cavi
+      const offP = dist * 1.4, pw = 260;
+      this.tileRun(offP, pw, (i, x) => {
+        const top = 120, base = 194; g.fillStyle = '#20263e';
+        for (let y = top; y < base; y++) { const half = Math.round(2 + (y - top) * 0.12); g.fillRect(x - half, y, 1, 1); g.fillRect(x + half, y, 1, 1); if ((y - top) % 8 === 0) g.fillRect(x - half, y, half * 2, 1); }
+        g.fillRect(x - 14, top + 6, 28, 2); g.fillRect(x - 10, top + 16, 20, 2);
+        g.fillStyle = 'rgba(60,70,110,.6)';
+        for (const [dy, dx] of [[7, -14], [7, 14], [17, -10], [17, 10]]) for (let s = 0; s <= pw; s += 3) { const f = s / pw; g.fillRect(x + dx + s, Math.round(top + dy + 14 * 4 * f * (1 - f)), 1, 1); }
+      });
+      // filari di pioppi e cascine
+      const offT = dist * 3.2;
+      this.tileRun(offT, 220, (i, x) => {
+        const r0 = rnd(i * 3.7);
+        if (r0 < 0.55) for (let q = 0; q < 9; q++) {
+          const tx = x + q * 13 + Math.round(rnd(i + q) * 4), hh = 30 + Math.floor(rnd(i * 9 + q) * 14);
+          g.fillStyle = '#0d1418'; for (let r = 0; r < hh; r++) { const w = Math.round(3.4 * Math.sin(Math.PI * Math.min(1, (r + 2) / hh)) + 0.5); g.fillRect(tx - w, 204 - hh + r, w * 2 + 1, 1); }
+          g.fillStyle = '#0a0f12'; g.fillRect(tx, 200, 1, 5);
+        } else if (r0 < 0.8) {
+          const bx = x + 40; g.fillStyle = '#3a2420'; g.fillRect(bx, 176, 56, 28); g.fillStyle = '#4a2a22'; for (let r = 0; r < 8; r++) g.fillRect(bx - 3 + r, 168 + r, 62 - r * 2, 1);
+          g.fillStyle = '#2a1a18'; g.fillRect(bx + 62, 180, 40, 24); for (let a = 0; a < 3; a++) { g.fillStyle = '#120c0c'; g.fillRect(bx + 66 + a * 12, 186, 8, 18); }
+          g.fillStyle = '#3a2420'; for (let r = 0; r < 6; r++) g.fillRect(bx + 60 + r, 174 + r, 44 - r * 2, 1);
+          win(bx + 10, 184, 4, 5, rnd(i + 5) < 0.7); win(bx + 30, 184, 4, 5, rnd(i + 6) < 0.3); win(bx + 20, 194, 4, 5, rnd(i + 7) < 0.5);
+        }
+      });
+      // banchi di nebbia che scorrono
+      for (let k = 0; k < 5; k++) { const y = 186 + k * 6, x = ((t * (4 + k) + k * 200 - dist * 0.4) % (W + 400) + W + 400) % (W + 400) - 400; g.fillStyle = `rgba(190,196,214,${0.05 + 0.02 * k})`; g.fillRect(Math.round(x), y, 380, 4); g.fillRect(Math.round(x) - 300, y + 2, 260, 3); }
+      g.fillStyle = 'rgba(190,196,214,.06)'; g.fillRect(0, 196, W, 14);
+      // fosso con l'acqua e argine d'erba, paletti bianchi
+      g.fillStyle = '#101820'; g.fillRect(0, 212, W, 8); g.fillStyle = 'rgba(140,150,200,.18)'; for (let x = (-Math.round(dist * 30) % 9 + 9) % 9; x < W; x += 9) g.fillRect(x, 215, 4, 1);
+      g.fillStyle = '#16221a'; g.fillRect(0, 220, W, 12); for (let x = 0; x < W; x += 3) { g.fillStyle = rnd(x + Math.floor(dist * 10)) < 0.5 ? '#1c2c20' : '#122016'; g.fillRect(x, 219 - Math.floor(rnd(x * 1.3) * 3), 1, 3); }
+      for (let m = Math.floor(visFrom / 50) * 50; m < visTo; m += 50) { const x = wx(m); g.fillStyle = '#e8e6df'; g.fillRect(x, 212, 3, 18); g.fillStyle = '#14161e'; g.fillRect(x, 215, 3, 3); g.fillStyle = '#ff9a1a'; g.fillRect(x, 213, 3, 1); }
+      g.fillStyle = '#2a2f40'; g.fillRect(0, 230, W, 2);
+      return;
+    }
+    if (bg === 'village') {
+      // San Gimignano: colline coi cipressi, le torri sul colle, case di pietra lungo la strada
+      this.ridge(g, dist * 0.02, 196, 34, 170, '#161c3a', 0.7);
+      const offH = dist * 0.02;
+      for (let x = (-Math.round(offH) % 23 + 23) % 23; x < W; x += 23) {
+        if (rnd(Math.round((x + offH) / 23)) < 0.4) continue;
+        const top = Math.round(196 - this.ridgeH(offH, x, 34, 170, 0.7)), hh = 9 + Math.floor(rnd(Math.round((x + offH) / 23) + 3) * 6);
+        g.fillStyle = '#0c1020'; for (let r = 0; r < hh; r++) { const w = Math.round(1.6 * Math.sin(Math.PI * Math.min(1, (r + 1) / hh))); g.fillRect(x - w, top - hh + r, w * 2 + 1, 1); }
+      }
+      const tx = Math.round(W * 0.35 - ((dist * 0.012) % (W + 600))) + ((dist * 0.012) % (W + 600) > W * 0.35 + 200 ? W + 600 : 0);
+      g.fillStyle = '#1a1830'; for (let c = -110; c < 110; c += 2) g.fillRect(tx + c, Math.round(176 - 22 * Math.cos(c / 70)), 2, 30);
+      const tw = [[-70, 40], [-52, 52], [-38, 34], [-22, 58], [-8, 46], [6, 62], [20, 38], [34, 54], [50, 44], [66, 36], [-60, 30], [80, 28], [-86, 24], [92, 22]];
+      for (const [dx, h] of tw) { g.fillStyle = '#221e34'; g.fillRect(tx + dx, 158 - h, 8, h + 4); g.fillStyle = '#2e2840'; g.fillRect(tx + dx, 158 - h, 8, 1); if (h > 40) win(tx + dx + 3, 160 - h + 8, 2, 3, true); }
+      for (let q = 0; q < 26; q++) win(tx - 80 + Math.floor(rnd(q + 900) * 160), 160 + Math.floor(rnd(q + 901) * 14), 1, 1, true);
+      // case di pietra a schiera sulla strada
+      const offM = dist * 0.22 * 4;
+      this.tileRun(offM, 64, (i, x) => {
+        const h = 40 + Math.floor(rnd(i * 2.3) * 22), w = 62, y = 216 - h, kind = rnd(i * 7.7);
+        const stone = Street2D.shade(rnd(i) < 0.5 ? '#7a6a58' : '#8a7660', -0.52 * night);
+        g.fillStyle = stone; g.fillRect(x, y, w, h);
+        for (let k = 0; k < 18; k++) { g.fillStyle = Street2D.shade(stone, rnd(i * 50 + k) < 0.5 ? -0.12 : 0.08); g.fillRect(x + Math.floor(rnd(i * 40 + k) * (w - 5)), y + Math.floor(rnd(i * 60 + k) * (h - 3)), 5, 2); }
+        g.fillStyle = Street2D.shade('#8a3a26', -0.5 * night); g.fillRect(x - 2, y - 3, w + 4, 4); g.fillStyle = Street2D.shade('#a84a30', -0.5 * night); g.fillRect(x - 2, y - 3, w + 4, 1);
+        if (kind < 0.12) {   // campanile
+          g.fillStyle = stone; g.fillRect(x + 20, y - 46, 18, 46); g.fillStyle = '#0a0a14'; g.fillRect(x + 25, y - 40, 8, 10);
+          g.fillStyle = '#c8a040'; g.fillRect(x + 27, y - 36, 4, 5); g.fillStyle = Street2D.shade('#8a3a26', -0.5 * night); for (let r = 0; r < 7; r++) g.fillRect(x + 20 + r, y - 53 + r, 18 - r * 2, 1);
+        }
+        for (const wx2 of [8, 26, 44]) for (const wy of [10, 26]) if (wy + 10 < h - 12) {
+          const lit = rnd(i * 13 + wx2 + wy) < 0.45;
+          g.fillStyle = '#26402e'; g.fillRect(x + wx2 - 3, y + wy, 3, 10); g.fillRect(x + wx2 + 6, y + wy, 3, 10);
+          win(x + wx2, y + wy, 6, 10, lit);
+        }
+        g.fillStyle = '#2a1c14'; g.fillRect(x + 26, 216 - 16, 10, 16); g.fillStyle = '#3a2a1c'; g.fillRect(x + 26, 216 - 16, 10, 1);
+        if (kind > 0.85) { g.fillStyle = C.ink; g.fillRect(x + 6, y + h - 26, 22, 9); this.text(g, 'BAR', x + 9, y + h - 24, '#ffd23f'); this.light(g, x + 17, y + h - 22, 18, 8, '#ffd23f', 0.1, 3); }
+        else if (kind > 0.78) { g.fillStyle = '#3bff7a'; g.fillRect(x + 50, y + h - 30, 6, 2); g.fillRect(x + 52, y + h - 32, 2, 6); this.light(g, x + 53, y + h - 29, 10, 10, '#3bff7a', 0.16, 3); }
+        g.fillStyle = Street2D.shade(stone, -0.3); g.fillRect(x + w - 1, y, 1, h);
+      });
+      return;
+    }
+    if (bg === 'desert') {
+      // Route 66: mesas sotto le stelle, cactus e yucche, pali del telefono, motel col neon
+      g.fillStyle = 'rgba(120,60,90,.18)'; g.fillRect(0, 140, W, 60);
+      for (const [sp, base, col, seed] of [[0.015, 196, '#2e1c2c', 1], [0.045, 202, '#24161f', 3]]) {
+        this.tileRun(dist * sp, 300, (i, x) => {
+          if (rnd(i * 4.1 + seed) < 0.3) return;
+          const w = 80 + Math.floor(rnd(i * 2 + seed) * 120), h = 20 + Math.floor(rnd(i * 3 + seed) * 36), x0 = x + Math.floor(rnd(i + seed) * 100);
+          g.fillStyle = col; for (let r = 0; r < h; r++) { const sl = r < 4 ? 0 : Math.round((r - 4) * 0.9); g.fillRect(x0 - sl, base - h + r, w + sl * 2, 1); }
+          g.fillStyle = Street2D.shade(col, 0.25); g.fillRect(x0, base - h, w, 1);
+        });
+      }
+      g.fillStyle = '#20161c'; g.fillRect(0, 200, W, 32);
+      for (let k = 0; k < 140; k++) { const x = Math.round(((rnd(k + 500) * W * 2 - dist * 8) % (W * 2) + W * 2) % (W * 2)); if (x < W) { g.fillStyle = '#2c2026'; g.fillRect(x, 202 + Math.floor(rnd(k + 501) * 28), 2, 1); } }
+      this.tileRun(dist * 6, 160, (i, x) => {
+        if (rnd(i * 6.6) < 0.4) return;
+        const bx = x + Math.floor(rnd(i) * 60), base = 212 + Math.floor(rnd(i + 1) * 12);
+        g.fillStyle = '#0f0a10';
+        if (rnd(i * 2.2) < 0.5) {   // yucca (Joshua tree)
+          g.fillRect(bx, base - 26, 3, 26); g.fillRect(bx - 8, base - 30, 3, 12); g.fillRect(bx - 8, base - 20, 10, 3); g.fillRect(bx + 3, base - 34, 3, 14); g.fillRect(bx + 3, base - 22, 6, 3);
+          for (const [ox, oy] of [[-9, -33], [2, -37], [1, -29]]) g.fillRect(bx + ox, base + oy, 5, 4);
+        } else { g.fillRect(bx, base - 22, 4, 22); g.fillRect(bx - 6, base - 16, 3, 10); g.fillRect(bx - 6, base - 9, 7, 3); g.fillRect(bx + 6, base - 18, 3, 8); g.fillRect(bx + 3, base - 12, 6, 3); }
+      });
+      // pali del telefono con i fili
+      let prev = null;
+      for (let m = Math.floor(visFrom / 40) * 40 - 40; m < visTo + 40; m += 40) {
+        const x = wx(m); g.fillStyle = '#1a1214'; g.fillRect(x, 132, 3, 92); g.fillRect(x - 10, 138, 23, 2); g.fillRect(x - 6, 146, 15, 2);
+        if (prev !== null) { g.fillStyle = 'rgba(60,40,50,.9)'; for (const [dy, dx] of [[138, -9], [138, 11], [146, -5]]) for (let s = 0; s <= x - prev; s += 3) { const f = s / Math.max(1, x - prev); g.fillRect(prev + dx + s, Math.round(dy + 10 * 4 * f * (1 - f)), 1, 1); } }
+        prev = x;
+      }
+      // motel col neon ogni 1,6 km
+      for (let m = Math.floor(visFrom / 1600) * 1600 + 700; m < visTo + 60; m += 1600) {
+        const x = wx(m); g.fillStyle = '#2a2a3a'; g.fillRect(x, 196, 150, 30); g.fillStyle = '#3a3a52'; for (let r = 0; r < 6; r++) g.fillRect(x - 8 + r * 2, 190 + r, 166 - r * 4, 1);
+        for (let q = 0; q < 6; q++) win(x + 8 + q * 23, 204, 10, 12, rnd(q + m) < 0.6);
+        g.fillStyle = C.ink; g.fillRect(x + 168, 112, 4, 112);
+        const on = Math.sin(t * 9) > -0.7; g.fillStyle = C.ink; g.fillRect(x + 150, 116, 46, 40);
+        this.text(g, 'MOTEL', x + 157, 122, on ? '#ff5fa8' : '#3a1a2a'); this.text(g, 'CAFE', x + 160, 134, on ? '#2ee6ff' : '#1a2a3a'); this.text(g, '66', x + 168, 146, '#ffd23f');
+        if (on) { this.light(g, x + 172, 130, 40, 24, '#ff5fa8', 0.1, 3); this.light(g, x + 172, 140, 30, 12, '#2ee6ff', 0.08, 3); }
+      }
+      g.fillStyle = '#2a2026'; g.fillRect(0, 226, W, 6); g.fillStyle = '#3a2e30'; g.fillRect(0, 230, W, 2);
+    }
+  }
+
   drawCity(g, dist, t, layer, speed, baseY, tileW) {
     const off = dist * speed;
     const i0 = Math.floor(off / tileW) - 2, i1 = i0 + Math.ceil(this.LW / tileW) + 4;
@@ -1216,6 +1452,30 @@ class Street2D {
     }
   }
   // personaggi: Niko (tuta blu, cappello rosso, baffi, chiave inglese che lavora) e Luca (felpa nera, cappello al contrario, tablet)
+  // primo piano fuori città: sotto la carreggiata (y 339–360)
+  drawNearSide(g, bg, dist, PPM, visFrom, visTo, wx, t) {
+    const W = this.LW, rnd = Street2D.rnd;
+    g.fillStyle = this.C.ink; g.fillRect(0, 337, W, 2);
+    if (bg === 'highway') {
+      g.fillStyle = '#4a5068'; g.fillRect(0, 339, W, 21); g.fillStyle = '#6a7090'; g.fillRect(0, 339, W, 3); g.fillStyle = '#3a3f58'; g.fillRect(0, 350, W, 10);
+      for (let m = Math.floor(visFrom / 4) * 4; m < visTo; m += 4) { const x = wx(m); g.fillStyle = '#2e3348'; g.fillRect(x, 342, 1, 18); }
+      for (let m = Math.floor(visFrom / 12) * 12; m < visTo; m += 12) { const x = wx(m); g.fillStyle = '#ffb000'; g.fillRect(x, 344, 3, 2); this.light(g, x + 1, 345, 6, 3, '#ffb000', 0.2, 2); }
+    } else if (bg === 'mountain' || bg === 'plain') {
+      g.fillStyle = bg === 'mountain' ? '#0e1820' : '#142218'; g.fillRect(0, 339, W, 21);
+      for (let x = 0; x < W; x += 2) { const k = Math.floor((x + dist * PPM) / 2); g.fillStyle = rnd(k) < 0.5 ? '#1a2c22' : '#0e1a14'; g.fillRect(x, 339 + Math.floor(rnd(k + 1) * 4), 2, 3 + Math.floor(rnd(k + 2) * 5)); }
+      g.fillStyle = '#5c6386'; g.fillRect(0, 343, W, 3); g.fillStyle = '#8a93b0'; g.fillRect(0, 343, W, 1);
+      for (let m = Math.floor(visFrom / 4) * 4; m < visTo; m += 4) { const x = wx(m); g.fillStyle = '#3a3f58'; g.fillRect(x, 342, 3, 18); }
+    } else if (bg === 'sea') {
+      g.fillStyle = '#2a2030'; g.fillRect(0, 339, W, 21);
+      for (let m = Math.floor(visFrom / 1.3) * 1.3; m < visTo; m += 1.3) { const x = wx(m), k = Math.round(m / 1.3); g.fillStyle = rnd(k) < 0.5 ? '#342838' : '#221a28'; g.fillRect(x, 339 + Math.floor(rnd(k + 1) * 8), 30, 6); }
+      for (let m = Math.floor(visFrom / 9) * 9; m < visTo; m += 9) { const x = wx(m), k = Math.round(m / 9); const col = rnd(k + 5) < 0.6 ? '#c8287a' : '#d8c040';
+        for (let q = 0; q < 14; q++) { g.fillStyle = q % 3 ? Street2D.shade(col, -0.45) : col; g.fillRect(x + Math.floor(rnd(k * 9 + q) * 24), 340 + Math.floor(rnd(k * 7 + q) * 12), 2, 2); } }
+    } else {
+      g.fillStyle = '#2c2226'; g.fillRect(0, 339, W, 21);
+      for (let m = Math.floor(visFrom / 0.7) * 0.7; m < visTo; m += 0.7) { const x = wx(m), k = Math.round(m / 0.7); if (rnd(k) < 0.3) { g.fillStyle = rnd(k + 1) < 0.5 ? '#3a2e30' : '#1c1418'; g.fillRect(x, 341 + Math.floor(rnd(k + 2) * 16), 2 + Math.floor(rnd(k + 3) * 4), 2); } }
+    }
+  }
+
   // radar delle corsie: tre strisce viste dall'alto, l'auto del giocatore, il traffico da −40 a +160 m;
   // in rosso chi è vicino nella stessa corsia e va più piano (rischio tamponamento)
   drawLaneRadar(g, game, dist, t) {
@@ -1416,24 +1676,30 @@ class Street2D {
       g.fillStyle = gr; g.fillRect(0, 0, W, 224);
       if (!wt) { const sx = W * 0.22, sy = 150 - dd * 110; this.light(g, sx, sy, 34, 34, ss > 0.3 ? '#ffb070' : '#fff2c0', 0.25, 4); g.fillStyle = ss > 0.3 ? '#ffc890' : '#fff6d8'; this.span(g, sx, sy, 11, 11); }
     }
-    this.drawCity(g, dist, st.t, 'haze', 0.025, 188, 50);
-    g.fillStyle = 'rgba(70,50,114,.35)'; g.fillRect(0, 150, W, 40);
-    this.drawCity(g, dist, st.t, 'far', 0.07, 200, 52);
-    g.fillStyle = 'rgba(70,50,114,.22)'; g.fillRect(0, 168, W, 34);
-    this.drawTrain(g, dist, st.t);
-    const shops = this.drawCity(g, dist, st.t, 'mid', 0.22, 216, 72);
+    // luogo della mappa del mondo: la città di sempre o uno sfondo dedicato
+    const bg = (game && game.loc && game.loc.bg) || this.bg || 'city';
+    let shops = [];
+    if (bg === 'city') {
+      this.drawCity(g, dist, st.t, 'haze', 0.025, 188, 50);
+      g.fillStyle = 'rgba(70,50,114,.35)'; g.fillRect(0, 150, W, 40);
+      this.drawCity(g, dist, st.t, 'far', 0.07, 200, 52);
+      g.fillStyle = 'rgba(70,50,114,.22)'; g.fillRect(0, 168, W, 34);
+      this.drawTrain(g, dist, st.t);
+      shops = this.drawCity(g, dist, st.t, 'mid', 0.22, 216, 72);
+    } else this.drawScenery(g, dist, st.t, bg, { wx, visFrom, visTo });
     // velocità: lo sfondo lascia una scia (copie spostate e trasparenti), più lunga quanto più si va forte
     const smear = Math.min(1, Math.max(0, (Math.abs(s.v) - 12) / 40));
     if (smear > 0.02 && this.quality !== 'bassa') { g.save(); for (const [o, a] of [[5, 0.32], [11, 0.2], [18, 0.12]]) { g.globalAlpha = a * smear; g.drawImage(this.lo, 0, 40, W, 192, -o * (0.5 + smear), 40, W, 192); } g.restore(); }
 
     // ---- marciapiede lontano, luce delle vetrine, pedoni
+    if (bg === 'city' || bg === 'village') {
     g.fillStyle = C.ink; g.fillRect(0, 215, W, 1);
     g.fillStyle = C.walk; g.fillRect(0, 216, W, 16);
     g.fillStyle = '#353a55'; for (let x = -((dist * PPM) % 32); x < W; x += 32) g.fillRect(Math.round(x), 216, 1, 16);
     g.fillRect(0, 222, W, 1);
     g.fillStyle = '#4a5070'; g.fillRect(0, 230, W, 2);
     for (const sh of shops) this.light(g, sh.x, 224, sh.w * 0.6, 7, sh.col, 0.07, 3);
-    for (let k = 0; k < 6; k++) {
+    for (let k = 0; k < (bg === 'city' ? 6 : 2); k++) {
       const span = W + 120, walkX = ((k * 157 + st.t * (14 + k * 5) * (k % 2 ? 1 : -1) - dist * PPM * 0.22) % span + span) % span - 60;
       const legs = Math.floor(st.t * 7 + k) % 2, X = Math.round(walkX), dir = k % 2 ? 1 : -1;
       const coat = ['#2a1f4f', '#123049', '#3a1f2e', '#1f3a2e', '#4a2a1a', '#2a2a3a'][k], hair = ['#1a1010', '#3a2010', '#d9c08a', '#0a0a0a', '#7a3a1a', '#c0c0c0'][k];
@@ -1444,12 +1710,14 @@ class Street2D {
       g.fillStyle = '#1a1a2a'; g.fillRect(X + (legs ? 0 : 1), 220, 2, 9); g.fillRect(X + (legs ? 3 : 2), 220, 2, 9);
       if (k === 2) { g.fillStyle = C.ink; g.fillRect(X + (dir > 0 ? 6 : -4), 212, 3, 6); g.fillStyle = '#b8ff3a'; g.fillRect(X + (dir > 0 ? 6 : -4), 213, 2, 4); }   // sacchetto
     }
+    }
     // ---- carreggiata
     g.fillStyle = C.road2; g.fillRect(0, 232, W, 4);
     const rt = this.roadTile(), ro = ((dist * PPM) % 256 + 256) % 256;
     for (let x = -ro; x < W; x += 256) g.drawImage(rt, Math.round(x), 236);
     for (let m = Math.ceil(visFrom / 47) * 47; m < visTo; m += 47) { const x = wx(m); g.fillStyle = '#14172a'; g.fillRect(x, 236, 3, 104); g.fillStyle = '#3a3f58'; g.fillRect(x + 3, 236, 1, 104); }
-    for (let m = Math.ceil(visFrom / 61) * 61 + 20; m < visTo; m += 61) {                       // tombini fumanti
+    const urban = bg === 'city' || bg === 'village';
+    for (let m = Math.ceil(visFrom / 61) * 61 + 20; urban && m < visTo; m += 61) {                       // tombini fumanti
       const x = wx(m);
       g.fillStyle = C.ink; this.span(g, x, 282, 14, 4); g.fillStyle = '#2a2f40'; this.span(g, x, 282, 12, 3);
       g.fillStyle = '#14172a'; for (let k = -10; k <= 10; k += 3) g.fillRect(x + k, 280, 1, 5);
@@ -1463,7 +1731,7 @@ class Street2D {
     g.fillStyle = C.line; g.fillRect(0, 238, W, 2); g.fillRect(0, 335, W, 2);
     for (let x = -((dist * PPM) % (12 * PPM)); x < W; x += 12 * PPM) { g.fillRect(Math.round(x), 262, Math.round(4.5 * PPM), 2); g.fillRect(Math.round(x), 300, Math.round(4.5 * PPM), 2); }
     // incroci: strisce pedonali ogni 260 m (il semaforo si disegna davanti, alla fine)
-    for (let m = Math.floor((visFrom - 140) / 260) * 260 + 130; m < visTo + 10; m += 260) {
+    for (let m = Math.floor((visFrom - 140) / 260) * 260 + 130; urban && m < visTo + 10; m += 260) {
       const x = wx(m);
       for (let yy = 242; yy < 334; yy += 8) { g.fillStyle = 'rgba(216,212,198,.82)'; g.fillRect(x, yy, 4 * PPM, 5); g.fillStyle = 'rgba(120,118,110,.5)'; g.fillRect(x, yy + 5, 4 * PPM, 1); }
       g.fillStyle = 'rgba(232,228,214,.9)'; g.fillRect(x - 12, 242, 3, 92);                    // linea d'arresto
@@ -1509,8 +1777,8 @@ class Street2D {
     this.marks = this.marks.filter((mk) => wx(mk.m) > -60).slice(-400);
 
     // ---- lampioni: alone piccolo, pozza a terra, riflesso sul bagnato (niente fasci)
-    const lampX = [];
-    for (let lm = Math.floor(visFrom / 24) * 24; lm < visTo + 24; lm += 24) {
+    const lampX = [], lampSp = { city: 24, village: 30, sea: 32, highway: 40 }[bg] || 0;
+    for (let lm = Math.floor(visFrom / (lampSp || 1)) * lampSp; lampSp && lm < visTo + lampSp; lm += lampSp) {
       const x = wx(lm); lampX.push(x);
       this.light(g, x + 18, 252, 70, 13, '#ffcf7a', 0.07, 4);               // pozza sull'asfalto, corsia lontana
       this.light(g, x + 18, 226, 46, 6, '#ffcf7a', 0.08, 3);                // pozza sul marciapiede
@@ -1808,7 +2076,7 @@ class Street2D {
 
     for (const e of front) drawEnt(e);
     // semafori degli incroci, in primo piano sul marciapiede vicino: verde, giallo, rosso a ciclo
-    for (let m = Math.floor((visFrom - 140) / 260) * 260 + 130; m < visTo + 20; m += 260) {
+    for (let m = Math.floor((visFrom - 140) / 260) * 260 + 130; bg === 'city' && m < visTo + 20; m += 260) {
       const px2 = wx(m) + 4 * PPM + 10, ph = ((st.t + m * 0.013) % 14 + 14) % 14, light = ph < 8 ? 2 : ph < 10 ? 1 : 0;
       const ax = px2 - 120;
       g.fillStyle = C.ink; g.fillRect(px2 - 2, 108, 6, 252); g.fillRect(ax, 108, px2 - ax + 2, 5);
@@ -1837,7 +2105,9 @@ class Street2D {
     if (game && game.race && game.race.phase === 'run' && game.race.tt < 0.05 && cd('go', 2)) this.comic('VIA!', carX + 80, carTop - 30, '#b8ff3a', 6, '#163a8c');
     st.prevV = s.v; st.prevFlame = st.flame; st.prevSiren = !!(game && game.siren);
     this.drawComics(g, dt);
-    // ---- marciapiede vicino con oggetti in primo piano
+    // ---- marciapiede vicino con oggetti in primo piano (fuori città: barriera, guardrail, roccia, erba o sabbia)
+    if (!urban) this.drawNearSide(g, bg, dist, PPM, visFrom, visTo, wx, st.t);
+    else {
     g.fillStyle = C.ink; g.fillRect(0, 339, W, 2);
     g.fillStyle = '#5c6386'; g.fillRect(0, 341, W, 2);
     g.fillStyle = C.curb; g.fillRect(0, 343, W, 17);
@@ -1849,6 +2119,7 @@ class Street2D {
       const x = wx(m + Street2D.rnd(k + 302) * 8);
       g.fillStyle = 'rgba(4,5,12,.45)'; g.fillRect(x - 10, 356, 22, 3);
       this.prop(g, kind, x, 358, st.t);
+    }
     }
 
     // ---- linee di velocità sopra i 90 km/h circa

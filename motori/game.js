@@ -15,6 +15,24 @@ const GAME_TRAFFIC = [
   { vt: 'sedan', len: 4.6, v: [18, 28], w: 30 }, { vt: 'kei', len: 3.4, v: [15, 22], w: 14 }, { vt: 'taxi', len: 4.7, v: [17, 25], w: 10 },
   { vt: 'van', len: 4.9, v: [16, 24], w: 12 }, { vt: 'truck', len: 8.4, v: [13, 19], w: 8 }, { vt: 'bus', len: 11, v: [11, 16], w: 5 },
 ];
+// luoghi della mappa del mondo: posti veri, ognuno con il suo sfondo 2D e il suo traffico
+// bg: tipo di sfondo · lat/lon: coordinate reali · traffic: densità · mix: quanto pesa ogni tipo di veicolo · places: negozi e officine
+const GAME_LOCS = [
+  { id: 'tokyo', name: 'Tokyo · Shinjuku', country: 'Giappone', bg: 'city', lat: 35.6938, lon: 139.7034, traffic: 1.1, places: true,
+    note: 'Insegne, izakaya e il treno sopraelevato. Qui ci sono il benzinaio, Luca, Niko e il Neon Kustom.' },
+  { id: 'wangan', name: 'Wangan · Bayshore Route', country: 'Giappone', bg: 'highway', lat: 35.4614, lon: 139.6800, traffic: 1.6, mix: { truck: 2.6, bus: 0.3, kei: 0.5, taxi: 0.6 },
+    note: 'L\'autostrada sopraelevata sulla baia di Tokyo verso Daikoku: barriere antirumore, lampioni al sodio, la città sull\'acqua.' },
+  { id: 'hakone', name: 'Hakone Turnpike', country: 'Giappone', bg: 'mountain', lat: 35.2420, lon: 139.1040, traffic: 0.5, mix: { truck: 0.2, bus: 0.2, taxi: 0.2 },
+    note: 'La salita tra i cedri sopra Odawara, col Fuji innevato all\'orizzonte. Niente lampioni: solo i tuoi fari e i catarifrangenti.' },
+  { id: 'positano', name: 'Costiera Amalfitana · Positano', country: 'Italia', bg: 'sea', lat: 40.6281, lon: 14.4850, traffic: 0.8, mix: { bus: 1.5, truck: 0.3, kei: 0.3, taxi: 0.2, van: 1.3 },
+    note: 'La statale 163 a picco sul Tirreno: muretto bianco, case colorate sulla roccia, la luna sul mare e le lampare.' },
+  { id: 'bassa', name: 'Bassa Reggiana · Guastalla', country: 'Italia', bg: 'plain', lat: 44.9203, lon: 10.6555, traffic: 0.6, mix: { truck: 1.6, bus: 0.2, taxi: 0.1, kei: 0.4 },
+    note: 'Pianura Padana vicino al Po: filari di pioppi, cascine, tralicci, banchi di nebbia sui campi.' },
+  { id: 'sangimignano', name: 'San Gimignano', country: 'Italia', bg: 'village', lat: 43.4676, lon: 11.0434, traffic: 0.5, mix: { bus: 0.4, truck: 0.3, kei: 0.5, van: 1.3, taxi: 0.1 },
+    note: 'Il borgo delle torri sulle colline senesi: case di pietra, persiane verdi, cipressi e il campanile.' },
+  { id: 'route66', name: 'Route 66 · Amboy, Mojave', country: 'Stati Uniti', bg: 'desert', lat: 34.5583, lon: -115.7444, traffic: 0.4, mix: { truck: 2.2, bus: 0.1, kei: 0.05, taxi: 0, van: 1.2 },
+    note: 'La Mother Road nel deserto della California: mesas sotto le stelle, pali del telefono, un motel col neon.' },
+];
 const GAME_LANE_Z = { 0: 6.1, 1: 3.5, 2: 0, 3: -3.5 };
 
 // strada di montagna: la direzione cambia con la distanza percorsa (somma di sinusoidi), raggi fino a ~60 m.
@@ -136,6 +154,7 @@ class StreetGame {
     this.siren = 0;
     this.autoLane = true;      // sorpasso automatico (si può spegnere)
     this.track = 'city';       // 'city' oppure 'mountain' (solo in modalità libera)
+    this.loc = GAME_LOCS[0];   // luogo della mappa del mondo (sfondo 2D e traffico)
     this.manualT = 0;          // secondi in cui la corsia l'ha scelta il pilota
     this.steerIn = 0;          // sterzo libero tenuto dal pilota: +1 sinistra, -1 destra
     this.latV = 0;             // velocità laterale (m/s)
@@ -250,7 +269,7 @@ class StreetGame {
   // ------------------------------------------------------------ salvataggio
   save() { return JSON.stringify({ mode: this.mode, s: this.s }); }
   load(json) {
-    try { const o = JSON.parse(json); if (o && o.s) { Object.assign(this.s, o.s); this.mode = o.mode === 'free' ? 'free' : 'career'; } } catch (e) { /* salvataggio illeggibile */ }
+    try { const o = JSON.parse(json); if (o && o.s) { Object.assign(this.s, o.s); this.mode = o.mode === 'free' ? 'free' : 'career'; this.loc = GAME_LOCS.find((l) => l.id === this.s.loc) || GAME_LOCS[0]; } } catch (e) { /* salvataggio illeggibile */ }
     if (!Array.isArray(this.s.trunk)) this.s.trunk = [];
     // contachilometri per auto (i salvataggi vecchi partono dalla distanza già percorsa)
     if (!this.s.cars || !this.s.cars.supra) this.s.cars = { supra: { km: Math.max(0, (this.s.dist || 0) / 1000) } };
@@ -382,6 +401,14 @@ class StreetGame {
     return { ok: true, paid: p };
   }
 
+  // viaggio verso un altro punto della mappa: cambia sfondo e traffico, la strada si svuota
+  setLoc(id) {
+    const L = GAME_LOCS.find((l) => l.id === id); if (!L) return false;
+    this.loc = L; this.s.loc = L.id;
+    this.ents = this.ents.filter((e) => e.kind === 'drop');
+    this.nextTraffic = 0; this.inside = null; this.prompt = null;
+    return true;
+  }
   say(text, kind = 'info') { this.out.push({ text, kind }); }
   ask(p) { if (this.prompt) return false; this.prompt = Object.assign({ t: 9, time: 9 }, p); this.prompt.t = this.prompt.time; return true; }
   answer(i) {

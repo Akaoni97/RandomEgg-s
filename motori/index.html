@@ -201,6 +201,20 @@ h1 span { color: var(--amber); }
 @keyframes enterPulse { 50% { box-shadow: 0 0 0 2px #000, 0 0 4px rgba(255,179,71,.2); } }
 .place { position: fixed; z-index: 40; top: 0; right: 0; bottom: 0; width: min(560px, 100%); overflow: auto; background: linear-gradient(180deg, rgba(22,20,16,.97), rgba(12,11,9,.98)); box-shadow: -18px 0 40px rgba(0,0,0,.6), inset 3px 0 0 var(--place-col, var(--amber)); padding: 14px 16px 24px; display: grid; align-content: start; gap: 12px; }
 .place[hidden] { display: none; }
+.worldmap { width: min(780px, 100%); --place-col: #2ee6ff; }
+.wm-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.wm-tabs button { background: #1c1a15; color: var(--fg); border: 0; box-shadow: inset 0 0 0 1px #4a4234; padding: 6px 12px; font: 600 13px/1 var(--f-data); cursor: pointer; }
+.wm-tabs button[aria-pressed="true"] { background: #2ee6ff; color: #0b0a08; }
+#wmCv { width: 100%; display: block; background: #070b14; box-shadow: inset 0 0 0 1px #1c2a3c; cursor: pointer; image-rendering: pixelated; }
+.wm-list { display: grid; gap: 8px; }
+.wm-card { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 12px; background: #13120f; box-shadow: inset 3px 0 0 var(--c, #2ee6ff), inset 0 0 0 1px #2a2620; }
+.wm-card.sel { background: #1a1d22; box-shadow: inset 3px 0 0 var(--c, #2ee6ff), inset 0 0 0 1px var(--c, #2ee6ff); }
+.wm-card b { font: 400 17px/1.1 var(--f-display); letter-spacing: .03em; }
+.wm-card .wm-meta { font: 500 12px/1.3 var(--f-data); color: var(--muted); }
+.wm-card p { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--fg); opacity: .85; }
+.wm-card .go { align-self: center; grid-row: 1 / 3; grid-column: 2; }
+body.travel .road canvas { opacity: 0; transition: opacity .35s; }
+.road canvas { transition: opacity .5s; }
 .place-head { display: flex; align-items: center; gap: 10px; position: sticky; top: -14px; padding: 8px 0; background: #16140f; z-index: 1; }
 .place-head h3 { margin: 0; flex: 1; font: 400 22px/1 var(--f-display); letter-spacing: .05em; text-transform: uppercase; font-style: italic; color: var(--place-col, var(--amber)); }
 .place-cash { font: 400 14px/1 var(--f-data); color: var(--lime); }
@@ -706,6 +720,13 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       </div>
     </div>
     </div>
+    <div class="place worldmap" id="worldMap" hidden role="dialog" aria-labelledby="wmTitle">
+      <div class="place-head"><h3 id="wmTitle">Mappa del mondo</h3><span class="place-cash" id="wmHere"></span>
+        <button class="go small" type="button" id="wmClose">Chiudi <kbd>T</kbd></button></div>
+      <div class="wm-tabs" id="wmTabs" role="group" aria-label="Zona della mappa"></div>
+      <canvas id="wmCv" aria-label="Mappa con i luoghi in cui guidare"></canvas>
+      <div class="wm-list" id="wmList"></div>
+    </div>
     <div class="place" id="placeBox" hidden role="dialog" aria-labelledby="placeTitle">
       <div class="place-head"><h3 id="placeTitle">Officina</h3><span class="place-cash" id="placeCash"></span>
         <button class="go small" type="button" id="placeExit">Esci <kbd>U</kbd></button></div>
@@ -725,6 +746,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
       <button class="kbtn only3d" type="button" id="glbReset">Modello di base</button>
       <button class="kbtn only3d" type="button" id="camReset">Inquadratura</button>
       <button class="kbtn only3d" type="button" id="camNext">Telecamera<small>C</small></button>
+      <button class="kbtn" type="button" id="mapBtn">Mappa del mondo<small>T</small></button>
       <button class="kbtn" type="button" id="fsBtn2">Schermo intero<small>Z</small></button>
       <button class="kbtn" type="button" id="showBtn">Vetrina<small>G</small></button>
       <button class="kbtn" type="button" id="photoBtn">Foto<small>X</small></button>
@@ -1244,6 +1266,7 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
     else if (k === 'p') radioNext();
     else if (k === 'u') placeKey();
     else if (k === 'z') toggleFs();
+    else if (k === 't') toggleWorldMap();
     else if (k === 'j') { const st = S.hudG === false ? 0 : S.hudStyle === 'anime' ? 2 : 1, nx = (st + 1) % 3; S.hudG = nx !== 0; S.hudStyle = nx === 2 ? 'anime' : 'orig';
       flash(nx === 0 ? 'Strumenti in gioco: spenti' : nx === 1 ? 'Strumenti in gioco: quadro originale dell\'auto' : 'Strumenti in gioco: stile anime', 1.4); try { localStorage.setItem('banco2jz', JSON.stringify(S)); } catch (err) { /* ignora */ } }
     else if (k === 'k') cycleMeteo();
@@ -1937,13 +1960,123 @@ code { font: 400 12.5px/1 var(--f-data); color: var(--amber); }
   // ---------------------------------------------------------------- luoghi in città (2D): mappa, ingresso, interni
   // Benzinaio, officina e ricambi estetici sono edifici veri lungo la strada: ci si ferma davanti e si entra con la Supra.
   // estetica mostrata: quella scelta più lo sporco (si accumula coi chilometri, si lava da Niko)
+
+  // ---------------------------------------------------------------- mappa del mondo: punti reali, ognuno con il suo sfondo
+  const WM_TYPES = { city: ['Città', '#ff5fa8'], highway: ['Autostrada', '#ffb000'], mountain: ['Montagna', '#7dff9a'], sea: ['Mare', '#2ee6ff'], plain: ['Pianura', '#c9dd5a'], village: ['Paese', '#ff9a5a'], desert: ['Deserto', '#ff6a3a'] };
+  const WM_VIEWS = { mondo: ['Mondo', -170, 180, 72, -48], giappone: ['Giappone', 128, 147, 46, 30], italia: ['Italia', 5.5, 19.5, 47.5, 36], usa: ['Stati Uniti', -126, -66, 50, 23] };
+  // coste semplificate (longitudine, latitudine): bastano per riconoscere i continenti a puntini
+  const WM_LAND = [
+    [[-168,66],[-162,70],[-140,70],[-125,70],[-95,72],[-80,73],[-64,60],[-56,52],[-66,45],[-70,41],[-76,35],[-81,31],[-80,25],[-84,30],[-90,29],[-97,26],[-97,22],[-92,18],[-87,21],[-88,15],[-83,9],[-78,8],[-80,7],[-85,11],[-92,14],[-105,20],[-110,23],[-112,29],[-117,32],[-121,35],[-124,40],[-124,48],[-133,56],[-150,60],[-158,57],[-165,61]],
+    [[-55,60],[-45,60],[-20,70],[-20,80],[-60,82],[-70,77],[-55,68]],
+    [[-80,8],[-77,0],[-81,-5],[-75,-15],[-71,-18],[-71,-30],[-74,-42],[-74,-52],[-68,-55],[-65,-47],[-58,-38],[-48,-26],[-41,-22],[-35,-8],[-50,0],[-60,8],[-72,12]],
+    [[-9.5,37],[-9,43],[-1.5,43.5],[-4.5,48.5],[1.5,50.5],[4,51.5],[8,54],[8.5,57],[10.5,57.5],[11,59],[5,59],[5,62],[14,67],[20,70],[28,71],[34,69],[40,67],[44,68],[56,69],[60,68],[60,50],[50,47],[48,42],[40,41.5],[30,41],[26,40.5],[24,38],[22,36.5],[21,39],[19.5,42],[13.7,45.6],[12.4,44.5],[9,44.3],[7,43.6],[3,43.2],[3.2,42],[0,40],[-0.5,38.5],[-2,36.7],[-5.5,36]],
+    [[7,44],[9,44.3],[12.4,44.4],[13.7,45.6],[12.3,44.2],[13.5,43.6],[14.2,42.4],[16.1,41.9],[18.5,40.2],[17.1,39.4],[16.5,38.4],[15.7,37.9],[15.8,39.6],[14.6,40.6],[13,41.2],[12,41.9],[10.6,42.9],[10.2,43.9],[8.5,44.4]],
+    [[12.4,38.1],[15.6,38.3],[15.1,36.7],[12.6,37.6]], [[8.2,39],[9.7,39.1],[9.8,41],[8.3,41]],
+    [[-5.5,50],[1.5,51],[1.8,52.8],[0,53.5],[-1.5,55],[-2,57],[-3.5,58.6],[-5,58.5],[-6,56],[-5,54.5],[-3,53.5],[-4.5,52],[-5.3,51.7]], [[-10,51.5],[-6,52],[-6,54],[-8,55.2],[-10,54]],
+    [[-24,65.5],[-18,66.5],[-13.5,65],[-18,63.4],[-22,64]],
+    [[-17,21],[-13,28],[-9,32],[-6,35.8],[10,37],[11,33],[20,31],[25,31.5],[32,31],[34,28],[43,12],[51,12],[50,10],[40,-3],[40,-15],[35,-24],[32,-28],[27,-33.8],[20,-34.8],[18,-32],[15,-27],[12,-17],[13,-11],[9,-1],[9,4],[5,5],[-4,5],[-8,4.5],[-13,8],[-17,14.5]],
+    [[44,-25],[47,-25],[50,-15],[49,-12],[44,-16]],
+    [[26,40],[36,36],[35,33],[43,12.5],[52,16],[57,18],[59,22.5],[56,26.5],[50,30],[57,25.5],[62,25],[67,24.5],[72,21],[73,16],[77,8],[80,13],[80,16],[87,21],[92,22],[94,16],[98,16],[98,8],[100,4],[104,1.3],[101,6.5],[100,13],[105,9],[109,12],[106,20],[110,21.5],[117,23],[120,26],[122,31],[119,35],[122,37],[118,38],[121,40.5],[126,38],[126,35],[129,35],[129.5,42],[135,43.5],[141,48.5],[140,53],[135,54.5],[143,59],[155,59],[162,62],[180,65],[180,69],[160,70],[140,72],[113,74],[100,78],[80,73],[70,73],[66,69],[60,69],[60,50],[50,46],[48,42],[40,41.5]],
+    [[130,31],[131.5,31.3],[132,33.8],[135.1,33.5],[136.6,34.2],[137.3,34.6],[138.8,34.6],[139.1,35.1],[139.6,35.2],[139.7,35.5],[139.85,35.25],[139.8,34.95],[140.4,35.15],[140.9,35.7],[140.6,36.3],[141,38],[142,40],[141.5,41.5],[140,40.5],[139.8,38.5],[137,37],[136,35.7],[133,35.5],[131,34.5],[130,33.5]],
+    [[140,41.8],[142,42.2],[145.5,43.3],[144,44.2],[142,45.4],[141.5,43.5]], [[130.2,33.9],[131.9,34],[131.4,31.4],[130.2,31.3]], [[132.6,33.9],[134.7,34.2],[134.2,33.2],[132.9,32.8]],
+    [[114,-22],[114,-34],[118,-35],[124,-33.5],[131,-31.5],[135,-35],[138,-35],[140,-38],[146,-39],[150,-37],[153,-31],[153,-25],[146,-19],[142,-11],[141,-17],[136,-12],[130,-11.5],[126,-14],[122,-18]],
+    [[95,5.5],[98,4],[104,-2],[106,-6],[102,-4],[96,2]], [[109,1.5],[117,7],[119,5],[117,1],[116,-4],[110,-3]], [[131,-1],[141,-2.5],[150,-10],[143,-9],[138,-8]],
+    [[166.5,-46],[172,-41],[174,-41],[178,-38],[175,-36],[173,-35],[171,-44],[168,-46.5]],
+  ];
+  const wm = { view: null, sel: null, dots: new Map() };
+  const inPoly = (x, y, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, yi] = P[i], [xj, yj] = P[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+  function wmDraw() {
+    const cv = $('wmCv'), V = WM_VIEWS[wm.view], [, l0, l1, a0, a1] = V;
+    const Wc = Math.max(320, cv.clientWidth || 700), Hc = Math.round(Wc * Math.min(0.62, Math.max(0.4, (a0 - a1) / (l1 - l0) * 1.25)));
+    cv.width = Wc; cv.height = Hc; const g = cv.getContext('2d');
+    const X = (lon) => (lon - l0) / (l1 - l0) * Wc, Y = (lat) => (a0 - lat) / (a0 - a1) * Hc;
+    g.fillStyle = '#070b14'; g.fillRect(0, 0, Wc, Hc);
+    g.strokeStyle = 'rgba(46,230,255,.08)'; g.lineWidth = 1;
+    const stepG = (l1 - l0) > 90 ? 30 : (l1 - l0) > 30 ? 10 : 2;
+    for (let lon = Math.ceil(l0 / stepG) * stepG; lon < l1; lon += stepG) { g.beginPath(); g.moveTo(X(lon), 0); g.lineTo(X(lon), Hc); g.stroke(); }
+    for (let lat = Math.ceil(a1 / stepG) * stepG; lat < a0; lat += stepG) { g.beginPath(); g.moveTo(0, Y(lat)); g.lineTo(Wc, Y(lat)); g.stroke(); }
+    // terre a puntini (in cache per vista)
+    const key = wm.view + Wc;
+    if (!wm.dots.has(key)) {
+      const pts = [], cell = Math.max(4, Math.round(Wc / 150)), boxes = WM_LAND.map((P) => [Math.min(...P.map((p) => p[0])), Math.max(...P.map((p) => p[0])), Math.min(...P.map((p) => p[1])), Math.max(...P.map((p) => p[1]))]);
+      for (let py = cell / 2; py < Hc; py += cell) for (let px = cell / 2; px < Wc; px += cell) {
+        const lon = l0 + px / Wc * (l1 - l0), lat = a0 - py / Hc * (a0 - a1);
+        if (WM_LAND.some((P, i) => lon >= boxes[i][0] && lon <= boxes[i][1] && lat >= boxes[i][2] && lat <= boxes[i][3] && inPoly(lon, lat, P))) pts.push(px, py);
+      }
+      wm.dots.set(key, { pts, cell });
+    }
+    const D = wm.dots.get(key); g.fillStyle = '#2a4a6a';
+    for (let i = 0; i < D.pts.length; i += 2) g.fillRect(Math.round(D.pts[i] - D.cell * 0.3), Math.round(D.pts[i + 1] - D.cell * 0.3), Math.max(2, Math.round(D.cell * 0.6)), Math.max(2, Math.round(D.cell * 0.6)));
+    // punti: luogo attuale che pulsa, luogo scelto con l'etichetta
+    wm.pins = [];
+    const tt = performance.now() / 1000;
+    for (const L of GAME_LOCS) {
+      const x = X(L.lon), y = Y(L.lat); if (x < -10 || x > Wc + 10 || y < -10 || y > Hc + 10) continue;
+      const col = WM_TYPES[L.bg][1], here = game.loc && game.loc.id === L.id, sel = wm.sel === L.id;
+      wm.pins.push({ id: L.id, x, y });
+      if (here) { g.strokeStyle = col; g.globalAlpha = 0.6 - (tt % 1) * 0.6; g.beginPath(); g.arc(x, y, 6 + (tt % 1) * 12, 0, 7); g.stroke(); g.globalAlpha = 1; }
+      g.fillStyle = '#05060a'; g.fillRect(Math.round(x) - 5, Math.round(y) - 5, 10, 10);
+      g.fillStyle = col; g.fillRect(Math.round(x) - 4, Math.round(y) - 4, 8, 8);
+      if (sel || here) { g.fillStyle = '#fff'; g.fillRect(Math.round(x) - 2, Math.round(y) - 2, 4, 4); }
+      if (wm.view !== 'mondo' || sel) {
+        g.font = `600 ${sel ? 13 : 11}px ${FM}`; g.textBaseline = 'middle';
+        const label = L.name.split(' · ')[0], w = g.measureText(label).width, lx = Math.min(Wc - w - 6, x + 9), ly = y + (L.id === 'wangan' ? 12 : L.id === 'hakone' ? -10 : 0);
+        g.fillStyle = 'rgba(5,6,10,.8)'; g.fillRect(lx - 3, ly - 8, w + 6, 16); g.fillStyle = sel ? col : '#e6f2ff'; g.fillText(label, lx, ly);
+      }
+    }
+    if (wm.raf) cancelAnimationFrame(wm.raf);
+    if (!$('worldMap').hidden) wm.raf = requestAnimationFrame(wmDraw);
+  }
+  const fmtCoord = (v, p, n) => `${Math.abs(v).toFixed(4).replace('.', ',')}° ${v >= 0 ? p : n}`;
+  function wmRender() {
+    const tabs = $('wmTabs'); tabs.innerHTML = '';
+    for (const [id, V] of Object.entries(WM_VIEWS)) { const b = document.createElement('button'); b.type = 'button'; b.textContent = V[0]; b.setAttribute('aria-pressed', String(wm.view === id)); b.addEventListener('click', () => { wm.view = id; wmRender(); }); tabs.appendChild(b); }
+    const list = $('wmList'); list.innerHTML = '';
+    for (const L of GAME_LOCS) {
+      const [tName, col] = WM_TYPES[L.bg], here = game.loc && game.loc.id === L.id, d = document.createElement('div');
+      d.className = 'wm-card' + (wm.sel === L.id ? ' sel' : ''); d.style.setProperty('--c', col);
+      d.innerHTML = `<b>${L.name}</b><span class="wm-meta">${L.country} · <span style="color:${col}">${tName}</span> · ${fmtCoord(L.lat, 'N', 'S')} ${fmtCoord(L.lon, 'E', 'O')}</span><p>${L.note}</p>`;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'go small'; b.textContent = here ? 'Sei qui' : 'Vai'; b.disabled = here;
+      b.addEventListener('click', (e) => { e.stopPropagation(); travelTo(L.id); });
+      d.insertBefore(b, d.children[1]);
+      d.addEventListener('click', () => { wm.sel = L.id; wm.view = L.lon > 120 ? 'giappone' : L.lon < -60 ? 'usa' : 'italia'; wmRender(); });
+      list.appendChild(d);
+    }
+    $('wmHere').textContent = game.loc ? 'Sei a ' + game.loc.name : '';
+    wmDraw();
+  }
+  function toggleWorldMap(force) {
+    const box = $('worldMap'), open = force !== undefined ? force : box.hidden;
+    if (open && game.track !== 'city') { flash('La mappa del mondo è per la strada in città: in montagna c\'è il percorso 3D', 2.4); return; }
+    box.hidden = !open;
+    if (open) { const L = game.loc || GAME_LOCS[0]; wm.sel = wm.sel || L.id; wm.view = wm.view || (L.lon > 120 ? 'giappone' : L.lon < -60 ? 'usa' : 'italia'); wmRender(); }
+  }
+  function travelTo(id) {
+    if (Math.abs(sim.v) > 0.8) { flash('Fermati prima di partire: l\'auto va caricata sulla bisarca', 2.2); return; }
+    if (game.race) { flash('Prima finisci la gara', 1.6); return; }
+    const L = GAME_LOCS.find((l) => l.id === id); if (!L) return;
+    document.body.classList.add('travel');
+    setTimeout(() => {
+      game.setLoc(id); toggleWorldMap(false); saveGame();
+      flash(`${L.name} (${L.country}) · ${WM_TYPES[L.bg][0].toLowerCase()}${L.places ? '' : ' · qui niente negozi: Luca e Niko sono a Tokyo'}`, 3);
+      setTimeout(() => document.body.classList.remove('travel'), 120);
+    }, 380);
+  }
+  $('wmClose').addEventListener('click', () => toggleWorldMap(false));
+  $('mapBtn').addEventListener('click', () => toggleWorldMap());
+  $('wmCv').addEventListener('click', (e) => {
+    const r = e.target.getBoundingClientRect(), x = (e.clientX - r.left) * e.target.width / r.width, y = (e.clientY - r.top) * e.target.height / r.height;
+    let best = null, bd = 18;
+    for (const p of wm.pins || []) { const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = p; } }
+    if (best) { wm.sel = best.id; wmRender(); }
+  });
   function cosView(c) { return Object.assign({}, c || S.cos, { dirt: Math.round(game.maint().dirt * 10) / 10 }); }
   const PLACE_ICON = { fuel: 'B', shop: 'L', niko: 'N', style: 'E' };
   let mmT = 0, placeOpen = null, cosPrev = null;
   const moved = [];
   const fmtDist = (m) => (m < 1000 ? Math.max(0, Math.round(m / 10) * 10) + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km');
   function placesTick(dt) {
-    game.placesOn = S.look === '2d' && game.track === 'city';
+    game.placesOn = S.look === '2d' && game.track === 'city' && !!(game.loc && game.loc.places);
     const mm = $('miniMap'), eb = $('enterBtn'), I = game.inside;
     mm.hidden = !game.placesOn || !!I;
     const p = game.placesOn && !I ? game.nearPlace() : null;

@@ -320,3 +320,30 @@ con modello di aderenza, resistenza aerodinamica e frenata. Con la configurazion
 | `street3d.js` | Strada notturna in 3D: città, arredo urbano, traffico, polizia, distributore |
 | `game.js` | Carriera: soldi, eventi, polizia, sfide, consegne, pilota automatico per le fermate |
 | `../test/motori.test.js` | Prove con `npm test` |
+
+## Limitatore, quadri originali, traffico, fisica e mappa del mondo
+
+**Limitatore (reparto da Luca, per tutte le auto).** Di serie a taglio d'iniezione; Holley soft cut a ritardo
+d'accensione (il motore galleggia contro il limite ronzando); MSD 6AL hard cut (taglio d'accensione: bang e fiamme);
+MSD 6AL-2 col 2-step (launch da fermo, turbo carico); Holley EFI 2-step + 3-step (flat shift: in salita si cambia
+col gas a fondo, la pressione resta); stutter box "brap-brap" (da fermo taglia a tempo, regolare). Nelle impostazioni
+si regolano i giri del limitatore (fino al massimo della centralina) e del launch, per ogni auto.
+
+**Quadro originale.** Lo stile "Originale dell'auto" (predefinito) ridisegna il quadro in alto come quello vero:
+Toyota col contagiri al centro e scala a 180, Volvo, Jaeger della R5 con luce verde, BMW anni '70 cromata, BMW M con
+luce arancione e strisce M, zona rossa della E36 che si sposta finché l'olio è freddo. In gioco gli strumenti a pixel
+seguono lo stesso stile (J: originale, anime, spenti), sempre con le 5 luci della cambiata.
+
+**Traffico.** Continuo e vario (berline, kei car, taxi, furgoni, camion, autobus), con code dietro ai lenti e
+frecce; la densità e la miscela dipendono dal luogo. In alto a sinistra il radar delle tre corsie (rosso se stai per
+tamponare) e sull'asfalto le frecce verdi nella corsia scelta.
+
+**Fisica.** Beccheggio con molle e smorzatori che guida il trasferimento di carico (la coda si siede, sorpassa e si
+assesta), saltellamento dell'assale vicino al picco d'aderenza, esitazione del motore quando si spalanca il gas ai
+bassi giri (forte sulla 2002 a iniezione meccanica), tempi di cambiata diversi per ogni cambio, scalata fuori giri
+rifiutata dal sincronizzatore.
+
+**Mappa del mondo (T).** Sette posti veri con le coordinate, ognuno col suo sfondo 2D: Tokyo · Shinjuku (città, con
+benzinaio, Luca, Niko e Neon Kustom), Wangan · Bayshore Route (autostrada sopraelevata sulla baia), Hakone Turnpike
+(montagna, il Fuji all'orizzonte), Positano (mare, il paese sulla roccia), Bassa Reggiana (pianura, pioppi e nebbia),
+San Gimignano (paese, le torri), Route 66 ad Amboy nel Mojave (deserto, mesas e motel). Si parte da fermi.
