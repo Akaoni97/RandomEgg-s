@@ -234,6 +234,7 @@ function genParams(c) {
 function genCar(c) {
   const d = GEN_DATA[c.id];
   c.P.tq = d.tq; c.sprite = Object.assign({ img: `img/${c.id}.png`, wheel: `img/${c.id}_wheel.png`, paint: `img/${c.id}_paint.png` }, d.sprite);
+  c.sprite.wy = Math.round((d.sprite.wy + d.sprite.wr) * 10) / 10;   // nei dati è il bordo alto della gomma: serve il centro della ruota
   c.tuning = genCatalog(c); c.presets = genPresets(c); c.params = genParams(c); c.body = c.body || {}; c.paint0 = 'orig';
   return c;
 }
