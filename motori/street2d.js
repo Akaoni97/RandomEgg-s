@@ -112,6 +112,11 @@ class Street2D {
     supra: { w: 200, ax: [48, 158] },
     coupe: { w: 200, ax: [48, 158] },
     sedan: { w: 190, ax: [40, 152] },
+    taxi: { w: 190, ax: [40, 152] },
+    kei: { w: 150, ax: [30, 120] },
+    van: { w: 200, ax: [38, 162], top: 14 },
+    truck: { w: 262, ax: [44, 172, 226], top: 42, wr: 17 },
+    bus: { w: 330, ax: [62, 268], top: 46, wr: 17 },
   };
 
   carSprite(k) {
@@ -482,18 +487,19 @@ class Street2D {
     g.restore();
   }
 
-  otherSprite(kind, color, k) {
+  otherSprite(kind, color, k, vt) {
     const hex = kind === 'police' ? '#163a8c' : '#' + (color || 0x777777).toString(16).padStart(6, '0');
-    return this.vehicle(kind === 'rival' ? 'coupe' : kind === 'police' ? 'police' : 'sedan', hex, k);
+    return this.vehicle(kind === 'rival' ? 'coupe' : kind === 'police' ? 'police' : vt && Street2D.GEO[vt] ? vt : 'sedan', hex, k);
   }
 
   vehicle(type, P, k) {
     const key = type + P + k + (type === 'supra' && this.dual ? 'd' : '');
     if (this.spr[key]) return this.spr[key];
-    const geo = Street2D.GEO[type === 'police' ? 'sedan' : type];
+    const geo = Street2D.GEO[type === 'police' ? 'sedan' : type], top = geo.top || 0;
     const D = Street2D.shade(P, -0.38), DD = Street2D.shade(P, -0.62), L = Street2D.shade(P, 0.3), LL = Street2D.shade(P, 0.6);
     const ink = this.C.ink;
-    const c = this.sprite(Math.ceil(geo.w * k), Math.ceil(57 * k), (x) => {
+    const c = this.sprite(Math.ceil(geo.w * k), Math.ceil((57 + top) * k), (x) => {
+      if (top) x.translate(0, Math.round(top * k));
       const px = (col, xx, yy, w = 1, h = 1) => { x.fillStyle = col; x.fillRect(Math.round(xx * k), Math.round(yy * k), Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k))); };
       const fillPath = (d, col) => { x.save(); x.scale(k, k); x.fillStyle = col; x.fill(new Path2D(d)); x.restore(); };
       const shadeBody = (d) => {
@@ -539,11 +545,54 @@ class Street2D {
           px(L, 0, 12, 36, 1); px(DD, 0, 16, 36, 1);
           if (k > 0.6) { this.text(x, '2JZ', Math.round(100 * k), Math.round(38 * k), LL); this.text(x, 'TURBO', Math.round(146 * k), Math.round(35 * k), Street2D.shade(P, 0.15)); }
         }
+      } else if (type === 'kei' || type === 'van' || type === 'truck' || type === 'bus') {
+        // kei car squadrata, furgone tipo Hiace, camion col cassone, autobus di linea
+        const glass = '#0d1a33', hi = '#6fd8ff';
+        if (type === 'kei') {
+          shadeBody('M4 53 L3 30 Q4 12 20 10 L104 10 Q118 12 128 26 L146 32 Q150 36 149 46 L148 53 Z');
+          fillPath('M24 27 L30 14 L70 14 L70 27 Z M74 27 L74 14 L102 14 Q110 16 118 27 Z', glass);
+          for (let n = 0; n < 7; n++) px(hi, 34 + n, 24 - n, 1, 1);
+          px(LL, 22, 10, 80, 1); px(L, 8, 33, 138, 1); px(DD, 72, 14, 1, 33);
+          px('#3a0805', 2, 30, 4, 8); px('#a3150c', 3, 31, 2, 6); px('#c9b98a', 140, 35, 7, 4); px('#fff7d6', 141, 35, 5, 2);
+          px('#14161e', 3, 48, 12, 4); px('#14161e', 136, 48, 12, 4);
+        } else if (type === 'van') {
+          shadeBody('M4 53 L3 2 Q4 -10 16 -12 L168 -12 Q180 -10 186 4 L195 28 Q199 34 198 46 L197 53 Z');
+          fillPath('M150 14 L150 -6 L172 -6 Q180 -2 186 14 Z', glass); fillPath('M20 10 L20 -4 L140 -4 L140 10 Z', glass);
+          for (let n = 0; n < 9; n++) px(hi, 156 + n, 10 - n, 1, 1);
+          px(LL, 16, -12, 152, 1); px(L, 8, 22, 186, 1); px(DD, 146, -6, 1, 52); px(DD, 96, 10, 1, 36); px(LL, 100, 24, 8, 1);
+          px('#3a0805', 2, 20, 4, 12); px('#a3150c', 3, 21, 2, 10); px('#c9b98a', 188, 30, 8, 5); px('#fff7d6', 189, 30, 6, 3);
+          px('#14161e', 3, 48, 14, 4); px('#14161e', 184, 47, 14, 5);
+        } else if (type === 'truck') {
+          // cassone (bianco o colore) e cabina davanti a destra
+          fillPath('M2 46 L2 -40 L186 -40 L186 46 Z', '#d8d6cc'); px('#b8b6ac', 2, -40, 184, 2); px('#9a988e', 2, 40, 184, 6);
+          for (let n = 0; n < 8; n++) px('#c2c0b6', 2 + n * 23, -38, 1, 78);
+          fillPath('M8 4 L180 4 L180 14 L8 14 Z', P); if (k > 0.55) this.text(x, 'NIGHT EXPRESS', Math.round(40 * k), Math.round(6 * k), '#f4f1e6');
+          shadeBody('M188 53 L188 -14 Q190 -20 198 -20 L236 -20 Q246 -18 252 0 L258 22 Q261 28 260 46 L259 53 Z');
+          fillPath('M210 8 L210 -14 L236 -14 Q244 -10 250 8 Z', glass); for (let n = 0; n < 9; n++) px(hi, 216 + n, 4 - n, 1, 1);
+          px(LL, 196, -20, 40, 1); px(L, 190, 20, 68, 1);
+          px('#14161e', 186, 46, 4, 7); px('#14161e', 6, 46, 176, 3);
+          px('#3a0805', 2, 28, 4, 10); px('#c9b98a', 252, 28, 7, 5); px('#fff7d6', 253, 28, 5, 3); px('#14161e', 246, 46, 14, 6);
+        } else {
+          // autobus: fiancata lunga con fascia di finestrini, porte, numero di linea
+          shadeBody('M3 53 L2 -36 Q3 -44 14 -44 L312 -44 Q324 -43 327 -30 L329 46 L328 53 Z');
+          fillPath('M10 14 L10 -32 L320 -32 L320 14 Z', glass);
+          for (let n = 0; n < 12; n++) px(DD, 34 + n * 24, -32, 2, 46);
+          for (let n = 0; n < 12; n++) for (let m = 0; m < 6; m++) px(hi, 14 + n * 24 + m, -20 - m, 1, 1);
+          fillPath('M232 50 L232 -26 L252 -26 L252 50 Z', '#101a2e'); px(DD, 242, -26, 1, 76);
+          px('#f4f1e6', 2, 20, 326, 3); px(LL, 12, -44, 300, 1);
+          fillPath('M296 -40 L324 -40 L324 -34 L296 -34 Z', '#1a1a10'); if (k > 0.55) this.text(x, '27', Math.round(304 * k), Math.round(-40 * k), '#ffb000');
+          px('#3a0805', 2, 28, 4, 12); px('#c9b98a', 321, 32, 7, 5); px('#fff7d6', 322, 32, 5, 3); px('#14161e', 3, 48, 16, 4); px('#14161e', 312, 47, 16, 5);
+        }
+        arches();
       } else {
         // berlina generica a tre volumi
         const body = 'M6 53 L3 40 Q4 31 14 30 L46 29 L62 12 L128 12 L146 29 L178 31 Q188 33 189 41 L188 50 Q187 53 182 53 Z';
         shadeBody(body);
         fillPath('M66 28 L77 15 L104 15 L104 28 Z M108 28 L108 15 L126 15 L140 28 Z', '#0d1a33');
+        if (type === 'taxi') {   // taxi giapponese: insegna sul tetto e fascia sulle portiere
+          fillPath('M84 5 L108 5 L110 12 L82 12 Z', '#f4e9c8'); px('#c42a1a', 86, 8, 20, 2);
+          px('#f4f1e6', 44, 38, 104, 2);
+        }
         if (type === 'police') {
           fillPath('M44 31 L148 31 L148 44 L44 44 Z', '#eef2ff');
           fillPath('M82 6 L110 6 L110 12 L82 12 Z', '#2a2f45');
@@ -1167,6 +1216,37 @@ class Street2D {
     }
   }
   // personaggi: Niko (tuta blu, cappello rosso, baffi, chiave inglese che lavora) e Luca (felpa nera, cappello al contrario, tablet)
+  // radar delle corsie: tre strisce viste dall'alto, l'auto del giocatore, il traffico da −40 a +160 m;
+  // in rosso chi è vicino nella stessa corsia e va più piano (rischio tamponamento)
+  drawLaneRadar(g, game, dist, t) {
+    const W = this.LW, w = 116, h = 44, x0 = 8, y0 = 84, from = -40, to = 160;
+    const mx = (m) => Math.round(x0 + 4 + (m - from) / (to - from) * (w - 8));
+    const ly = (z) => Math.round(y0 + 9 + (3.5 - Math.max(-3.5, Math.min(3.5, z))) / 7 * 22);   // corsia 3 in alto, 1 in basso
+    g.fillStyle = 'rgba(8,9,16,.72)'; g.fillRect(x0, y0, w, h); g.fillStyle = '#3a3f58'; g.fillRect(x0, y0, w, 1); g.fillRect(x0, y0 + h - 1, w, 1);
+    g.fillStyle = '#1a1d2c'; g.fillRect(x0 + 3, y0 + 4, w - 6, 32);
+    g.fillStyle = '#cfcab9'; g.fillRect(x0 + 3, y0 + 4, w - 6, 1); g.fillRect(x0 + 3, y0 + 35, w - 6, 1);
+    for (let xx = x0 + 4 - Math.round((dist * 0.6) % 8); xx < x0 + w - 4; xx += 8) if (xx > x0 + 3) { g.fillRect(xx, y0 + 14, 4, 1); g.fillRect(xx, y0 + 25, 4, 1); }
+    // corsia di destinazione evidenziata
+    const tl = ly(GAME_LANE_Z[game.lane] ?? 3.5);
+    g.fillStyle = Math.floor(t * 4) % 2 || Math.abs(game.laneZ - (GAME_LANE_Z[game.lane] ?? 3.5)) < 0.3 ? 'rgba(184,255,58,.16)' : 'rgba(184,255,58,.3)'; g.fillRect(x0 + 4, tl - 4, w - 8, 9);
+    const sim = game.sim, myV = sim ? sim.v : 0;
+    for (const e of game.ents) {
+      if (!(e.kind === 'traffic' || e.kind === 'police' || e.kind === 'rival')) continue;
+      const rel = e.x - dist; if (rel < from || rel > to || e.lane === 0) continue;
+      const z = e._z ?? GAME_LANE_Z[e.lane], len = Math.max(3, Math.round((e.len || 4.6) / (to - from) * (w - 8) * 1.6));
+      const same = Math.abs(z - game.laneZ) < 1.7, warn = same && rel > 0 && rel < 14 + myV * 1.2 && myV > (e.v || 0) + 1;
+      g.fillStyle = warn && Math.floor(t * 8) % 2 ? '#ff3a3a' : e.kind === 'police' ? (Math.floor(t * 6) % 2 ? '#ff2e4d' : '#4f7bff') : e.vt === 'truck' || e.vt === 'bus' ? '#c8c2b0' : e.vt === 'taxi' ? '#f0b020' : '#7f8aa8';
+      g.fillRect(mx(rel) - (len >> 1), ly(z) - 2, len, 5);
+      if (e.sig > 0 && Math.floor(t * 3) % 2 === 0) { g.fillStyle = '#ffa020'; g.fillRect(mx(rel) + (len >> 1), ly(z) + (e.to > e.lane ? -3 : 3), 2, 1); }
+    }
+    // la nostra auto: freccia nel colore della vernice
+    const px0 = mx(0), py0 = ly(game.laneZ);
+    g.fillStyle = '#05060a'; g.fillRect(px0 - 4, py0 - 3, 9, 7);
+    g.fillStyle = this.paintHex || '#ff5a3a'; g.fillRect(px0 - 3, py0 - 2, 6, 5); g.fillStyle = '#b8ff3a'; g.fillRect(px0 + 3, py0 - 1, 2, 3);
+    this.text(g, 'CORSIA ' + (game.lane || 1), x0 + 4, y0 + 37, '#b8ff3a');
+    if (game.blocked) this.text(g, 'CODA', x0 + w - 24, y0 + 37, '#ffb000');
+  }
+
   person(g, x, gy, who, t) {
     const S2 = 2, ink = this.C.ink, skin = this.C.skin;
     const p = (col, a, b, w, h) => { g.fillStyle = col; g.fillRect(Math.round(x + a * S2), Math.round(gy - b * S2), Math.round(w * S2), Math.round(h * S2)); };
@@ -1397,6 +1477,15 @@ class Street2D {
       g.fillStyle = '#7a86c0'; g.fillRect(x - rx + 5, y - 1, 3, 1);
     }
 
+    // ---- corsia scelta: frecce luminose dipinte sull'asfalto davanti all'auto (si spostano col cambio corsia)
+    if (game && game.track === 'city' && !game.inside && !game.race && this.laneRadar !== false && Math.abs(s.v) > 0.5) {
+      const ly = Math.round(this.laneY(GAME_LANE_Z[game.lane] ?? 3.5)) - 6, pulse = 0.25 + 0.15 * Math.sin(st.t * 6);
+      for (let q = 0; q < 4; q++) {
+        const xx = Math.round(carX + (110 + q * 26 + ((st.t * 40) % 26)) * 1), a = pulse * (1 - q * 0.2);
+        g.fillStyle = `rgba(184,255,58,${a})`;
+        for (let r = 0; r < 7; r++) { const o = 3 - Math.abs(r - 3); g.fillRect(xx + o * 2, ly - 3 + r, 4, 1); }
+      }
+    }
     // ---- asfalto a specchio: la città (neon, finestre) si riflette capovolta e tremolante sulla strada
     const wetA = this.quality === 'bassa' ? 0 : (this.rainOn ? 0.26 : 0.09) * (1 - 0.7 * (this.day || 0));
     if (wetA > 0.02) {
@@ -1475,15 +1564,16 @@ class Street2D {
         }
         return;
       }
-      const y = this.laneY(zOf(e)), k = kq(y), spr = this.otherSprite(e.kind, e.color, k), sc = k;
-      const w = spr.width, left = Math.round(x - w / 2), sy = Math.round(y - 57 * k - 1);
+      const y = this.laneY(zOf(e)), k = kq(y), spr = this.otherSprite(e.kind, e.color, k, e.vt), sc = k;
+      const w = spr.width, left = Math.round(x - w / 2), sy = Math.round(y - 57 * k - 1) - Math.round((spr.geo.top || 0) * k);
+      const T0 = Math.round((spr.geo.top || 0) * k);
       this.light(g, left + w + 50 * k, y - 2, 70 * k, 6, '#fff2c4', 0.06, 3);
       this.shadow(g, x, y, w * 0.45, 4);
       g.drawImage(spr, left, sy);
       const ang = -(e.x / 0.32);
-      for (const ax of spr.geo.ax) this.wheel(g, left + 1 + ax * k, sy + 1 + 42 * k, Math.max(6, Math.round(15 * k)), ang, e.v || 0);
-      this.light(g, left + 3, sy + 35 * k, 8, 6, '#ff2a2a', 0.15, 2);
-      if (e.sig > 0 && Math.floor(st.t * 3) % 2 === 0) { g.fillStyle = '#ffa020'; g.fillRect(left + 2, sy + Math.round(38 * k), 4, 3); g.fillRect(left + w - 6, sy + Math.round(36 * k), 4, 3); this.light(g, left + 4, sy + 39 * k, 9, 6, '#ffa020', 0.3, 3); }
+      for (const ax of spr.geo.ax) this.wheel(g, left + 1 + ax * k, sy + T0 + 1 + 42 * k, Math.max(6, Math.round((spr.geo.wr || 15) * k)), ang, e.v || 0);
+      this.light(g, left + 3, sy + T0 + 35 * k, 8, 6, '#ff2a2a', 0.15, 2);
+      if (e.sig > 0 && Math.floor(st.t * 3) % 2 === 0) { g.fillStyle = '#ffa020'; g.fillRect(left + 2, sy + T0 + Math.round(38 * k), 4, 3); g.fillRect(left + w - 6, sy + T0 + Math.round(36 * k), 4, 3); this.light(g, left + 4, sy + T0 + 39 * k, 9, 6, '#ffa020', 0.3, 3); }
       if (e.honk > 3.5 && !(this.cool['honk' + e.id] > st.t) && (this.cool['honk' + e.id] = st.t + 3)) this.comic(Math.random() < 0.5 ? 'BEEEP!' : 'HONK!', left + w * 0.3, sy - 8, '#ffe14d', 2);
       if (e.kind === 'police') {
         const on = e.chase || e.v > 0 || Math.abs(e.x - dist) < 120, ph = Math.floor(st.t * 8) % 2;
@@ -1817,6 +1907,9 @@ class Street2D {
         mark(game.s.dist - R.x0, this.paintHex);
       }
     }
+
+    // ---- segnalatore della corsia (radar delle tre corsie)
+    if (game && game.track === 'city' && !game.inside && this.laneRadar !== false) this.drawLaneRadar(g, game, dist, st.t);
 
     // ---- su schermo
     if (!this.visible) return;

@@ -10,6 +10,11 @@ const GAME_RIVALS = [
   { name: 'Leo', car: 'BMW M3 E46' }, { name: 'Nico', car: 'Honda S2000' },
 ];
 const GAME_COLORS = [0x2b4c7e, 0x8a8f96, 0x1d1f22, 0xe8e6df, 0x6b1b14, 0x2f5d3a, 0xb38b2d];
+// traffico: tipi di veicolo con lunghezza (m), velocità tipica (m/s) e peso nella miscela
+const GAME_TRAFFIC = [
+  { vt: 'sedan', len: 4.6, v: [18, 28], w: 30 }, { vt: 'kei', len: 3.4, v: [15, 22], w: 14 }, { vt: 'taxi', len: 4.7, v: [17, 25], w: 10 },
+  { vt: 'van', len: 4.9, v: [16, 24], w: 12 }, { vt: 'truck', len: 8.4, v: [13, 19], w: 8 }, { vt: 'bus', len: 11, v: [11, 16], w: 5 },
+];
 const GAME_LANE_Z = { 0: 6.1, 1: 3.5, 2: 0, 3: -3.5 };
 
 // strada di montagna: la direzione cambia con la distanza percorsa (somma di sinusoidi), raggi fino a ~60 m.
@@ -400,7 +405,7 @@ class StreetGame {
     for (const [n, p] of w) { if ((k -= p) < 0) { kind = n; break; } }
     if (kind === 'traffic') {
       const n = 1 + (r() < 0.35 ? 1 : 0);
-      for (let i = 0; i < n; i++) this.ents.push({ id: this.id++, kind: 'traffic', lane: r() < 0.6 ? 1 : r() < 0.7 ? 2 : 3, x: d + 230 + r() * 160 + i * 45, v: 18 + r() * 11, color: GAME_COLORS[Math.floor(r() * GAME_COLORS.length)] });
+      for (let i = 0; i < n; i++) this.spawnTraffic(d + 230 + r() * 160 + i * 45);
     } else if (kind === 'police') {
       const parked = r() < 0.6;
       this.ents.push({ id: this.id++, kind: 'police', lane: parked ? 0 : 2, x: d + (parked ? 380 : 260), v: parked ? 0 : 24 + r() * 4 });
@@ -408,6 +413,20 @@ class StreetGame {
       if (!this.ents.some((e) => e.kind === 'station')) this.ents.push({ id: this.id++, kind: 'station', lane: 0, x: d + 760, v: 0 });
     } else if (kind === 'race') this.offerRace();
     else if (kind === 'job') this.offerJob();
+  }
+
+  // un veicolo del traffico (tipo a caso secondo il luogo), in una corsia libera
+  spawnTraffic(x, lane) {
+    const r = this.rnd, mix = (this.loc && this.loc.mix) || {};
+    const tot = GAME_TRAFFIC.reduce((a, t) => a + t.w * (mix[t.vt] ?? 1), 0);
+    let k = r() * tot, T = GAME_TRAFFIC[0];
+    for (const t of GAME_TRAFFIC) { if ((k -= t.w * (mix[t.vt] ?? 1)) < 0) { T = t; break; } }
+    const heavy = T.vt === 'truck' || T.vt === 'bus';
+    lane = lane || (heavy ? (r() < 0.8 ? 1 : 2) : r() < 0.5 ? 1 : r() < 0.6 ? 2 : 3);
+    if (this.ents.some((o) => o.kind === 'traffic' && o.lane === lane && Math.abs(o.x - x) < 14 + (o.len || 4.6))) return null;
+    const cols = T.vt === 'taxi' ? [0xf0b020, 0x2f6d3a, 0xe8e6df] : T.vt === 'bus' ? [0x2f8d5a, 0x2b5cae, 0xc8c2b0] : T.vt === 'truck' ? [0xe8e6df, 0x3a5a9a, 0xb03020] : GAME_COLORS;
+    const e = { id: this.id++, kind: 'traffic', vt: T.vt, len: T.len, lane, x, v: T.v[0] + r() * (T.v[1] - T.v[0]), color: cols[Math.floor(r() * cols.length)] };
+    this.ents.push(e); return e;
   }
 
   offerRace() {
@@ -574,6 +593,12 @@ class StreetGame {
       return;
     }
 
+    // traffico continuo (città e luoghi della mappa): densità secondo il luogo
+    if (this.track === 'city' && !this.race && !this.ap && !this.inside && this.trafficOn !== false && d > (this.nextTraffic || 0)) {
+      const dens = (this.loc && this.loc.traffic) || 1;
+      if (this.ents.filter((e) => e.kind === 'traffic' && e.x - d > -60 && e.x - d < 700).length < 3 + dens * 5) this.spawnTraffic(d + 240 + this.rnd() * 260);
+      this.nextTraffic = d + (40 + this.rnd() * 90) / dens;
+    }
     if (this.mode === 'career' && sim.running && !this.race && !this.ap && d > this.nextSpawn) {
       this.spawn(); this.nextSpawn = d + 220 + this.rnd() * 380;
     }
@@ -593,8 +618,11 @@ class StreetGame {
       const rel = e.x - d;
       // traffico vivo: ogni tanto cambia corsia (con la freccia prima), e suona se gli stai attaccato
       if (e.kind === 'traffic') {
+        // coda: chi raggiunge un veicolo più lento nella sua corsia rallenta e prima o poi mette la freccia
+        const lead = this.ents.find((o) => o !== e && o.kind === 'traffic' && o.lane === e.lane && o.x > e.x && o.x - e.x < 9 + ((o.len || 4.6) + (e.len || 4.6)) / 2);
+        if (lead && e.v > lead.v) { e.v0 = e.v0 || e.v; e.v = lead.v; } else if (e.v0 && !lead) { e.v += (e.v0 - e.v) * Math.min(1, dt * 0.4); if (Math.abs(e.v - e.v0) < 0.2) e.v0 = 0; }
         if (e.sig > 0) { e.sig -= dt; if (e.sig <= 0 && e.to) { e.lane = e.to; e.to = 0; } }
-        else if ((rel > 30 || rel < -15) && Math.random() < dt * 0.05) {
+        else if ((rel > 30 || rel < -15) && Math.random() < dt * (lead ? 0.4 : 0.05)) {
           const to = e.lane + (e.lane === 1 ? 1 : e.lane === 3 ? -1 : Math.random() < 0.5 ? 1 : -1);
           if (!this.ents.some((o) => o !== e && o.kind === 'traffic' && (o.lane === to || o.to === to) && Math.abs(o.x - e.x) < 14)) { e.to = to; e.sig = 1.6; }
         }
@@ -650,7 +678,7 @@ class StreetGame {
     if (!this.race) for (const e of this.ents) {
       if (!(e.kind === 'traffic' || (e.kind === 'police' && e.v > 0 && !e.chase))) continue;
       const rel = e.x - d;
-      if (rel > 0.5 && rel < 4.5 && Math.abs(this.laneZ - GAME_LANE_Z[e.lane]) < 1.7 && sim.v > e.v + 1) this.crash(e);
+      if (rel > 0.5 && rel < 2.3 + (e.len || 4.4) / 2 && Math.abs(this.laneZ - GAME_LANE_Z[e.lane]) < 1.7 && sim.v > e.v + 1) this.crash(e);
     }
     // frecce: lampeggiano qualche secondo quando cambia la corsia scelta
     if (this.prevLane !== undefined && this.lane !== this.prevLane) this.signal = { dir: this.lane > this.prevLane ? 'L' : 'R', t: 2.6 };
