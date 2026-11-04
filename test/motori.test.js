@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const dir = new URL('../motori/', import.meta.url);
-const src = ['dsp.js', 'sim.js', 'tuning.js', 'samples.js', 'game.js'].map((f) => readFileSync(new URL(f, dir), 'utf8')).join('\n');
+const src = ['dsp.js', 'sim.js', 'tuning.js', 'cars.js', 'samples.js', 'game.js'].map((f) => readFileSync(new URL(f, dir), 'utf8')).join('\n');
 const { EngineDSP, SupraSim, TUNING, TUNING_PRESETS, tuningParams, SamplePlayer, StreetGame, GAME_LANE_Z } =
   new Function(src + ';return { EngineDSP, SupraSim, TUNING, TUNING_PRESETS, tuningParams, SamplePlayer, StreetGame, GAME_LANE_Z };')();
 
@@ -126,7 +126,7 @@ function career() {
   const sim = new SupraSim();
   const game = new StreetGame(sim, () => 0.5);
   startEngine(sim);
-  game.nextSpawn = 1e9;                   // eventi solo quelli creati dal test
+  game.nextSpawn = 1e9; game.trafficOn = false;   // eventi e traffico: solo quelli creati dal test
   return { sim, game };
 }
 function play(sim, game, seconds, pedals) {

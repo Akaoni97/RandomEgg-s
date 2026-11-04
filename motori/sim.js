@@ -222,7 +222,7 @@ class SupraSim {
     // ---- farfalla e aria ------------------------------------------------------------
     // esitazione: gas spalancato di colpo ai bassi giri, la miscela si smagrisce per un attimo e il motore "si siede"
     const dThr = thrCmd - this.thr;
-    if (dThr > 0.02 && rpm < 3400 && this.running) this.hes = Math.min(0.6, (this.hes || 0) + dThr * 0.05 * (P.hesK ?? 0.3) * (1 - rpm / 3400) * 4);
+    if (dThr > 0.02 && rpm < 3400 && this.running) this.hes = Math.max(this.hes || 0, Math.min(0.6, dThr * (P.hesK ?? 0.3) * (1 - rpm / 3400) * 0.8));   // indipendente dal passo d'integrazione
     this.hes = (this.hes || 0) * Math.exp(-h / 0.16);
     this.thr += (thrCmd - this.thr) * Math.min(1, h / 0.018);
     const rk = Math.max(rpm / 3000, 0.35), k = 4.2 / rk;
