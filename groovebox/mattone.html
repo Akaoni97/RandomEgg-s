@@ -374,6 +374,10 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 .sblk button:not(.sp):hover { background: rgba(255,255,255,.14); }
 .sblk .sperf { position: relative; height: 6px; border-radius: 3px; background: rgba(0,0,0,.3); overflow: hidden; }
 .sblk .sperf i { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--cream-2); }
+.pg-seq.simple .humanl, .pg-seq.simple #varyBtn, .pg-seq.simple #grooveBar, .pg-seq.simple #fillBar, .pg-seq.simple .perfrow, .pg-seq.simple .divwrap:not(.odd),
+.pg-seq.simple .lanelab, .pg-seq.simple .beat.lanes, .pg-seq.simple .songhelp { display: none !important; }
+.divwrap { display: inline-flex; align-items: center; gap: 8px 12px; }
+.seqmore { margin-left: auto; }
 .perfrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
 .perfrow #perfRec.on { animation: blink 1s steps(2) infinite; }
 .nrbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
@@ -1076,12 +1080,25 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
   .fx small { display: none; }
   .knobs { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }
   .knob canvas { width: 50px; height: 50px; }
-  .grid { grid-template-columns: 92px repeat(4, minmax(0,1fr)); gap: 4px 6px; min-width: 560px; }
-  .beat { gap: 3px; }
+  /* the whole bar on the screen, no scrolling sideways */
+  .grid { grid-template-columns: 52px repeat(4, minmax(0,1fr)); gap: 4px 4px; min-width: 0; }
+  .beat { gap: 2px; }
+  .grid .lab { padding: 0 2px; gap: 3px; font-size: 10px; }
+  .grid .lab i { display: none; }
+  .labw .ms { display: none; }
+  .pg-seq > .unit:first-child { padding-left: 8px; padding-right: 8px; }
   .pats { grid-template-columns: repeat(8, minmax(0,1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .bigkey.rec.on .dot, .pats button.queued { animation: none; }
+}
+/* the smallest phones: less frame around the instrument, more room for the steps */
+@media (max-width: 380px) {
+  body { padding-left: 6px; padding-right: 6px; }
+  .flipbtn { white-space: normal; max-width: 100%; }
+  .pg-seq > .unit:first-child { padding-left: 6px; padding-right: 6px; }
+  .grid { grid-template-columns: 44px repeat(4, minmax(0,1fr)); gap: 4px 3px; }
+  .grid .lab { font-size: 9px; }
 }
 /* Personalizza: a page of its own, so the top bar stays in sight while you change things */
 .pg-cust > .unit { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; }
@@ -1719,8 +1736,9 @@ html.intro-on { overflow: hidden; }
         </div>
         <div class="seqbar">
           <span class="lbl">Battute</span><div class="seg" id="barsSeg" role="group" aria-label="Lunghezza del pattern in battute"></div>
-          <span class="lbl">Griglia</span><div class="seg" id="divSeg" role="group" aria-label="Griglia"></div>
+          <span class="divwrap" id="divWrap"><span class="lbl">Griglia</span><div class="seg" id="divSeg" role="group" aria-label="Griglia"></div></span>
           <span class="pagewrap" id="pageWrap" hidden><span class="lbl">Modifica la battuta</span><span class="seg" id="pageSeg" role="group" aria-label="Battuta da modificare"></span><button class="key small" id="follow" type="button" aria-pressed="true" title="Mentre suona, mostra la battuta che sta suonando"><span class="ledi"></span>Segui</button></span>
+          <button class="key small seqmore" id="seqMore" type="button" aria-pressed="false" title="Mano umana, griglia a terzine, groove, swing per gruppo, passaggi automatici, impostazioni per step e performance">Più opzioni</button>
         </div>
         <div class="melbar" id="melBar" hidden>
           <span class="lbl">Assistente melodia</span>
@@ -1775,7 +1793,7 @@ html.intro-on { overflow: hidden; }
           <button class="key small" id="perfClear" type="button">Cancella</button>
           <span class="lbl" id="perfInfo"></span>
         </div>
-        <p class="cnote small"><span id="songInfo"></span> Tocca una parte per partire da lì; × dice quante volte si ripete. «Registra la canzone» la suona tutta dall’inizio e la salva in WAV o MP3 (formato scelto nel Mix). «Registra la performance»: mentre la canzone suona, quello che fai dal vivo (gruppi muti o in onda, effetti a pressione, fader e Taglio del piatto) resta nella canzone, e la volta dopo lo rifà da sola; le tacche sotto le parti sono le mosse. Rifalla sopra: cambiano solo i comandi che tocchi.</p>
+        <p class="cnote small"><span id="songInfo"></span><span class="songhelp"> Tocca una parte per partire da lì; × dice quante volte si ripete. «Registra la canzone» la suona tutta dall’inizio e la salva in WAV o MP3 (formato scelto nel Mix). «Registra la performance»: mentre la canzone suona, quello che fai dal vivo (gruppi muti o in onda, effetti a pressione, fader e Taglio del piatto) resta nella canzone, e la volta dopo lo rifà da sola; le tacche sotto le parti sono le mosse. Rifalla sopra: cambiano solo i comandi che tocchi.</span></p>
       </section>
     </div>
     <div class="page pg-mix" data-page="mix" role="tabpanel" aria-label="Mix e registratore" hidden>
@@ -4298,6 +4316,7 @@ const stepDur = (i = state.pattern) => 240 / state.bpm / pm(i).div;   // a bar i
 const stepLog = [];   // the steps already on the clock: where a hit played live lands in the pattern
 const barT = [];      // when the last bars began, for the note repeat grid
 let edPage = 0;       // the bar shown in the editor
+let edTouch = 0;      // when a step was last edited: the editor stays on that bar for a while
 // change the length or the grid of the pattern: every hit keeps its place in time, and a longer pattern repeats what was there
 function setShape(bars, div) {
   const i = state.pattern, m = pm(i), oldDiv = m.div;
@@ -4333,6 +4352,26 @@ function renderShape() {
   [...pg.children].forEach((b, i) => b.setAttribute("aria-pressed", i === edPage));
   $("pageWrap").hidden = m.bars < 2;
   $("follow").classList.toggle("on", state.follow); $("follow").setAttribute("aria-pressed", state.follow);
+  $("divWrap").classList.toggle("odd", m.div !== 16);   // a triplet grid stays in sight, so you know why the bar is different
+  renderSeqMore();
+}
+// the sequencer shows the essentials; the rest is under «Più opzioni», which says what of it is on
+function seqExtrasOn() {
+  const on = [], g = state.groove;
+  if (state.human) on.push("mano umana");
+  if (state.fills && state.fills.on) on.push("passaggi automatici");
+  if (g && g.id && g.on && g.on.some(Boolean)) on.push("groove");
+  if (g && g.gs && g.gs.some(x => x != null)) on.push("swing per gruppo");
+  if (state.perf && state.perf.on && state.perf.ev && state.perf.ev.length) on.push("performance");
+  return on;
+}
+function renderSeqMore() {
+  const b = $("seqMore"); if (!b) return;
+  const more = !!state.seqMore, on = seqExtrasOn();
+  document.querySelector(".pg-seq").classList.toggle("simple", !more);
+  b.setAttribute("aria-pressed", more); b.classList.toggle("on", more);
+  b.textContent = more ? "Meno opzioni" : "Più opzioni" + (on.length ? " · " + on.length + (on.length > 1 ? " attive" : " attiva") : "");
+  b.title = on.length ? "Attive adesso: " + on.join(", ") : "Mano umana, griglia a terzine, groove, swing per gruppo, passaggi automatici, impostazioni per step e performance";
 }
 
 // song mode: the patterns in a row, each played a number of times
@@ -5551,6 +5590,7 @@ function build() {
   BARS.forEach(n => { const b = el("button", null, String(n)); b.type = "button"; b.dataset.v = n; b.setAttribute("aria-label", n + (n > 1 ? " battute" : " battuta")); b.addEventListener("click", () => setShape(n, pm().div)); $("barsSeg").appendChild(b); });
   DIVS.forEach(([v, name]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = v; b.title = v === 16 ? "Sedicesimi" : v === 12 ? "Terzine di ottavo: shuffle" : "Terzine di sedicesimo: rullate trap"; b.addEventListener("click", () => setShape(pm().bars, v)); $("divSeg").appendChild(b); });
   $("follow").addEventListener("click", () => { state.follow = !state.follow; save(); renderShape(); });
+  $("seqMore").addEventListener("click", () => { state.seqMore = !state.seqMore; save(); renderSeqMore(); });
   NR_RATES.forEach(([name, v]) => { const b = el("button", null, name); b.type = "button"; b.dataset.v = v; b.addEventListener("click", () => { state.nrRate = v; save(); renderNr(); msg("NOTE REPEAT " + name + (state.nr ? "" : " · ACCENDILO CON H")); }); $("nrSeg").appendChild(b); });
   $("nrBtn").addEventListener("click", nrToggle);
   $("songOn").addEventListener("click", songToggle);
@@ -5824,8 +5864,8 @@ function loadFile(file, pad) {
 }
 function toggleCell(b, p, s) {
   const arr = state.patterns[state.pattern][b][p], v = arr[s];
-  // each tap: normal -> accent -> ghost -> off
-  arr[s] = !v ? [1, 0] : v[0] === 3 ? 0 : Object.assign(v.slice(), { 0: v[0] === 1 ? 2 : 3 });   // roll and chance stay
+  // a tap puts the hit in or takes it out; accent, ghost note and the rest are in the long press
+  arr[s] = v ? 0 : [1, 0]; edTouch = performance.now();
   if (arr[s] && !playing && initAudio()) trigger(b, p, ctx.currentTime, STEP_VEL[arr[s][0]], arr[s][1]);
   save(); renderPads(); renderEditor(); renderPatterns(); renderLeds();
 }
@@ -6345,7 +6385,7 @@ function renderEditorHead() {
   const roll = state.view === "roll", s = curSound();
   $("tabGrid").setAttribute("aria-pressed", !roll); $("tabRoll").setAttribute("aria-pressed", roll);
   $("idea808").hidden = !roll; $("melBar").hidden = !roll; $("ideaSel").hidden = $("variaBtn").hidden = roll;
-  $("edCtx").textContent = roll ? "Melodia di " + padLabel(state.bank, state.pad) + " · " + (s ? s.name : "") + " · " + NOTE_NAMES[state.root] + " " + SCALES[state.scale][0].toLowerCase() + " · trascina per allungare, tasto destro per il glissato" : "Gruppo " + BANKS[state.bank].id + " · tocco = colpo · due = accento";
+  $("edCtx").textContent = roll ? "Melodia di " + padLabel(state.bank, state.pad) + " · " + (s ? s.name : "") + " · " + NOTE_NAMES[state.root] + " " + SCALES[state.scale][0].toLowerCase() + " · trascina per allungare, tasto destro per il glissato" : "Gruppo " + BANKS[state.bank].id + " · tocca: metti o togli il colpo · " + (matchMedia("(pointer: coarse)").matches ? "tieni premuto" : "tasto destro") + ": accento e altro";
   $("muteBank").textContent = (state.mutes[state.bank] ? "Riattiva " : "Silenzia ") + BANKS[state.bank].id;
   $("muteBank").classList.toggle("on", state.mutes[state.bank]);
   $("clearTrack").textContent = "Cancella " + padLabel(state.bank, state.pad);
@@ -7979,7 +8019,7 @@ function tick() {
     if (changed) {
       const m = pm(), bar = Math.floor(shownStep / m.div);
       $("vPos").textContent = (bar + 1) + "." + (Math.floor((shownStep % m.div) / (m.div / 4)) + 1);
-      if (state.follow && bar !== edPage && bar < m.bars) { edPage = bar; renderEditor(); renderLeds(); }   // the editor follows the bar playing
+      if (state.follow && bar !== edPage && bar < m.bars && performance.now() - edTouch > 4000) { edPage = bar; renderEditor(); renderLeds(); }   // the editor follows the bar playing
       renderPlayhead();
 
     }
@@ -8554,7 +8594,7 @@ function bindForm() {
 // a step holds [level, note, roll, chance]: roll = hits inside the step (1–4), chance = % of the times it plays
 let stepPop = null;
 function openStepPop(cellEl, b, p, s) {
-  closeStepPop();
+  closeStepPop(); edTouch = performance.now();
   const arr = state.patterns[state.pattern][b][p];
   if (!arr[s]) { arr[s] = [1, 0]; save(); renderEditor(); renderPads(); renderLeds(); }
   const pop = el("div", "steppop"); pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Opzioni dello step");
