@@ -1,7 +1,9 @@
 name: Mat.Tone desktop
 
 # Builds the desktop app on every change. When groovebox/desktop/package.json carries a version that has
-# no "mattone-v<version>" release yet, it also publishes that release: installed apps update from it.
+# no published "mattone-v<version>" release yet, it also publishes that release: installed apps update from it.
+# Each build uploads its files straight into a draft release, which is published once all three are in:
+# no workflow artifacts, so the repository's artifact storage never fills up.
 
 on:
   workflow_dispatch:
@@ -10,8 +12,53 @@ on:
       - "groovebox/**"
       - ".github/workflows/mattone-desktop.yml"
 
+concurrency:
+  group: mattone-desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: groovebox/desktop/package.json
+          sparse-checkout-cone-mode: false
+      - name: Prepara la Release se la versione è nuova
+        id: v
+        run: |
+          VERSION=$(node -p "require('./groovebox/desktop/package.json').version")
+          TAG="mattone-v$VERSION"
+          DRAFT=$(gh release view "$TAG" --json isDraft -q .isDraft 2>/dev/null || echo none)
+          if [ "$DRAFT" = "false" ]; then
+            echo "La versione $VERSION è già pubblicata: per un aggiornamento aumenta la versione in package.json."
+            exit 0
+          fi
+          if [ "$DRAFT" = "none" ]; then
+            cat > notes.md <<NOTES
+          **Mat.Tone $VERSION**
+
+          - Windows: \`Mat.Tone-Setup-$VERSION.exe\` (installer, si aggiorna da solo) oppure \`Mat.Tone-Portatile-$VERSION.exe\` (nessuna installazione)
+          - Mac: \`.dmg\` (al primo avvio: clic destro sull'app → Apri)
+          - Linux: \`.AppImage\` (si aggiorna da solo)
+
+          Se Mat.Tone è già installata non serve scaricare niente: all'avvio l'app trova questa versione da sola.
+          Windows SmartScreen può dire "PC protetto da Windows" perché l'app non è firmata: **Ulteriori informazioni → Esegui comunque**.
+          NOTES
+            gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "Mat.Tone $VERSION" --notes-file notes.md
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
@@ -23,6 +70,8 @@ jobs:
           - os: ubuntu-latest
             target: linux
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: groovebox/desktop
@@ -37,57 +86,22 @@ jobs:
           cache-dependency-path: groovebox/desktop/package-lock.json
       - run: npm ci
       - run: npm run dist:${{ matrix.target }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Mat.Tone-${{ matrix.target }}
-          path: |
-            groovebox/desktop/dist/*.exe
-            groovebox/desktop/dist/*.dmg
-            groovebox/desktop/dist/*.AppImage
-            groovebox/desktop/dist/*.blockmap
-            groovebox/desktop/dist/latest*.yml
-          if-no-files-found: error
+      - name: Carica i file nella Release
+        if: needs.prepare.outputs.tag
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(dist/*.exe dist/*.dmg dist/*.AppImage dist/*.blockmap dist/latest*.yml)
+          if [ ${#files[@]} -eq 0 ]; then echo "Nessun file prodotto"; exit 1; fi
+          ls -la "${files[@]}"
+          gh release upload "${{ needs.prepare.outputs.tag }}" "${files[@]}" --clobber
 
   release:
-    needs: build
+    needs: [prepare, build]
+    if: needs.prepare.outputs.tag
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    concurrency: mattone-release
-    env:
-      GH_TOKEN: ${{ github.token }}
-      GH_REPO: ${{ github.repository }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          sparse-checkout: groovebox/desktop/package.json
-          sparse-checkout-cone-mode: false
-      - name: Pubblica la Release se la versione è nuova
-        run: |
-          VERSION=$(node -p "require('./groovebox/desktop/package.json').version")
-          TAG="mattone-v$VERSION"
-          if gh release view "$TAG" > /dev/null 2>&1; then
-            echo "La versione $VERSION è già pubblicata: per un aggiornamento aumenta la versione in package.json."
-            exit 0
-          fi
-          echo "PUBLISH_TAG=$TAG" >> "$GITHUB_ENV"
-          echo "PUBLISH_VERSION=$VERSION" >> "$GITHUB_ENV"
-      - if: env.PUBLISH_TAG
-        uses: actions/download-artifact@v4
-        with:
-          path: files
-          merge-multiple: true
-      - if: env.PUBLISH_TAG
-        run: |
-          cat > notes.md <<NOTES
-          **Mat.Tone $PUBLISH_VERSION**
-
-          - Windows: \`Mat.Tone-Setup-$PUBLISH_VERSION.exe\` (installer, si aggiorna da solo) oppure \`Mat.Tone-Portatile-$PUBLISH_VERSION.exe\` (nessuna installazione)
-          - Mac: \`.dmg\` (al primo avvio: clic destro sull'app → Apri)
-          - Linux: \`.AppImage\` (si aggiorna da solo)
-
-          Se Mat.Tone è già installata non serve scaricare niente: all'avvio l'app trova questa versione da sola.
-          Windows SmartScreen può dire "PC protetto da Windows" perché l'app non è firmata: **Ulteriori informazioni → Esegui comunque**.
-          NOTES
-          ls -la files
-          gh release create "$PUBLISH_TAG" files/* --target "$GITHUB_SHA" --title "Mat.Tone $PUBLISH_VERSION" --notes-file notes.md
+      - name: Pubblica la Release
+        run: gh release edit "${{ needs.prepare.outputs.tag }}" --draft=false --latest
