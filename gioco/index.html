@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Gusci</title>
+<title>EggMonster'S</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Baloo+2:wght@600;800&display=swap">
 <style>
@@ -111,9 +111,22 @@ kbd{font:800 11px var(--body);background:var(--ink);color:var(--paper);border-ra
 .screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px var(--gr) 24px var(--gl);overflow:auto}
 .screen.dim{background:rgba(42,31,51,.6)}
 #title{flex-direction:column;gap:4px;text-align:center;background:radial-gradient(ellipse at 50% 45%,rgba(42,31,51,0) 30%,rgba(42,31,51,.5))}
-#title h1{font-family:var(--display);font-weight:400;font-size:clamp(90px,17vw,210px);line-height:.95;margin:0;display:flex}
-#title h1 span{display:inline-block;color:var(--yolk);-webkit-text-stroke:7px var(--ink);paint-order:stroke fill;text-shadow:0 12px 0 var(--ink);
-  animation:hop 1.6s ease-in-out infinite;animation-delay:calc(var(--i)*.12s);transform:rotate(calc((var(--i) - 2)*3deg))}
+#title h1{font-family:var(--display);font-weight:400;font-size:clamp(52px,10.5vw,150px);line-height:1;margin:0 0 10px;display:flex}
+#title h1 span{display:inline-block;color:var(--yolk);-webkit-text-stroke:6px var(--ink);paint-order:stroke fill;text-shadow:0 10px 0 var(--ink);
+  animation:drop .55s cubic-bezier(.3,1.5,.5,1) backwards, hop 1.9s ease-in-out infinite;animation-delay:calc(var(--i)*.06s), calc(1.1s + var(--i)*.1s);transform:rotate(calc((var(--i) - 5.5)*1.3deg))}
+#title h1 span.eg{color:var(--paper)}
+@keyframes drop{from{opacity:0;scale:3.2}to{opacity:1;scale:1}}
+#title p,#title .acts{animation:rise .5s ease-out .8s backwards}
+@keyframes rise{from{opacity:0;translate:0 30px}}
+#bars{position:absolute;inset:0;pointer-events:none}
+#bars::before,#bars::after{content:"";position:absolute;left:0;right:0;height:11vh;background:var(--ink)}
+#bars::before{top:0}#bars::after{bottom:0}
+#cap{position:absolute;left:var(--gl);right:var(--gr);bottom:14vh;text-align:center;font-family:var(--display);font-size:clamp(22px,3.3vw,46px);color:#fff;
+  -webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 5px 0 var(--ink);text-wrap:balance}
+#cap span{display:inline-block;animation:rise .5s ease-out backwards}
+#bars small{position:absolute;right:var(--gr);bottom:3.6vh;z-index:1;color:var(--paper);font-weight:800;font-size:14px;opacity:.8}
+#splash{background:var(--ink);flex-direction:column;gap:34px}
+#splash .egg{width:104px;height:134px;border-width:6px;animation:wob 1.1s ease-in-out infinite;transform-origin:50% 90%}
 @keyframes hop{0%,60%,100%{translate:0 0}30%{translate:0 -18px}}
 #title p{font-family:var(--display);font-size:26px;color:var(--ink);background:var(--paper);border:4px solid var(--ink);border-radius:14px;
   padding:4px 20px;margin:0 0 30px;transform:rotate(-2deg);box-shadow:0 6px 0 var(--ink)}
@@ -146,7 +159,7 @@ kbd{font:800 11px var(--body);background:var(--ink);color:var(--paper);border-ra
 #toast.off{opacity:0;translate:0 -30px}
 #err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-weight:800;background:var(--sky)}
 @media (max-width:760px){#panel{grid-template-columns:1fr;padding-top:20px}#map,#hint{display:none}#eggs{grid-template-columns:1fr}#teamList{grid-template-columns:1fr}.banner{font-size:38px}}
-@media (prefers-reduced-motion:reduce){.bar i,.cmd{transition:none}#title h1 span,#rays{animation:none}}
+@media (prefers-reduced-motion:reduce){.bar i,.cmd{transition:none}#title h1 span,#rays,#splash .egg{animation:none}}
 </style>
 
 <div id="app">
@@ -181,8 +194,10 @@ kbd{font:800 11px var(--body);background:var(--ink);color:var(--paper);border-ra
 
   <div id="toast" class="stk off"></div>
 
-  <div id="title" class="screen">
-    <h1><span style="--i:0">G</span><span style="--i:1">U</span><span style="--i:2">S</span><span style="--i:3">C</span><span style="--i:4">I</span></h1>
+  <div id="bars" hidden><div id="cap"></div><small><kbd>Invio</kbd> salta l'intro</small></div>
+
+  <div id="title" class="screen" hidden>
+    <h1 aria-label="EggMonster'S"></h1>
     <p>Mostri dall'uovo: allevali, falli lottare, falli evolvere</p>
     <div class="acts">
       <button id="bCont" class="cmd big" hidden><span class="t">Continua</span><kbd>Invio</kbd></button>
@@ -215,6 +230,10 @@ kbd{font:800 11px var(--body);background:var(--ink);color:var(--paper);border-ra
   </div>
 
   <div id="iris"></div>
+  <div id="splash" class="screen">
+    <span class="egg" style="--e:#ffc21a"></span>
+    <button id="bStart" class="cmd big"><span class="t">Comincia</span><kbd>Invio</kbd></button>
+  </div>
   <div id="err" hidden>Il motore 3D non si è caricato. Controlla la connessione e ricarica la pagina.</div>
 </div>
 
@@ -348,18 +367,18 @@ function mkMon(sp, lv) { const m = { sp, lv, xp: 0, st: null, moves: movesAt(sp,
 
 /* ============ stato e salvataggio ============ */
 const SAVE = 'gusci-salvataggio-1';
-const S = { state: 'title', team: [], items: { guscio: 5, bacca: 3 }, boss: false, grace: 0 };
+const S = { state: 'splash', team: [], items: { guscio: 5, bacca: 3 }, boss: false, grace: 0 };
 const P = { x: NEST.x, z: NEST.z + 5, face: Math.PI, walk: 0 };
 function save() { try { localStorage.setItem(SAVE, JSON.stringify({ team: S.team, items: S.items, boss: S.boss, pos: [P.x, P.z] })); } catch (e) {} }
 function load() { try { const d = JSON.parse(localStorage.getItem(SAVE)); if (d && d.team && d.team.length && d.team.every(m => SP[m.sp])) return d; } catch (e) {} return null; }
 
 /* ============ audio ============ */
-let AC = null, muted = false;
+let AC = null, muted = false, tune = null;
 function tone(f, d, type = 'square', v = .06, when = 0, slide = 0) {
   if (!AC || muted) return;
   const t = AC.currentTime + when, o = AC.createOscillator(), g = AC.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
-  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + .02);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + .02); if (tune) tune.push(o);
 }
 const seq = (fs, step = .09, type, v) => fs.forEach((f, i) => tone(f, step * 1.4, type, v, i * step));
 const sfx = {
@@ -524,7 +543,7 @@ const TREES = [];
   for (let k = 0; k < 260; k++) { const [x, z] = spot(4, ISLE - 10); d.position.set(x, heightAt(x, z) + .2, z); d.scale.setScalar(.17); d.rotation.set(R(), R(), R()); flo.add(d, C.set(fc[k % 5])); }
   rocks.done(); bush.done(); stem.done(); cap.done(); flo.done();
   // cerchio di pietre del Custode
-  for (let k = 0; k < 7; k++) { const a = k / 7 * 6.283 + .45, x = HILL.x + Math.cos(a) * 7.5, z = HILL.z + Math.sin(a) * 7.5, s = 1 + R() * .6;
+  for (let k = 0; k < 7; k++) { const a = k / 7 * 6.283 + 2.02, x = HILL.x + Math.cos(a) * 7.5, z = HILL.z + Math.sin(a) * 7.5, s = 1 + R() * .6;
     const st = part(G.dod, mat('#a99fc0'), x, heightAt(x, z) + s * .9, z, .7 * s, 1.3 * s, .6 * s); st.rotation.y = R() * 3; st.children[0].material = OUTW; scene.add(st); TREES.push({ x, z }); }
 }
 const clouds = [];
@@ -1003,6 +1022,48 @@ async function hatch(sp) {
   await transition(() => { scene.remove(m); B = null; panel.hidden = true; enterWorld(); });
   save(); toast('Il Nido cura la squadra e salva la partita.', 4500);
 }
+/* ============ intro ============ */
+let introOn = false, introSkip = false; const actors = [], IC = { p0: V(0, 0, 0), p1: V(0, 0, 0), l0: V(0, 0, 0), l1: V(0, 0, 0), t0: 0, d: 1 };
+const iw = ms => new Promise(res => { const w = { t: 0, ms, fn: () => { if (introSkip) w.t = w.ms; }, res }; tweens.push(w); });
+const shot = (p0, l0, p1, l1, ms) => { IC.p0.copy(p0); IC.l0.copy(l0); IC.p1.copy(p1); IC.l1.copy(l1); IC.t0 = T; IC.d = ms / 1000; return iw(ms); };
+const cap = t => { $('#cap').innerHTML = `<span>${t}</span>`; };
+function music() {
+  if (!AC || muted) return; tune = []; const ch = [[262, 330, 392], [196, 247, 294], [220, 262, 330], [175, 220, 262]], st = .2;
+  for (let b = 0; b < 18; b++) { const c = ch[b % 4], t = b * st * 4, up = b >= 8 ? 2 : 1; tone(c[0] / 2, .78, 'triangle', .08, t); if (b >= 4) tone(c[1] / 2, .78, 'triangle', .04, t);
+    for (let i = 0; i < 4; i++) tone(c[i % 3] * (i === 3 ? 2 : 1) * up, .17, 'square', .03, t + i * st); }
+  const all = tune; tune = null; return all;
+}
+async function intro() {
+  introOn = true; introSkip = false; camMode = 'intro'; $('#bars').hidden = false; const notes = music() || [];
+  const ny = heightAt(NEST.x, NEST.z), N = V(NEST.x, ny, NEST.z), flashCut = () => tint('#fff8e0', 1, 300);
+  P.x = NEST.x - 2.8; P.z = NEST.z + 3; P.face = Math.atan2(NEST.x - P.x, NEST.z - P.z); player.rotation.y = P.face;
+  // 1. il Nido
+  sunAt(N); cap('Sull\'Isola Covata ogni mostro nasce da un uovo.'); setIris(0);
+  const s1 = shot(V(N.x + 10, ny + 8, N.z + 13), V(N.x, ny + 1, N.z), V(N.x + 3.2, ny + 2.4, N.z + 5.6), V(N.x - .4, ny + .9, N.z), 3800);
+  tween(700, k => setIris(110 * k * k)).then(() => setIris(150)); await s1;
+  // 2. un mostro selvatico nell'erba
+  if (!introSkip) { flashCut(); const r = roam[0], l = V(r.x, heightAt(r.x, r.z) + .7, r.z); r.wait = 9; sunAt(l); cap('Crescono nell\'erba alta, pronti a lottare.');
+    r.model.rotation.y = .5; await shot(l.clone().add(V(-3.4, 1.3, 5.2)), l, l.clone().add(V(2.6, 1, 4.2)), l, 3200); }
+  // 3. cuccioli ed evoluzioni
+  if (!introSkip) { flashCut(); sunAt(ARENA); cap('Da cuccioli…'); const A = (x, y, z) => ARENA.clone().add(V(x, y, z)), xs = [-3.3, 0, 3.3];
+    const kids = ['tizzolo', 'goccino', 'fogliolo'].map((sp, i) => { const m = buildMonster(sp); m.position.copy(A(xs[i], AY, i === 1 ? .6 : 0)); scene.add(m); actors.push(m); return m; });
+    const sh = shot(A(-2, 1.6, 6.5), A(0, .8, 0), A(1.2, 2.6, 10), A(0, 1.5, 0), 5000); await iw(1900);
+    if (!introSkip) { tint('#ffffff', .95, 480); shake = .6; kick = 1; sfx.big(); sfx.evo(); $('#rays').classList.add('on'); cap('…a leggende.');
+      ['vampardo', 'marosauro', 'selvadon'].forEach((sp, i) => { const p = kids[i].position.clone(), c = p.clone().add(V(0, 1.2, 0)); scene.remove(kids[i]); const m = buildMonster(sp); m.position.copy(p); scene.add(m); actors.push(m);
+        burst(c, '#ffffff', 26, 8); burst(c, EL[SP[sp].el].c, 26, 7, .2); ringFx(c, EL[SP[sp].el].c, 5, 650); tween(520, k => m.scale.setScalar(.3 + .7 * Math.min(1, k * 1.5) + Math.sin(k * Math.PI) * .25)); }); }
+    await sh; $('#rays').classList.remove('on'); }
+  // 4. il Custode
+  if (!introSkip) { flashCut(); const hy = heightAt(HILL.x, HILL.z), H = (x, y, z) => V(HILL.x + x, hy + y, HILL.z + z); sunAt(H(0, 0, 0)); cap('E in cima al colle, il Custode aspetta.');
+    const s = shot(H(.8, .9, 10.5), H(0, 1.6, 0), H(-.6, 2.4, 6.4), H(0, 2.9, 0), 3200); await iw(2300); if (!introSkip) { shake = .8; kick = 1; sfx.big(); tint('#c29bff', .55, 520); } await s; }
+  if (introSkip) for (const o of notes) { try { o.stop(); } catch (e) {} }
+  for (const m of actors) scene.remove(m); actors.length = 0; $('#rays').classList.remove('on'); $('#bars').hidden = true; setIris(150);
+  P.x = NEST.x; P.z = NEST.z + 5; P.face = Math.PI; tint('#ffffff', 1, 600); camMode = 'title'; camSnap = true; introOn = false; showTitle();
+}
+function showTitle() { S.state = 'title'; $('#title').hidden = false; sfx.lvl(); }
+function start() { if (!$('#splash').hidden) { $('#splash').hidden = true; sfx.sel(); intro(); } }
+$('#bStart').onclick = start; app.addEventListener('pointerdown', () => { if (introOn && T - IC.t0 > .3) introSkip = true; });
+$('#title h1').innerHTML = [...'EggMonster\'S'].map((c, i) => `<span class="${i < 3 ? 'eg' : ''}" style="--i:${i}">${c}</span>`).join('');
+
 const saved = load(); $('#bCont').hidden = !saved;
 const cont = () => { sfx.sel(); S.team = saved.team; S.items = saved.items || S.items; S.boss = !!saved.boss; if (saved.pos) { P.x = saved.pos[0]; P.z = saved.pos[1]; } S.state = 'busy'; transition(enterWorld); };
 $('#bNew').onclick = showStarter; $('#bCont').onclick = cont;
@@ -1012,6 +1073,8 @@ const keys = {}, joy = { x: 0, y: 0, id: null, ox: 0, oy: 0 }, joyEl = $('#joy')
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase(); keys[k] = true; if (e.key.startsWith('Arrow') || k === ' ') e.preventDefault(); if (e.repeat) return;
   const go = k === 'enter' || k === ' ';
+  if (!$('#splash').hidden) { if (go) start(); return; }
+  if (introOn) { if (go || k === 'escape') introSkip = true; return; }
   if (!$('#dialog').hidden) { const b = $(`#dlgB [data-key="${go ? 'Enter' : e.key}"]`); if (b) b.click(); return; }
   if (!$('#team').hidden) { if (k === 'escape' || k === 'q') closeTeam(); return; }
   if (!$('#title').hidden && S.state === 'title') { if (go) (saved ? cont : showStarter)(); return; }
@@ -1047,7 +1110,7 @@ function updWorld(dt, t) {
   animMonster(bossModel, t * .5); bossModel.rotation.y = Math.atan2(P.x - HILL.x, P.z - HILL.z) * .6;
   const world = S.state === 'world'; if (world && S.grace > 0) S.grace -= dt;
   for (const r of roam) {
-    const dp = Math.hypot(r.x - P.x, r.z - P.z); r.model.visible = dp < 55 || camMode === 'title'; if (!r.model.visible) continue;
+    const dp = Math.hypot(r.x - P.x, r.z - P.z); r.model.visible = dp < 55 || camMode === 'title' || camMode === 'intro'; if (!r.model.visible) continue;
     const chase = world && S.grace <= 0 && dp < 6.5 && zoneAt(P.x, P.z) === r.q; if (chase) { r.tx = P.x; r.tz = P.z; r.wait = 0; }
     const dx = r.tx - r.x, dz = r.tz - r.z, d = Math.hypot(dx, dz);
     if (r.wait > 0) r.wait -= dt; else if (d > .3) { const v = (chase ? 4.2 : 1.7) * dt / d; r.x += dx * v; r.z += dz * v; r.model.rotation.y = Math.atan2(dx, dz); }
@@ -1070,7 +1133,8 @@ function updWorld(dt, t) {
 }
 const camP = V(0, 0, 0), camL = V(0, 0, 0), curL = V(0, 0, 0);
 function updCam(dt, t) {
-  if (camMode === 'title') { camP.set(Math.sin(t * .08) * 58, 22, Math.cos(t * .08) * 58 - 8); camL.set(0, 4, -8); }
+  if (camMode === 'intro') { const k = clamp((t - IC.t0) / IC.d, 0, 1); camP.lerpVectors(IC.p0, IC.p1, k); camL.lerpVectors(IC.l0, IC.l1, k); camSnap = true; }
+  else if (camMode === 'title') { camP.set(Math.sin(t * .08) * 58, 22, Math.cos(t * .08) * 58 - 8); camL.set(0, 4, -8); }
   else if (camMode === 'world') { const y = heightAt(P.x, P.z); camP.set(P.x, y + 15, P.z + 12.5); camL.set(P.x, y + 1.2, P.z - 1.5); sunAt(player.position); }
   else if (camMode === 'battle') { const s = Math.sin(t * .4) * .6; camP.set(ARENA.x - 5.2 + s, 4.6, ARENA.z + 10.5); camL.set(ARENA.x + .7, .1, ARENA.z); }
   else if (camMode === 'evo' && B && B.me) { const p = B.me.model.position, h = B.me.model.userData.top; camP.set(p.x - 1.5 + Math.sin(t) * .6, p.y + h * .8 + 1, p.z + 4.5 + h); camL.set(p.x, p.y + h * .5, p.z); }
@@ -1089,6 +1153,7 @@ function frame(now) {
   for (let i = bits.length - 1; i >= 0; i--) { const b = bits[i]; b.life -= dt * 1.4; if (b.life <= 0) { scene.remove(b.o); bits.splice(i, 1); continue; } b.v.y -= 11 * dt; b.o.position.addScaledVector(b.v, dt); b.o.scale.setScalar(b.s * Math.min(1, b.life * 2)); b.o.rotation.x += dt * 6; }
   updWorld(dt, T);
   if (B) for (const c of [B.me, B.foe]) if (c && c.model) animMonster(c.model, T);
+  for (const m of actors) animMonster(m, T);
   for (const c of clouds) { c.position.x += dt * .9; if (c.position.x > 460) c.position.x = -190; }
   for (const f of foams) { const s = 1 + Math.sin(T * 1.1 + f.userData.k * 2) * .012; f.scale.set(s, s, 1); }
   for (const e of nest.children) if (e.userData.e) e.userData.e.rotation.z = Math.sin(T * 2 + e.position.x * 3) * .08;

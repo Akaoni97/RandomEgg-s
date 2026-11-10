@@ -108,9 +108,9 @@ CSRF, conflitto fra due utenti, ripetizione di un'operazione e permessi amminist
 - Regole di annullo dopo movimenti successivi; gestione di miscele e unità diverse dalle tonnellate.
 - Se adottare la modalità “solo conferma” al posto della stima automatica.
 
-## Gusci · gioco 3D
+## EggMonster'S · gioco 3D
 
-Nella cartella `gioco/` c'è **Gusci**, un gioco 3D di mostriciattoli da collezione (un solo file, `gioco/index.html`).
+Nella cartella `gioco/` c'è **EggMonster'S**, un gioco 3D di mostriciattoli da collezione (un solo file, `gioco/index.html`).
 Scegli un uovo, esplora l'Isola Covata, lotta a turni nell'erba alta, cattura i mostri con i gusci vuoti, falli salire di livello ed evolvere, poi sfida l'Ovodrago in cima al colle.
 
 Si apre direttamente nel browser (PC o telefono); serve la connessione per caricare Three.js dal CDN. I progressi restano nel browser.
