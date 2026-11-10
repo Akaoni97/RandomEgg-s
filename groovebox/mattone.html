@@ -374,8 +374,75 @@ html.learn .learnsel { outline: 3px solid #ff9f2e !important; outline-offset: 3p
 .sblk button:not(.sp):hover { background: rgba(255,255,255,.14); }
 .sblk .sperf { position: relative; height: 6px; border-radius: 3px; background: rgba(0,0,0,.3); overflow: hidden; }
 .sblk .sperf i { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--cream-2); }
-.pg-seq.simple .humanl, .pg-seq.simple #varyBtn, .pg-seq.simple #grooveBar, .pg-seq.simple #fillBar, .pg-seq.simple .perfrow, .pg-seq.simple .divwrap:not(.odd),
-.pg-seq.simple .lanelab, .pg-seq.simple .beat.lanes, .pg-seq.simple .songhelp { display: none !important; }
+.pg-seq.simple .humanl, .pg-seq.simple #varyBtn, .pg-seq.simple #grooveBar, .pg-seq.simple #fillBar, .pg-seq.simple .divwrap:not(.odd),
+.pg-seq.simple .lanelab, .pg-seq.simple .beat.lanes { display: none !important; }
+html:not(.ui-simple) #seqMore { display: none; }
+/* Semplice: what makes a beat stays in sight, the rest is one click away (Completa, ⚙ or the «?» of each panel) */
+.pg-canzone { display: grid; gap: 14px; align-content: start; }
+.ui-simple .pg-canzone.noperf .perfrow { display: none; }
+.ui-simple .rack .skins, .ui-simple .rack #openCust, .ui-simple .rack .flipbtn, .ui-simple .lcdhead .lcdbtns, .ui-simple #viewKey, .ui-simple #tap { display: none !important; }
+.ui-simple .page:not(.pg-guida) .unit:not(.showhelp) :is(.cnote, .rechint, .songhelp, .hint, .hd > .lbl.hdnote) { display: none !important; }
+.ui-simple .pg-mix .loud { display: none; }
+.ui-simple .page:not(.pg-guida) .unit.song:not(.showhelp) p.cnote { display: block !important; }
+.seqbar .row { display: flex; gap: 8px; align-items: center; }
+.helpq { display: none; flex: none; width: 24px; height: 24px; padding: 0; border-radius: 50%; font: 700 12px var(--f-ui); line-height: 1; }
+.ui-simple .helpq { display: inline-grid; place-items: center; }
+.unit.showhelp .helpq { background: var(--led); color: #1a1208; }
+.unit > .helpq.float { position: absolute; top: 10px; right: 30px; z-index: 3; }
+.ui-simple .gknobs .knob:not([data-k="Livello"]):not(.sk), .ui-simple #masterKnobs .knob:not([data-k="Volume"]) { display: none; }
+html:not(.ui-simple) .knob.sk { display: none; }
+.ui-simple .gknobs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ui-simple .pg-mix .fxrack, .ui-simple .pg-mix .mixer > div:last-child { display: none; }
+.ui-simple .pg-mix .mixer { grid-template-columns: minmax(0, 1fr); }
+.ui-simple .pg-mix .master.knobs { grid-template-columns: repeat(auto-fill, minmax(96px, 120px)); }
+.uimode { flex: none; align-self: center; margin-left: auto; }
+.uimode button { padding: 6px 10px; }
+.tabs button[hidden] { display: none; }
+.expbtn { white-space: nowrap; }
+.gearbtn { min-width: 34px; font-family: system-ui, sans-serif; font-size: 16px; letter-spacing: 0; }
+.gearmenu { position: fixed; z-index: 45; width: min(340px, calc(100vw - 16px)); display: grid; gap: 10px; padding: 14px; box-shadow: 0 18px 50px rgba(0,0,0,.6), 0 0 0 1px var(--edge); animation: cardIn .25s cubic-bezier(.34, 1.4, .64, 1); }
+.gearmenu[hidden] { display: none; }
+.gmrow { display: grid; gap: 6px; }
+.gmrow .seg button { flex: 1; }
+.gmnote { margin: -4px 0 0; font-size: 12px; color: var(--cream-2); }
+.gmchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.gmlist { display: grid; gap: 6px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.gmlist .key { text-align: left; justify-content: flex-start; }
+.dlgbox { width: min(820px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; }
+.exfmt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.exgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.excard { display: grid; gap: 6px; align-content: start; padding: 12px; border-radius: 8px; background: var(--well); box-shadow: inset 0 1px 4px rgba(0,0,0,.5); }
+.excard b { font-size: 15px; color: var(--well-text, var(--cream)); }
+.excard small { font-size: 12px; color: var(--cream-2); min-height: 2.6em; }
+.excard .exrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.excard select { background: var(--chassis, #222); color: var(--cream); border: 1px solid var(--line); border-radius: 5px; padding: 5px 6px; }
+.excard.off { opacity: .5; }
+.nbintro { margin: 0; font-size: 14px; color: var(--cream-2); }
+.nbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.nbcard { display: grid; gap: 4px; text-align: left; padding: 14px; border: 0; border-radius: 9px; cursor: pointer; color: var(--key-ink); background: linear-gradient(180deg, var(--key-1), var(--key-2)); box-shadow: 0 3px 0 var(--edge), 0 1px 0 rgba(255,255,255,.08) inset; font: inherit; }
+.nbcard b { font-family: var(--f-label); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+.nbcard small { font-size: 12px; opacity: .8; }
+.nbcard:hover { filter: brightness(1.12); }
+.nbcard:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--edge); }
+.nbcard i { font-style: normal; font-family: var(--f-vfd); font-size: 18px; color: var(--led); }
+/* the top bar in one row on a computer: play, tempo, patterns, undo, export, settings */
+@media (min-width: 901px) {
+  .ui-simple .unit.rack { display: flex; align-items: center; gap: 14px; padding-top: 14px; padding-bottom: 12px; }
+  .ui-simple .rack .skinart, .ui-simple .rack .stickers, .ui-simple .rack .badge, .ui-simple .logo .stripes, .ui-simple .logo small, .ui-simple .lcdhead, .ui-simple .rack .steps16 { display: none !important; }
+  .ui-simple .rack .logo { display: flex; align-items: center; padding: 0; flex: none; }
+  .ui-simple .rack .logo b { font-size: calc(24px * var(--brand-scale, 1)); white-space: nowrap; }
+  .ui-simple .rack .lcdwrap { flex: none; }
+  .ui-simple .rack .lcd { padding: 4px; }
+  .ui-simple .rack .lcd canvas { height: 70px; width: auto; }
+  .ui-simple .rack .vus { display: none; }   /* the meters stay in Completa: the display already says what plays */
+  .ui-simple .rack .transport { display: flex; align-items: center; gap: 10px; flex: none; }
+  .ui-simple .rack .transport .row { flex-wrap: nowrap; gap: 6px; }
+  .ui-simple .rack .bigkey { width: 52px; height: 44px; }
+  .ui-simple .rack .pats { grid-template-columns: repeat(8, 28px); gap: 3px; }
+  .ui-simple .rack .pats button { height: 32px; }
+}
+
+@media (min-width: 901px) and (max-width: 1120px) { .ui-simple .rack .lcdwrap { display: none; } }
 .divwrap { display: inline-flex; align-items: center; gap: 8px 12px; }
 .seqmore { margin-left: auto; }
 .perfrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
@@ -1092,6 +1159,10 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-i
 @media (prefers-reduced-motion: reduce) {
   .bigkey.rec.on .dot, .pats button.queued { animation: none; }
 }
+@media (max-width: 640px) {
+  .ui-simple .gknobs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .expbtn { padding-left: 8px; padding-right: 8px; }
+}
 /* the smallest phones: less frame around the instrument, more room for the steps */
 @media (max-width: 380px) {
   body { padding-left: 6px; padding-right: 6px; }
@@ -1415,7 +1486,7 @@ html.intro-on { overflow: hidden; }
   .rack .logo { display: flex; align-items: center; gap: 6px; padding: 0; flex: none; }
   .rack .logo b { font-size: 15px; }
   .rack #openCust { padding: 4px 7px; font-size: 0; } .rack #openCust::before { content: "✎"; font-size: 12px; }
-  .rack .lcdwrap { flex: 1 1 auto; min-width: 110px; }
+  .rack .lcdwrap { flex: 1 1 auto; min-width: 70px; }
   .rack .lcd { padding: 2px; }
   .rack .lcd canvas { height: 42px; width: 100%; object-fit: contain; }
   .rack .transport { display: flex !important; align-items: center; gap: 6px; flex: none; }
@@ -1443,6 +1514,7 @@ html.intro-on { overflow: hidden; }
   .pg-suona .nrbar .hint, .pg-suona .scalebar .hint, .pg-suona .kbd .hint { display: none; }
   .pg-suona .kbd { grid-template-rows: auto minmax(70px, 1fr); }
   .pg-suona .kkeys { min-height: 70px; }
+  .rack .expbtn { font-size: 0; padding: 4px 8px; } .rack .expbtn::before { content: "⤓"; font-size: 14px; }
 }
 @media (orientation: landscape) and (max-height: 520px) and (max-width: 720px) {
   .rack .lcdwrap, .rack .logo b { display: none !important; }
@@ -1506,7 +1578,7 @@ html.intro-on { overflow: hidden; }
       </div>
       <div class="row"><span class="lbl">Swing</span><input type="range" id="swing" min="0" max="60" value="16" aria-label="Swing" style="width:110px"><span class="lbl" id="swingOut">16%</span></div>
       <div class="pats" id="pats" role="group" aria-label="Pattern"></div>
-      <div class="row"><button class="key small" id="copy" type="button">Duplica</button><button class="key small" id="clear" type="button">Svuota</button><button class="key small" id="undo" type="button" title="Annulla (Ctrl+Z)" aria-label="Annulla" disabled>↶</button><button class="key small" id="redo" type="button" title="Rifai (Ctrl+Y)" aria-label="Rifai" disabled>↷</button></div>
+      <div class="row"><button class="key small" id="copy" type="button">Duplica</button><button class="key small" id="clear" type="button">Svuota</button><button class="key small" id="undo" type="button" title="Annulla (Ctrl+Z)" aria-label="Annulla" disabled>↶</button><button class="key small" id="redo" type="button" title="Rifai (Ctrl+Y)" aria-label="Rifai" disabled>↷</button><button class="key small expbtn" id="expBtn" type="button" title="Salva il beat in MP3 o WAV, un video, le tracce, il MIDI o il progetto">⤓ Esporta</button><button class="key small gearbtn" id="gearBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Impostazioni: modalità, schede, aspetto, lato B, visualizzatore">⚙</button></div>
     </div>
   </header>
 
@@ -1576,6 +1648,7 @@ html.intro-on { overflow: hidden; }
       <section class="unit padunit" aria-label="Pad">
         <div class="hd">
           <div class="seg banks" id="banks" role="group" aria-label="Gruppo"></div>
+          <button class="key small nbbtn" id="nbBtn" type="button" title="Scegli lo stile: kit, tempo e un ritmo pronto da cambiare">✨ Nuovo beat</button>
           <select id="kitSel" aria-label="Carica un kit nel gruppo"><option value="">Carica un kit (hip hop, old school, tekno…)</option></select>
           <div class="seg" role="group" aria-label="Modalità">
             <button type="button" id="modePad" aria-pressed="true">Suoni</button>
@@ -1775,6 +1848,8 @@ html.intro-on { overflow: hidden; }
           <button class="key small" id="fillNow" type="button" title="Un passaggio subito, alla prossima battuta">Uno adesso</button>
         </div>
       </section>
+    </div>
+    <div class="page pg-canzone" data-page="canzone" role="tabpanel" aria-label="Canzone" hidden>
       <section class="unit song" aria-label="Canzone">
         <div class="hd">
           <h2>Canzone · i pattern in fila</h2>
@@ -1784,6 +1859,7 @@ html.intro-on { overflow: hidden; }
             <button class="key small" id="songAdd" type="button">+ Aggiungi pattern 1</button>
             <button class="key small rec2" id="songRec" type="button">● Registra la canzone</button>
             <button class="key small" id="songClear" type="button">Svuota</button>
+            <button class="key small on" id="songExp" type="button" title="Salva la canzone o il beat in MP3 o WAV, un video, le tracce, il MIDI o il progetto">⤓ Esporta</button>
           </div>
         </div>
         <div class="songrow" id="songRow"></div>
@@ -1980,10 +2056,12 @@ html.intro-on { overflow: hidden; }
           <ol>
             <li>Premi Play: il pattern 1 è pronto, il 2 è una variazione.</li>
             <li>Tocca i pad. Il pad toccato si seleziona: a destra cambi suono e manopole (trascina in su o in giù).</li>
-            <li><b>Ritmo</b>: un tocco = colpo, due = accento, tre = nota fantasma (piano, quella tra un colpo e l’altro), quattro = spento. <b>Mano umana</b> sposta di pochi millesimi tempi e volumi, come un batterista vero. <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla, <kbd>Ctrl</kbd>+<kbd>Y</kbd> rifà (anche coi tasti ↶ ↷). <b>Melodia</b>: righe = note della scala.</li>
+            <li><b>Ritmo</b>: un tocco mette o toglie il colpo; tieni premuto (o tasto destro) per accento, nota fantasma (piano, quella tra un colpo e l’altro), rullata e il resto. <b>Mano umana</b> sposta di pochi millesimi tempi e volumi, come un batterista vero. <kbd>Ctrl</kbd>+<kbd>Z</kbd> annulla, <kbd>Ctrl</kbd>+<kbd>Y</kbd> rifà (anche coi tasti ↶ ↷). <b>Melodia</b>: righe = note della scala.</li>
             <li><b>Note</b> trasforma i pad in una tastiera sulla scala scelta, col suono selezionato.</li>
             <li>Pallino rosso + Play: quello che suoni sui pad viene scritto nel pattern.</li>
-            <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Piatto</b> (scratch), <b>Sequencer</b>, <b>Mix</b> (master e registratore per esportare WAV o MP3), <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
+            <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Sequencer</b>, <b>Canzone</b> (i pattern in fila), <b>Mix</b>; in più <b>Piatto</b> (scratch), <b>Voce</b> e <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
+            <li><b>Semplice</b> e <b>Completa</b> (in fondo alle pagine, o ⚙): Semplice mostra solo quello che serve per fare un beat, con la barra in alto su una riga, tre manopole per gruppo nel Mix e un «?» al posto delle spiegazioni lunghe; Completa mostra tutti i comandi. Non si spegne niente: cambia solo cosa vedi. In ⚙ accendi le schede in più, l’aspetto, il lato B, il visualizzatore e la vista 3D.</li>
+            <li><b>✨ Nuovo beat</b> (Suona o ⚙): scegli lo stile e arrivano kit, tempo e un ritmo pronto da cambiare; ↶ Annulla riporta il beat di prima. <b>⤓ Esporta</b> raccoglie in un posto MP3 e WAV, la canzone, il video, le tracce, il MIDI e il progetto.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
             <li><b>Scocche</b> (in alto a sinistra, o Personalizza): cinque macchine vere, ognuna col suo look completo. «Dodici bit» (campionatore scuro), «Campionatore ’88» (grigio coi pad di gomma), «Ritmo ’80» (drum machine coi tasti rosso, arancio, giallo e crema), «Giradischi ’79» (alluminio e strobo rosso), «Consolle ’73» (banco da studio coi fianchi in noce). Il dado ne sceglie una a caso.</li>
             <li><b>Duplica</b> (in alto, sotto i tasti dei pattern): copia il pattern su qualsiasi altro, anche su quello prima, o scambiali di posto. Si può anche trascinare un tasto 1–8 sopra un altro: si scambiano (con Alt si copia). La canzone segue gli scambi.</li>
@@ -2063,6 +2141,41 @@ html.intro-on { overflow: hidden; }
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
+<div class="gearmenu unit" id="gearMenu" hidden role="menu" aria-label="Impostazioni">
+  <div class="gmrow"><span class="lbl">Modalità</span><div class="seg" id="uiSeg" role="group" aria-label="Modalità"><button type="button" data-v="semplice">Semplice</button><button type="button" data-v="completa">Completa</button></div></div>
+  <p class="gmnote" id="uiNote"></p>
+  <div class="gmrow" id="tabsXRow"><span class="lbl">Schede in più</span><div class="gmchips" id="tabsX"></div></div>
+  <div class="gmlist">
+    <button class="key small" type="button" data-act="nb">✨ Nuovo beat…</button>
+    <button class="key small" type="button" data-act="cust">✎ Personalizza l’aspetto</button>
+    <button class="key small" type="button" data-act="flip">⟲ Lato B · scratch</button>
+    <button class="key small" type="button" data-act="vis">Visualizzatore</button>
+    <button class="key small" type="button" data-act="vfx">Effetti visivi</button>
+    <button class="key small" type="button" data-act="view">Vista 3D</button>
+    <button class="key small" type="button" data-act="guida">? Guida completa</button>
+  </div>
+</div>
+<div class="micwrap" id="expDlg" hidden role="dialog" aria-modal="true" aria-label="Esporta">
+  <div class="unit micbox dlgbox">
+    <div class="hd"><h2>Esporta</h2><button class="key small" data-close type="button">✕ Chiudi</button></div>
+    <div class="exfmt"><span class="lbl">Formato audio</span><div class="seg" id="exFmt" role="group" aria-label="Formato audio"><button type="button" data-v="mp3">MP3</button><button type="button" data-v="wav">WAV</button><button type="button" data-v="both">Tutti e due</button></div></div>
+    <div class="exgrid">
+      <div class="excard"><b>Il beat</b><small>Il pattern che suona, dall’inizio, per le battute che scegli</small><div class="exrow"><select id="exBars" aria-label="Quante battute"><option value="1">1 battuta</option><option value="2">2 battute</option><option value="4" selected>4 battute</option><option value="8">8 battute</option><option value="16">16 battute</option></select><button class="key small rec2" type="button" data-ex="beat">● Registra</button></div></div>
+      <div class="excard"><b>La canzone</b><small id="exSongNote">Tutte le parti in fila, dall’inizio alla fine</small><div class="exrow"><button class="key small rec2" type="button" data-ex="song">● Registra la canzone</button></div></div>
+      <div class="excard"><b>Video per i social</b><small>Verticale, quadrato o orizzontale, col beat e lo schermo</small><div class="exrow"><button class="key small" type="button" data-ex="video">🎬 Prepara il video</button></div></div>
+      <div class="excard"><b>Per il DAW</b><small>Un WAV per gruppo, oppure le note in MIDI</small><div class="exrow"><button class="key small" type="button" data-ex="stems">Tracce separate</button><button class="key small" type="button" data-ex="midi">File MIDI</button></div></div>
+      <div class="excard"><b>Progetto</b><small>Pattern, canzone, pad, mix e i tuoi campioni in un solo file</small><div class="exrow"><button class="key small" type="button" data-ex="save">Salva progetto</button><button class="key small" type="button" data-ex="open">Apri progetto</button></div></div>
+    </div>
+    <p class="cnote small exnote">Su claude.ai i file audio arrivano dentro uno .zip; nell’app per PC vengono salvati direttamente.</p>
+  </div>
+</div>
+<div class="micwrap" id="nbDlg" hidden role="dialog" aria-modal="true" aria-label="Nuovo beat">
+  <div class="unit micbox dlgbox">
+    <div class="hd"><h2>Nuovo beat</h2><button class="key small" data-close type="button">✕ Chiudi</button></div>
+    <p class="nbintro">Scegli lo stile: arrivano il kit, il tempo giusto e un ritmo di batteria pronto da cambiare. Il beat di adesso non si perde: <b>↶ Annulla</b> lo riporta indietro.</p>
+    <div class="nbgrid" id="nbGrid"></div>
+  </div>
+</div>
 <div class="micwrap" id="vidBox" hidden role="dialog" aria-modal="true" aria-label="Video per i social">
   <div class="unit micbox vidbox">
     <div class="hd"><h2>Video per i social</h2><button class="key small" id="vidClose" type="button">✕ Chiudi</button></div>
@@ -4368,7 +4481,7 @@ function seqExtrasOn() {
 function renderSeqMore() {
   const b = $("seqMore"); if (!b) return;
   const more = !!state.seqMore, on = seqExtrasOn();
-  document.querySelector(".pg-seq").classList.toggle("simple", !more);
+  document.querySelector(".pg-seq").classList.toggle("simple", uiSimple() && !more);
   b.setAttribute("aria-pressed", more); b.classList.toggle("on", more);
   b.textContent = more ? "Meno opzioni" : "Più opzioni" + (on.length ? " · " + on.length + (on.length > 1 ? " attive" : " attiva") : "");
   b.title = on.length ? "Attive adesso: " + on.join(", ") : "Mano umana, griglia a terzine, groove, swing per gruppo, passaggi automatici, impostazioni per step e performance";
@@ -4551,6 +4664,7 @@ function arrangeSong() {
 }
 function songButton(txt, label, fn) { const b = el("button", null, txt); b.type = "button"; b.setAttribute("aria-label", label); b.title = label; b.addEventListener("click", fn); return b; }
 function renderSong() {
+  renderPerfFlag();
   const row = $("songRow"); if (!row) return;
   row.innerHTML = "";
   const now = playing && state.songOn ? songPos.i : -1;
@@ -5539,7 +5653,7 @@ const pad3 = n => String(n).padStart(3, "0");
 /* ================= knobs ================= */
 const knobs = [];
 function makeKnob(host, { label, min, max, get, set, fmt, center, col, def }) {
-  const wrap = el("div", "knob"), cv = el("canvas"), out = el("output"), lab = el("span", "lbl", label);
+  const wrap = el("div", "knob"), cv = el("canvas"), out = el("output"), lab = el("span", "lbl", label); wrap.dataset.k = label;
   cv.width = 116; cv.height = 116; cv.tabIndex = 0; cv.setAttribute("role", "slider"); cv.setAttribute("aria-label", label);
   wrap.append(cv, out, lab); host.appendChild(wrap);
   const k = { cv, out, min, max, get, set, fmt, center, draw() {
@@ -6190,6 +6304,7 @@ function bindLibrary() {
 function onKeyDown(e) {
   const typing = e.target && (e.target.tagName === "TEXTAREA" || (e.target.tagName === "INPUT" && e.target.type !== "range" && e.target.type !== "checkbox"));
   if (!$("chopBox").hidden) { if (!e.metaKey && !e.ctrlKey && !e.altKey) chopKey(e); return; }   // the chop editor takes the keyboard while open
+  if (!$("expDlg").hidden || !$("nbDlg").hidden || !$("gearMenu").hidden) { if (e.key === "Escape") { e.preventDefault(); closeDlgs(); } return; }
   if ((e.metaKey || e.ctrlKey) && !e.altKey && !typing && $("micBox").hidden) {
     const k = e.key.toLowerCase();
     if (k === "z") { e.preventDefault(); histGo(!e.shiftKey); return; }
@@ -8171,7 +8286,8 @@ function initDesktop() {
 }
 
 // ---------- pages ----------
-const PAGES = [["suona", "Suona"], ["piatto", "Piatto"], ["seq", "Sequencer"], ["mix", "Mix · Registra"], ["voce", "Voce"], ["guida", "Guida"]];
+const PAGES = [["suona", "Suona"], ["piatto", "Piatto"], ["seq", "Sequencer"], ["canzone", "Canzone"], ["mix", "Mix · Registra"], ["voce", "Voce"], ["guida", "Guida"]];
+const PAGES_BASE = ["suona", "seq", "canzone", "mix"], PAGES_X = [["piatto", "Piatto"], ["voce", "Voce"], ["guida", "Guida"]];
 function fitPages() { $("pages").style.setProperty("--pg-h", $("pages").clientHeight + "px"); }
 let curPage = "suona";
 function showPage(id) {
@@ -8179,7 +8295,8 @@ function showPage(id) {
   curPage = id; $("openCust").classList.toggle("on", id === "cust");
   document.querySelectorAll(".page").forEach(pg => { pg.hidden = pg.dataset.page !== id; });
   if (id === "seq" && edStale) renderPlayhead();
-  [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.page === id));
+  [...$("tabs").children].forEach(b => { if (b.dataset.page) b.setAttribute("aria-selected", b.dataset.page === id); });
+  applyTabs();
   if (id !== "cust" && state.page !== id) { state.page = id; save(); }
   fitPages(); sizeCanvases(); placeTabGlow(); if (id === "mix") drawEq(); if (id === "suona") drawForm(); if (id === "seq") setTimeout(drawGroove, 50);
   if (id === "voce") { voiceEnsure(); if (state.voice.takes.length && !ctx && navigator.userActivation && navigator.userActivation.isActive) initAudio(); voiceRender(); } else if (VO.stream) voiceMicClose();
@@ -8318,6 +8435,12 @@ function buildStrips() {
     ["Bassi", "Medi", "Alti"].forEach((label, k) => makeKnob(host, { label, min: -12, max: 12, center: true, col, get: () => state.geq[i][k], set: v => { state.geq[i][k] = Math.abs(v) < 0.3 ? 0 : Math.round(v * 2) / 2; save(); applyEq(); }, fmt: fmtG }));
     [["Eco", 4], ["Riverb.", 5], ["Comp.", 6]].forEach(([label, k]) => makeKnob(host, { label, min: 0, max: 1, col, get: () => state.geq[i][k] || 0, set: v => { state.geq[i][k] = v < 0.02 ? 0 : v; save(); applyEq(); }, fmt: v => Math.round(v * 100) }));
     makeKnob(host, { label: "Livello", min: 0, max: 1.5, def: 1, col, get: () => state.geq[i][3], set: v => { state.geq[i][3] = Math.abs(v - 1) < 0.03 ? 1 : v; save(); applyEq(); }, fmt: v => v < 0.01 ? "−∞" : fmtG(20 * Math.log10(v)) });
+    // Semplice: Tono tilts the strip (darker: more bass and fewer highs; brighter: the other way), Spazio sends to echo and reverb together
+    const mine = () => knobs.filter(k => k.cv.closest(".gstrip") === g), redraw = () => mine().forEach(k => k.draw());
+    const tone = makeKnob(host, { label: "Tono", min: -1, max: 1, center: true, col, get: () => Math.max(-1, Math.min(1, (state.geq[i][2] / 8 - state.geq[i][0] / 4) / 2)), set: v => { const t = Math.abs(v) < 0.04 ? 0 : v; state.geq[i][0] = Math.round(-4 * t * 2) / 2; state.geq[i][2] = Math.round(8 * t * 2) / 2; save(); applyEq(); redraw(); }, fmt: v => Math.abs(v) < 0.04 ? "0" : (v < 0 ? "−" : "+") + Math.round(Math.abs(v) * 10) });
+    const space = makeKnob(host, { label: "Spazio", min: 0, max: 1, col, get: () => Math.max(state.geq[i][5] || 0, (state.geq[i][4] || 0) * 2), set: v => { const x = v < 0.02 ? 0 : v; state.geq[i][5] = x; state.geq[i][4] = x / 2; save(); applyEq(); redraw(); }, fmt: v => Math.round(v * 100) });
+    [tone, space].forEach(k => { const w = k.cv.parentNode; w.classList.add("sk"); host.insertBefore(w, host.firstChild); });
+    host.insertBefore(space.cv.parentNode, tone.cv.parentNode.nextSibling);
     $("gstrips").appendChild(g);
   });
   renderGroups();
@@ -11123,6 +11246,7 @@ function buildPages() {
     $("tabs").appendChild(b);
   });
   $("tabs").appendChild(el("span", "tabglow"));
+  buildUi();
   $("toDeck").addEventListener("click", () => showPage("piatto"));
   window.addEventListener("resize", () => { fitPages(); sizeCanvases(); placeTabGlow(); });
   showPage(state.page);
@@ -11321,6 +11445,145 @@ function viewFrame(now) {
 function paintView() {
   const c = V3.cur;
   $("app").style.transform = "perspective(1600px) translateY(" + c.ty.toFixed(3) + "vh) rotateX(" + c.rx.toFixed(3) + "deg) rotateY(" + c.ry.toFixed(3) + "deg) rotateZ(" + c.rz.toFixed(3) + "deg) scale(" + c.s.toFixed(4) + ")";
+}
+/* ---------- Semplice e Completa ---------- */
+// Semplice shows what makes a beat: four tabs, the top bar in one row, three knobs a group, one Esporta.
+// Completa shows everything. Nothing is switched off: only what is on screen changes.
+const uiSimple = () => (state.ui || "semplice") === "semplice";
+const MOVES = [];   // controls that change place in Semplice: [node, home parent, home next sibling, simple parent]
+function uiMove(node, to, before) { if (node) MOVES.push([node, node.parentNode, node.nextSibling, to, before || null]); }
+function applyUi() {
+  const simple = uiSimple();
+  document.documentElement.classList.toggle("ui-simple", simple);
+  for (const [n, , , to, before] of MOVES) if (simple && n.parentNode !== to) to.insertBefore(n, before && before.parentNode === to ? before : null);
+  for (const [n, home, next] of MOVES.slice().reverse()) if (!simple && n.parentNode !== home) home.insertBefore(n, next && next.parentNode === home ? next : null);   // backwards, so each finds its neighbour home
+  [...$("uiSeg").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === (simple ? "semplice" : "completa")));
+  [...$("uiMode").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === (simple ? "semplice" : "completa")));
+  $("uiNote").textContent = simple ? "Solo quello che serve per fare un beat. Il resto è nelle schede in più, qui sotto, o in Completa." : "Tutti i comandi in vista, come sui banchi da studio.";
+  $("tabsXRow").hidden = !simple;
+  const mixTab = $("tabs").querySelector('[data-page="mix"]'); if (mixTab) mixTab.lastChild.textContent = simple ? "Mix" : "Mix · Registra";
+  renderSeqMore(); applyTabs(); renderPerfFlag();
+  requestAnimationFrame(() => { fitPages(); sizeCanvases(); placeTabGlow(); });
+}
+function applyTabs() {
+  const simple = uiSimple(), x = state.tabsX || [];
+  [...$("tabs").children].forEach(b => { if (b.dataset.page) b.hidden = simple && !PAGES_BASE.includes(b.dataset.page) && !x.includes(b.dataset.page) && b.dataset.page !== curPage; });
+  [...$("tabsX").children].forEach(b => b.setAttribute("aria-pressed", x.includes(b.dataset.v)));
+  placeTabGlow();
+}
+function renderPerfFlag() { const pg = document.querySelector(".pg-canzone"); if (pg) pg.classList.toggle("noperf", !(state.perf && state.perf.ev && state.perf.ev.length) && !PERF.rec); }
+function setUi(mode) {
+  if ((state.ui || "semplice") === mode) return;
+  state.ui = mode; save(); applyUi();
+  msg(mode === "semplice" ? "MODALITÀ SEMPLICE · TUTTO IL RESTO È IN COMPLETA" : "MODALITÀ COMPLETA · TUTTI I COMANDI");
+}
+// the settings menu
+function gearOpen(open) {
+  const m = $("gearMenu"), b = $("gearBtn"), show = open != null ? open : m.hidden;
+  if (show) {
+    m.hidden = false; const r = b.getBoundingClientRect();
+    m.style.left = Math.max(8, Math.min(innerWidth - m.offsetWidth - 8, r.right - m.offsetWidth)) + "px";
+    m.style.top = Math.min(innerHeight - m.offsetHeight - 8, r.bottom + 8) + "px";
+    setTimeout(() => document.addEventListener("pointerdown", gearOutside, true), 0);
+  } else { m.hidden = true; document.removeEventListener("pointerdown", gearOutside, true); }
+  b.setAttribute("aria-expanded", show);
+}
+function gearOutside(e) { if (!$("gearMenu").contains(e.target) && e.target !== $("gearBtn")) gearOpen(false); }
+function dlgOpen(id) { gearOpen(false); closeDlgs(); $(id).hidden = false; const f = $(id).querySelector("button:not([data-close]), select"); if (f) f.focus({ preventScroll: true }); }
+function closeDlgs() { gearOpen(false); ["expDlg", "nbDlg"].forEach(id => { $(id).hidden = true; }); }
+// Esporta: everything that leaves the Mat.Tone, in one place
+function openExport() {
+  $("exBars").value = $("recBars").value === "0" ? "4" : $("recBars").value;
+  [...$("exFmt").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === $("recFmt").value));
+  const has = state.song.length > 0;
+  $("expDlg").querySelector('[data-ex="song"]').disabled = !has;
+  $("expDlg").querySelector('[data-ex="song"]').closest(".excard").classList.toggle("off", !has);
+  $("exSongNote").textContent = has ? "Tutte le " + state.song.length + (state.song.length > 1 ? " parti" : " parte") + " in fila, " + songBars() + " battute, dall’inizio alla fine" : "Prima metti i pattern in fila nella scheda Canzone";
+  dlgOpen("expDlg");
+}
+function doExport(what) {
+  closeDlgs(); initAudio();
+  if (what === "beat") { if (recorder.on) recStop(); $("recBars").value = $("exBars").value; recStart(+$("exBars").value); }
+  else if (what === "song") songRec();
+  else if (what === "video") openVideo();
+  else if (what === "stems") exportStems();
+  else if (what === "midi") exportMidi();
+  else if (what === "save") saveProject();
+  else if (what === "open") $("projFile").click();
+}
+// Nuovo beat: a style gives kit, tempo, a drum pattern ready to change and the sound of the master
+const NEW_BEATS = [
+  ["boombap", "Boom bap", "Cassa e rullante pesanti, swing alla MPC", ["boombapac", "boombap"], 90, "boombap", "boombap"],
+  ["lofi", "Lo-fi", "Morbido, polveroso, col Wurlitzer", ["lofiwurli", "lofi"], 80, "lofi", "lofi"],
+  ["trap", "Trap", "808 lunghe e charleston veloci", ["trapdrill", "trap"], 140, "trap", "pulito"],
+  ["westcoast", "West Coast", "Bounce, 808 rotonda e conga", ["bounce", "808"], 96, "boombap", "pulito"],
+  ["oldschool", "Old school", "La 808 classica degli anni ’80", ["808", "sp1200"], 100, "boombap", "boombap"],
+  ["tekno", "Tekno", "Cassa dritta a 140", ["tekno140", "acid140"], 140, "tekno", "tekno"],
+  ["freeparty", "Free party", "Cassa distorta a 170", ["freeparty", "hardtek"], 170, "freeparty", "freeparty"],
+];
+function newBeat(id) {
+  const nb = NEW_BEATS.find(x => x[0] === id); if (!nb) return;
+  const kit = nb[3].find(k => KITS.some(x => x[0] === k)); if (!kit) return;
+  closeDlgs(); initAudio();
+  if (playing) stop();
+  state.patterns = state.patterns.map(() => emptyPattern(NSTEP)); state.pmeta = defaultPmeta();
+  state.pattern = 0; state.bank = 0; state.mutes = state.mutes.map(() => false); state.song = []; state.songOn = false; songFrom = 0;
+  state.banks.forEach(bk => bk.forEach(pr => { delete pr.mute; delete pr.solo; }));
+  edPage = 0; queued = null; fixPatterns();
+  loadKit(kit);
+  makeIdea(nb[5]);
+  setBpm(nb[4]); setMasterPreset(nb[6], true);
+  if (curPage !== "suona") showPage("suona");
+  save(); renderAll(); applyUi();
+  setTimeout(() => msg("NUOVO BEAT " + nb[1].toUpperCase() + " · " + nb[4] + " BPM · PREMI PLAY"), 1800);
+}
+function buildUi() {
+  // the mode switch at the end of the tabs, the extra tabs in the menu
+  const seg = el("div", "seg uimode"); seg.id = "uiMode"; seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Modalità");
+  [["semplice", "Semplice"], ["completa", "Completa"]].forEach(([v, n]) => { const b = el("button", null, n); b.type = "button"; b.dataset.v = v; b.addEventListener("click", () => setUi(v)); seg.appendChild(b); });
+  $("tabs").insertBefore(seg, $("tabs").querySelector(".tabglow"));
+  [...$("uiSeg").children].forEach(b => b.addEventListener("click", () => setUi(b.dataset.v)));
+  PAGES_X.forEach(([v, n]) => {
+    const b = el("button", "key small", n); b.type = "button"; b.dataset.v = v;
+    b.addEventListener("click", () => { const x = state.tabsX = (state.tabsX || []).filter(q => q !== v); if (b.getAttribute("aria-pressed") !== "true") x.push(v); save(); applyTabs(); });
+    $("tabsX").appendChild(b);
+  });
+  $("gearBtn").addEventListener("click", () => gearOpen());
+  $("gearMenu").querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => {
+    const a = b.dataset.act; gearOpen(false);
+    if (a === "nb") dlgOpen("nbDlg");
+    else if (a === "cust") $("openCust").click();
+    else if (a === "flip") document.querySelector(".rack .flipbtn").click();
+    else if (a === "vis") $("visBtn").click();
+    else if (a === "vfx") $("vfxBtn").click();
+    else if (a === "view") { const v = $("viewKey"); if (v) v.click(); }
+    else if (a === "guida") showPage("guida");
+  }));
+  // export and new beat
+  $("expBtn").addEventListener("click", openExport); $("songExp").addEventListener("click", openExport);
+  [...$("exFmt").children].forEach(b => b.addEventListener("click", () => { $("recFmt").value = b.dataset.v; $("recFmt").dispatchEvent(new Event("change")); [...$("exFmt").children].forEach(x => x.setAttribute("aria-pressed", x === b)); }));
+  $("expDlg").querySelectorAll("[data-ex]").forEach(b => b.addEventListener("click", () => doExport(b.dataset.ex)));
+  NEW_BEATS.forEach(([id, name, sub, kits, bpm]) => {
+    if (!kits.some(k => KITS.some(x => x[0] === k))) return;
+    const b = el("button", "nbcard", "<i>" + bpm + " BPM</i><b>" + esc(name) + "</b><small>" + esc(sub) + "</small>"); b.type = "button";
+    b.addEventListener("click", () => newBeat(id)); $("nbGrid").appendChild(b);
+  });
+  $("nbBtn").addEventListener("click", () => dlgOpen("nbDlg"));
+  ["expDlg", "nbDlg"].forEach(id => { const d = $(id); d.addEventListener("click", e => { if (e.target === d || e.target.closest("[data-close]")) closeDlgs(); }); });
+  // the long explanations become a «?» in the corner of their panel
+  document.querySelectorAll(".page:not(.pg-guida) .unit").forEach(u => {
+    const h = u.querySelector(":scope > .hd > .lbl"); if (h && h.textContent.length > 60) h.classList.add("hdnote");
+    if (u.classList.contains("mixer") || !u.querySelector(".cnote, .rechint, .songhelp, .hint, .hdnote")) return;   // the master's notes go with the meter and the recorder
+    const q = el("button", "key small helpq", "?"); q.type = "button"; q.title = "Spiegazione di questo pannello"; q.setAttribute("aria-label", "Mostra la spiegazione");
+    q.addEventListener("click", () => { const on = u.classList.toggle("showhelp"); q.setAttribute("aria-pressed", on); fitPages(); });
+    const hd = u.querySelector(":scope > .hd");
+    if (hd) hd.appendChild(q); else { q.classList.add("float"); u.prepend(q); }
+  });
+  // in Semplice the pattern tools go next to the grid, the swing to the bar of the pattern length
+  const acts = document.querySelector(".pg-seq .acts");
+  uiMove($("copy"), acts, $("clearTrack")); uiMove($("clear"), acts, $("clearTrack"));
+  uiMove($("swing").closest(".row"), document.querySelector(".pg-seq .seqbar"), $("seqMore"));
+  applyUi();
 }
 // back to flat: drop the 3D layers so text is sharp again
 function settleFlat() {
