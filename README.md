@@ -111,6 +111,6 @@ CSRF, conflitto fra due utenti, ripetizione di un'operazione e permessi amminist
 ## EggMonster'S · gioco 3D
 
 Nella cartella `gioco/` c'è **EggMonster'S**, un gioco 3D di mostriciattoli da collezione (un solo file, `gioco/index.html`).
-Scegli un uovo, esplora l'Isola Covata, lotta a turni nell'erba alta, cattura i mostri con i gusci vuoti, falli salire di livello ed evolvere, poi sfida l'Ovodrago in cima al colle.
+Scegli un uovo, esplora una regione con quattro habitat (Valle del Nido, Bosco Frusciante, Laguna Salmastra, Terre Roventi), lotta a turni nell'erba alta, cattura i mostri con i gusci vuoti, falli salire di livello ed evolvere, poi sfida l'Ovodrago in cima al colle.
 
 Si apre direttamente nel browser (PC o telefono); serve la connessione per caricare Three.js dal CDN. I progressi restano nel browser.
