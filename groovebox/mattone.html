@@ -467,6 +467,14 @@ html:not(.ui-simple) .knob.sk { display: none; }
 .lychips button.rich { background: color-mix(in srgb, var(--led) 22%, rgba(255,255,255,.06)); }
 .lychips .none { font-size: 12px; color: var(--cream-3); }
 @media (max-width: 900px) { .lygrid { grid-template-columns: minmax(0, 1fr); } .lyed { height: 55vh; min-height: 230px; grid-template-columns: 96px minmax(0, 1fr); } .lyg .sec { font-size: 9px; } }
+.vcomp { display: grid; gap: 8px; margin-top: 10px; padding: 10px; border-radius: 8px; background: var(--well); box-shadow: inset 0 1px 4px rgba(0,0,0,.5); }
+.vchd { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.vchd b { font-size: 15px; color: var(--well-text, var(--cream)); }
+.vchd .lbl { text-transform: none; letter-spacing: .02em; font-family: var(--f-ui); font-size: 12px; color: var(--cream-2); }
+#vComp { display: block; width: 100%; cursor: pointer; touch-action: pan-y; border-radius: 6px; }
+.vtake .vrole { padding: 4px 7px; }
+.vtake .vrole.on { background: var(--led); color: #1a1208; }
+.vtake .vtag { font-family: var(--f-label); font-size: 9px; letter-spacing: .1em; color: var(--led); margin-left: 6px; }
 .cliprow { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .pg-seq .grid:not(.roll) .cell { touch-action: pan-y; }
 .gearbtn { min-width: 34px; font-family: system-ui, sans-serif; font-size: 16px; letter-spacing: 0; }
@@ -819,7 +827,8 @@ html:not(.ui-simple) .knob.sk { display: none; }
 #vMeter { width: 180px; height: 14px; border-radius: 3px; }
 #vDev { max-width: 200px; }
 .vtakes { display: grid; gap: 6px; }
-.vtake { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 6px; align-items: center; }
+.vtake { display: grid; grid-template-columns: minmax(0, 1fr) repeat(5, auto); gap: 6px; align-items: center; }
+@media (max-width: 640px) { .vtake { grid-template-columns: minmax(0, 1fr) repeat(3, auto); } .vtake .vtpick { grid-column: 1 / -1; } }
 .vtpick { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 10px; align-items: center; text-align: left; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--well); color: var(--well-text); min-width: 0; }
 .vtpick i { grid-row: span 2; width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--well-ink); }
 .vtpick b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -2059,6 +2068,10 @@ html.intro-on { overflow: hidden; }
           <canvas id="vMeter" width="180" height="14" aria-label="Livello del microfono"></canvas>
           <label class="key small" for="vFile">Carica una voce</label><button class="key small vidopen" type="button" title="Il beat con la voce e il testo, in un video per i social">🎬 Fai il video</button><input type="file" id="vFile" accept="audio/*,.wav,.mp3,.m4a,.ogg,.aac" hidden>
         </div>
+        <div class="vcomp" id="vCompBox" hidden>
+          <div class="vchd"><b>Voce migliore</b><span class="lbl" id="vCompInfo"></span><span class="vgrow"></span><button class="key small" id="vCompNew" type="button" title="Una voce nuova: comincia tutta dalla presa scelta, poi tocchi le battute delle altre">＋ Nuova voce migliore</button></div>
+          <canvas id="vComp" aria-label="Le prese battuta per battuta: tocca (o trascina) le battute di una presa per usarle nella voce migliore"></canvas>
+        </div>
         <div class="vtakes" id="vTakes"></div>
         <p class="cnote small">Premi <b>● Registra</b>: il beat riparte dall’inizio, una battuta di attacco col click, poi tocca a te; si ferma da solo alla fine delle battute scelte. Ogni presa resta, e scegli quale suona nel beat. Per correggere un pezzo trascina sulla forma d’onda le battute sbagliate e premi <b>↺ Rifai</b>: il beat riparte poco prima e ricanti solo lì, in una presa nuova. Il ritardo del microfono viene compensato da solo; se senti la voce in anticipo o in ritardo, usa <b>Sposta la presa</b>.</p>
       </section>
@@ -2175,6 +2188,7 @@ html.intro-on { overflow: hidden; }
             <li><b>▤ I miei beat</b> (il nome in alto, accanto al logo): tutti i tuoi beat, salvati da soli mentre lavori, sul dispositivo. Tocca per aprirne uno; Rinomina, Duplica per provare una variante, Elimina. Un progetto aperto da file diventa un beat nuovo della lista.</li>
             <li><b>Tra telefono e PC</b>: in I miei beat, <b>⤓ Esporta tutti</b> mette tutti i beat in un file, con i tuoi campioni e le prese di voce; dall’altra parte <b>⤒ Importa</b> (o Apri progetto) li aggiunge alla lista. Quelli che hai già si aggiornano solo se il file è più recente.</li>
             <li><b>🎧 Pronto per Spotify</b> (Mix, o in Esporta): ascolta la canzone (le prime 16 battute) o il pattern e regola da solo spinta e volume finale per −14 LUFS, il volume di Spotify e YouTube, coi picchi sotto −1 dB. Ripremi per fermare: il volume torna com’era.</li>
+            <li><b>Voce migliore</b> (Voce): con due o più prese della stessa strofa compare la griglia delle prese, battuta per battuta. Tocca o trascina le battute della presa che suona meglio: nasce una voce nuova fatta dei pezzi migliori, unita con dissolvenze di 20 ms sulle battute; le prese restano. Su ogni presa, <b>Doppia</b> la fa suonare sotto la voce scelta, a destra e a sinistra (registra la stessa strofa un’altra volta), <b>Ad-lib</b> ai lati e più leggera.</li>
             <li><b>Testi</b> (la scheda tra Canzone e Mix): il quaderno del rap. Una riga per battuta della canzone; accanto il numero, la sezione e le sillabe, in arancio le righe molto più lunghe o corte delle altre della sezione. A destra le rime per l’ultima parola della riga (o per quella che selezioni): perfette, le più ricche in evidenza, e assonanze; un clic la scrive. «Segui il beat» accende la battuta che suona. È lo stesso testo della pagina Voce, che lo fa scorrere mentre registri; «Salva il testo» lo scarica in .txt.</li>
             <li><b>🎤 Beatbox</b> (Sequencer, Ritmo): fai il ritmo con la bocca sul click per un giro del pattern; «bum» diventa cassa, «cià» rullante, «ts» charleston, nel gruppo che vedi. Il gruppo tace mentre registri; Ctrl+Z per tornare.</li>
             <li><b>Canzone a sezioni</b>: dai un nome a ogni parte (Intro, Strofa, Ritornello…) col menu sopra il numero; le parti vicine con lo stesso nome fanno una sezione, col suo colore. Trascina il ⠿ di una parte o di una sezione per spostarla; ⧉ duplica la sezione intera. «Fammi la canzone» dà già i nomi.</li>
@@ -10251,16 +10265,42 @@ function voiceAnchor(take) {
   if (state.songOn && state.song.length && !VO.rec && songFrom > 0) bars -= state.song.slice(0, songFrom).reduce((a, e) => a + pm(e.p).bars * e.n, 0);
   return gridOrigin + bars * vbar() + (take.shift || 0) / 1000 - VOICE_LAT;
 }
-function voiceStopPlay() { if (VO.play) { try { VO.play.stop(); } catch (e) { /* ended */ } VO.play = VO.playG = null; } }
+function voiceStopPlay() {
+  if (VO.play) { try { VO.play.stop(); } catch (e) { /* ended */ } VO.play = VO.playG = null; }
+  (VO.extra || []).forEach(s => { try { s.stop(); } catch (e) { /* ended */ } }); VO.extra = [];
+}
+// a take on the clock of the beat, into a node of the chain
+function voiceStartAt(take, buf, node) {
+  const s = ctx.createBufferSource(); s.buffer = buf; s.connect(node);
+  if (state.voice.rep) { s.loop = true; s.loopStart = 0; s.loopEnd = Math.min(buf.duration, take.bars * vbar()); }
+  const now = ctx.currentTime + 0.02; let when = voiceAnchor(take), off = 0;
+  if (when < now) { off = now - when; when = now; if (s.loop) off %= s.loopEnd; else if (off >= buf.duration) return null; }
+  s.start(when, off); return s;
+}
+// the doubles sit left and right a little under the voice; the ad-libs further out, thinner
+const VOICE_ROLES = { dbl: { g: 0.55, pan: 0.45, hp: 0 }, adl: { g: 0.62, pan: 0.8, hp: 260 } };
 function voicePlaySel() {
   voiceStopPlay();
   const take = vTake(); if (!take || !playing || !VO.ready) return;
   const buf = voiceBufOf(take.id); if (!buf) return;
-  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = buf; s.connect(g).connect(VO.in);
-  if (state.voice.rep) { s.loop = true; s.loopStart = 0; s.loopEnd = Math.min(buf.duration, take.bars * vbar()); }
-  const now = ctx.currentTime + 0.02; let when = voiceAnchor(take), off = 0;
-  if (when < now) { off = now - when; when = now; if (s.loop) off %= s.loopEnd; else if (off >= buf.duration) return; }
-  s.start(when, off); VO.play = s; VO.playG = g;
+  const g = ctx.createGain(), s = voiceStartAt(take, buf, g); g.connect(VO.in);
+  if (!s) return;
+  VO.play = s; VO.playG = g;
+  const side = { dbl: 0, adl: 0 };
+  for (const t of state.voice.takes) {
+    const R = VOICE_ROLES[t.role]; if (!R || t.id === take.id || t.bpm !== take.bpm) continue;
+    const b = voiceBufOf(t.id); if (!b) continue;
+    const xg = ctx.createGain(), pn = ctx.createStereoPanner(); xg.gain.value = R.g; pn.pan.value = (side[t.role]++ % 2 ? 1 : -1) * R.pan;
+    let head = xg; if (R.hp) { const f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = R.hp; f.connect(xg); head = f; }
+    xg.connect(pn).connect(VO.in);
+    const x = voiceStartAt(t, b, head); if (x) VO.extra.push(x);
+  }
+}
+function voiceRole(id, role) {
+  const t = vTake(id); if (!t) return;
+  t.role = t.role === role ? undefined : role; if (!t.role) delete t.role;
+  save(); voiceRender(); if (playing) voicePlaySel();
+  msg(t.role ? t.name.toUpperCase() + (t.role === "dbl" ? " È UNA DOPPIA: SUONA SOTTO LA VOCE, A DESTRA E A SINISTRA" : " FA DA AD-LIB: SUONA AI LATI") : t.name.toUpperCase() + ": SOLO SE LA SCEGLI");
 }
 function voiceOnStart() { if (state.voice.takes.length) voiceEnsure(); if (!VO.rec) VO.skip = 0; if (VO.rec && !VO.rec.punch) return; voicePlaySel(); }
 function voiceOnStop() { voiceStopPlay(); if (VO.rec) voiceRecFinish(); }
@@ -10423,11 +10463,12 @@ function voiceRecFinish() {
 }
 
 /* ---------- takes ---------- */
-function voiceSelect(id) { state.voice.sel = id; VO.sel = null; save(); voiceRender(); if (playing) voicePlaySel(); }
+function voiceSelect(id) { const t = vTake(id); if (t) delete t.role; state.voice.sel = id; VO.sel = null; save(); voiceRender(); if (playing) voicePlaySel(); }
 function voiceDelete(id) {
   const v = state.voice; v.takes = v.takes.filter(t => t.id !== id);
   VO.bufs.delete(id); VO.peaks.delete(id); voiceTx("readwrite", st => st.delete(id)).catch(() => {});
   if (v.sel === id) { v.sel = v.takes.length ? v.takes[0].id : null; if (playing) voicePlaySel(); }
+  VO.cpk && VO.cpk.delete(id);
   save(); voiceRender();
 }
 function voiceSoloStop() { if (VO.solo) { try { VO.solo.s.stop(); } catch (e) { /* ended */ } VO.solo = null; voiceRender(); } }
@@ -10446,6 +10487,94 @@ function voiceExport(id) {
   const d = b.getChannelData(0), name = "mattone-" + t.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + t.bpm + "bpm.wav";
   giveFiles([{ name, data: new Uint8Array(encodeWav(d, d, b.sampleRate)), type: "audio/wav" }], name.replace(/\.wav$/, ".zip"))
     .then(n => msg("VOCE SALVATA: " + n.toUpperCase())).catch(err => msg(err && err.code === "declined" ? "SALVATAGGIO ANNULLATO" : "QUI NON POSSO SALVARE FILE"));
+}
+/* ---------- la voce migliore: battuta per battuta dalle prese ---------- */
+// Takes sung on the same bars at the same tempo can be put together: for every bar you pick the take that sounds
+// best. The voice is rebuilt at once, each bar from its take (with its own «Sposta la presa»), joined by 20 ms
+// crossfades on the bar lines; it is a take like the others, and keeps the plan to be changed later.
+const COMP_XF = 0.02;
+const voiceFits = (a, b) => { const x = a && VO.bufs.get(a.id), y = b && VO.bufs.get(b.id); return !!(x && y && a.bpm === b.bpm && (a.startBar || 0) === (b.startBar || 0) && x.sampleRate === y.sampleRate); };
+function compBase() { const t = vTake(); if (!t) return null; return t.comp ? (t.comp.map(id => vTake(id)).find(Boolean) || null) : t; }
+function compSources(base) { return state.voice.takes.filter(t => !t.comp && voiceFits(t, base)).slice().reverse(); }   // the first sung on top
+function compBuild(take) {
+  const sr = ctx.sampleRate, bar = 240 / take.bpm, n = take.comp.length, len = Math.ceil((n * bar + 0.6) * sr), out = new Float32Array(len), xf = Math.round(COMP_XF * sr);
+  const prev = VO.bufs.get(take.id), pd = prev && prev.sampleRate === sr ? prev.getChannelData(0) : null;
+  for (let j = 0; j < n; j++) {
+    const t = vTake(take.comp[j]), b = t && VO.bufs.get(t.id), d = b ? b.getChannelData(0) : pd, sh = b ? Math.round((t.shift || 0) / 1000 * sr) : 0;
+    if (!d) continue;   // a deleted take: its bars keep what the voice had
+    const a = Math.round(j * bar * sr), e = Math.round((j + 1) * bar * sr), from = j ? a - xf : 0, to = j < n - 1 ? e + xf : len;
+    for (let i = Math.max(0, from); i < Math.min(len, to); i++) {
+      const k = i - sh; if (k < 0 || k >= d.length) continue;
+      let w = 1; if (j && i < a + xf) w = (i - from) / (2 * xf); if (j < n - 1 && i > e - xf) w = Math.min(w, (to - i) / (2 * xf));
+      out[i] += d[k] * w;
+    }
+  }
+  const buf = voiceBufFrom(out, sr);
+  VO.bufs.set(take.id, buf); VO.peaks.delete(take.id); VO.waveKey = "";
+  clearTimeout(VO.compKeep); VO.compKeep = setTimeout(() => voiceKeep(take.id, buf), 600);
+  if (playing && state.voice.sel === take.id) voicePlaySel();
+}
+function compNew() {
+  const base = compBase(); if (!base || base.comp) return null;
+  const src = compSources(base); if (src.length < 2) return null;
+  const v = state.voice, bars = Math.max(...src.map(t => t.bars)), n = v.takes.filter(t => t.comp).length + 1;
+  const take = { id: "voce_" + Date.now().toString(36), name: "Voce migliore " + n, bpm: base.bpm, startBar: base.startBar || 0, bars, shift: 0, k: 1, comp: new Array(bars).fill(base.id) };
+  v.takes.unshift(take); v.sel = take.id; compBuild(take); save();
+  return take;
+}
+function compSet(row, bars) {
+  let take = vTake(); if (!take || !take.comp) take = compNew(); if (!take) return;
+  const src = compSources(compBase()), t = src[row]; if (!t) return;
+  let changed = false;
+  for (const j of bars) if (j >= 0 && j < take.comp.length && take.comp[j] !== t.id) { take.comp[j] = t.id; changed = true; }
+  if (!changed) { compRender(); return; }
+  compBuild(take); save(); voiceRender();
+}
+// rms of each sixteenth of a take, for the cells
+function compPeaks(t) {
+  VO.cpk = VO.cpk || new Map();
+  const b = VO.bufs.get(t.id), k = t.id + "|" + (t.shift || 0) + "|" + (b ? b.length : 0); let c = VO.cpk.get(t.id);
+  if (c && c.k === k) return c.v;
+  const sr = b.sampleRate, step = 240 / t.bpm / 16 * sr, d = b.getChannelData(0), sh = Math.round((t.shift || 0) / 1000 * sr), v = new Float32Array(t.bars * 16);
+  for (let q = 0; q < v.length; q++) { let s2 = 0, n = 0; for (let i = Math.round(q * step) - sh, e = Math.round((q + 1) * step) - sh; i < e; i += 4) { if (i >= 0 && i < d.length) { s2 += d[i] * d[i]; n++; } } v[q] = n ? Math.sqrt(s2 / n) : 0; }
+  VO.cpk.set(t.id, { k, v }); return v;
+}
+const COMP_LAB = 118, COMP_ROW = 34, COMP_HEAD = 18;
+function compRender() {
+  const box = $("vCompBox"); if (!box) return;
+  const base = compBase(), src = base ? compSources(base) : [], cur = vTake();
+  box.hidden = src.length < 2; if (box.hidden) return;
+  const plan = cur && cur.comp ? cur.comp : null, bars = Math.max(...src.map(t => t.bars), plan ? plan.length : 0);
+  $("vCompInfo").textContent = plan ? "«" + cur.name + "»: tocca o trascina le battute della presa da usare" : "Tocca una battuta di una presa: nasce una voce fatta dei pezzi migliori, le prese restano";
+  $("vCompNew").hidden = !plan;
+  const cv = $("vComp"), dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.max(300, cv.clientWidth || 600), H = COMP_HEAD + src.length * COMP_ROW;
+  cv.style.height = H + "px"; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const c = cv.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  const led = getComputedStyle(document.documentElement).getPropertyValue("--led").trim() || "#ff8a3c", cw = (W - COMP_LAB) / bars;
+  c.font = "10px system-ui"; c.textAlign = "center"; c.fillStyle = "rgba(255,255,255,.45)";
+  for (let j = 0; j < bars; j++) if (bars <= 16 || j % 2 === 0) c.fillText(String(j + 1), COMP_LAB + (j + 0.5) * cw, 12);
+  src.forEach((t, r) => {
+    const y = COMP_HEAD + r * COMP_ROW, pk = compPeaks(t), top = Math.max(1e-4, ...pk);
+    c.textAlign = "left"; c.fillStyle = "rgba(255,255,255,.8)"; c.font = "12px system-ui"; c.fillText(t.name.length > 16 ? t.name.slice(0, 15) + "…" : t.name, 6, y + 21);
+    for (let j = 0; j < bars; j++) {
+      const x = COMP_LAB + j * cw, on = plan ? plan[j] === t.id : t.id === (cur && cur.id), has = j < t.bars;
+      c.fillStyle = on ? (plan ? led : "rgba(255,255,255,.16)") : "rgba(255,255,255,.04)"; c.globalAlpha = on && plan ? 0.42 : 1;
+      c.fillRect(x + 1, y + 2, cw - 2, COMP_ROW - 4); c.globalAlpha = 1;
+      if (!has) continue;
+      c.fillStyle = on ? "rgba(255,240,220,.95)" : "rgba(255,255,255,.35)";
+      for (let q = 0; q < 16; q++) { const h = Math.min(1, pk[j * 16 + q] / top) * (COMP_ROW - 10); c.fillRect(x + 2 + q * (cw - 4) / 16, y + COMP_ROW / 2 - h / 2, Math.max(1, (cw - 4) / 16 - 1), Math.max(1, h)); }
+    }
+  });
+}
+function initComp() {
+  const cv = $("vComp"); let drag = null;
+  const at = e => { const r = cv.getBoundingClientRect(), base = compBase(), src = base ? compSources(base) : [], bars = Math.max(...src.map(t => t.bars)), cw = (r.width - COMP_LAB) / bars;
+    return { row: Math.floor((e.clientY - r.top - COMP_HEAD) / COMP_ROW), bar: Math.floor((e.clientX - r.left - COMP_LAB) / cw), n: src.length }; };
+  cv.addEventListener("pointerdown", e => { const h = at(e); if (h.row < 0 || h.row >= h.n || h.bar < 0) return; drag = { id: e.pointerId, row: h.row, last: h.bar }; compSet(h.row, [h.bar]); });
+  cv.addEventListener("pointermove", e => { if (!drag || e.pointerId !== drag.id) return; const h = at(e); if (h.bar === drag.last || h.bar < 0) return; const a = Math.min(h.bar, drag.last), b = Math.max(h.bar, drag.last), list = []; for (let j = a; j <= b; j++) list.push(j); drag.last = h.bar; compSet(drag.row, list); });
+  ["pointerup", "pointercancel"].forEach(ev => cv.addEventListener(ev, () => { drag = null; }));
+  $("vCompNew").addEventListener("click", () => { const t = vTake(); if (!t || !t.comp) return; const first = t.comp.map(id => vTake(id)).find(Boolean); if (!first) return; state.voice.sel = first.id; const nt = compNew(); if (nt) { voiceRender(); msg("NUOVA VOCE MIGLIORE: TOCCA LE BATTUTE DELLE PRESE"); } });
+  addEventListener("resize", () => { if (curPage === "voce") compRender(); });
 }
 // a voice recorded elsewhere (the phone): it starts on the first bar, then «Sposta la presa» puts it in time
 function voiceImport(file) {
@@ -10532,9 +10661,15 @@ function voiceRender() {
     const mk = (txt, title, fn) => { const x = el("button", "key small", txt); x.type = "button"; x.title = title; x.setAttribute("aria-label", title); x.addEventListener("click", fn); return x; };
     const solo = mk(VO.solo && VO.solo.id === t.id ? "■" : "▶", "Ascolta solo la voce", () => voiceSolo(t.id));
     const wav = mk("WAV", "Salva questa presa (voce asciutta)", () => voiceExport(t.id));
+    const main = t.id === v.sel, fits = !main && vTake() && vTake().bpm === t.bpm;
+    const dbl = mk("Doppia", "Suona insieme alla voce scelta, un po’ sotto, a destra e a sinistra: registra la stessa strofa un’altra volta", () => voiceRole(t.id, "dbl"));
+    const adl = mk("Ad-lib", "Suona insieme alla voce scelta, ai lati e più leggera: le parole di rinforzo", () => voiceRole(t.id, "adl"));
+    [dbl, adl].forEach((x, i) => { x.classList.add("vrole"); const on = t.role === (i ? "adl" : "dbl") && !main; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); x.disabled = !fits; if (main) x.title = "È la voce scelta"; });
+    if (t.comp) pick.querySelector("b").insertAdjacentHTML("afterend", '<span class="vtag">VOCE MIGLIORE</span>');
     const del = mk("✕", "Cancella la presa", () => { if (del.dataset.armed) { voiceDelete(t.id); return; } del.dataset.armed = "1"; del.textContent = "Sicuro?"; setTimeout(() => { if (del.isConnected) { delete del.dataset.armed; del.textContent = "✕"; } }, 2500); });
-    row.append(pick, solo, wav, del); host.appendChild(row);
+    row.append(pick, solo, dbl, adl, wav, del); host.appendChild(row);
   });
+  compRender();
   const c = v.ch;
   [...$("vPresets").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === v.preset));
   [...$("vFilt").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === c.filt));
@@ -11922,7 +12057,7 @@ function buildUi() {
   $("bkNew").addEventListener("click", () => beatBlank());
   $("bkStyle").addEventListener("click", () => dlgOpen("nbDlg"));
   $("dblBtn").addEventListener("click", patDouble); $("copyBar").addEventListener("click", clipCopyBar); $("copyRow").addEventListener("click", clipCopyRow); $("pasteBtn").addEventListener("click", clipPaste);
-  initPaint(); beatInit(); initSongDrag(); initLyrics();
+  initPaint(); beatInit(); initSongDrag(); initLyrics(); initComp();
   // the long explanations become a «?» in the corner of their panel
   document.querySelectorAll(".page:not(.pg-guida) .unit").forEach(u => {
     const h = u.querySelector(":scope > .hd > .lbl"); if (h && h.textContent.length > 60) h.classList.add("hdnote");
