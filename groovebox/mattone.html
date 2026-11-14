@@ -417,6 +417,12 @@ html:not(.ui-simple) .knob.sk { display: none; }
 .bkacts2 .key { padding: 4px 8px; }
 .bkcard input { width: 100%; box-sizing: border-box; font: 600 14px var(--f-ui); padding: 4px 6px; border-radius: 5px; border: 1px solid var(--line); background: var(--chassis, #222); color: var(--cream); }
 .bkempty { color: var(--cream-2); font-size: 13px; }
+.autoloud { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+.autoloud .lbl { text-transform: none; letter-spacing: .02em; font-family: var(--f-ui); font-size: 12px; color: var(--cream-2); }
+.autoloud.busy #autoLoud { background: var(--led); color: #1a1208; }
+.bkmove { padding-top: 8px; border-top: 1px dashed var(--line); }
+.bkmove .lbl { margin-left: 0; }
+.exloud .lbl { text-transform: none; letter-spacing: .02em; font-family: var(--f-ui); font-size: 12px; color: var(--cream-2); }
 .cliprow { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .pg-seq .grid:not(.roll) .cell { touch-action: pan-y; }
 .gearbtn { min-width: 34px; font-family: system-ui, sans-serif; font-size: 16px; letter-spacing: 0; }
@@ -1913,6 +1919,7 @@ html.intro-on { overflow: hidden; }
         <div>
           <div class="hd"><h2>Master</h2><div class="seg" id="mPresets" role="group" aria-label="Suono del master"></div></div>
           <div class="master knobs" id="masterKnobs"></div>
+          <div class="autoloud"><button class="key small on" id="autoLoud" type="button" title="Ascolta il pezzo e regola da solo il volume finale per le piattaforme: −14 LUFS, picchi sotto −1 dB">🎧 Pronto per Spotify</button><span class="lbl" id="autoLoudOut">Porta il pezzo a −14 LUFS, il volume di Spotify e YouTube</span></div>
           <div class="loud">
             <canvas id="loudCv" width="640" height="150" aria-label="Misuratore di volume del master"></canvas>
             <div class="loudrow"><span class="lbl" id="loudInt">Media del pezzo: —</span><button class="key small" id="loudReset" type="button">Azzera misura</button></div>
@@ -2094,6 +2101,8 @@ html.intro-on { overflow: hidden; }
             <li>Le pagine in alto: <b>Suona</b> (pad ed effetti), <b>Sequencer</b>, <b>Canzone</b> (i pattern in fila), <b>Mix</b>; in più <b>Piatto</b> (scratch), <b>Voce</b> e <b>Guida</b>. I tasti della tastiera funzionano da ogni pagina.</li>
             <li><b>Semplice</b> e <b>Completa</b> (in fondo alle pagine, o ⚙): Semplice mostra solo quello che serve per fare un beat, con la barra in alto su una riga, tre manopole per gruppo nel Mix e un «?» al posto delle spiegazioni lunghe; Completa mostra tutti i comandi. Non si spegne niente: cambia solo cosa vedi. In ⚙ accendi le schede in più, l’aspetto, il lato B, il visualizzatore e la vista 3D.</li>
             <li><b>▤ I miei beat</b> (il nome in alto, accanto al logo): tutti i tuoi beat, salvati da soli mentre lavori, sul dispositivo. Tocca per aprirne uno; Rinomina, Duplica per provare una variante, Elimina. Un progetto aperto da file diventa un beat nuovo della lista.</li>
+            <li><b>Tra telefono e PC</b>: in I miei beat, <b>⤓ Esporta tutti</b> mette tutti i beat in un file, con i tuoi campioni e le prese di voce; dall’altra parte <b>⤒ Importa</b> (o Apri progetto) li aggiunge alla lista. Quelli che hai già si aggiornano solo se il file è più recente.</li>
+            <li><b>🎧 Pronto per Spotify</b> (Mix, o in Esporta): ascolta la canzone (le prime 16 battute) o il pattern e regola da solo spinta e volume finale per −14 LUFS, il volume di Spotify e YouTube, coi picchi sotto −1 dB. Ripremi per fermare: il volume torna com’era.</li>
             <li><b>Scrivere veloce</b>: tieni premuto su un passo e scorri lungo la riga per mettere (o togliere) tanti colpi in un gesto. <b>×2 Raddoppia</b> allunga il pattern con la seconda parte uguale; <b>Copia battuta</b> (tutti i gruppi) e <b>Copia riga</b> (il pad selezionato) si incollano in un altro pattern, battuta o pad.</li>
             <li><b>✨ Nuovo beat</b> (Suona o ⚙): scegli lo stile e arrivano kit, tempo e un ritmo pronto da cambiare, in un beat nuovo della lista. <b>⤓ Esporta</b> raccoglie in un posto MP3 e WAV, la canzone, il video, le tracce, il MIDI e il progetto.</li>
             <li><b>Mix</b>: il master ha compressore, “pompa” sulla cassa (sidechain), saturazione, wow del nastro e un limiter che non lascia passare picchi sopra −1 dB. Il misuratore dice quanto è forte il pezzo in LUFS: −14 per Spotify e YouTube, −9 per il club. I preset Pulito, Boom bap, Lo-fi, Tekno club e Free party regolano tutto in un tocco.</li>
@@ -2193,6 +2202,7 @@ html.intro-on { overflow: hidden; }
 <div class="micwrap" id="expDlg" hidden role="dialog" aria-modal="true" aria-label="Esporta">
   <div class="unit micbox dlgbox">
     <div class="hd"><h2>Esporta</h2><button class="key small" data-close type="button">✕ Chiudi</button></div>
+    <div class="exfmt exloud"><span class="lbl" id="exLoudNote">Prima di esportare, il volume giusto per le piattaforme:</span><button class="key small" type="button" data-ex="loud">🎧 Pronto per Spotify</button></div>
     <div class="exfmt"><span class="lbl">Formato audio</span><div class="seg" id="exFmt" role="group" aria-label="Formato audio"><button type="button" data-v="mp3">MP3</button><button type="button" data-v="wav">WAV</button><button type="button" data-v="both">Tutti e due</button></div></div>
     <div class="exgrid">
       <div class="excard"><b>Il beat</b><small>Il pattern che suona, dall’inizio, per le battute che scegli</small><div class="exrow"><select id="exBars" aria-label="Quante battute"><option value="1">1 battuta</option><option value="2">2 battute</option><option value="4" selected>4 battute</option><option value="8">8 battute</option><option value="16">16 battute</option></select><button class="key small rec2" type="button" data-ex="beat">● Registra</button></div></div>
@@ -2208,6 +2218,7 @@ html.intro-on { overflow: hidden; }
   <div class="unit micbox dlgbox">
     <div class="hd"><h2>I miei beat</h2><button class="key small" data-close type="button">✕ Chiudi</button></div>
     <div class="bkbar"><button class="key small on" id="bkNew" type="button">+ Beat vuoto</button><button class="key small" id="bkStyle" type="button">✨ Da uno stile</button><span class="lbl" id="bkInfo"></span></div>
+    <div class="bkbar bkmove"><span class="lbl">Tra telefono e PC</span><button class="key small" id="bkExport" type="button" title="Tutti i beat in un solo file, con i tuoi campioni e le prese di voce che usano">⤓ Esporta tutti</button><button class="key small" id="bkImport" type="button" title="Aggiunge i beat di un file alla lista: quelli che hai già si aggiornano se il file è più recente">⤒ Importa</button><input type="file" id="bkFile" accept=".mattone,.zip,.json,application/json,application/zip" hidden></div>
     <div class="bklist" id="bkList"></div>
   </div>
 </div>
@@ -3812,7 +3823,7 @@ function mattoneLimiterModule() {
       this.ks = [new Float64Array(8), new Float64Array(8)];
       this.blk = Math.round(fs * 0.1); this.cnt = 0; this.acc = 0; this.pk = 0; this.minG = 1;
       this.blocks = []; this.all = []; this.k = 0;
-      this.port.onmessage = e => { if (e.data.reset) this.all = []; if (e.data.ceil) this.ceil = e.data.ceil; };
+      this.port.onmessage = e => { if (e.data.reset) { this.all = []; this.lastI = null; } if (e.data.ceil) this.ceil = e.data.ceil; };
     }
     kw(ch, x) {
       const s = this.ks[ch];
@@ -4029,7 +4040,7 @@ function initAudio() {
     const url = URL.createObjectURL(new Blob([mattoneLimiterModule.toString() + "\nmattoneLimiterModule();"], { type: "application/javascript" }));
     ctx.audioWorklet.addModule(url).then(() => {
       N.lim = new AudioWorkletNode(ctx, "mattone-limiter", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
-      N.lim.port.onmessage = e => { loud = e.data; };
+      N.lim.port.onmessage = e => { loud = e.data; if (AUTO && e.data.pk > AUTO.pk) AUTO.pk = e.data.pk; };
       N.limit.disconnect(); N.limit.connect(N.lim).connect(N.out);
     }).catch(() => { /* the fallback stays */ });
   }
@@ -9524,6 +9535,7 @@ function openProject(file) {
     let u = new Uint8Array(ab);
     if (u[0] === 0x50 && u[1] === 0x4b) u = unzipFirst(u);
     const proj = JSON.parse(new TextDecoder().decode(u));
+    if (proj && proj.app === "Mat.Tone" && proj.kind === "beat") { beatsImport(proj); return; }
     if (!proj || proj.app !== "Mat.Tone" || !proj.state || !proj.state.banks) throw new Error("non è un progetto");
     beatFork(file.name.replace(/\.(mattone|zip|json)$/i, "").replace(/^mattone-progetto-/, "Progetto ").slice(0, 40));
     for (const s of proj.sounds || []) {
@@ -11557,6 +11569,7 @@ function doExport(what) {
   else if (what === "midi") exportMidi();
   else if (what === "save") saveProject();
   else if (what === "open") $("projFile").click();
+  else if (what === "loud") { showPage("mix"); autoLoud(); }
 }
 // Nuovo beat: a style gives kit, tempo, a drum pattern ready to change and the sound of the master
 const NEW_BEATS = [
@@ -11621,6 +11634,9 @@ function buildUi() {
   $("nbBtn").addEventListener("click", () => dlgOpen("nbDlg"));
   ["expDlg", "nbDlg", "beatsDlg"].forEach(id => { const d = $(id); d.addEventListener("click", e => { if (e.target === d || e.target.closest("[data-close]")) closeDlgs(); }); });
   $("beatBtn").addEventListener("click", beatsOpen);
+  $("autoLoud").addEventListener("click", autoLoud);
+  $("bkExport").addEventListener("click", beatsExport); $("bkImport").addEventListener("click", () => $("bkFile").click());
+  $("bkFile").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) importFile(f); });
   $("bkNew").addEventListener("click", () => beatBlank());
   $("bkStyle").addEventListener("click", () => dlgOpen("nbDlg"));
   $("dblBtn").addEventListener("click", patDouble); $("copyBar").addEventListener("click", clipCopyBar); $("copyRow").addEventListener("click", clipCopyRow); $("pasteBtn").addEventListener("click", clipPaste);
@@ -11778,6 +11794,144 @@ async function renderBeats() {
     });
     card.append(open, acts); box.appendChild(card);
   }
+}
+
+/* ---------- pronto per Spotify: il pezzo al volume delle piattaforme ---------- */
+// Listen to the song (or the pattern) and measure what leaves the limiter: integrated loudness, gated, as the
+// platforms do. The level goes into the limiter with the push; when even no push is too loud, the output volume
+// comes down. A second pass checks it (the limiter eats a little of every push) and a third, if needed, finishes.
+const AUTO_T = -14, AUTO_BARS = 16;
+let AUTO = null;
+function autoStatus(t) { $("autoLoudOut").textContent = t; }
+function autoLoud() {
+  if (AUTO) { autoLoudEnd(true, "MISURA FERMATA · IL VOLUME È COME PRIMA"); return; }
+  if (!initAudio()) return;
+  if (recorder.on) { msg("PRIMA FINISCI LA REGISTRAZIONE"); return; }
+  if (!N.lim) { msg("IL MISURATORE SI STA ACCENDENDO: RIPROVA TRA UN SECONDO"); return; }
+  const song = state.song.length > 0, bars = Math.max(2, Math.min(AUTO_BARS, song ? songBars() : 8));
+  AUTO = { push: state.push, vol: state.volume, songOn: state.songOn, song, bars, pass: 0, pk: -99 };
+  $("autoLoud").textContent = "■ Ferma"; document.querySelector(".autoloud").classList.add("busy");
+  autoPass();
+}
+function autoPass() {
+  const A = AUTO; A.pass++; A.pk = -99;
+  if (playing) stop();
+  if (A.song) { state.songOn = true; songFrom = 0; }
+  N.lim.port.postMessage({ reset: true }); loud = null;
+  start();
+  const bar = 240 / state.bpm; A.t0 = performance.now();
+  const tick = () => { const b = Math.min(A.bars, Math.floor((performance.now() - A.t0) / 1000 / bar) + 1), t = (A.pass > 1 ? "CONTROLLO" : "ASCOLTO") + " · BATTUTA " + b + "/" + A.bars; autoStatus(t.charAt(0) + t.slice(1).toLowerCase()); msg(t); };
+  tick(); A.tick = setInterval(tick, 400);
+  A.timer = setTimeout(autoMeasured, (A.bars * bar + 0.5) * 1000);
+}
+function autoMeasured() {
+  const A = AUTO; if (!A) return;
+  clearInterval(A.tick); stop();
+  const M = loud && loud.i != null && loud.i > -69 ? loud.i : null;
+  if (M == null) { autoLoudEnd(true, "NON SENTO NIENTE: METTI QUALCHE COLPO NEL PATTERN E RIPROVA"); return; }
+  const db = v => 20 * Math.log10(Math.max(1e-4, v)), out = M + db(state.volume), d = AUTO_T - out;
+  // one level for both: above zero it is push into the limiter, below zero the output volume comes down
+  const x = state.push > 0 ? state.push : db(state.volume);
+  if (Math.abs(d) < 0.5 || A.pass >= 5) { autoLoudEnd(false, null, out, A.pk + db(state.volume)); return; }
+  if (d > 0 && x >= 12) { autoLoudEnd(false, null, out, A.pk + db(state.volume), true); return; }
+  // the step: 1:1 where only the volume moves; into the limiter, the slope measured between the last two passes
+  let slope = 1;
+  if (x <= 0 && d < 0) slope = 1;   // only the volume moves: exactly 1:1
+  else if (A.last && Math.abs(x - A.last.x) > 0.05) slope = Math.max(0.15, Math.min(1.2, (out - A.last.out) / (x - A.last.x)));
+  else if (x > 0 && d < 0) slope = 0.5;   // pulling back a hot limiter lowers the level less than the push taken away
+  A.last = { x, out }; A.lastVol = state.volume;
+  let nx = x + d / slope;
+  if (x > 0 && nx < 0 && slope < 1) nx = 0;   // through zero one step at a time: below it the slope is 1
+  nx = Math.max(-30, Math.min(12, nx));
+  const push = nx > 0 ? nx : 0, vol = nx > 0 ? 1 : Math.pow(10, nx / 20);
+  state.push = Math.round(push * 10) / 10; state.volume = Math.round(vol * 1000) / 1000;
+  applyMaster(); knobs.forEach(k => { if (k.label === "Spinta (dB)" || k.label === "Volume") k.draw(); }); save();
+  // a change of the output volume alone is exact: no need to listen again
+  if (x <= 0 && nx <= 0) { const g = db(state.volume) - db(A.lastVol != null ? A.lastVol : vol); autoLoudEnd(false, null, out + g, A.pk + db(A.lastVol) + g); return; }
+  autoPass();
+}
+function autoLoudEnd(cancel, text, out, pk, maxed) {
+  const A = AUTO; if (!A) return;
+  clearInterval(A.tick); clearTimeout(A.timer); AUTO = null;
+  if (playing) stop();
+  state.songOn = A.songOn;
+  if (cancel) { state.push = A.push; state.volume = A.vol; applyMaster(); }
+  knobs.forEach(k => { if (k.label === "Spinta (dB)" || k.label === "Volume") k.draw(); });
+  save(); renderSong();
+  $("autoLoud").textContent = "🎧 Pronto per Spotify"; document.querySelector(".autoloud").classList.remove("busy");
+  const f1 = v => v.toFixed(1).replace(".", ",").replace("-", "−");
+  if (cancel) { autoStatus(text.charAt(0) + text.slice(1).toLowerCase()); msg(text); return; }
+  const what = A.song ? "la canzone" : "il pattern";
+  if (maxed) { autoStatus("Arrivato a " + f1(out) + " LUFS con la spinta al massimo: alza il Livello dei gruppi e riprova"); msg("PIÙ DI COSÌ NON SI PUÒ: " + f1(out) + " LUFS · ALZA IL LIVELLO DEI GRUPPI"); return; }
+  autoStatus("Fatto: " + what + " è a " + f1(out) + " LUFS, picchi a " + f1(Math.min(pk, -1)) + " dB · spinta " + f1(state.push) + " dB" + (state.volume < 0.999 ? ", volume " + Math.round(state.volume * 100) : ""));
+  msg("PRONTO PER SPOTIFY: " + f1(out) + " LUFS · ORA ESPORTA");
+}
+
+/* ---------- i beat tra telefono e PC: un file con tutti i beat ---------- */
+// Every beat with its music, plus your sounds and voice takes that they use, once each. Importing adds the
+// beats you do not have and updates the ones you have when the file's copy is newer: the ids travel with them.
+async function saveFile(name, data, done) {
+  const dl = await claude_use("downloads");
+  if (!dl) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: "application/json" })); a.download = name; a.click(); msg(done); return; }
+  try { await dl.save({ filename: name.replace(/\.mattone$/, ".zip"), data: makeZip([{ name, data }]) }); msg(done + " · IN UNO .ZIP, IMPORTALO COSÌ COM’È"); }
+  catch (err) { msg(err && err.code === "declined" ? "SALVATAGGIO ANNULLATO" : "QUI NON POSSO SALVARE FILE"); }
+}
+async function beatsExport() {
+  if (!initAudio()) return;
+  await beatFlush(); msg("PREPARO I BEAT…");
+  const metas = await beatList(), beats = [], sids = new Set(), vids = new Set();
+  for (const m of metas) {
+    const rec = await beatTx(["data"], "readonly", t => t.objectStore("data").get(m.id)).catch(() => null); if (!rec) continue;
+    beats.push({ meta: m, st: rec.st });
+    (rec.st.banks || []).flat().forEach(pr => { const k = (SOUNDS.get(pr.sound) || {}).kind; if (k === "user" || k === "folder") sids.add(pr.sound); });
+    ((rec.st.voice && rec.st.voice.takes) || []).forEach(t => vids.add(t.id));
+  }
+  const sounds = [], voices = [];
+  for (const id of sids) { try { const b = cache.get(id) || await loadSound(id), s = SOUNDS.get(id); sounds.push({ id, name: s.name, src: s.src, sr: b.sampleRate, data: f32ToB64(b.getChannelData(0)) }); } catch (e) { /* a lost sound: the pad falls back to the group's own */ } }
+  for (const id of vids) { const r = await voiceTx("readonly", q => q.get(id)).catch(() => null); if (r) voices.push({ id, sr: r.sr, data: f32ToB64(r.data) }); }
+  const d = new Date(), pad2 = n => String(n).padStart(2, "0");
+  const name = "mattone-beat-" + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + "-" + pad2(d.getHours()) + pad2(d.getMinutes()) + ".mattone";
+  const data = new TextEncoder().encode(JSON.stringify({ app: "Mat.Tone", kind: "beat", ver: 1, saved: d.toISOString(), beats, sounds, voices }));
+  await saveFile(name, data, beats.length + (beats.length === 1 ? " BEAT SALVATO" : " BEAT SALVATI") + " IN " + name.toUpperCase());
+}
+function importFile(file) {
+  if (!initAudio()) return;
+  file.arrayBuffer().then(ab => {
+    let u = new Uint8Array(ab);
+    if (u[0] === 0x50 && u[1] === 0x4b) u = unzipFirst(u);
+    const f = JSON.parse(new TextDecoder().decode(u));
+    if (f && f.app === "Mat.Tone" && f.kind === "beat") return beatsImport(f);
+    closeDlgs(); openProject(file);   // a single project: it becomes one new beat
+  }).catch(() => msg("QUESTO FILE NON È DI MAT.TONE"));
+}
+async function beatsImport(f) {
+  await beatFlush();
+  for (const s of f.sounds || []) {
+    if (SOUNDS.has(s.id) && (SOUNDS.get(s.id).kind === "user")) continue;
+    const d = b64ToF32(s.data), b = ctx.createBuffer(1, Math.max(1, d.length), s.sr || 44100); b.getChannelData(0).set(d);
+    SOUNDS.set(s.id, { id: s.id, name: s.name, cat: "I tuoi suoni", root: null, home: null, kind: "user", src: s.src || "Importato" });
+    cache.set(s.id, b); userSave(s.id, b);
+  }
+  for (const v of f.voices || []) { const have = await voiceTx("readonly", q => q.get(v.id)).catch(() => null); if (!have) { const b = voiceBufFrom(b64ToF32(v.data), v.sr || 44100); VO.bufs.set(v.id, b); voiceKeep(v.id, b); } }
+  const mine = new Map((await beatList()).map(m => [m.id, m]));
+  const free = (name, id) => { const taken = new Set([...mine.values()].filter(o => o.id !== id).map(o => o.name)); if (!taken.has(name)) return name; for (let i = 2; ; i++) if (!taken.has(name + " " + i)) return name + " " + i; };
+  let added = 0, updated = 0, same = 0, reopen = false;
+  for (const x of f.beats || []) {
+    const m = x.meta, old = mine.get(m.id);
+    if (!m || !m.id || !x.st || !x.st.banks) continue;
+    if (old && old.updated >= m.updated) { same++; continue; }
+    m.name = free(m.name, m.id); mine.set(m.id, m);
+    await beatTx(["meta", "data"], "readwrite", t => { t.objectStore("meta").put(m); t.objectStore("data").put({ id: m.id, st: x.st }); }).catch(() => {});
+    if (old) updated++; else added++;
+    if (m.id === state.beatId) reopen = true;
+  }
+  if (reopen) {   // the beat open now came back newer: show the new one
+    const rec = await beatTx(["data"], "readonly", t => t.objectStore("data").get(state.beatId)), meta = await beatTx(["meta"], "readonly", t => t.objectStore("meta").get(state.beatId));
+    if (rec && meta) { state.beatName = meta.name; beatApply(rec.st); renderBeatName(); histReset(); }
+  }
+  const parts = []; if (added) parts.push(added + (added === 1 ? " BEAT NUOVO" : " BEAT NUOVI")); if (updated) parts.push(updated + " AGGIORNAT" + (updated === 1 ? "O" : "I")); if (same) parts.push(same + " GIÀ UGUALI");
+  msg("IMPORTATI: " + (parts.join(" · ") || "NIENTE DI NUOVO"));
+  if (!$("beatsDlg").hidden) renderBeats(); else beatsOpen();
 }
 
 /* ---------- scrivere veloce: trascinare sulla riga, copiare e incollare, raddoppiare ---------- */
